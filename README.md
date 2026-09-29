@@ -105,12 +105,14 @@ Acer-Predator-Connect-T7/
 │   └── README_PORT_OPENWRT.md                   # Guia passo a passo para criar o Target no OpenWrt
 │
 ├── Scripts_Automacao/                           # Utilitários Python
+│   ├── apply_debloat.py                         # Limpeza cirúrgica de telemetria, FOTA e daemons não utilizados
 │   ├── dump_full_firmware.py                    # Script de dump completo 1:1 de MTDs e diretórios do sistema
 │   ├── unlock_only_ssh.py                       # Script para destravar SOMENTE SSH/Telnet em qualquer backup
 │   ├── build_ssh_unlocked.py                    # Script que compilou a injeção do SSH e canais
 │   └── test_router_access.py                    # Diagnóstico rápido de portas, temperatura e Wi-Fi
 │
 ├── README.md                                    # Este documento
+├── DESCOBERTAS_LUCI_DEBLOAT_E_ARQUITETURA.md    # [IMPORTANTE] LuCI nativo, fix de login, debloat e blueprint
 ├── COMO_EDITAR_CFG_E_LIBERAR_SSH.md             # Guia: como editar o .cfg e destravar apenas SSH/Telnet
 ├── GUIA_TECNICO_DESBLOQUEIO_E_AP.md             # Passo a passo da engenharia reversa e modificações
 ├── MAPA_HARDWARE_E_PARTICOES.md                 # Tabela MTD, Dual-Boot e parâmetros do U-Boot

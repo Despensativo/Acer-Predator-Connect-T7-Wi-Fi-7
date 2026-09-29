@@ -1,0 +1,14 @@
+# Ambientes e temporarios
+.DS_Store
+._*
+Thumbs.db
+*.sock
+.venv-mac/
+.venv-win/
+node_modules_mac/
+node_modules_win/
+
+# Backups Privados e Pessoais (Protegidos)
+Meus_Backups_Pessoais/
+*.private
+*.secret

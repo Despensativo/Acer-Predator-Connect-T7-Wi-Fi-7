@@ -24,34 +24,34 @@ O Predator T7 utiliza um sistema de **Dual Boot redundante (A/B)** para permitir
 
 ```text
 dev:    size   erasesize  name
-mtd0: 00180000 00040000 "0:SBL1"          -> Secondary Boot Loader (Slot A)
+mtd0: 00180000 00040000 "0:SBL1"          -> Secondary Boot Loader (Slot A) [DUMP COMPLETO]
 mtd1: 00180000 00040000 "0:SBL1_1"        -> Secondary Boot Loader (Slot B)
-mtd2: 00100000 00040000 "0:MIBIB"         -> Master Information Block (Tabela de Partições)
+mtd2: 00100000 00040000 "0:MIBIB"         -> Master Information Block (Partições) [DUMP COMPLETO]
 mtd3: 00080000 00040000 "0:BOOTCONFIG"    -> Configuração de Inicialização
 mtd4: 00080000 00040000 "0:BOOTCONFIG1"   -> Configuração de Inicialização (Backup)
-mtd5: 00380000 00040000 "0:QSEE"          -> Qualcomm Secure Execution Environment (Slot A)
+mtd5: 00380000 00040000 "0:QSEE"          -> Qualcomm Secure Execution Environment (TrustZone) [DUMP COMPLETO]
 mtd6: 00380000 00040000 "0:QSEE_1"        -> Qualcomm Secure Execution Environment (Slot B)
 mtd7: 00080000 00040000 "0:DEVCFG_1"      -> Device Configuration (Slot B)
-mtd8: 00080000 00040000 "0:DEVCFG"        -> Device Configuration (Slot A) [BACKUP EXTRAÍDO]
+mtd8: 00080000 00040000 "0:DEVCFG"        -> Device Configuration (Slot A) [DUMP COMPLETO]
 mtd9: 00080000 00040000 "0:TME"           -> Trusted Management Engine
 mtd10: 00080000 00040000 "0:TME_1"        -> Trusted Management Engine (Backup)
 mtd11: 00080000 00040000 "0:CDT_1"        -> Platform Configuration Data (Slot B)
-mtd12: 00080000 00040000 "0:CDT"          -> Platform Configuration Data (Slot A) [BACKUP EXTRAÍDO]
-mtd13: 00080000 00040000 "0:APPSBLENV"    -> Variáveis de Ambiente do U-Boot [BACKUP EXTRAÍDO]
-mtd14: 00180000 00040000 "0:APPSBL_1"     -> U-Boot Bootloader (Slot B)
-mtd15: 00180000 00040000 "0:APPSBL"       -> U-Boot Bootloader (Slot A)
-mtd16: 00100000 00040000 "0:ETHPHYFW"     -> Firmware do chip 2.5 Gbps Ethernet [BACKUP EXTRAÍDO]
+mtd12: 00080000 00040000 "0:CDT"          -> Platform Configuration Data (Slot A) [DUMP COMPLETO]
+mtd13: 00080000 00040000 "0:APPSBLENV"    -> Variáveis de Ambiente do U-Boot [DUMP COMPLETO]
+mtd14: 00180000 00040000 "0:APPSBL_1"     -> U-Boot Bootloader (Slot B) [DUMP COMPLETO]
+mtd15: 00180000 00040000 "0:APPSBL"       -> U-Boot Bootloader (Slot A) [DUMP COMPLETO]
+mtd16: 00100000 00040000 "0:ETHPHYFW"     -> Firmware do chip 2.5 Gbps Ethernet [DUMP COMPLETO]
 mtd17: 00080000 00040000 "0:TRAINING"     -> Dados de Treinamento de Memória DDR
-mtd18: 00200000 00040000 "0:ART"          -> Atheros Radio Test (Calibração Wi-Fi) [CRÍTICO - EXTRAÍDO]
-mtd19: 00040000 00040000 "0:LICENSE"      -> Licenças e números de série [BACKUP EXTRAÍDO]
+mtd18: 00200000 00040000 "0:ART"          -> Atheros Radio Test (Calibração Wi-Fi) [CRÍTICO - DUMP COMPLETO]
+mtd19: 00040000 00040000 "0:LICENSE"      -> Licenças e números de série [DUMP COMPLETO]
 mtd20: 0f000000 00040000 "rootfs_1"       -> Imagem do Sistema Operacional (Slot B - 240 MB)
 mtd21: 0f000000 00040000 "rootfs"         -> Imagem do Sistema Operacional (Slot A - 240 MB)
 mtd22: 00600000 00040000 "0:TRAFFIC"      -> Dados de Estatísticas de Tráfego
 mtd23: 00080000 00040000 "0:SYSTRACE"     -> Rastreamento de Sistema
 mtd24: 00300000 00040000 "0:TRAFFIC_DAY"  -> Histórico Diário de Tráfego
-mtd25: 00828800 0003e000 "wifi_fw"        -> Firmware Binário Wi-Fi 7 Qualcomm IPQ5332 (8.3 MB)
-mtd26: 0040ad48 0003e000 "kernel"         -> Imagem do Kernel Linux montada
-mtd27: 02606000 0003e000 "ubi_rootfs"     -> Sistema Base /rom
+mtd25: 00828800 0003e000 "wifi_fw"        -> Firmware Binário Wi-Fi 7 Qualcomm IPQ5332 (8.3 MB) [DUMP COMPLETO]
+mtd26: 0040ad48 0003e000 "kernel"         -> Imagem do Kernel Linux montada (4.04 MB) [DUMP COMPLETO]
+mtd27: 02606000 0003e000 "ubi_rootfs"     -> Sistema Base /rom (SquashFS 38 MB) [DUMP COMPLETO]
 mtd28: 0a71c000 0003e000 "rootfs_data"    -> Camada gravável de personalizações (/overlay)
 ```
 

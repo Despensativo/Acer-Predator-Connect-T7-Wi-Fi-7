@@ -6,7 +6,14 @@ Este documento registra em detalhes toda a análise técnica, engenharia reversa
 
 ## 1. O Desafio Inicial e Objetivos
 
-O Acer Predator Connect T7 é um roteador gamer de ponta equipado com o SoC **Qualcomm IPQ5332 (Wi-Fi 7)** e uma porta de **2.5 Gbps**. O usuário possui uma conexão de internet de **2 Gbps** entregue por um roteador mestre (`192.168.73.1`), mas o firmware de fábrica da Acer impunha limitações severas:
+O Acer Predator Connect T7 é um roteador gamer de ponta equipado com o SoC **Qualcomm IPQ5332 (Wi-Fi 7)** e uma porta de **2.5 Gbps**.
+
+> [!NOTE]
+> **Esquema de Endereçamento IP**:
+> * **IP Padrão de Fábrica (Stock):** `192.168.76.1` (Modo Roteador com servidor DHCP ativo).
+> * **IP Customizado deste Projeto:** `192.168.73.2` (Modificado manualmente para integrar como Access Point à rede do roteador mestre `192.168.73.1`).
+
+O usuário possui uma conexão de internet de **2 Gbps** entregue por um roteador mestre (`192.168.73.1`), mas o firmware de fábrica da Acer impunha limitações severas:
 
 1. **Sem Modo Ponto de Acesso (AP) verdadeiro para 2.5G**: O painel padrão insistia em usar a porta 2.5G como WAN de roteador com NAT duplo ou limitava a operação às portas Gigabit.
 2. **Terminal (SSH/Telnet) Bloqueado de Fábrica**: A Acer removeu qualquer opção de habilitar SSH ou acesso ao console Linux no painel web.

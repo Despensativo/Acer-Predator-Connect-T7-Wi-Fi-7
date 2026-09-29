@@ -2,16 +2,26 @@
 """
 Script de Teste e Diagnostico Rapido - Acer Predator Connect T7
 Executa verificacao de portas (SSH, Telnet, HTTP) e consulta status do sistema via terminal.
+
+Uso:
+    python test_router_access.py [IP_DO_ROTEADOR]
+    (Padrao de fabrica original: 192.168.76.1 | Padrao deste Lab/AP: 192.168.73.2)
 """
 
 import socket
 import sys
 
-ROUTER_IP = "192.168.73.2"
+DEFAULT_FACTORY_IP = "192.168.76.1"
+DEFAULT_LAB_IP = "192.168.73.2"
+
+ROUTER_IP = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_LAB_IP
 PORTS = [22, 23, 80, 443]
 
 def check_ports():
+    print("=" * 60)
     print(f"[*] Verificando portas em {ROUTER_IP}...")
+    print(f"    (Nota: IP de fabrica original eh {DEFAULT_FACTORY_IP})")
+    print("=" * 60)
     for p in PORTS:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1.5)

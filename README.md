@@ -4,33 +4,41 @@
 
 ---
 
+> [!IMPORTANT]
+> ### ⚠️ Atenção sobre o Endereço IP do Roteador:
+> * **IP Padrão de Fábrica (Stock Default):** **`192.168.76.1`** (Modo Roteador tradicional com servidor DHCP ativo na faixa `192.168.76.x`).
+> * **IP Customizado deste Projeto (Lab / Modo AP):** **`192.168.73.2`** (Alterado manualmente pelo usuário para operar como Access Point / Bridge na mesma sub-rede do roteador mestre `192.168.73.1`, com DHCP desativado).
+> * **Regra Prática:** Se o seu roteador está com as configurações de fábrica ou foi recém-resetado, utilize **`192.168.76.1`**. Se já aplicou o arquivo de backup para AP deste projeto, utilize **`192.168.73.2`**.
+
+---
+
 ## 1. Dados e Credenciais da Rede
 
-| Parâmetro | Configuração Ativa | Detalhes |
-| :--- | :--- | :--- |
-| **Endereço IP do Roteador** | `192.168.73.2` | IP estático na rede local |
-| **Máscara de Sub-rede** | `255.255.255.0` (`/24`) | Sub-rede única com o roteador principal |
-| **Gateway / DNS** | `192.168.73.1` | Roteador Mestre (Cudy WR3000) |
-| **Servidor DHCP** | **Desativado** | Evita duplo NAT; todos os IPs vêm do Mestre |
-| **Porta WAN (2.5 Gbps)** | Em Bridge com LAN | Tráfego de 2 Gbps flui sem gargalo |
-| **Usuário do Painel Web** | `Admin` | Senha configurada pelo usuário |
-| **Usuário Terminal (SSH / Telnet)** | `Admin` ou `root` | UID 0 (Superusuário completo) |
-| **Acesso Telnet (Sem senha)** | Porta `23` | `telnet 192.168.73.2` |
-| **Acesso SSH (Criptografado)** | Porta `22` | `ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.73.2` |
+| Parâmetro | Padrão de Fábrica (Stock) | Configuração Ativa (Modo AP Lab) | Detalhes |
+| :--- | :--- | :--- | :--- |
+| **Endereço IP** | **`192.168.76.1`** | **`192.168.73.2`** | IP estático na rede local |
+| **Máscara de Sub-rede** | `255.255.255.0` (`/24`) | `255.255.255.0` (`/24`) | Sub-rede alinhada ao roteador mestre |
+| **Gateway / DNS** | `192.168.76.1` | `192.168.73.1` | Roteador Mestre (Cudy WR3000) |
+| **Servidor DHCP** | **Ativado** (Pool 76.x) | **Desativado** | Evita duplo NAT; todos os IPs vêm do Mestre |
+| **Porta WAN (2.5 Gbps)** | Roteamento NAT | Em Bridge com LAN | Tráfego de 2 Gbps flui sem gargalo |
+| **Usuário do Painel Web** | `Admin` | `Admin` | Senha configurada pelo usuário |
+| **Usuário Terminal (SSH / Telnet)**| *(Bloqueado de fábrica)* | `Admin` ou `root` | UID 0 (Superusuário completo) |
+| **Acesso Telnet (Sem senha)** | Porta `23` | Porta `23` | `telnet 192.168.73.2` (ou `76.1`) |
+| **Acesso SSH (Criptografado)** | Porta `22` | Porta `22` | `ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.73.2` (ou `76.1`) |
 
 ---
 
 ## 2. Configuração dos Rádios e Redes Wi-Fi
 
 | Rádio | Frequência | SSID | Canal Travado | Largura | Potência | Finalidade |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`wifi0`** | 2.4 GHz | **`CASA_ARK`** | **1** | **`HT20` (20 MHz)** | 25 dBm | Máxima penetração de paredes e alcance (25m) |
 | **`wifi0`** | 2.4 GHz | **`TV casa`** | **1** | **`HT20` (20 MHz)** | 25 dBm | Na bridge `lan` principal (espelhamento liberado) |
 | **`wifi1`** | 5 GHz | **`CASA_ARK_5G`** | **36** | **`HT160` (160 MHz)** | 25 dBm | Mais de 1.5 a 2 Gbps sem risco de queda por radar DFS |
 | **`wifi2`** | 6 GHz | **`CASA_ARK_6G`** | **37 (PSC)** | **`HT320` (320 MHz)** | 25 dBm | Wi-Fi 7 ultra-rápido no canal de varredura preferencial |
 | **MLD** | 5G + 6G | **`CASA_ARK_7G`** | MLO Agregado | 160 + 320 MHz | 25 dBm | **Wi-Fi 7 Multi-Link Operation** ativo em hardware |
 
-*Todas as redes utilizam a senha:* `Casa0100@`
+*As senhas das redes Wi-Fi podem ser mantidas ou customizadas livremente no painel web ou via terminal UCI (`uci set wireless.@wifi-iface[X].key='suasenha'`).*
 
 ---
 
@@ -39,15 +47,23 @@
 ### Acesso Instantâneo via Telnet (Recomendado na LAN):
 No Prompt de Comando ou PowerShell do Windows:
 ```powershell
+# Se o roteador estiver com o IP padrão de fábrica:
+telnet 192.168.76.1
+
+# Se o roteador já estiver configurado como AP na rede deste lab:
 telnet 192.168.73.2
 ```
 *Você cai direto no terminal de superusuário (`/ #`) sem necessidade de senha.*
 
 ### Acesso via SSH:
 ```powershell
+# Se o roteador estiver com o IP de fábrica:
+ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.76.1
+
+# Se o roteador já estiver configurado no modo AP:
 ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.73.2
 ```
-*(ou `ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.73.2`, utilizando a sua senha de Admin).*
+*(ou `ssh -o HostKeyAlgorithms=+ssh-rsa root@...`, utilizando a sua senha de Admin).*
 
 ---
 
@@ -55,28 +71,41 @@ ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.73.2
 
 ```text
 Acer-Predator-Connect-T7/
-├── Backups_MTD/                                 # [CRÍTICO] Imagens brutas da memória Flash
+├── Backups_MTD/                                 # [CRÍTICO] Imagens brutas da memória Flash (Full Dump)
 │   ├── backup_predator_t7_art.bin               # Calibração Wi-Fi 7 (Atheros Radio Test - 2 MB)
-│   ├── backup_predator_t7_uboot_env.bin         # Variáveis do Bootloader U-Boot (512 KB)
-│   ├── backup_predator_t7_ethphy_fw.bin         # Firmware do chip 2.5 Gbps Ethernet PHY (1 MB)
-│   ├── backup_predator_t7_license.bin           # Licença e números de série do fabricante (256 KB)
-│   ├── backup_predator_t7_devcfg.bin            # Configuração de dispositivo Qualcomm (512 KB)
-│   └── backup_predator_t7_cdt.bin               # Tabela de dados de plataforma CDT (512 KB)
+│   ├── backup_predator_t7_ubi_rootfs.bin        # Imagem bruta 1:1 do SquashFS de fábrica (38 MB)
+│   ├── backup_predator_t7_wifi_fw_raw.bin       # Partição bruta do firmware Wi-Fi (8.16 MB)
+│   ├── backup_predator_t7_kernel.bin            # Partição bruta do Kernel Linux 5.4 Qualcomm (4.04 MB)
+│   ├── backup_predator_t7_qsee_tz.bin           # Qualcomm TrustZone / QSEE (3.5 MB)
+│   ├── backup_predator_t7_uboot_appsbl.bin      # Bootloader U-Boot APPSBL principal (1.5 MB)
+│   ├── backup_predator_t7_appsbl_1.bin          # Cópia secundária do U-Boot (1.5 MB)
+│   ├── backup_predator_t7_sbl1.bin              # Bootloader primário Qualcomm SBL1 (1.5 MB)
+│   ├── backup_predator_t7_ethphy_fw.bin         # Firmware da PHY Ethernet 2.5G (1 MB)
+│   ├── backup_predator_t7_mibib.bin             # Tabela de partições do SoC (1 MB)
+│   ├── backup_predator_t7_uboot_env.bin         # Variáveis de ambiente do U-Boot (512 KB)
+│   ├── backup_predator_t7_devcfg.bin            # Device Config Qualcomm (512 KB)
+│   └── backup_predator_t7_cdt.bin               # Platform Data CDT (512 KB)
 │
 ├── Configuracoes_Roteador/                      # Arquivo .cfg pronto para restauração Web
 │   └── config_ap_ssh_unlocked_template.cfg      # Template público ativo (AP + Wi-Fi 7 + SSH + Canais)
 │
 ├── Engenharia_Reversa_OpenWrt/                  # [DEV] Kit de portabilidade para o OpenWrt Oficial
-│   ├── acer_predator_t7.dts                     # Árvore de dispositivos (Device Tree) DESCOMPILADA (97 KB)
+│   ├── acer_predator_t7.dts                     # Árvore de dispositivos (Device Tree) DESCOMPILADA (100 KB)
 │   ├── acer_predator_t7.dtb                     # Binário original montado pelo kernel (/sys/firmware/fdt)
+│   ├── kernel_modules_5.4.213.tar.gz            # Drivers proprietários compilados (PPE, NSS, ECM, Wi-Fi 7 - 8.3 MB)
+│   ├── webapps_acer_oem.tar.gz                  # Binários e daemons da interface Acer, CGI e Killer QoS (3.4 MB)
+│   ├── qualcomm_ini_and_sawf.tar.gz             # Tabelas INI de calibração Qualcomm e classes SAWF QoS (8 KB)
+│   ├── etc_factory_tree.tar.gz                  # Árvore /etc/ de fábrica (scripts init.d, uci defaults - 435 KB)
 │   ├── ipq5332_wifi_fw.tar.gz                   # Pacote de firmwares Wi-Fi 7 Qualcomm IPQ5332 (4.3 MB)
 │   ├── gpio_table.txt                           # Tabela e mapa de pinos digitais GPIO
 │   ├── board.json                               # Definição OpenWrt de modelo e portas de rede
 │   ├── switch_config.txt                        # Configuração do switch gigabit integrado
-│   ├── loaded_modules.txt                       # Módulos de kernel carregados (NSS, PPE, drivers)
+│   ├── loaded_modules.txt                       # Módulos de kernel carregados (lsmod)
+│   ├── network_interfaces.txt                   # Mapeamento completo de interfaces de rede
 │   └── README_PORT_OPENWRT.md                   # Guia passo a passo para criar o Target no OpenWrt
 │
 ├── Scripts_Automacao/                           # Utilitários Python
+│   ├── dump_full_firmware.py                    # Script de dump completo 1:1 de MTDs e diretórios do sistema
 │   ├── unlock_only_ssh.py                       # Script para destravar SOMENTE SSH/Telnet em qualquer backup
 │   ├── build_ssh_unlocked.py                    # Script que compilou a injeção do SSH e canais
 │   └── test_router_access.py                    # Diagnóstico rápido de portas, temperatura e Wi-Fi

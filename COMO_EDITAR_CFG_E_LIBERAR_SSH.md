@@ -101,17 +101,28 @@ Para evitar erros manuais com permissões ou compactação, disponibilizamos o s
 
 ## 4. Como Conectar após o Desbloqueio
 
+> [!IMPORTANT]
+> **Qual IP utilizar?**
+> * **Roteador com IP de Fábrica (Stock):** Utilize **`192.168.76.1`**.
+> * **Roteador no Modo AP (Neste Lab):** Utilize **`192.168.73.2`** (ou o IP estático que você configurou).
+
 ### Opção A: Telnet (Mais fácil e instantâneo)
 No Prompt de Comando ou PowerShell:
 ```powershell
+# Se estiver com o IP padrão de fábrica:
+telnet 192.168.76.1
+
+# Se configurado no lab / modo AP:
 telnet 192.168.73.2
 ```
-*(Se o seu roteador estiver com o IP de fábrica, use `telnet 192.168.76.1`).*
-Você cairá direto no terminal com privilégios máximos (`/ #`).
+Você cairá direto no terminal com privilégios máximos (`/ #`) sem pedir senha.
 
 ### Opção B: SSH Criptografado
 ```powershell
+# Se estiver com o IP padrão de fábrica:
+ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.76.1
+
+# Se configurado no lab / modo AP:
 ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.73.2
 ```
-*(ou `ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.73.2`)*
-Digite a mesma senha do seu usuário `Admin` do painel web.
+*(ou conecte com `root@...`, utilizando a mesma senha do seu usuário `Admin` do painel web).*

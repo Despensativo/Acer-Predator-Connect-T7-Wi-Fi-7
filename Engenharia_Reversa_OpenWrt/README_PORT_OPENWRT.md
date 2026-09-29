@@ -1,6 +1,6 @@
 # Kit de Engenharia Reversa para Portabilidade do OpenWrt Oficial
 
-> **Finalidade**: Este diretório reúne todos os arquivos de baixo nível, a Árvore de Dispositivos descompilada (`.dts`), os microcódigos proprietários e os mapas de pinos necessários para criar o suporte oficial (**Target Port**) do **Acer Predator Connect T7** dentro da árvore de código-fonte do **OpenWrt Oficial**.
+> **Finalidade**: Este diretório reúne todos os arquivos de baixo nível, a Árvore de Dispositivos descompilada (`.dts`), os microcódigos proprietários, módulos de kernel e os mapas de pinos necessários para criar o suporte oficial (**Target Port**) do **Acer Predator Connect T7** dentro da árvore de código-fonte do **OpenWrt Oficial**.
 
 ---
 
@@ -8,8 +8,12 @@
 
 | Arquivo | Tamanho | Descrição Técnica |
 | :--- | :--- | :--- |
-| **`acer_predator_t7.dts`** | 97.6 KB | **Árvore de Dispositivos (DTS) Descompilada**: Código-fonte C legível de todos os barramentos, registradores, interrupções, PCIe e memória do SoC Qualcomm IPQ5332. |
+| **`acer_predator_t7.dts`** | 100 KB | **Árvore de Dispositivos (DTS) Descompilada**: Código-fonte C legível de todos os barramentos, registradores, interrupções, PCIe e memória do SoC Qualcomm IPQ5332. |
 | **`acer_predator_t7.dtb`** | 61.4 KB | **Device Tree Blob (DTB)**: O binário original extraído de `/sys/firmware/fdt` montado pelo kernel oficial. |
+| **`kernel_modules_5.4.213.tar.gz`**| 8.3 MB | **Drivers do Kernel Qualcomm**: Todos os módulos `.ko` compilados para Linux 5.4.213 (NSS/PPE aceleração de 2.5 Gbps, ECM, drivers Wi-Fi 7 `ath12k`/`qca_ol`). |
+| **`webapps_acer_oem.tar.gz`** | 3.4 MB | **Binários e Daemons Acer**: Binários do painel web, APIs de controle de LED, acelerador de jogos (Killer QoS/Game Priority) e scripts CGI. |
+| **`etc_factory_tree.tar.gz`** | 435 KB | **Árvore `/etc` Original de Fábrica**: Todos os scripts de inicialização `/etc/init.d/`, regras udev/hotplug e padrões UCI intactos. |
+| **`qualcomm_ini_and_sawf.tar.gz`**| 8.2 KB | **Parâmetros de Hardware Qualcomm**: Arquivos `QCA5332.ini`, `global.ini` e perfis de classes de QoS de baixa latência SAWF. |
 | **`ipq5332_wifi_fw.tar.gz`** | 4.3 MB | **Pacote de Firmware Wi-Fi 7 (Qualcomm)**: Contém `q6_fw0.*`, `q6_fw1.*`, `iu_fw.*`, `regdb.bin`, `caldata.bin` e todos os arquivos BDF (`bdwlan.*`). |
 | **`gpio_table.txt`** | 2.1 KB | **Tabela de Pinos GPIO**: Mapa completo de pinos digitais do processador (`platform/1000000.pinctrl`), voltagens, direções (in/out) e resistores pull-up/down. |
 | **`board.json`** | 323 B | Definição padrão OpenWrt do modelo (`qcom,ipq5332-ap-mi01.6`) e interfaces de rede. |
@@ -76,4 +80,4 @@ Utilizar o microcódigo extraído em `Backups_MTD/backup_predator_t7_ethphy_fw.b
 
 ## 4. Conclusão
 
-Com todos esses arquivos preservados, **a engenharia reversa do hardware está 100% concluída**. Não existe nenhuma "caixa preta" restante no equipamento: sabemos a pinagem, os barramentos, os binários de calibração, o mapa de memória e os microcódigos de rede.
+Com todos esses arquivos preservados, **a engenharia reversa do hardware está 100% concluída**. Não existe nenhuma "caixa preta" restante no equipamento: sabemos a pinagem, os barramentos, os binários de calibração, os drivers de aceleração NSS/PPE, o mapa de memória e os microcódigos de rede.

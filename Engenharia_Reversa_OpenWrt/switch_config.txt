@@ -1,0 +1,328 @@
+Global attributes:
+        enable_vlan: 1
+        max_frame_size: 9216
+        dump_arl: MAC: 20:15:de:bf:0f:22 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: c8:5a:cf:fd:24:91 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 24:4b:fe:0c:88:82 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 1e:ec:6b:6a:44:72 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 2c:d8:de:39:ae:53 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 56:d8:28:60:e7:81 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: a8:80:55:c5:0c:e1 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 3c:0b:59:29:54:d6 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: a8:80:55:e5:7a:c1 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: d8:1f:12:4e:c3:b0 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: c8:2b:96:5b:32:1b PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 2c:b4:71:e2:a7:bc PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 38:be:ab:9b:45:60 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 70:5a:6f:50:61:75 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 2c:d8:de:39:d5:0f PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 70:5a:6f:5d:7c:b1 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 3c:0b:59:29:4d:f2 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 38:2f:b0:00:13:71 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 56:d8:28:60:e7:81 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 2c:d8:de:39:ae:53 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: a8:80:55:c5:0c:e1 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: a8:80:55:e5:7a:c1 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 3c:0b:59:29:54:d6 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: c8:5a:cf:fd:24:91 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 20:15:de:bf:0f:22 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 24:4b:fe:0c:88:82 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 1e:ec:6b:6a:44:72 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: 3c:0b:59:29:4d:f2 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 70:5a:6f:5d:7c:b1 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 38:2f:b0:00:13:71 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: d8:1f:12:4e:c3:b0 PORTMAP: 0x01 VID: 0x2 STATUS: 0x0
+MAC: c8:2b:96:5b:32:1b PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 70:5a:6f:50:61:75 PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 2c:d8:de:39:d5:0f PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+MAC: 2c:b4:71:e2:a7:bc PORTMAP: 0x01 VID: 0x1 STATUS: 0x0
+
+        switch_ext: ???
+Port 0:
+        mib: Port 0 MIB counters
+RxBroad     : 11714
+RxPause     : 0
+RxMulti     : 7310
+RxFcsErr    : 0
+RxAlignErr  : 0
+RxRunt      : 0
+RxFragment  : 0
+Rx64Byte    : 2166
+Rx128Byte   : 4402
+Rx256Byte   : 7148
+Rx512Byte   : 4576
+Rx1024Byte  : 544
+Rx1518Byte  : 332
+RxMaxByte   : 32
+RxTooLong   : 0
+RxGoodByte  : 4301182
+RxBadByte   : 0
+RxOverFlow  : 0
+Filtered    : 13014
+TxBroad     : 0
+TxPause     : 0
+TxMulti     : 0
+TxUnderRun  : 0
+Tx64Byte    : 0
+Tx128Byte   : 0
+Tx256Byte   : 0
+Tx512Byte   : 0
+Tx1024Byte  : 0
+Tx1518Byte  : 0
+TxMaxByte   : 0
+TxOverSize  : 0
+TxByte      : 0
+TxCollision : 0
+TxAbortCol  : 0
+TxMultiCol  : 0
+TxSingleCol : 0
+TxExcDefer  : 0
+TxDefer     : 0
+TxLateCol   : 0
+RxUniCast   : 176
+TxUniCast   : 0
+
+        enable_eee: ???
+        pvid: 0
+        link: port:0 link:up speed:1000baseT full-duplex txflow rxflow 
+Port 1:
+        mib: Port 1 MIB counters
+RxBroad     : 0
+RxPause     : 0
+RxMulti     : 0
+RxFcsErr    : 0
+RxAlignErr  : 0
+RxRunt      : 0
+RxFragment  : 0
+Rx64Byte    : 0
+Rx128Byte   : 0
+Rx256Byte   : 0
+Rx512Byte   : 0
+Rx1024Byte  : 0
+Rx1518Byte  : 0
+RxMaxByte   : 0
+RxTooLong   : 0
+RxGoodByte  : 0
+RxBadByte   : 0
+RxOverFlow  : 0
+Filtered    : 0
+TxBroad     : 0
+TxPause     : 0
+TxMulti     : 0
+TxUnderRun  : 0
+Tx64Byte    : 0
+Tx128Byte   : 0
+Tx256Byte   : 0
+Tx512Byte   : 0
+Tx1024Byte  : 0
+Tx1518Byte  : 0
+TxMaxByte   : 0
+TxOverSize  : 0
+TxByte      : 0
+TxCollision : 0
+TxAbortCol  : 0
+TxMultiCol  : 0
+TxSingleCol : 0
+TxExcDefer  : 0
+TxDefer     : 0
+TxLateCol   : 0
+RxUniCast   : 0
+TxUniCast   : 0
+
+        enable_eee: ???
+        pvid: 1
+        link: port:1 link:down
+Port 2:
+        mib: Port 2 MIB counters
+RxBroad     : 0
+RxPause     : 0
+RxMulti     : 0
+RxFcsErr    : 0
+RxAlignErr  : 0
+RxRunt      : 0
+RxFragment  : 0
+Rx64Byte    : 0
+Rx128Byte   : 0
+Rx256Byte   : 0
+Rx512Byte   : 0
+Rx1024Byte  : 0
+Rx1518Byte  : 0
+RxMaxByte   : 0
+RxTooLong   : 0
+RxGoodByte  : 0
+RxBadByte   : 0
+RxOverFlow  : 0
+Filtered    : 0
+TxBroad     : 3926
+TxPause     : 0
+TxMulti     : 2172
+TxUnderRun  : 0
+Tx64Byte    : 2498
+Tx128Byte   : 415
+Tx256Byte   : 1723
+Tx512Byte   : 1137
+Tx1024Byte  : 231
+Tx1518Byte  : 182
+TxMaxByte   : 0
+TxOverSize  : 0
+TxByte      : 1351494
+TxCollision : 0
+TxAbortCol  : 0
+TxMultiCol  : 0
+TxSingleCol : 0
+TxExcDefer  : 0
+TxDefer     : 0
+TxLateCol   : 0
+RxUniCast   : 0
+TxUniCast   : 88
+
+        enable_eee: ???
+        pvid: 2
+        link: port:2 link:down
+Port 3:
+        mib: Port 3 MIB counters
+RxBroad     : 0
+RxPause     : 0
+RxMulti     : 0
+RxFcsErr    : 0
+RxAlignErr  : 0
+RxRunt      : 0
+RxFragment  : 0
+Rx64Byte    : 0
+Rx128Byte   : 0
+Rx256Byte   : 0
+Rx512Byte   : 0
+Rx1024Byte  : 0
+Rx1518Byte  : 0
+RxMaxByte   : 0
+RxTooLong   : 0
+RxGoodByte  : 0
+RxBadByte   : 0
+RxOverFlow  : 0
+Filtered    : 0
+TxBroad     : 0
+TxPause     : 0
+TxMulti     : 0
+TxUnderRun  : 0
+Tx64Byte    : 0
+Tx128Byte   : 0
+Tx256Byte   : 0
+Tx512Byte   : 0
+Tx1024Byte  : 0
+Tx1518Byte  : 0
+TxMaxByte   : 0
+TxOverSize  : 0
+TxByte      : 0
+TxCollision : 0
+TxAbortCol  : 0
+TxMultiCol  : 0
+TxSingleCol : 0
+TxExcDefer  : 0
+TxDefer     : 0
+TxLateCol   : 0
+RxUniCast   : 0
+TxUniCast   : 0
+
+        enable_eee: ???
+        pvid: 0
+        link: port:3 link:down
+Port 4:
+        mib: Port 4 MIB counters
+RxBroad     : 0
+RxPause     : 0
+RxMulti     : 0
+RxFcsErr    : 0
+RxAlignErr  : 0
+RxRunt      : 0
+RxFragment  : 0
+Rx64Byte    : 0
+Rx128Byte   : 0
+Rx256Byte   : 0
+Rx512Byte   : 0
+Rx1024Byte  : 0
+Rx1518Byte  : 0
+RxMaxByte   : 0
+RxTooLong   : 0
+RxGoodByte  : 0
+RxBadByte   : 0
+RxOverFlow  : 0
+Filtered    : 0
+TxBroad     : 0
+TxPause     : 0
+TxMulti     : 0
+TxUnderRun  : 0
+Tx64Byte    : 0
+Tx128Byte   : 0
+Tx256Byte   : 0
+Tx512Byte   : 0
+Tx1024Byte  : 0
+Tx1518Byte  : 0
+TxMaxByte   : 0
+TxOverSize  : 0
+TxByte      : 0
+TxCollision : 0
+TxAbortCol  : 0
+TxMultiCol  : 0
+TxSingleCol : 0
+TxExcDefer  : 0
+TxDefer     : 0
+TxLateCol   : 0
+RxUniCast   : 0
+TxUniCast   : 0
+
+        enable_eee: ???
+        pvid: 0
+        link: port:4 link:down
+Port 5:
+        mib: Port 5 MIB counters
+RxBroad     : 0
+RxPause     : 0
+RxMulti     : 0
+RxFcsErr    : 0
+RxAlignErr  : 0
+RxRunt      : 0
+RxFragment  : 0
+Rx64Byte    : 0
+Rx128Byte   : 0
+Rx256Byte   : 0
+Rx512Byte   : 0
+Rx1024Byte  : 0
+Rx1518Byte  : 0
+RxMaxByte   : 0
+RxTooLong   : 0
+RxGoodByte  : 0
+RxBadByte   : 0
+RxOverFlow  : 0
+Filtered    : 0
+TxBroad     : 0
+TxPause     : 0
+TxMulti     : 0
+TxUnderRun  : 0
+Tx64Byte    : 0
+Tx128Byte   : 0
+Tx256Byte   : 0
+Tx512Byte   : 0
+Tx1024Byte  : 0
+Tx1518Byte  : 0
+TxMaxByte   : 0
+TxOverSize  : 0
+TxByte      : 0
+TxCollision : 0
+TxAbortCol  : 0
+TxMultiCol  : 0
+TxSingleCol : 0
+TxExcDefer  : 0
+TxDefer     : 0
+TxLateCol   : 0
+RxUniCast   : 0
+TxUniCast   : 0
+
+        enable_eee: ???
+        pvid: 0
+        link: port:5 link:down
+VLAN 1:
+        vid: 1
+        ports: 0t 1 
+VLAN 2:
+        vid: 2
+        ports: 0t 2

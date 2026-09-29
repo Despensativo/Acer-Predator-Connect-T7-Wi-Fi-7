@@ -63,10 +63,18 @@ Acer-Predator-Connect-T7/
 │   ├── backup_predator_t7_devcfg.bin            # Configuração de dispositivo Qualcomm (512 KB)
 │   └── backup_predator_t7_cdt.bin               # Tabela de dados de plataforma CDT (512 KB)
 │
-├── Configuracoes_Roteador/                      # Arquivos .cfg prontos para restauração Web
-│   ├── config_ap_ssh_unlocked.cfg               # Configuração DEFINITIVA ativa (AP + Wi-Fi 7 + SSH + Canais)
-│   ├── config_original_fabrica.cfg              # Backup original intocado de fábrica
-│   └── config(1).cfg                            # Backup intermediário com senha Admin atual
+├── Configuracoes_Roteador/                      # Arquivo .cfg pronto para restauração Web
+│   └── config_ap_ssh_unlocked_template.cfg      # Template público ativo (AP + Wi-Fi 7 + SSH + Canais)
+│
+├── Engenharia_Reversa_OpenWrt/                  # [DEV] Kit de portabilidade para o OpenWrt Oficial
+│   ├── acer_predator_t7.dts                     # Árvore de dispositivos (Device Tree) DESCOMPILADA (97 KB)
+│   ├── acer_predator_t7.dtb                     # Binário original montado pelo kernel (/sys/firmware/fdt)
+│   ├── ipq5332_wifi_fw.tar.gz                   # Pacote de firmwares Wi-Fi 7 Qualcomm IPQ5332 (4.3 MB)
+│   ├── gpio_table.txt                           # Tabela e mapa de pinos digitais GPIO
+│   ├── board.json                               # Definição OpenWrt de modelo e portas de rede
+│   ├── switch_config.txt                        # Configuração do switch gigabit integrado
+│   ├── loaded_modules.txt                       # Módulos de kernel carregados (NSS, PPE, drivers)
+│   └── README_PORT_OPENWRT.md                   # Guia passo a passo para criar o Target no OpenWrt
 │
 ├── Scripts_Automacao/                           # Utilitários Python
 │   ├── unlock_only_ssh.py                       # Script para destravar SOMENTE SSH/Telnet em qualquer backup

@@ -1,0 +1,5 @@
+config button reset
+        option disabled '0'
+
+config button wps
+        option disabled '0'

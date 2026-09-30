@@ -118,3 +118,20 @@ Acer-Predator-Connect-T7/
 ├── MAPA_HARDWARE_E_PARTICOES.md                 # Tabela MTD, Dual-Boot e parâmetros do U-Boot
 └── RECUPERACAO_E_DESASTRE_UNBRICK.md            # Guia de recuperação de emergência (TFTP)
 ```
+
+---
+
+## 5. 📦 Boas Práticas de Download e Armazenamento (GitHub & Repositório)
+
+Este repositório preserva imagens de calibração e partições MTD essenciais (Backups_MTD/). Para garantir downloads rápidos e respeitar as diretrizes da comunidade:
+
+> [!TIP]
+> ### ⚡ Dica para Clonagem Rápida:
+> Para economizar tempo e largura de banda, recomenda-se realizar uma **clonagem rasa** (*shallow clone*), que baixa apenas a revisão atual dos arquivos sem todo o histórico de commits:
+> \\ash
+> git clone --depth 1 https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git
+> \
+> [!IMPORTANT]
+> ### 🛡️ Diretrizes de Armazenamento e Limites do GitHub:
+> * **Limite de Arquivo do Git:** O GitHub impõe um limite estrito de **100 MB** por arquivo individual no Git tradicional (com alertas a partir de 50 MB) e recomenda manter o repositório abaixo de **1 GB a 5 GB**.
+> * **Publicação de Novos Dumps ou Imagens Compiladas:** Imagens completas de firmware (.bin, .img, .iso) ou pacotes compilados pesados **não devem ser commitados diretamente na árvore do Git**. Em vez disso, utilize a aba **[Releases](https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/releases)** do repositório, que suporta gratuitamente arquivos de até **2 GB cada**, mantendo o repositório leve, ágil e dentro das diretrizes gratuitas do GitHub.

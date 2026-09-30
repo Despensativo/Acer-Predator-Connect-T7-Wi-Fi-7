@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/acer-predator-t7-banner.jpg" alt="Acer Predator Connect T7 Wi-Fi 7 Banner" width="100%">
+</p>
+
 # Acer Predator Connect T7 - Desbloqueio, Modo Access Point 2.5 Gbps & Wi-Fi 7
 
 > **Resumo Executivo**: Documentação completa da transformação do roteador gamer **Acer Predator Connect T7** (Qualcomm IPQ5332 Wi-Fi 7) em um **Ponto de Acesso (AP) / Switch de 2.5 Gbps de altíssima performance**, sem duplo NAT, com desbloqueio permanente de terminal Root (SSH / Telnet), canais de rádio otimizados e backups de baixo nível para recuperação de desastre.

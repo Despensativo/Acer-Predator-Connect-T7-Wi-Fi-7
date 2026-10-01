@@ -108,7 +108,13 @@ Acer-Predator-Connect-T7/
 │   ├── switch_config.txt                        # Configuração do switch gigabit integrado
 │   ├── loaded_modules.txt                       # Módulos de kernel carregados (lsmod)
 │   ├── network_interfaces.txt                   # Mapeamento completo de interfaces de rede
-│   └── README_PORT_OPENWRT.md                   # Guia passo a passo para criar o Target no OpenWrt
+│   ├── README_PORT_OPENWRT.md                   # Guia passo a passo para criar o Target no OpenWrt
+│   └── modem_5g_fibocom_x7/                     # [NOVO] Engenharia reversa do modem 5G Fibocom FM160 do X7
+│       ├── bin/                                 # Binários RIL (at_rild, ipqcm, modem-monitor, etc.)
+│       ├── config/                              # Configurações do modem, ril.json (/dev/mhi_at) e GPIOs
+│       ├── init.d/                              # Scripts de serviço de telefonia e discagem celular
+│       ├── kmod/                                # Drivers de kernel (rmnet_core.ko, rmnet_ctl.ko)
+│       └── README.md                            # Documentação técnica detalhada do subsistema celular
 │
 ├── Scripts_Automacao/                           # Utilitários Python
 │   ├── apply_debloat.py                         # Limpeza cirúrgica de telemetria, FOTA e daemons não utilizados
@@ -129,15 +135,49 @@ Acer-Predator-Connect-T7/
 
 ## 5. 📦 Boas Práticas de Download e Armazenamento (GitHub & Repositório)
 
-Este repositório preserva imagens de calibração e partições MTD essenciais (Backups_MTD/). Para garantir downloads rápidos e respeitar as diretrizes da comunidade:
+Este repositório preserva imagens de calibração e partições MTD essenciais (`Backups_MTD/`). Para garantir downloads rápidos e respeitar as diretrizes da comunidade:
 
 > [!TIP]
 > ### ⚡ Dica para Clonagem Rápida:
 > Para economizar tempo e largura de banda, recomenda-se realizar uma **clonagem rasa** (*shallow clone*), que baixa apenas a revisão atual dos arquivos sem todo o histórico de commits:
-> \\ash
+> ```bash
 > git clone --depth 1 https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git
-> \
+> ```
+
 > [!IMPORTANT]
 > ### 🛡️ Diretrizes de Armazenamento e Limites do GitHub:
 > * **Limite de Arquivo do Git:** O GitHub impõe um limite estrito de **100 MB** por arquivo individual no Git tradicional (com alertas a partir de 50 MB) e recomenda manter o repositório abaixo de **1 GB a 5 GB**.
-> * **Publicação de Novos Dumps ou Imagens Compiladas:** Imagens completas de firmware (.bin, .img, .iso) ou pacotes compilados pesados **não devem ser commitados diretamente na árvore do Git**. Em vez disso, utilize a aba **[Releases](https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/releases)** do repositório, que suporta gratuitamente arquivos de até **2 GB cada**, mantendo o repositório leve, ágil e dentro das diretrizes gratuitas do GitHub.
+> * **Publicação de Novos Dumps ou Imagens Compiladas:** Imagens completas de firmware (`.bin`, `.img`, `.iso`) ou pacotes compilados pesados **não devem ser commitados diretamente na árvore do Git**. Em vez disso, utilize a aba **[Releases](https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/releases)** do repositório, que suporta gratuitamente arquivos de até **2 GB cada**, mantendo o repositório leve, ágil e dentro das diretrizes gratuitas do GitHub.
+
+---
+
+## 6. 🔗 Compatibilidade com o Acer Predator Connect X7 5G CPE (Irmão Gêmeo)
+
+Conforme identificado em discussões de desenvolvedores no fórum oficial do OpenWrt, o roteador **Acer Predator Connect X7 5G CPE** compartilha **99% do mesmo hardware e código-fonte base** com o **Predator Connect T7**.
+
+### 🔍 Evidências Forenses Comprovadas nos Dumps:
+1. **Mesma Plataforma Base:** Ambos utilizam a arquitetura Qualcomm Immersive Home `IPQ5332/AP-MI01.6`, com kernel Linux 5.4.213, mesmo particionamento MTD e rádios Wi-Fi 7 BE11000.
+2. **Código do Modem no T7:** No dump original da partição `rootfs` do T7, o binário `/usr/bin/at_rild` contém a rotina de detecção `AT+CGMI?` validando o fabricante `"Fibocom"` e a função interna dedicada `set_fm160_usb_lock`.
+3. **Device Tree (DTS):** O Device Tree extraído do T7 (`acer_predator_t7.dts`) declara ativamente o barramento PCIe 0 (`pcie@20000000`) com o controlador MHI (`qcom,mhi@0`), aliases de rede `rmnet_mhi` e os pinos GPIO 33 (`mdm2ap`) e 34 (`ap2mdm`).
+4. **Módulos Celulares Ativos:** O kernel carrega nativamente os módulos `rmnet_core.ko` e `rmnet_ctl.ko`.
+
+### 📊 Comparativo Técnico: T7 vs. X7
+
+| Componente | Predator Connect T7 | Predator Connect X7 5G CPE |
+| :--- | :--- | :--- |
+| **SoC Principal** | Qualcomm IPQ5332 (Quad-Core A53 @ 1.5 GHz) | Qualcomm IPQ5332 (Quad-Core A53 @ 1.5 GHz) |
+| **Wi-Fi** | Tri-Band Wi-Fi 7 BE11000 (2.4G + 5G + 6G) | Tri-Band Wi-Fi 7 BE11000 (2.4G + 5G + 6G) |
+| **Portas de Rede** | 1x 2.5 Gbps WAN + 2x 1 Gbps LAN | 1x 2.5 Gbps WAN + 2x 1 Gbps LAN |
+| **Slot M.2 WWAN** | Desocupado na PCB | **Módulo Fibocom FM160 (Snapdragon X62 5G)** |
+| **Slot Cartão SIM** | Ausente / Não soldado | Slot Nano-SIM / eSIM presente |
+| **Estrutura de Backup** | `config.cfg` (tar.gz descompactado) | `config.cfg` (tar.gz descompactado) |
+
+### 🚀 Desbloqueio de Root no X7:
+Como a infraestrutura de firmware e backup Web é idêntica, **o script [`unlock_only_ssh.py`](Scripts_Automacao/unlock_only_ssh.py) funciona 1:1 no Predator Connect X7**, permitindo aos donos do X7:
+* Obter acesso Root Shell (SSH / Telnet) sem abrir o roteador e sem soldar cabos UART.
+* Conversar diretamente com o modem Fibocom FM160 via comandos AT na porta serial `/dev/mhi_at` (bloqueio de bandas 5G, ajuste de TTL / Mangle para planos ilimitados, telemetria de sinal).
+* Realizar o dump preventivo das partições de calibração Wi-Fi (`0:ART`) e do sistema.
+
+Para detalhes completos dos binários, GPIOs e scripts do modem 5G, consulte:
+👉 **[Documentação da Engenharia Reversa do Modem 5G Fibocom FM160](Engenharia_Reversa_OpenWrt/modem_5g_fibocom_x7/README.md)**
+

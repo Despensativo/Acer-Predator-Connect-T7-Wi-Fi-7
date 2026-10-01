@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+
+START=50
+
+USE_PROCD=1
+
+start_service() {
+	# only cpe will run the process
+	if ! cat /tmp/ipq_model | grep -qe "cpe"; then
+	    exit 1
+	fi
+	if ! grep -q "/data/messages.json" /etc/sysupgrade.conf; then
+		cp /rom/etc/sysupgrade.conf /etc/sysupgrade.conf
+	fi
+	if ! grep -q "/data/in_messages" /etc/sysupgrade.conf; then
+		cp /rom/etc/sysupgrade.conf /etc/sysupgrade.conf
+	fi
+	if ! grep -q "/data/sms_sent" /etc/sysupgrade.conf; then
+		cp /rom/etc/sysupgrade.conf /etc/sysupgrade.conf
+	fi
+	procd_open_instance
+	procd_set_param command /usr/bin/at_rild
+	procd_set_param respawn 3600 10 400
+	procd_close_instance
+}
+

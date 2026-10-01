@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=30
+
+start() {
+    # only cpe will run the process
+    if ! cat /tmp/ipq_model | grep -qe "cpe"; then
+        exit 1
+    fi
+
+    if ! cat /etc/rc.local | grep "modem_read"; then
+        cp /rom/etc/rc.local /etc/rc.local
+    fi
+    md5_rom=`md5sum /rom/etc/config/modem_info | awk '{print $1}'`
+    md5_sys=`md5sum /etc/config/modem_info | awk '{print $1}'`
+    if [ $md5_rom != $md5_sys ];then
+        cp /rom/etc/config/modem_info /etc/config/modem_info
+    fi
+    cp /etc/config/modem_info /tmp/
+
+}

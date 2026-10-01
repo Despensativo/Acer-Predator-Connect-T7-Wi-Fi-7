@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+#
+
+START=09
+
+SERVICE_PID_FILE=/var/run/modem-monitor.pid
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+start() {
+    # only cpe will run the process
+    if ! cat /tmp/ipq_model | grep -qe "cpe"; then
+        exit 1
+    fi
+
+    service_start /usr/bin/modem-monitor
+}
+
+stop() {
+          service_stop /usr/bin/modem-monitor && rm $SERVICE_PID_FILE
+}

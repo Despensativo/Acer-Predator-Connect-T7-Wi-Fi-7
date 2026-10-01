@@ -1,0 +1,57 @@
+#!/bin/sh /etc/rc.common
+#
+#
+# START=49
+# STOP=104
+
+# SERVICE_PID_FILE=/var/run/ipqcm.pid
+# SERVICE_DAEMONIZE=1
+# SERVICE_WRITE_PID=1
+
+# start() {
+# 	logger "starting IPQCM"
+#     # if model is externder(IH3000), not start the ipqcm service
+#     if echo "$(customer_nv r model)" | grep -Fqe "IH3000"; then
+#             return 1
+#     fi
+# 	service_start /usr/bin/ipqcm faiot
+# }
+
+# stop() {
+# 	service_stop /usr/bin/ipqcm && rm $SERVICE_PID_FILE
+# }
+
+# ----------- ipqcm procd -----------
+# set ipqcm run with procd
+
+USE_PROCD=1
+START=48
+STOP=104
+PROG=/usr/bin/ipqcm
+
+SERVICE_PID_FILE=/var/run/ipqcm.pid
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+start_service() {
+	logger "starting IPQCM"
+	# only cpe will run the process
+	current_wan=`uci get wanconfig.wan.first`
+    dualwan_status=`uci get wanconfig.dualwan.status`
+	if [ "$current_wan" == "wan" -a "$dualwan_status" == "false" ]; then
+            exit 1
+    fi
+
+	if ! cat /tmp/ipq_model | grep -qe "cpe"; then
+		exit 1
+	fi
+	procd_open_instance
+	procd_set_param command "$PROG" faiot
+	procd_set_param respawn 3600 10 400
+	procd_close_instance
+}
+
+stop_service() {
+        service_stop $PROG && rm $SERVICE_PID_FILE
+
+}

@@ -1,0 +1,47 @@
+# Copyright (C) 2006 OpenWrt.org
+config interface  apn
+	option status  ''
+	option ip_family  ''
+	option apn_name  ''
+	option profile_name ''
+	option auth ''
+	option username ''
+	option password ''
+config interface  apn_default
+	option status  ''
+	option ip_family  '3'
+	option apn_name  ''
+	option profile_name ''
+	option auth '0'
+	option username ''
+	option password ''
+config interface basic
+	option fwversion ''
+	option imei ''
+config interface sim
+	option card_status ''
+	option pin_status ''
+	option pin_retries ''
+	option puk_retries ''
+config interface network
+	option phone_number ''
+	option sig_strength ''
+	option nr5g_snr ''
+	option rscp ''
+	option rsrq ''
+	option ecio ''
+	option rssi ''
+	option imsi ''
+	option service_name ''
+	option act ''
+	option rat ''
+	option cell_id ''
+	option band ''
+	option all_bands ''
+config interface tr_cell_info
+	option mcc ''
+	option mnc ''
+config interface tr_ims_apn
+	option apn ''
+	option ip ''
+	option default_apn_name ''

@@ -153,11 +153,11 @@ echo "MD5 Checksum  : $MD5"
 echo ""
 if [ -n "$CLOUD_URL" ]; then
     echo "LINK NA NUVEM (Pronto para baixar/compartilhar):"
-    echo "  👉 $CLOUD_URL"
+    echo "  --> $CLOUD_URL"
     echo ""
 fi
 echo "OPCAO LOCAL (Pelo Navegador na mesma rede):"
-echo "  👉 http://$ROUTER_LAN_IP/predator_hardware_dump_FULL.tar.gz"
+echo "  --> http://$ROUTER_LAN_IP/predator_hardware_dump_FULL.tar.gz"
 echo ""
 echo "OPCAO VIA TERMINAL NO PC:"
 echo "  scp -O -o HostKeyAlgorithms=+ssh-rsa Admin@$ROUTER_LAN_IP:$ARCHIVE ."

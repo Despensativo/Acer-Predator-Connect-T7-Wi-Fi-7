@@ -74,6 +74,7 @@ We restored native LuCI:
 * Bound `uhttpd` directly to `0.0.0.0:80` and `[::]:80`.
 * Granted full read/write permissions to `Admin` and `root` in `rpcd`.
 * Disabled `lighttpd.init` completely.
+* **Credentials Note:** When unlocking via your own `config.cfg`, root/Admin passwords remain identical to your current Acer Web GUI password (no surprises/lockouts). For pristine template restores, the stock password is `admin0100`. In emergencies, Telnet on port 23 provides direct unauthenticated root access to run `passwd`.
 * **Result:** A clean, responsive OpenWrt LuCI interface on port 80 without proprietary bloat.
 
 ---

@@ -1,0 +1,50 @@
+for x in /usr/sbin/boot-openwrt /usr/sbin/boot-acer; do if [ -f "$x" ]; then
+ echo T7_SCRIPT=$x; sed -n '1,120p' "$x"; else echo T7_ABSENT=$x; fi; done
+T7_SCRIPT=/usr/sbin/boot-openwrt
+#!/bin/sh
+echo "=== Chaveando boot para SLOT 2 (OpenWrt Otimizado) ==="
+fw_setenv fsbootargs 'ubi.mtd=rootfs_1 root=mtd:ubi_rootfs rootfstype=squashfs'
+echo 0 > /proc/boot_info/bootconfig0/rootfs/primaryboot
+echo 0 > /proc/boot_info/bootconfig1/rootfs/primaryboot
+cat /proc/boot_info/bootconfig0/getbinary_bootconfig > /tmp/bc0.bin
+cat /proc/boot_info/bootconfig1/getbinary_bootconfig > /tmp/bc1.bin
+mtd unlock /dev/mtd3 2>/dev/null
+mtd unlock /dev/mtd4 2>/dev/null
+mtd -e /dev/mtd3 write /tmp/bc0.bin /dev/mtd3
+mtd -e /dev/mtd4 write /tmp/bc1.bin /dev/mtd4
+rm -f /tmp/bc0.bin /tmp/bc1.bin
+sync
+echo "[OK] Reiniciando no Slot 2..."
+reboot
+T7_SCRIPT=/usr/sbin/boot-acer
+#!/bin/sh
+echo "=== Chaveando boot para SLOT 1 (Acer Original de Fabrica) ==="
+fw_setenv fsbootargs 2>/dev/null
+echo 1 > /proc/boot_info/bootconfig0/rootfs/primaryboot
+echo 1 > /proc/boot_info/bootconfig1/rootfs/primaryboot
+cat /proc/boot_info/bootconfig0/getbinary_bootconfig > /tmp/bc0.bin
+cat /proc/boot_info/bootconfig1/getbinary_bootconfig > /tmp/bc1.bin
+mtd unlock /dev/mtd3 2>/dev/null
+mtd unlock /dev/mtd4 2>/dev/null
+mtd -e /dev/mtd3 write /tmp/bc0.bin /dev/mtd3
+mtd -e /dev/mtd4 write /tmp/bc1.bin /dev/mtd4
+rm -f /tmp/bc0.bin /tmp/bc1.bin
+sync
+echo "[OK] Reiniciando no Slot 1..."
+reboot
+/ # for x in /proc/boot_info/bootconfig0/rootfs/primaryboot /proc/boot_info/boot
+config1/rootfs/primaryboot /proc/boot_info/bootconfig0/getbinary_bootconfig /pro
+c/boot_info/bootconfig1/getbinary_bootconfig; do if [ -e "$x" ]; then echo T7_PA
+TH=$x; case $x in */primaryboot) cat "$x";; esac; fi; done
+T7_PATH=/proc/boot_info/bootconfig0/rootfs/primaryboot
+1
+T7_PATH=/proc/boot_info/bootconfig1/rootfs/primaryboot
+1
+T7_PATH=/proc/boot_info/bootconfig0/getbinary_bootconfig
+T7_PATH=/proc/boot_info/bootconfig1/getbinary_bootconfig
+/ # for k in fsbootargs bootcmd bootargs; do fw_printenv $k 2>/dev/null; done
+bootcmd=bootipq
+bootargs=console=ttyMSM0,115200n8
+/ # printf '\nT7_SELECTION_DONE\n'
+
+T7_SELECTION_DONE

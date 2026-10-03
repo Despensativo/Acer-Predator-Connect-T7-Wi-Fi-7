@@ -1,0 +1,117 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: program the mitigation timers from the parameters
+
+Both ring setup paths range check the edma_rx_mitigation_timer and
+edma_tx_mitigation_timer module parameters and then program
+EDMA_REG_RX_MOD_TIMER and EDMA_REG_TX_MOD_TIMER from the compile-time
+defaults instead, so neither parameter has any effect while the matching
+packet count parameters do.  Program the timers from the values that
+were just validated.  The defaults are unchanged, so a build that does
+not set the parameters programs exactly what it did before.
+
+Raise the accepted minimum from zero to one microsecond.  Zero was
+unreachable while the register was always written from the default; now
+that the parameter reaches the register, a zero would program a
+moderation timer of zero, and what the hardware does with that is not
+documented here.  A ring that only raises its interrupt on the packet
+count threshold can hold packets indefinitely, so do not offer the
+value.  As with the other parameters here, one out of range is replaced
+by the default and logged, not rejected, and the replacement is written
+back to the parameter.
+
+What the parameters cannot do is name a real number of microseconds.
+EDMA_MICROSEC_TO_TIMER_UNIT() scales by ppe_dev->clk_rate, which
+ppe_probe() sets to the constant 353 MHz for every SoC and never reads
+back.  On IPQ5332 the PPE clock source offers only 24 MHz and 200 MHz,
+so the clock runs at 200 MHz and every value is programmed about 1.77
+times longer than it reads: the 25 us default is roughly 43 us on the
+wire.  MODULE_PARM_DESC() still says microseconds, and still does not
+describe what the hardware is given.  Correcting the scale would change
+the moderation every IPQ5332 board is running today, which wants
+measuring on hardware, so it is left for a patch that can do that.  This
+one only makes the parameters reach the register they name.
+
+The packet count validation failure messages print the mitigation timer
+in the field that describes the packet count; print the packet count.
+The Rx timer's MODULE_PARM_DESC() names edma_dp_rx_mitigation_timer,
+which is not a parameter, so the real one has no description.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -56,13 +56,13 @@ MODULE_PARM_DESC(edma_rx_mitigation_pkt_
+ 
+ s32 edma_rx_mitigation_timer = EDMA_RX_MITIGATION_TIMER_DEF;
+ module_param(edma_rx_mitigation_timer, int, 0444);
+-MODULE_PARM_DESC(edma_dp_rx_mitigation_timer,
+-		 "Rx mitigation timer value in microseconds (default:25, min:0, max: 1000)");
++MODULE_PARM_DESC(edma_rx_mitigation_timer,
++		 "Rx mitigation timer value in microseconds (default:25, min:1, max: 1000)");
+ 
+ int edma_tx_mitigation_timer = EDMA_TX_MITIGATION_TIMER_DEF;
+ module_param(edma_tx_mitigation_timer, int, 0444);
+ MODULE_PARM_DESC(edma_tx_mitigation_timer,
+-		 "Tx mitigation timer value in microseconds (default:250, min:0, max: 1000)");
++		 "Tx mitigation timer value in microseconds (default:250, min:1, max: 1000)");
+ 
+ int edma_tx_mitigation_pkt_cnt = EDMA_TX_MITIGATION_PKT_CNT_DEF;
+ module_param(edma_tx_mitigation_pkt_cnt, int, 0444);
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -184,13 +184,13 @@ static void edma_cfg_rx_desc_ring_config
+ 	if (edma_rx_mitigation_pkt_cnt < EDMA_RX_MITIGATION_PKT_CNT_MIN ||
+ 	    edma_rx_mitigation_pkt_cnt > EDMA_RX_MITIGATION_PKT_CNT_MAX) {
+ 		pr_err("Invalid Rx mitigation packet count configured:%d for ring:%d. Using the default packet counter value:%d\n",
+-		       edma_rx_mitigation_timer, rxdesc_ring->ring_id,
++		       edma_rx_mitigation_pkt_cnt, rxdesc_ring->ring_id,
+ 			EDMA_RX_MITIGATION_PKT_CNT_DEF);
+ 		edma_rx_mitigation_pkt_cnt = EDMA_RX_MITIGATION_PKT_CNT_DEF;
+ 	}
+ 
+ 	/* Configure the Mitigation timer */
+-	data = EDMA_MICROSEC_TO_TIMER_UNIT(EDMA_RX_MITIGATION_TIMER_DEF,
++	data = EDMA_MICROSEC_TO_TIMER_UNIT(edma_rx_mitigation_timer,
+ 					   ppe_dev->clk_rate / MHZ);
+ 	data = ((data & EDMA_RX_MOD_TIMER_INIT_MASK)
+ 			<< EDMA_RX_MOD_TIMER_INIT_SHIFT);
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.h
+@@ -33,7 +33,7 @@
+ #define EDMA_RX_MITIGATION_TIMER_DEF	25
+ 
+ /* Rx mitigation timer's minimum value in microseconds */
+-#define EDMA_RX_MITIGATION_TIMER_MIN	0
++#define EDMA_RX_MITIGATION_TIMER_MIN	1
+ 
+ /* Rx mitigation timer's maximum value in microseconds */
+ #define EDMA_RX_MITIGATION_TIMER_MAX	1000
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+@@ -182,13 +182,13 @@ static void edma_cfg_txcmpl_ring_configu
+ 	if (edma_tx_mitigation_pkt_cnt < EDMA_TX_MITIGATION_PKT_CNT_MIN ||
+ 	    edma_tx_mitigation_pkt_cnt > EDMA_TX_MITIGATION_PKT_CNT_MAX) {
+ 		pr_err("Invalid Tx mitigation packet count configured:%d for ring:%d. Using the default packet counter value:%d\n",
+-		       edma_tx_mitigation_timer, txcmpl_ring->id,
++		       edma_tx_mitigation_pkt_cnt, txcmpl_ring->id,
+ 		       EDMA_TX_MITIGATION_PKT_CNT_DEF);
+ 		edma_tx_mitigation_pkt_cnt = EDMA_TX_MITIGATION_PKT_CNT_DEF;
+ 	}
+ 
+ 	/* Configure the Mitigation timer. */
+-	data = EDMA_MICROSEC_TO_TIMER_UNIT(EDMA_TX_MITIGATION_TIMER_DEF,
++	data = EDMA_MICROSEC_TO_TIMER_UNIT(edma_tx_mitigation_timer,
+ 					   ppe_dev->clk_rate / MHZ);
+ 	data = ((data & EDMA_TX_MOD_TIMER_INIT_MASK)
+ 		<< EDMA_TX_MOD_TIMER_INIT_SHIFT);
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.h
+@@ -13,7 +13,7 @@
+ #define EDMA_TX_MITIGATION_TIMER_DEF	250
+ 
+ /* Tx mitigation timer's minimum value in microseconds */
+-#define EDMA_TX_MITIGATION_TIMER_MIN	0
++#define EDMA_TX_MITIGATION_TIMER_MIN	1
+ 
+ /* Tx mitigation timer's maximum value in microseconds */
+ #define EDMA_TX_MITIGATION_TIMER_MAX	1000

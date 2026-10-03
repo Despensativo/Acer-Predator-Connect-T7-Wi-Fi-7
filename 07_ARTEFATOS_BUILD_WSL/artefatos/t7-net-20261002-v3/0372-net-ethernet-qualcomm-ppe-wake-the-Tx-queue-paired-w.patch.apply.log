@@ -1,0 +1,3 @@
+patching file drivers/net/ethernet/qualcomm/ppe/edma_tx.c
+Hunk #1 succeeded at 100 (offset -25 lines).
+Hunk #2 succeeded at 210 (offset -25 lines).

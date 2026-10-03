@@ -1,0 +1,42 @@
+From 521a3f58ecb2b9e3a940d86f1d5a654ea0b2ab94 Mon Sep 17 00:00:00 2001
+From: Praveenkumar I <quic_ipkumar@quicinc.com>
+Date: Mon, 03 Aug 2026 18:38:34 +0400
+Subject: [PATCH v2 13/17] arm64: dts: qcom: ipq5332: Add Super-Speed UNIPHY to USB node
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260803-ipq5018-usb3-v2-13-3a4136712b20@outlook.com>
+
+Add the USB3 UNIPHY node to the USB controller node.
+
+In addition, switch to the pipe clock supplied by the USB3 UNIPHY
+instead of the UTMI clock and add a phandle to the TCSR register for
+USB3 mux selection to support USB3 mode.
+
+Signed-off-by: Praveenkumar I <quic_ipkumar@quicinc.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5332.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5332.dtsi b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+index 382691a77d61..98180d626216 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+@@ -539,10 +539,10 @@ usb: usb@8a00000 {
+ 					<&gcc MASTER_SNOC_USB &gcc SLAVE_SNOC_USB>;
+ 			interconnect-names = "usb-ddr", "apps-usb";
+ 
+-			phys = <&usbphy0>;
+-			phy-names = "usb2-phy";
++			phys = <&usbphy0>, <&pcie0_phy>;
++			phy-names = "usb2-phy", "usb3-phy";
+ 
+-			qcom,select-utmi-as-pipe-clk;
++			qcom,phy-usb-mux-sel = <&tcsr 0x10540>;
+ 
+ 			tx-fifo-resize;
+ 			snps,is-utmi-l1-suspend;
+
+-- 
+2.53.0

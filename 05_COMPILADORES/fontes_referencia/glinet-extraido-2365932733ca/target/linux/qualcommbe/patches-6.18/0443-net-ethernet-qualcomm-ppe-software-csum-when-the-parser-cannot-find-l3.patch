@@ -1,0 +1,181 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: fall back to software csum/GSO
+ when the parser cannot find L3
+
+The EDMA TX path enables the inline checksum engine by setting the
+ip_csum_en/l4_csum_en bits in TX descriptor word5 (edma_tx_fill_desc()),
+but never programs the L3/L4 offset fields in word7 and ignores the skb's
+csum_start/csum_offset. The hardware therefore locates the headers with
+its own parser, which only appears to understand Ethernet framing with at
+most one VLAN tag.
+
+Anything that inserts further bytes ahead of the L3 header moves the
+headers out from under that parser, and the checksum is written at the
+wrong offset: every CHECKSUM_PARTIAL frame then leaves with a corrupted
+checksum and is dropped by the peer. A DSA tagger is the case that bites
+here -- DSA_TAG_PROTO_RTL8_4, used by RTL837x switches, pushes eight
+bytes between the source MAC and the EtherType. Disabling TX checksum
+offload with "ethtool -K <conduit> tx off" makes the problem disappear,
+which confirms the diagnosis.
+
+Testing against netdev_uses_dsa() would be enough to fix that case, but
+it is both too broad and too narrow: too broad because a tag_8021q
+tagger inserts an ordinary VLAN header the parser handles perfectly
+well, so masking there needlessly costs the conduit its checksum and TSO
+offload; too narrow because any other head insertion would be missed.
+
+Compare instead where the L3 header will actually be with where the
+parser will look for it, and fall back to software checksumming and GSO
+when they differ. That keeps full offload for ordinary framing and
+covers every head-inserting tag protocol without naming one. A trailer
+tagger would leave the offset unchanged and is not covered; none is in
+use here.
+
+Three details decide where L3 actually ends up:
+
+Hardware segmentation uses the same parser, and edma_tx_fill_desc()
+enables TSO from skb_is_gso() alone, independently of ip_summed. A GSO
+skb that is not CHECKSUM_PARTIAL -- a GRO-coalesced frame being
+forwarded, which is the ordinary WAN-to-LAN path -- would otherwise keep
+hardware segmentation and be sliced at the misplaced offsets, which is
+worse than a bad checksum: the result is structurally malformed segments
+rather than frames a peer simply drops. Run the check whenever either
+checksum offload or segmentation is in play.
+
+An offloaded VLAN tag is not in the data when this callback runs:
+validate_xmit_vlan() follows netif_skb_features(). Unless the hardware
+will insert it, it is pushed inside afterwards and shifts L3 by a
+further VLAN_HLEN, so count it on both sides. A single offloaded tag
+then still keeps full offload, while a frame that ends up double-tagged
+-- beyond what the parser follows -- does not.
+
+Only an 802.1Q tag is assumed to be one the parser follows. No TPID
+register is programmed anywhere in this driver, so whether the hardware
+also recognises 802.1ad is unknown; assuming it does would keep offload
+on a frame whose L3 the parser never reaches, while assuming it does not
+merely costs offload on a configuration nothing here uses.
+
+Documentation/networking/dsa/dsa.rst requires a conduit driver whose
+offload engine does not understand the switch tag in use to "correctly
+fall back to software checksum when the IP header is not where the
+hardware expects".
+
+Note the "Ethernet plus at most one VLAN" premise is taken from observed
+behaviour, not from documentation. The logic above is fail-safe given
+that premise; it deserves a hardware A/B over VLAN, QinQ and TSO before
+being relied on.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+ drivers/net/ethernet/qualcomm/ppe/edma_port.c | 90 +++++++++++++++++++++-
+ 1 file changed, 89 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -5,6 +5,7 @@
+ /* EDMA port initialization, configuration and netdevice ops handling */
+ 
+ #include <linux/etherdevice.h>
++#include <linux/if_vlan.h>
+ #include <linux/net.h>
+ #include <linux/netdevice.h>
+ #include <linux/of_net.h>
+@@ -191,10 +192,97 @@
+ 	return 0;
+ }
+ 
+-static netdev_features_t edma_port_feature_check(__maybe_unused struct sk_buff *skb,
++static netdev_features_t edma_port_feature_check(struct sk_buff *skb,
+ 						 __maybe_unused struct net_device *netdev,
+ 						 netdev_features_t features)
+ {
++	bool vlan_parseable = true;
++	int expected = ETH_HLEN;
++	unsigned int nvlan = 0;
++	int l3_off;
++
++	/* The TX checksum/TSO engine ignores skb->csum_start: no L3/L4
++	 * offsets are programmed into the TX descriptor, so the hardware
++	 * locates the headers with its own parser, which understands only
++	 * Ethernet with at most one VLAN tag. Anything inserting further
++	 * bytes ahead of the L3 header -- a DSA tagger such as RTL8_4, for
++	 * instance -- moves the headers out from under that parser, and the
++	 * checksum is then written at the wrong offset, corrupting every
++	 * offloaded frame.
++	 *
++	 * Rather than hard-code which tag protocols are safe, compare where
++	 * the L3 header will actually be with where the parser will look for
++	 * it, and fall back to software checksumming and GSO when they
++	 * differ. Ordinary framing -- including the single VLAN a tag_8021q
++	 * tagger inserts -- keeps full offload.
++	 *
++	 * Documentation/networking/dsa/dsa.rst requires a conduit driver
++	 * whose offload engine cannot parse the tag in use to fall back to
++	 * software checksumming.
++	 */
++
++	/* edma_tx_fill_desc() enables TSO from skb_is_gso() alone, not from
++	 * ip_summed, so a GSO skb that is not CHECKSUM_PARTIAL -- a
++	 * GRO-coalesced frame being forwarded, for instance -- has to be
++	 * checked too, or it keeps hardware segmentation and is sliced at
++	 * the same misplaced offsets.
++	 */
++	if (skb->ip_summed != CHECKSUM_PARTIAL && !skb_is_gso(skb))
++		return features;
++
++	l3_off = skb_network_offset(skb);
++
++	/* Only an 802.1Q tag is assumed to be one the parser follows. No
++	 * TPID register is ever programmed, so whether it also recognises
++	 * 802.1ad is unknown, and assuming it does would keep offload on a
++	 * frame whose L3 the parser never reaches; assuming it does not
++	 * merely costs offload.
++	 *
++	 * With a head-inserted tag in front these two bytes lie inside that
++	 * tag rather than being an ethertype, so the test can match on
++	 * rubbish. That stays safe because the parser reads the ethertype at
++	 * the same offset as this does: a spurious 802.1Q match means the
++	 * parser skips the same four bytes and arrives at the same L3 offset
++	 * computed here, and a spurious 802.1ad match is masked through
++	 * vlan_parseable regardless. Do not reason instead that l3_off always
++	 * lands beyond expected -- that is false for a four-byte head tag,
++	 * where both come to ETH_HLEN + VLAN_HLEN.
++	 */
++	if (skb_headlen(skb) >= ETH_HLEN) {
++		__be16 proto = ((struct ethhdr *)skb->data)->h_proto;
++
++		if (eth_type_vlan(proto)) {
++			nvlan++;
++			if (proto != htons(ETH_P_8021Q))
++				vlan_parseable = false;
++		}
++	}
++
++	/* An offloaded VLAN tag is not in the data yet: validate_xmit_vlan()
++	 * runs after netif_skb_features(). Unless the hardware is going to
++	 * insert it, it gets pushed inside afterwards and shifts L3 by a
++	 * further VLAN_HLEN.
++	 *
++	 * Leaving nvlan alone when the hardware will insert the tag assumes
++	 * the parser reads the DMA buffer, which such a tag never enters.
++	 * Revisit that, and whether vlan_proto needs checking there too, if
++	 * NETIF_F_HW_VLAN_*_TX is ever advertised by this driver.
++	 */
++	if (skb_vlan_tag_present(skb) &&
++	    !vlan_hw_offload_capable(features, skb->vlan_proto)) {
++		l3_off += VLAN_HLEN;
++		nvlan++;
++		if (skb->vlan_proto != htons(ETH_P_8021Q))
++			vlan_parseable = false;
++	}
++
++	/* The parser accounts for one VLAN tag, no more. */
++	if (nvlan)
++		expected += VLAN_HLEN;
++
++	if (l3_off != expected || !vlan_parseable)
++		features &= ~(NETIF_F_CSUM_MASK | NETIF_F_GSO_MASK);
++
+ 	return features;
+ }
+ 

@@ -1,0 +1,98 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: stop following a flapping address
+
+The FDB follower re-points a port-addressed flow wherever the bridge
+learns its destination MAC next, trusting the bridge's learning as far
+as the bridge does. That is more than the software fast path does (its
+transmit device is fixed when the flow is created), and every re-point
+rewrites the nexthop and the flow entry under RTNL. An address that
+keeps moving, from a loop, a station present on two ports, or any host
+on the bridge sending frames with that source, would drag the flow
+back and forth indefinitely.
+
+Count re-points per flow in a 10 s window and, past three, drop the
+flow from hardware instead of moving it a fourth time: the flowtable's
+next refresh re-offers it and it lands wherever the bridge says then,
+which is the software fast path's own behaviour. Measured on a
+GL-BE9300 with a live download and the client's MAC announced on
+another port and back four times inside 5 s: three re-points, then
+"2 dropped for flapping", both tuples back in hardware after the next
+refresh.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -273,6 +273,11 @@
+ 	 */
+ 	u64 refresh_packets;
+ 	bool refresh_seen;
++	/* Re-points within the current PPE_OFFLOAD_FDB_FLAP_WINDOW, see
++	 * ppe_offload_fdb_move_work().
++	 */
++	unsigned long move_window;
++	unsigned int move_count;
+ };
+ 
+ static const struct rhashtable_params ppe_offload_flow_ht_params = {
+@@ -1769,6 +1774,11 @@
+  * dropped, and the next learn of the address re-arms it.
+  */
+ #define PPE_OFFLOAD_FDB_MOVES_MAX	64
++/* A flow re-pointed more than PPE_OFFLOAD_FDB_FLAP_MAX times within
++ * PPE_OFFLOAD_FDB_FLAP_WINDOW is dropped from hardware instead.
++ */
++#define PPE_OFFLOAD_FDB_FLAP_MAX	3
++#define PPE_OFFLOAD_FDB_FLAP_WINDOW	(10 * HZ)
+ 
+ struct ppe_offload_fdb_move {
+ 	struct work_struct work;
+@@ -1889,7 +1899,7 @@
+ 	struct ppe_offload_fdb_move *move = container_of(work, struct ppe_offload_fdb_move, work);
+ 	struct ppe_offload_priv *priv = move->priv;
+ 	struct ppe_offload_flow_entry *entry;
+-	unsigned int moved = 0, failed = 0;
++	unsigned int moved = 0, failed = 0, dropped = 0;
+ 	struct edma_port_priv *port_priv;
+ 	struct net_device *bridge;
+ 	struct net_device *conduit;
+@@ -1940,6 +1950,26 @@
+ 		    !ether_addr_equal(entry->dmac, move->addr))
+ 			continue;
+ 
++		/* Following the bridge is only as good as its learning. An
++		 * address that keeps moving (a loop, a station on two ports,
++		 * or any host on the bridge sending frames with that source)
++		 * would drag the flow, and each re-point rewrites the table
++		 * under RTNL. The software fast path never follows a move at
++		 * all, so past a few moves in a short window the flow goes
++		 * back to it: the entry is dropped, the flowtable's next
++		 * refresh re-offers it, and the port it resolves then is
++		 * whatever the bridge says at that moment.
++		 */
++		if (time_after(jiffies, entry->move_window + PPE_OFFLOAD_FDB_FLAP_WINDOW)) {
++			entry->move_window = jiffies;
++			entry->move_count = 0;
++		}
++		if (++entry->move_count > PPE_OFFLOAD_FDB_FLAP_MAX) {
++			ppe_offload_flow_forget(priv, entry);
++			dropped++;
++			continue;
++		}
++
+ 		if (ppe_offload_flow_repoint(priv, entry, dp, move->dev))
+ 			failed++;
+ 		else
+@@ -1951,9 +1981,9 @@
+ 	/* A MAC flapping between two ports (a loop, a misbehaving client)
+ 	 * would otherwise turn this into a log storm.
+ 	 */
+-	if (moved || failed)
+-		pr_info_ratelimited("ppe_offload: %pM moved to %s: %u flow(s) re-pointed, %u not re-pointed\n",
+-				    move->addr, netdev_name(move->dev), moved, failed);
++	if (moved || failed || dropped)
++		pr_info_ratelimited("ppe_offload: %pM moved to %s: %u flow(s) re-pointed, %u not re-pointed, %u dropped for flapping\n",
++				    move->addr, netdev_name(move->dev), moved, failed, dropped);
+ 
+ out:
+ 	rtnl_unlock();

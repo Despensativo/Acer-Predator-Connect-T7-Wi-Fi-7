@@ -1,0 +1,54 @@
+{
+  "status": "offline_build_candidate_not_hardware_ready",
+  "hardware_ready": false,
+  "upload_authorized": false,
+  "boot_launcher_generated": false,
+  "image_header": {
+    "text_offset": "0x0",
+    "image_size": 10485760,
+    "flags": "0xa"
+  },
+  "candidate_load": "0x41000000",
+  "candidate_end": "0x41a00000",
+  "approved_addresses": null,
+  "ramoops_region": null,
+  "blockers": [
+    "RAM dinamica U-Boot nao validada",
+    "Fixups e posicao DTB nao validados",
+    "Retencao RAM e regiao ramoops nao validadas",
+    "Saida Linux pela rede nao implementada; UART ainda necessaria",
+    "Watchdog e transicao ARM64 precisam observacao no hardware"
+  ],
+  "files": {
+    "Image": {
+      "bytes": 10156040,
+      "sha256": "d159beb8ad4f8e1a27348754b95fc8f0d675d85d642467fe30c6711e298f116a",
+      "crc32": "907887cc"
+    },
+    "Image.lzma": {
+      "bytes": 3043526,
+      "sha256": "87bbabae2676a667140211d190d70c523484bbd35adf9f0dac066daa1664e732",
+      "crc32": "dc94d0c1"
+    },
+    "init": {
+      "bytes": 282624,
+      "sha256": "6ab7dc55fa27995f75a47171e0a15ef3f8c4705568e431767158f5ec503fe769",
+      "crc32": "7599a2a8"
+    },
+    "t7-diagnostico.dtb": {
+      "bytes": 18775,
+      "sha256": "3fe8ac341a0adf41f90e21a9ac5e5e8534c6f0000fe92ac7d56f6da544d9dbbd",
+      "crc32": "d1a89154"
+    },
+    "kernel.config": {
+      "bytes": 115589,
+      "sha256": "b2d247a1ba7fea569e052b42111723968e2f991abb1d4c08990f2a68942c9863",
+      "crc32": "4822e570"
+    },
+    "t7-arm64-diag-CANDIDATO-NAO-ENVIAR.itb": {
+      "bytes": 3063368,
+      "sha256": "084c54473930040cc14e0b6790d25bef2f56951e3a5cc24670d54cdbd840302d",
+      "crc32": "cfc3d01c"
+    }
+  }
+}

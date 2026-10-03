@@ -1,0 +1,90 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: do not return a freed IRQ number
+
+When of_irq_get_byname() fails, both loops in edma_irq_configure() free
+the array that holds the result and then return that same array element
+as the error code:
+
+	kfree(edma_ctx->intr_info.intr_txcmpl);
+	return edma_ctx->intr_info.intr_txcmpl[i];
+
+The value is read after the allocation is freed, so with slab poisoning
+or a reallocation in between, probe returns whatever now occupies that
+memory instead of the error.  -EPROBE_DEFER in particular can be lost or
+invented this way.
+
+Read the error before freeing the array, and clear the pointers that are
+freed on the way out so a later unwind cannot free them twice.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -566,6 +566,7 @@ static int edma_irq_configure(void)
+ 	struct platform_device *pdev;
+ 	struct device_node *edma_np;
+ 	u32 i;
++	int ret;
+ 
+ 	pdev = to_platform_device(dev);
+ 	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
+@@ -582,11 +583,13 @@ static int edma_irq_configure(void)
+ 			 txcmpl->ring_start + i);
+ 		edma_ctx->intr_info.intr_txcmpl[i] = of_irq_get_byname(edma_np, edma_irq_name);
+ 		if (edma_ctx->intr_info.intr_txcmpl[i] < 0) {
++			ret = edma_ctx->intr_info.intr_txcmpl[i];
+ 			dev_err(dev, "%s: txcmpl_info.intr[%u] irq get failed\n",
+ 				edma_np->name, i);
+ 			of_node_put(edma_np);
+ 			kfree(edma_ctx->intr_info.intr_txcmpl);
+-			return edma_ctx->intr_info.intr_txcmpl[i];
++			edma_ctx->intr_info.intr_txcmpl = NULL;
++			return ret;
+ 		}
+ 
+ 		dev_dbg(dev, "%s: intr_info.intr_txcmpl[%u] = %u\n",
+@@ -598,6 +601,7 @@ static int edma_irq_configure(void)
+ 	if (!edma_ctx->intr_info.intr_rx) {
+ 		of_node_put(edma_np);
+ 		kfree(edma_ctx->intr_info.intr_txcmpl);
++		edma_ctx->intr_info.intr_txcmpl = NULL;
+ 		return -ENOMEM;
+ 	}
+ 
+@@ -607,12 +611,15 @@ static int edma_irq_configure(void)
+ 			 rx->ring_start + i);
+ 		edma_ctx->intr_info.intr_rx[i] = of_irq_get_byname(edma_np, edma_irq_name);
+ 		if (edma_ctx->intr_info.intr_rx[i] < 0) {
++			ret = edma_ctx->intr_info.intr_rx[i];
+ 			dev_err(dev, "%s: rx_queue_map_info.intr[%u] irq get failed\n",
+ 				edma_np->name, i);
+ 			of_node_put(edma_np);
+ 			kfree(edma_ctx->intr_info.intr_rx);
++			edma_ctx->intr_info.intr_rx = NULL;
+ 			kfree(edma_ctx->intr_info.intr_txcmpl);
+-			return edma_ctx->intr_info.intr_rx[i];
++			edma_ctx->intr_info.intr_txcmpl = NULL;
++			return ret;
+ 		}
+ 
+ 		dev_dbg(dev, "%s: intr_info.intr_rx[%u] = %u\n",
+@@ -625,7 +632,9 @@ static int edma_irq_configure(void)
+ 		dev_err(dev, "%s: misc_intr irq get failed\n", edma_np->name);
+ 		of_node_put(edma_np);
+ 		kfree(edma_ctx->intr_info.intr_rx);
++		edma_ctx->intr_info.intr_rx = NULL;
+ 		kfree(edma_ctx->intr_info.intr_txcmpl);
++		edma_ctx->intr_info.intr_txcmpl = NULL;
+ 		return edma_ctx->intr_info.intr_misc;
+ 	}
+ 
+@@ -967,7 +976,9 @@ int edma_setup(struct ppe_device *ppe_de
+ 	if (ret) {
+ 		dev_err(dev, "Error in irq registration\n");
+ 		kfree(edma_ctx->intr_info.intr_rx);
++		edma_ctx->intr_info.intr_rx = NULL;
+ 		kfree(edma_ctx->intr_info.intr_txcmpl);
++		edma_ctx->intr_info.intr_txcmpl = NULL;
+ 		return ret;
+ 	}
+ 

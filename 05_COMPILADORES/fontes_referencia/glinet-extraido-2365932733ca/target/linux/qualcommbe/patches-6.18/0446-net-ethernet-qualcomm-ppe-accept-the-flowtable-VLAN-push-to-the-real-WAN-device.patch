@@ -1,0 +1,168 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: accept the flowtable's VLAN push
+ to the real WAN device
+
+ppe_offload declined every flow towards an 802.1Q-tagged WAN with
+"vlan push to non-vlan odev=wan unsupported". The check expected the
+redirect target to be the VLAN netdevice (wan.10) whenever a
+FLOW_ACTION_VLAN_PUSH was present, but that is not how the flowtable
+builds the rule: nft_dev_path_info() walks the VLAN upper down to its
+real device through dev_fill_forward_path(), records the tag as an
+encap, and the offload rule then redirects to the real EDMA device with
+the tag as a push action. The plain-device branch therefore declined
+the only shape that occurs. Measured on a GL-BE9300 with wan.10: no
+flow ever reached the hardware, on either DSA tagger.
+
+Accept the push to a plain EDMA device; the nexthop's C-VLAN insert
+(ctag_fmt/cvid) carries it. The redirect-to-VLAN-netdevice branch is
+kept for the case where the route's device is the VLAN netdevice
+itself. The egress C-TPID the hardware uses for the insert is the reset
+0x8100 also while the rtl8_4 parser alias is active (the alias only
+takes the S-TPID).
+
+Accepting that shape needs the checks the VLAN-netdevice branch had
+implicitly:
+- the push must match a VLAN upper really stacked on the device with
+  that VID (__vlan_find_dev_deep_rcu()); anything else, e.g. a
+  hand-written tc rule, is declined;
+- the PMTU is bounded by that upper's MTU, not only the real device's;
+- a VID of 0 or >= 4095 is declined rather than aliased by the 12-bit
+  CVID field, and so is a push with a PCP the insert cannot carry;
+- a flow leaving through its own ingress port is declined: the flow
+  key has the port's L3 interface but not the VLAN, so untagged-in /
+  tagged-out would also match frames from the other VLAN;
+- a DSA conduit as egress is declined, it would lack the CPU tag.
+
+Measured on the GL-BE9300, WAN wired to a 2.5G peer with 192.168.20.2
+untagged and 192.168.10.2 on VLAN 10: LAN->wan.10 flows are offloaded
+(2 HW_OFFLOAD flows, CPU ~99% idle), and a capture on the peer's side
+of the wire during hardware forwarding shows 30000 of 30000 frames
+tagged 0x8100 VID 10 and none untagged, on both the rtl8_4 and the
+tag_8021q DSA tagger.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -21,11 +21,16 @@
+  *   inbound, which is a real, known limitation of this milestone, not
+  *   an oversight.
+  * - Egress device must be one of this driver's own EDMA port
+- *   netdevices (edma_port_is_edma_netdev()), or a VLAN netdevice
+- *   stacked directly on one (e.g. wan.10) paired with a matching
+- *   FLOW_ACTION_VLAN_PUSH -- the VLAN case resolves down to the real
+- *   EDMA device via vlan_dev_real_dev() for the hardware programming,
+- *   and the nexthop's C-VLAN tag-insert fields carry the push. A
++ *   netdevices (edma_port_is_edma_netdev()). A tagged WAN (e.g. wan.10)
++ *   arrives as that plain EDMA device plus a FLOW_ACTION_VLAN_PUSH: the
++ *   flowtable resolves the VLAN upper through dev_fill_forward_path()
++ *   and hands the tag over as the push, which the nexthop's C-VLAN
++ *   tag-insert fields carry (a redirect to the VLAN netdevice itself is
++ *   resolved down via vlan_dev_real_dev() for the same programming).
++ *   The push must match a VLAN upper really stacked on that device,
++ *   whose MTU then bounds the flow's PMTU; a flow back out of its own
++ *   ingress port, a DSA conduit as egress, and a push with a PCP are
++ *   declined. A
+  *   second/S-tag push, or any other VLAN proto than 802.1Q, is
+  *   declined -- untested, and this hardware's nexthop entry only has
+  *   a single C-VLAN + single S-VLAN insert field to begin with. Bridge
+@@ -548,6 +553,16 @@
+ 			if (act->vlan.proto != htons(ETH_P_8021Q))
+ 				return ppe_offload_decline("vlan push proto=0x%04x unsupported",
+ 							    ntohs(act->vlan.proto));
++			/* CVID is 12 bits wide and would silently alias a larger
++			 * value; the insert has no PCP field, so a push that asks
++			 * for one would lose it.
++			 */
++			if (!act->vlan.vid || act->vlan.vid >= VLAN_VID_MASK)
++				return ppe_offload_decline("vlan push vid=%u out of range",
++							    act->vlan.vid);
++			if (act->vlan.prio)
++				return ppe_offload_decline("vlan push prio=%u unsupported",
++							    act->vlan.prio);
+ 			vlan_push_seen = true;
+ 			vlan_push_vid = act->vlan.vid;
+ 			break;
+@@ -565,32 +580,57 @@
+ 	 * vendor stack does with the transmit interface's MTU.
+ 	 */
+ 	pmtu = READ_ONCE(odev->mtu);
++
++	/* A push towards a plain device must belong to a VLAN netdevice
++	 * actually stacked on it with that VID: that is what the flowtable's
++	 * forward path resolved from, and a push with no such upper (e.g.
++	 * a hand-written tc rule) is not a flow this driver can vouch for.
++	 * The upper's MTU is the one the packets have to fit.
++	 */
++	if (vlan_push_seen && !is_vlan_dev(odev)) {
++		struct net_device *upper;
++
++		rcu_read_lock();
++		upper = __vlan_find_dev_deep_rcu(odev, htons(ETH_P_8021Q), vlan_push_vid);
++		if (upper)
++			pmtu = min(pmtu, READ_ONCE(upper->mtu));
++		rcu_read_unlock();
++
++		if (!upper)
++			return ppe_offload_decline("odev=%s has no vlan %u upper",
++						    netdev_name(odev), vlan_push_vid);
++	}
++
+ 	/* Unlike the vendor stack, which clamps to its jumbo maximum, decline
+ 	 * rather than program a PMTU the packets can't match.
+ 	 */
+ 	if (pmtu > GENMASK(13, 0))	/* PMTU_0 (11 bits) + PMTU_1 (3 bits) */
+ 		return ppe_offload_decline("odev=%s mtu=%u too large", netdev_name(odev), pmtu);
+ 
+-	/* A redirect to a VLAN netdevice (e.g. a tagged wan.10) needs a
+-	 * matching FLOW_ACTION_VLAN_PUSH for the tag this driver is expected
+-	 * to insert on egress, and the actual EDMA hardware programming
+-	 * below (edma_port_is_edma_netdev(), the dev_addr/MAC check, and
+-	 * port_priv) has to target the VLAN device's *real* underlying
+-	 * device -- odev itself is never an EDMA netdevice in this case.
++	/* For a tagged WAN (wan.10) the flowtable's forward path already
++	 * resolved the VLAN upper down to the real device, so odev is the
++	 * plain EDMA netdevice and the tag arrives as FLOW_ACTION_VLAN_PUSH,
++	 * which the nexthop's C-VLAN insert carries below. Should the
++	 * redirect target be the VLAN netdevice itself, it needs a matching
++	 * push, and the EDMA programming below (edma_port_is_edma_netdev(),
++	 * the dev_addr check, port_priv) has to target its real device.
+ 	 */
+ 	if (is_vlan_dev(odev)) {
+ 		if (!vlan_push_seen || vlan_dev_vlan_id(odev) != vlan_push_vid)
+ 			return ppe_offload_decline("odev=%s vlan id mismatch (push vid=%u)",
+ 						    netdev_name(odev), vlan_push_vid);
+ 		odev = vlan_dev_real_dev(odev);
+-	} else if (vlan_push_seen) {
+-		return ppe_offload_decline("vlan push to non-vlan odev=%s unsupported",
+-					    netdev_name(odev));
+ 	}
+ 
+ 	if (!edma_port_is_edma_netdev(odev))
+ 		return ppe_offload_decline("odev=%s not an edma netdev", netdev_name(odev));
+ 
++	/* A DSA conduit carries the switch's CPU tag, which a routed
++	 * hardware flow would not emit.
++	 */
++	if (netdev_uses_dsa(odev))
++		return ppe_offload_decline("odev=%s is a dsa conduit", netdev_name(odev));
++
+ 	/* SNAT only: source changed, destination didn't. Declines the
+ 	 * DNAT/reply direction and anything that changes both or
+ 	 * neither -- see the file comment.
+@@ -611,6 +651,15 @@
+ 
+ 	port_priv = netdev_priv(odev);
+ 
++	/* The flow key only knows the ingress port's L3 interface, not the
++	 * VLAN a frame came in on, so a flow leaving the port it entered
++	 * (say untagged wan in, wan.10 out) would also match frames from the
++	 * other VLAN of that port.
++	 */
++	if (ingress_l3_if == port_priv->l3_if_index)
++		return ppe_offload_decline("odev=%s hairpin to its own ingress port",
++					    netdev_name(odev));
++
+ 	mutex_lock(&priv->lock);
+ 
+ 	if (rhashtable_lookup_fast(&priv->flow_table, &cls->cookie, ppe_offload_flow_ht_params)) {

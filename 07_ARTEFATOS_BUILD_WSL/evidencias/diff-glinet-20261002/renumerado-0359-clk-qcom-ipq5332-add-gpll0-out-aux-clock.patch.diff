@@ -1,0 +1,7 @@
+--- local/0365-clk-qcom-ipq5332-add-gpll0-out-aux-clock.patch
++++ glinet/0359-clk-qcom-ipq5332-add-gpll0-out-aux-clock.patch
+@@ -1,4 +1,3 @@
+-From 382b2d7d434eaf03e148b6147b4a75cf62c27919 Mon Sep 17 00:00:00 2001
+ From: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
+ Subject: clk: qcom: ipq5332: add gpll0_out_aux clock
+ Date: Thu, 29 Aug 2024 13:58:24 +0530

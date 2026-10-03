@@ -1,0 +1,985 @@
+[
+  {
+    "name": "0073-v7.0-arm64-dts-qcom-ipq5018-Remove-tsens-v1-fallback-compatible.patch",
+    "sha256": "c34bbd2a647c114fe37bd209eef43984122f6d5b9cc3de825167f13c15f6559f",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0073-v7.0-arm64-dts-qcom-ipq5018-Remove-tsens-v1-fallback-compatible.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1162
+  },
+  {
+    "name": "0075-v7.0-arm64-dts-qcom-ipq5018-Correct-USB-DWC3-wrapper-interrupts.patch",
+    "sha256": "a83092fdfb558f1dc9544642bf3419b59ba81d577a612e35de83aca0c6e4c42e",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0075-v7.0-arm64-dts-qcom-ipq5018-Correct-USB-DWC3-wrapper-interrupts.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 1,
+    "bytes": 2015
+  },
+  {
+    "name": "0076-v7.2-dt-bindings-pwm-add-IPQ6018-binding.patch",
+    "sha256": "61c8987f40f7515dc2d711052c2fb569e538483be83850e00394979f4efad0ee",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0076-v7.2-dt-bindings-pwm-add-IPQ6018-binding.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/pwm/qcom,ipq6018-pwm.yaml"
+    ],
+    "ipq5332_mentions": 1,
+    "bytes": 2124
+  },
+  {
+    "name": "0077-v7.2-pwm-Driver-for-qualcomm-ipq6018-pwm-block.patch",
+    "sha256": "a9c75a67c0d4d2ab5d8ad06978d19657009b48bf6d4af2d4461777e9a3038288",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0077-v7.2-pwm-Driver-for-qualcomm-ipq6018-pwm-block.patch",
+    "files_touched": [
+      "drivers/pwm/Kconfig",
+      "drivers/pwm/Makefile",
+      "drivers/pwm/pwm-ipq.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 10186
+  },
+  {
+    "name": "0078-v7.3-arm64-dts-qcom-ipq6018-add-pwm-node.patch",
+    "sha256": "94da8098ed6f297ed5b14d004eea15955f360d809dabdc626cca889e822c357a",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0078-v7.3-arm64-dts-qcom-ipq6018-add-pwm-node.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq6018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1581
+  },
+  {
+    "name": "0079-v7.3-arm64-dts-qcom-ipq5018-add-pwm-node.patch",
+    "sha256": "a5e5a2b5bb46066ea9f7356e9bdcc021054cf0768a2408bcdaf5b4b3c6e58ea8",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0079-v7.3-arm64-dts-qcom-ipq5018-add-pwm-node.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1435
+  },
+  {
+    "name": "0080-v7.1-dt-bindings-clock-qcom-Add-CMN-PLL-support-for-IPQ6018.patch",
+    "sha256": "e1b6c3d3373115f2708b1697d6131bad98012a42d927e0bcc2a0b7f45155cbf9",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0080-v7.1-dt-bindings-clock-qcom-Add-CMN-PLL-support-for-IPQ6018.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/clock/qcom,ipq9574-cmn-pll.yaml",
+      "include/dt-bindings/clock/qcom,ipq6018-cmn-pll.h"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1907
+  },
+  {
+    "name": "0081-v7.1-dt-bindings-clock-qcom-Add-CMN-PLL-support-for-IPQ8074.patch",
+    "sha256": "14a2f14482feb82e426b99dda82723c281e72049199e68a95fe4e542869f4beb",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0081-v7.1-dt-bindings-clock-qcom-Add-CMN-PLL-support-for-IPQ8074.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/clock/qcom,ipq9574-cmn-pll.yaml",
+      "include/dt-bindings/clock/qcom,ipq8074-cmn-pll.h"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1926
+  },
+  {
+    "name": "0082-v7.1-clk-qcom-ipq-cmn-pll-Add-IPQ6018-SoC-support.patch",
+    "sha256": "c5f86defcfcb3eed22e7cde12166b97cfeda1a3423f47f06026e0552a251b598",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0082-v7.1-clk-qcom-ipq-cmn-pll-Add-IPQ6018-SoC-support.patch",
+    "files_touched": [
+      "drivers/clk/qcom/ipq-cmn-pll.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2046
+  },
+  {
+    "name": "0083-v7.1-clk-qcom-ipq-cmn-pll-Add-IPQ8074-SoC-support.patch",
+    "sha256": "cbec9dcc2238b0613fe769ac65fc12da3f0425e9ffce77c7c69719869947bd5e",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0083-v7.1-clk-qcom-ipq-cmn-pll-Add-IPQ8074-SoC-support.patch",
+    "files_touched": [
+      "drivers/clk/qcom/ipq-cmn-pll.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2064
+  },
+  {
+    "name": "0087-v7.2-dt-bindings-net-ethernet-phy-increase-max-clock-count-to-two.patch",
+    "sha256": "74506796312eb17fe56acfbb524e1bfdd833cc87255b61c722dd9966bc9395ae",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0087-v7.2-dt-bindings-net-ethernet-phy-increase-max-clock-count-to-two.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/net/ethernet-phy.yaml"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1575
+  },
+  {
+    "name": "0088-v7.2-dt-bindings-net-qca-ar803x-Add-clocks-for-IPQ5018-PHY.patch",
+    "sha256": "503b450ac716ca9225b150d20196c80248476e4eeeba911230cd2c5cade6b106",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0088-v7.2-dt-bindings-net-qca-ar803x-Add-clocks-for-IPQ5018-PHY.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/net/qca,ar803x.yaml"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1989
+  },
+  {
+    "name": "0089-v7.2-net-phy-at803x-add-RX-and-TX-clock-management-for-IPQ5018-PHY.patch",
+    "sha256": "60b5e999e95d6f229e6747a495747e8f0eb09bce72b642cb4aad0b19506ffc85",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0089-v7.2-net-phy-at803x-add-RX-and-TX-clock-management-for-IPQ5018-PHY.patch",
+    "files_touched": [
+      "drivers/net/phy/qcom/at803x.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1834
+  },
+  {
+    "name": "0090-v7.4-clk-qcom-gcc-ipq5018-mark-gpll0_main-clock-as-critical.patch",
+    "sha256": "420ef40f45bb3578a6c96bf890be4dc0d9a615e9b76899c7387ef5b15d4137f1",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0090-v7.4-clk-qcom-gcc-ipq5018-mark-gpll0_main-clock-as-critical.patch",
+    "files_touched": [
+      "drivers/clk/qcom/gcc-ipq5018.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2296
+  },
+  {
+    "name": "0091-v6.19-dt-bindings-usb-qcom-snps-dwc3-Correct-IPQ5018-interrupts.patch",
+    "sha256": "18ca0394d30fdfa4988669dd14849408f0a70d06968d334c6a1d541d810ac90a",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0091-v6.19-dt-bindings-usb-qcom-snps-dwc3-Correct-IPQ5018-interrupts.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/usb/qcom,dwc3.yaml",
+      "Documentation/devicetree/bindings/usb/qcom,snps-dwc3.yaml"
+    ],
+    "ipq5332_mentions": 3,
+    "bytes": 2062
+  },
+  {
+    "name": "0092-v7.3-pinctrl-qcom-ipq5018-add-missing-pwm3-function-on-gpio13.patch",
+    "sha256": "44a8856564cf02522a586bed9f085a615360861e81ff615217dcb3bfbc79a057",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0092-v7.3-pinctrl-qcom-ipq5018-add-missing-pwm3-function-on-gpio13.patch",
+    "files_touched": [
+      "drivers/pinctrl/qcom/pinctrl-ipq5018.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2200
+  },
+  {
+    "name": "0102-arm64-dts-ipq8074-add-reserved-memory-nodes.patch",
+    "sha256": "466f312dfee6fbcc8c4e2f8c86a694ca2473c526f2d0c785c070fa82000be404",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0102-arm64-dts-ipq8074-add-reserved-memory-nodes.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1547
+  },
+  {
+    "name": "0103-pwm-ipq-fix-period-calculation.patch",
+    "sha256": "d1be79bfecf1eeec9a810dc4831ddf3085455d0f4fc3edfd1f18e97053465de8",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0103-pwm-ipq-fix-period-calculation.patch",
+    "files_touched": [
+      "drivers/pwm/pwm-ipq.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 5525
+  },
+  {
+    "name": "0120-arm64-dts-qcom-ipq8074-add-secure-WCSS-remoteproc.patch",
+    "sha256": "e20d044a992bb7fcd1c95d39681f372435c3e5cb1f550c623c137adba89e1483",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0120-arm64-dts-qcom-ipq8074-add-secure-WCSS-remoteproc.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2410
+  },
+  {
+    "name": "0121-arm64-dts-ipq8074-Add-WLAN-node.patch",
+    "sha256": "131114467f7af89161847909bee16497ba161e2469214b2d468c14befa41c52f",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0121-arm64-dts-ipq8074-Add-WLAN-node.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 4796
+  },
+  {
+    "name": "0122-arm64-dts-ipq8074-add-CPU-clock.patch",
+    "sha256": "cc66959af959dfa896603a8d8f2d8f402ad6af18f3533d2f706a6407b6a4f20c",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0122-arm64-dts-ipq8074-add-CPU-clock.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1503
+  },
+  {
+    "name": "0123-arm64-dts-ipq8074-add-cooling-cells-to-CPU-nodes.patch",
+    "sha256": "e241fa6fce3b208b36adc8d531969c0dedcc59d0296903f5d705cf0340fc66ec",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0123-arm64-dts-ipq8074-add-cooling-cells-to-CPU-nodes.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1314
+  },
+  {
+    "name": "0129-arm64-dts-qcom-ipq8074-add-QFPROM-fuses.patch",
+    "sha256": "8f0d32b6dc1bd97d7c4e9630160c20e9117e8d50d23ef118a512fcba11ab97e4",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0129-arm64-dts-qcom-ipq8074-add-QFPROM-fuses.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2480
+  },
+  {
+    "name": "0130-arm64-dts-qcom-ipq8074-add-CPU-OPP-table.patch",
+    "sha256": "9ff8cacd6477ce916727593449c42d675fde5ca71f2d52e78ce700f5d94f226e",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0130-arm64-dts-qcom-ipq8074-add-CPU-OPP-table.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2504
+  },
+  {
+    "name": "0135-arm64-dts-qcom-ipq6018-add-NSS-reserved-memory.patch",
+    "sha256": "a6f256a71f2caff9d4fca7a76b9fbddf039db74bc68449e3f48b542d86417d42",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0135-arm64-dts-qcom-ipq6018-add-NSS-reserved-memory.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq6018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 794
+  },
+  {
+    "name": "0140-usb-dwc3-core-Allow-glue-layer-to-pass-reference-clo.patch",
+    "sha256": "c5462e71fdc3f8096b30bf243327de0c8c3d76c34b8b87a1e39d2e65c3c533a5",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0140-usb-dwc3-core-Allow-glue-layer-to-pass-reference-clo.patch",
+    "files_touched": [
+      "drivers/usb/dwc3/core.c",
+      "drivers/usb/dwc3/core.h",
+      "drivers/usb/dwc3/glue.h"
+    ],
+    "ipq5332_mentions": 1,
+    "bytes": 3704
+  },
+  {
+    "name": "0141-usb-dwc3-qcom-Add-support-for-selecting-UTMI-as-refe.patch",
+    "sha256": "020455d41ccaf66c829b9e876f032c39c508ba6f402ddcd9c85be21c335fccc2",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0141-usb-dwc3-qcom-Add-support-for-selecting-UTMI-as-refe.patch",
+    "files_touched": [
+      "drivers/usb/dwc3/dwc3-qcom.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2053
+  },
+  {
+    "name": "0142-arm64-dts-qcom-ipq5018-Flatten-usb-controller-node.patch",
+    "sha256": "d181c8884392cb93d13f9397df781c1e44257d59ade35c5d4fa78dcd52b5a723",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0142-arm64-dts-qcom-ipq5018-Flatten-usb-controller-node.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018-rdp432-c2.dts",
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2996
+  },
+  {
+    "name": "0143-arm64-dts-qcom-ipq6018-move-DR-mode-to-board-DTS.patch",
+    "sha256": "feb4d1a9e4dad51f60017fffc17a368be9239efc9669b956f93867685fb04598",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0143-arm64-dts-qcom-ipq6018-move-DR-mode-to-board-DTS.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq6018-cp01-c1.dts",
+      "arch/arm64/boot/dts/qcom/ipq6018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1282
+  },
+  {
+    "name": "0144-arm64-dts-qcom-ipq6018-Flatten-usb-controller-nodes.patch",
+    "sha256": "f897b67bd5f8c6bf0b4cc5067cc0638272993d071abffed6fc0cc30b6c009f56",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0144-arm64-dts-qcom-ipq6018-Flatten-usb-controller-nodes.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq6018-cp01-c1.dts",
+      "arch/arm64/boot/dts/qcom/ipq6018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 4697
+  },
+  {
+    "name": "0145-arm64-dts-qcom-ipq6018-add-uniphy-clocks-to-gcc.patch",
+    "sha256": "ff5ec2d4c5a0f2ff6b4c4f9bcda407e6237e3368a5a40bad004e6ff86503c520",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0145-arm64-dts-qcom-ipq6018-add-uniphy-clocks-to-gcc.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq6018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1405
+  },
+  {
+    "name": "0145-arm64-dts-qcom-ipq8074-move-DR-mode-to-board-DTS.patch",
+    "sha256": "6bfbe4ed8d3836af2e75fb6170c45c93ce87e740228a59351620a7158e0450b6",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0145-arm64-dts-qcom-ipq8074-move-DR-mode-to-board-DTS.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074-hk01.dts",
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1333
+  },
+  {
+    "name": "0146-arm64-dts-qcom-ipq8074-Flatten-usb-controller-nodes.patch",
+    "sha256": "4870051d9233a781e8d610243156b6c7b76dfe29dd022607d4f803e4fe7efcc9",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0146-arm64-dts-qcom-ipq8074-Flatten-usb-controller-nodes.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074-hk01.dts",
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 5429
+  },
+  {
+    "name": "0147-arm64-dts-qcom-ipq8074-add-uniphy-clocks-to-gcc.patch",
+    "sha256": "03f3e573200a9169f55611dabcbab48dfc60e9ad10bf1a840ebd0da7122d4238",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0147-arm64-dts-qcom-ipq8074-add-uniphy-clocks-to-gcc.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1641
+  },
+  {
+    "name": "0150-dt-bindings-phy-qcom-ipq5332-uniphy-pcie-Document-th.patch",
+    "sha256": "8ddc34a9af5123f4359ec14edd90a40d3eb02a3ca7f810f6fe39a64d6bd190ab",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0150-dt-bindings-phy-qcom-ipq5332-uniphy-pcie-Document-th.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/phy/qcom,ipq5332-uniphy-pcie-phy.yaml"
+    ],
+    "ipq5332_mentions": 6,
+    "bytes": 3151
+  },
+  {
+    "name": "0151-phy-qualcomm-qcom-uniphy-pcie-28lp-Convert-to-PCIe-U.patch",
+    "sha256": "80a764edf69c0b8501ab0fc26942704d671e651aa01701758a3b1ae8fd522ead",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0151-phy-qualcomm-qcom-uniphy-pcie-28lp-Convert-to-PCIe-U.patch",
+    "files_touched": [
+      "drivers/phy/qualcomm/Kconfig",
+      "drivers/phy/qualcomm/Makefile",
+      "drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c"
+    ],
+    "ipq5332_mentions": 17,
+    "bytes": 20598
+  },
+  {
+    "name": "0152-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Refactor-ini.patch",
+    "sha256": "8ff4d3b0958b550553c00631b9d32a0b618e99e87103b5163d0c8e812fe5f7f7",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0152-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Refactor-ini.patch",
+    "files_touched": [
+      "drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c"
+    ],
+    "ipq5332_mentions": 3,
+    "bytes": 4264
+  },
+  {
+    "name": "0153-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Use-bulk-res.patch",
+    "sha256": "5dd15d64f826b1f540506872ae81803338517688a1bf3d7a326e7fa0e5093ac7",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0153-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Use-bulk-res.patch",
+    "files_touched": [
+      "drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 3238
+  },
+  {
+    "name": "0154-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Improve-erro.patch",
+    "sha256": "53b79b91e00704ec07a2622bcf86270eb083f13f308cc97adc19a4eae635745c",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0154-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Improve-erro.patch",
+    "files_touched": [
+      "drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1701
+  },
+  {
+    "name": "0155-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Add-support-.patch",
+    "sha256": "0cd2e255faa78583ad9240c48c912fae274d8f1516a80bb6a9a7ced6c6501c86",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0155-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Add-support-.patch",
+    "files_touched": [
+      "drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c"
+    ],
+    "ipq5332_mentions": 8,
+    "bytes": 9387
+  },
+  {
+    "name": "0156-arm64-dts-qcom-ipq5018-Add-USB-Super-Speed-PHY-node.patch",
+    "sha256": "95209870aad2744d7c19be6c3d67992f73249c032dfa898442105ae4d04e1915",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0156-arm64-dts-qcom-ipq5018-Add-USB-Super-Speed-PHY-node.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1365
+  },
+  {
+    "name": "0157-dt-bindings-usb-qcom-snps-dwc3-Add-clocks-for-USB3-o.patch",
+    "sha256": "3427d79212049e9f40c29a8cf4cc68ebc40db091e967b540088d852c3da440d8",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0157-dt-bindings-usb-qcom-snps-dwc3-Add-clocks-for-USB3-o.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/usb/qcom,snps-dwc3.yaml"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1542
+  },
+  {
+    "name": "0158-arm64-dts-qcom-ipq5018-Add-clocks-required-for-USB3-.patch",
+    "sha256": "497ca8da1a1dcd906663af34cb880a50f5ed8cd52cf33886c8e6aa30737a64ba",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0158-arm64-dts-qcom-ipq5018-Add-clocks-required-for-USB3-.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1486
+  },
+  {
+    "name": "0159-arm64-dts-qcom-ipq5018-Add-Super-Speed-UNIPHY-to-USB.patch",
+    "sha256": "1d7ab55e5e1b7a00a1c063f146c9482ab7a56da19f774245ecb374819ed34a13",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0159-arm64-dts-qcom-ipq5018-Add-Super-Speed-UNIPHY-to-USB.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1042
+  },
+  {
+    "name": "0184-mailbox-tmelite-qmp-Introduce-TMEL-QMP-mailbox-driver.patch",
+    "sha256": "49e536d08a03e116e503f6304eb28d18bd84ca4d039109cb315a61193ed47a58",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0184-mailbox-tmelite-qmp-Introduce-TMEL-QMP-mailbox-driver.patch",
+    "files_touched": [
+      "drivers/mailbox/Kconfig",
+      "drivers/mailbox/Makefile",
+      "drivers/mailbox/qcom-tmel-qmp.c",
+      "include/linux/mailbox/tmelcom-qmp.h"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 38567
+  },
+  {
+    "name": "0185-firmware-qcom_scm-ipq5332-add-support-to-pass-metadata-size.patch",
+    "sha256": "3a570bebd46e58d1edb5e211b576f92e8581eb4bfd45d00f418a2a6c9caf551f",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0185-firmware-qcom_scm-ipq5332-add-support-to-pass-metadata-size.patch",
+    "files_touched": [
+      "drivers/firmware/qcom/qcom_scm.c",
+      "drivers/firmware/qcom/qcom_scm.h"
+    ],
+    "ipq5332_mentions": 2,
+    "bytes": 2395
+  },
+  {
+    "name": "0186-dt-bindings-remoteproc-qcom-document-hexagon-based-wcss-secure-pil.patch",
+    "sha256": "24eac663bdb25fff94eedda4ba2594aa45f7eafad85d0e224caf1719f182babb",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0186-dt-bindings-remoteproc-qcom-document-hexagon-based-wcss-secure-pil.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/remoteproc/qcom,wcss-sec-pil.yaml"
+    ],
+    "ipq5332_mentions": 2,
+    "bytes": 4696
+  },
+  {
+    "name": "0188-remoteproc-qcom-add-hexagon-based-wcss-secure-pil-driver.patch",
+    "sha256": "4193c40903cd510ba7e3af9cda0963038a2b811903b351871bc102910e7bb1aa",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0188-remoteproc-qcom-add-hexagon-based-wcss-secure-pil-driver.patch",
+    "files_touched": [
+      "drivers/remoteproc/Kconfig",
+      "drivers/remoteproc/Makefile",
+      "drivers/remoteproc/qcom_q6v5_wcss_sec.c",
+      "include/linux/remoteproc.h"
+    ],
+    "ipq5332_mentions": 5,
+    "bytes": 14453
+  },
+  {
+    "name": "0189-arm64-dts-qcom-ipq5018-add-nodes-to-bringup-q6.patch",
+    "sha256": "c00cbb52bfc4d24017c0052ba5c3adf049037f9de60acb35faa41749277a7010",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0189-arm64-dts-qcom-ipq5018-add-nodes-to-bringup-q6.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2702
+  },
+  {
+    "name": "0305-pinctrl-qcom-IPQ5018-update-pwm-groups.patch",
+    "sha256": "05af2ada638ffeb745dc2f696a9842abdeec08c64663a5045de9fb8e9d6bea16",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0305-pinctrl-qcom-IPQ5018-update-pwm-groups.patch",
+    "files_touched": [
+      "drivers/pinctrl/qcom/pinctrl-ipq5018.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2929
+  },
+  {
+    "name": "0400-mtd-rawnand-add-support-for-TH58NYG3S0HBAI4.patch",
+    "sha256": "152953e1d1f53a96b5ad2b0eef6bb389f0620a2edbfd49a36dbd68d3c4d4edd6",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0400-mtd-rawnand-add-support-for-TH58NYG3S0HBAI4.patch",
+    "files_touched": [
+      "drivers/mtd/nand/raw/nand_ids.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2031
+  },
+  {
+    "name": "0401-spi-spi-qpic-snand-default-to-4-bit-ECC.patch",
+    "sha256": "def409dbbc5c23972edb46c09e649784c56258cf6dca9b9eff8c5c21f9deb605",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0401-spi-spi-qpic-snand-default-to-4-bit-ECC.patch",
+    "files_touched": [
+      "drivers/spi/spi-qpic-snand.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1589
+  },
+  {
+    "name": "0411-mtd-rawnand-qpic-only-support-max-4-bytes-ID.patch",
+    "sha256": "13ad6f29298ea8292e0f998d52836f639fd76c8d6495449ecd43302b7c7914f3",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0411-mtd-rawnand-qpic-only-support-max-4-bytes-ID.patch",
+    "files_touched": [
+      "drivers/mtd/nand/raw/nand_base.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1002
+  },
+  {
+    "name": "0412-mtd-spinand-qpic-only-support-max-4-bytes-ID.patch",
+    "sha256": "7304be870d21b264d6a843b08a37343acc7bf4cb70d718c72b8d96bac512fe4a",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0412-mtd-spinand-qpic-only-support-max-4-bytes-ID.patch",
+    "files_touched": [
+      "drivers/mtd/nand/spi/core.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 931
+  },
+  {
+    "name": "0715-arm64-dts-qcom-ipq5018-add-vendor-compatible-to-mdio-node.patch",
+    "sha256": "a6b208dd367a37055ce2c36148898d6aa7bbdb1d4058dc4c8e88f7442eda390a",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0715-arm64-dts-qcom-ipq5018-add-vendor-compatible-to-mdio-node.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 767
+  },
+  {
+    "name": "0721-clk-gcc-ipq5018-remove-the-unsupported-clk-combinati.patch",
+    "sha256": "83cab832ba2f444d86f219336120b5a4c40a474202858b151f7c67006e94df0e",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0721-clk-gcc-ipq5018-remove-the-unsupported-clk-combinati.patch",
+    "files_touched": [
+      "drivers/clk/qcom/gcc-ipq5018.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1274
+  },
+  {
+    "name": "0723-clk-qcom-gcc-ipq5018-fix-uniphy-soft-reset-issue.patch",
+    "sha256": "d391d364590c0b3f8e3888243072577c12cbdfa2850cc22b99ba665c4f7383d6",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0723-clk-qcom-gcc-ipq5018-fix-uniphy-soft-reset-issue.patch",
+    "files_touched": [
+      "drivers/clk/qcom/gcc-ipq5018.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1019
+  },
+  {
+    "name": "0801-dt-bindings-remoteproc-qcom-Add-support-for-multipd-model.patch",
+    "sha256": "03792cfe3d699e9372b4d5932f02ffe1370eec3cfca30577d7d7a519a8503858",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0801-dt-bindings-remoteproc-qcom-Add-support-for-multipd-model.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/remoteproc/qcom,multipd-pil.yaml"
+    ],
+    "ipq5332_mentions": 7,
+    "bytes": 6456
+  },
+  {
+    "name": "0803-firmware-qcom_scm-ipq5332-add-msa-lock-unlock-suppor.patch",
+    "sha256": "9561c19acc465c380733610a6975a404e5fc83bb883127250feca063bf62ac25",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0803-firmware-qcom_scm-ipq5332-add-msa-lock-unlock-suppor.patch",
+    "files_touched": [
+      "include/linux/firmware/qcom/qcom_scm.h",
+      "drivers/firmware/qcom/qcom_scm.c",
+      "drivers/firmware/qcom/qcom_scm.h"
+    ],
+    "ipq5332_mentions": 2,
+    "bytes": 3487
+  },
+  {
+    "name": "0804-remoteproc-qcom-q6v5-Add-multipd-interrupts-support.patch",
+    "sha256": "09b0dc32d7578b377bc9788fb1a7f0972f01a5d48019b3c02dd90879ea34f8a3",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0804-remoteproc-qcom-q6v5-Add-multipd-interrupts-support.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5.c",
+      "drivers/remoteproc/qcom_q6v5.h"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 4402
+  },
+  {
+    "name": "0805-remoteproc-qcom-Add-Hexagon-based-multipd-rproc-driv.patch",
+    "sha256": "248f3e8c6815bc41349f42f4d6502872208bcc23e51a7308fd97debb8edeec91",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0805-remoteproc-qcom-Add-Hexagon-based-multipd-rproc-driv.patch",
+    "files_touched": [
+      "drivers/remoteproc/Kconfig",
+      "drivers/remoteproc/Makefile",
+      "drivers/remoteproc/qcom_q6v5_mpd.c"
+    ],
+    "ipq5332_mentions": 4,
+    "bytes": 23609
+  },
+  {
+    "name": "0806-rproc-qcom_q6v5_mpd-split-q6_wcss-to-rootpd-and-user.patch",
+    "sha256": "c3c24fa92777bb486c3fc370cee1531e781caab4017df10fcbb3a72851f9fd2a",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0806-rproc-qcom_q6v5_mpd-split-q6_wcss-to-rootpd-and-user.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_mpd.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 9493
+  },
+  {
+    "name": "0807-remoteproc-qcom_q6v5_mpd-fix-incorrent-use-of-rproc-.patch",
+    "sha256": "f864607a314f43e224ddb10f62bb4a777569f38f956de72846d8521fed087fc6",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0807-remoteproc-qcom_q6v5_mpd-fix-incorrent-use-of-rproc-.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_mpd.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 7193
+  },
+  {
+    "name": "0808-remoteproc-qcom-wcss-sec-add-split-firmware-support.patch",
+    "sha256": "68d44f51a729e088f35abbe67f2941d2390778737515621167389d4ff5cdb0c1",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0808-remoteproc-qcom-wcss-sec-add-split-firmware-support.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_wcss_sec.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2996
+  },
+  {
+    "name": "0809-remoteproc-qcom-wcss-sec-enable-PRNG-clock.patch",
+    "sha256": "6d07437ad6360a7d3cf1af607e4a48b2b8fa2f5e5392fd62ada5fcaaae61ae6e",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0809-remoteproc-qcom-wcss-sec-enable-PRNG-clock.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_wcss_sec.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1403
+  },
+  {
+    "name": "0810-remoteproc-qcom-wcss-sec-add-ipq8074-compatible.patch",
+    "sha256": "89ce1597a708c46fff42d1fbdf7cbd4418bb3b685b5cf4fbe9df0c60ef2266b1",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0810-remoteproc-qcom-wcss-sec-add-ipq8074-compatible.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_wcss_sec.c"
+    ],
+    "ipq5332_mentions": 3,
+    "bytes": 1037
+  },
+  {
+    "name": "0811-firmware-qcom_scm-support-MPD.patch",
+    "sha256": "f10d30cff96cf8fc1c89fa0b46929d9306dedb388617cd1e76f5f1a0aee36f00",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0811-firmware-qcom_scm-support-MPD.patch",
+    "files_touched": [
+      "include/linux/firmware/qcom/qcom_scm.h",
+      "drivers/firmware/qcom/qcom_scm.c",
+      "drivers/firmware/qcom/qcom_scm.h"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 3983
+  },
+  {
+    "name": "0811-remoteproc-qcom-wcss-sec-enable-qdss-clock.patch",
+    "sha256": "a65316b2d3a307ed1ad54f89d81be38d9a7d4cc25c727cc42d9fa24378faa13d",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0811-remoteproc-qcom-wcss-sec-enable-qdss-clock.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_wcss_sec.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1281
+  },
+  {
+    "name": "0812-remoteproc-qcom-wcss-sec-add-ipq6018-support.patch",
+    "sha256": "8a470ec2fbf4a31ef76894c3be331f8ebd309b078a68ce1351abea31ee5c7656",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0812-remoteproc-qcom-wcss-sec-add-ipq6018-support.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_wcss_sec.c"
+    ],
+    "ipq5332_mentions": 3,
+    "bytes": 1552
+  },
+  {
+    "name": "0812-soc-qcom-mdt_loader-support-MPD.patch",
+    "sha256": "6931021505ad026abc0ea3d9a47a5486a84d931586f59c019294e1465115ca15",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0812-soc-qcom-mdt_loader-support-MPD.patch",
+    "files_touched": [
+      "drivers/soc/qcom/mdt_loader.c",
+      "include/linux/soc/qcom/mdt_loader.h"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 6699
+  },
+  {
+    "name": "0813-remoteproc-qcom_q6v5_mpd-enable-clocks.patch",
+    "sha256": "def97411a44325f73296f57bf96d55d7cd377014d077efc0c53359ed6fa1221a",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0813-remoteproc-qcom_q6v5_mpd-enable-clocks.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_mpd.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1202
+  },
+  {
+    "name": "0814-remoteproc-qcom_q6v5_mpd-support-ipq5018.patch",
+    "sha256": "64d8cf7dbf1863485e053e9c1d8cefe61f091b5eb2a77754cb76edb6389763d4",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0814-remoteproc-qcom_q6v5_mpd-support-ipq5018.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_mpd.c"
+    ],
+    "ipq5332_mentions": 3,
+    "bytes": 3382
+  },
+  {
+    "name": "0815-remoteproc-qcom_q6v5_mpd-add-support-for-passing-v1-bootargs.patch",
+    "sha256": "238c74dfb214605ff0d1fa8a2dc14aa702c54a0c7f031114641ac10f14d7b8ea",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0815-remoteproc-qcom_q6v5_mpd-add-support-for-passing-v1-bootargs.patch",
+    "files_touched": [
+      "drivers/remoteproc/qcom_q6v5_mpd.c"
+    ],
+    "ipq5332_mentions": 1,
+    "bytes": 4840
+  },
+  {
+    "name": "0816-arm64-dts-qcom-ipq5018-add-wifi-support.patch",
+    "sha256": "16105c1380d7eff6ba8154d891f23f1ad778e1e7ff098f1de797fd2ff3a04fa7",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0816-arm64-dts-qcom-ipq5018-add-wifi-support.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 4972
+  },
+  {
+    "name": "0817-arm64-dts-qcom-ipq5018-add-tz_apps-reserved-memory-region.patch",
+    "sha256": "b2a0ce79dc83bffc5de2d03d96ea52456bb89f080eaa2d4b51bbd1106717b1cf",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0817-arm64-dts-qcom-ipq5018-add-tz_apps-reserved-memory-region.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 596
+  },
+  {
+    "name": "0820-dt-bindings-net-wireless-ath11k-add-bindings-for-QCN6122.patch",
+    "sha256": "f9252a5b3b3aa401cee0e3e4c2e60bdbb9ed658ebedd65891d0fab9b08b114ca",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0820-dt-bindings-net-wireless-ath11k-add-bindings-for-QCN6122.patch",
+    "files_touched": [
+      "Documentation/devicetree/bindings/net/wireless/qcom,ath11k.yaml"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2421
+  },
+  {
+    "name": "0842-arm64-dts-qcom-ipq5018-add-uniphy-node.patch",
+    "sha256": "fc89d546df79fdad6baf5a9f11a902748acdaca427861cf6d34e246830ce3338",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0842-arm64-dts-qcom-ipq5018-add-uniphy-node.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1430
+  },
+  {
+    "name": "0900-power-Add-Qualcomm-APM.patch",
+    "sha256": "c13c826eee53163a7e70143e1434d04662dc48789bd0b43a0f39b43d5095d421",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0900-power-Add-Qualcomm-APM.patch",
+    "files_touched": [
+      "drivers/power/Kconfig",
+      "drivers/power/Makefile",
+      "drivers/power/qcom/Kconfig",
+      "drivers/power/qcom/Makefile",
+      "drivers/power/qcom/apm.c",
+      "include/linux/power/qcom/apm.h"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 29141
+  },
+  {
+    "name": "0901-regulator-add-Qualcomm-CPR-regulators.patch",
+    "sha256": "1d0d95871c9d829a51df7b82f462ba94c0971e305dbfba7f5a90b7db75612fe7",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0901-regulator-add-Qualcomm-CPR-regulators.patch",
+    "files_touched": [
+      "drivers/regulator/Kconfig",
+      "drivers/regulator/Makefile",
+      "drivers/regulator/cpr3-npu-regulator.c",
+      "drivers/regulator/cpr3-regulator.c",
+      "drivers/regulator/cpr3-regulator.h",
+      "drivers/regulator/cpr3-util.c",
+      "drivers/regulator/cpr4-apss-regulator.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 367621
+  },
+  {
+    "name": "0902-arm64-dts-ipq8074-add-label-to-clocks.patch",
+    "sha256": "2786fbf72d57684ffcae282292f2cab3bc63f2e3958b7cda945a9d03f7612845",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0902-arm64-dts-ipq8074-add-label-to-clocks.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq8074.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 753
+  },
+  {
+    "name": "0903-psci-dont-advertise-OSI-support-for-IPQ6018.patch",
+    "sha256": "5ab41726fd01e0db4f48e44deeacb7487c0e293382e6b045922cc02e42fc751f",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0903-psci-dont-advertise-OSI-support-for-IPQ6018.patch",
+    "files_touched": [
+      "drivers/firmware/psci/psci.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1357
+  },
+  {
+    "name": "0905-arm64-dts-qcom-ipq6018-use-secure-WCSS-remoteproc.patch",
+    "sha256": "855a649b4a3c73d722f6eebdd44c3c8a58b17a972ada8b45a097636f65b00a76",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0905-arm64-dts-qcom-ipq6018-use-secure-WCSS-remoteproc.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq6018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 2076
+  },
+  {
+    "name": "0906-arm64-dts-qcom-ipq6018-add-wifi-node.patch",
+    "sha256": "6bc178676b79419db606e7c6a06233386fedede94a993f480705867a03f8563b",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0906-arm64-dts-qcom-ipq6018-add-wifi-node.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq6018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 4859
+  },
+  {
+    "name": "0907-soc-qcom-fix-smp2p-ack-on-ipq6018.patch",
+    "sha256": "c007c0d3a393bbd703680d0f3b4868bfd04fab2bf6732c42a7d20dfdd2b6d6bd",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0907-soc-qcom-fix-smp2p-ack-on-ipq6018.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq6018.dtsi",
+      "drivers/soc/qcom/smp2p.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1628
+  },
+  {
+    "name": "0911-arm64-cmdline-replacement.patch",
+    "sha256": "56d72e9b8aa19c89e9c9141279b3986e93a1018f1cffc96da9f9cc01f11a85f2",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0911-arm64-cmdline-replacement.patch",
+    "files_touched": [
+      "drivers/of/fdt.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 3161
+  },
+  {
+    "name": "0912-arm64-dts-qcom-ipq5018-remove-cpufreq-scaling.patch",
+    "sha256": "8c88ea05d2512d68a7d2b8b4c36fa66cbb2aebf965f4f6a23a8cdeffbbe3e7bd",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0912-arm64-dts-qcom-ipq5018-remove-cpufreq-scaling.patch",
+    "files_touched": [
+      "arch/arm64/boot/dts/qcom/ipq5018.dtsi"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 869
+  },
+  {
+    "name": "0917-clk-qcom-gcc-ipq6018-mark-gcc_xo_clk_src-as-critical.patch",
+    "sha256": "102363263dcdf93bbdea5c71a39683551a6cc7ebc150c22f9d7f9a658c70132e",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0917-clk-qcom-gcc-ipq6018-mark-gcc_xo_clk_src-as-critical.patch",
+    "files_touched": [
+      "drivers/clk/qcom/gcc-ipq6018.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 929
+  },
+  {
+    "name": "0920-clk-add-clk_hw_recalc_rate-to-trigger-HW-clk-rate-re.patch",
+    "sha256": "f82fba083970bf19d384bd314c9fd658feca8ce8e9b41593c843a162ad5ac6e8",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0920-clk-add-clk_hw_recalc_rate-to-trigger-HW-clk-rate-re.patch",
+    "files_touched": [
+      "drivers/clk/clk.c",
+      "include/linux/clk-provider.h"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 3954
+  },
+  {
+    "name": "0950-net-dsa-add-out-of-band-tagging-protocol.patch",
+    "sha256": "71fdfb23a7e0d2b3929f910b0d9e753411962dce1aa8c82112bddebe09218d8f",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0950-net-dsa-add-out-of-band-tagging-protocol.patch",
+    "files_touched": [
+      "Documentation/networking/dsa/dsa.rst",
+      "include/linux/dsa/oob.h",
+      "include/linux/skbuff.h",
+      "include/net/dsa.h",
+      "net/core/skbuff.c",
+      "net/dsa/Kconfig",
+      "net/dsa/Makefile",
+      "net/dsa/tag_oob.c"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 7632
+  },
+  {
+    "name": "0951-net-pcs-Enable-for-QCA-UNIPHY-PCS-driver.patch",
+    "sha256": "615533073c4cd00860b4e85eb4191eb67f08865a1aafd7b7129f5ba441768b5a",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0951-net-pcs-Enable-for-QCA-UNIPHY-PCS-driver.patch",
+    "files_touched": [
+      "drivers/net/pcs/Kconfig",
+      "drivers/net/pcs/Makefile"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1330
+  },
+  {
+    "name": "0952-net-ethernet-qca-add-ppe.patch",
+    "sha256": "a9006ddd019016276aebd5bb1c5f17a014fe225b3a2d1db1df45b6c130826929",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0952-net-ethernet-qca-add-ppe.patch",
+    "files_touched": [
+      "drivers/net/ethernet/qualcomm/Kconfig",
+      "drivers/net/ethernet/qualcomm/Makefile"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 873
+  },
+  {
+    "name": "0953-net-ethernet-qca-add-EDMA.patch",
+    "sha256": "c70073f251ab1fa29bc829de38a1880794ceb93f482824117a50dfe0865ea9e5",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0953-net-ethernet-qca-add-EDMA.patch",
+    "files_touched": [
+      "drivers/net/ethernet/qualcomm/Kconfig",
+      "drivers/net/ethernet/qualcomm/Makefile"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 780
+  },
+  {
+    "name": "0954-net-stmmac-Introduce-Qualcomm-IPQ5018-DWMAC-driver.patch",
+    "sha256": "11e8ee49423c12f15a1c88427000ed3e1726c331c8c5cc67fed84bed23105cdc",
+    "source_url": "https://raw.githubusercontent.com/immortalwrt/immortalwrt/5233c153ef7f119c567b54a92feea6919b167e84/target/linux/qualcommax/patches-6.18/0954-net-stmmac-Introduce-Qualcomm-IPQ5018-DWMAC-driver.patch",
+    "files_touched": [
+      "drivers/net/ethernet/stmicro/stmmac/Kconfig",
+      "drivers/net/ethernet/stmicro/stmmac/Makefile"
+    ],
+    "ipq5332_mentions": 0,
+    "bytes": 1078
+  }
+]

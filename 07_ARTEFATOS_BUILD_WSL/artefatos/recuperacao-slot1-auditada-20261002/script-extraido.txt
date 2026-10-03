@@ -1,0 +1,18 @@
+echo ========================================================
+echo RESTAURANDO TUDO DE FABRICA PARA SLOT 1 (ACER 100% ORIGINAL)
+echo ========================================================
+setenv fsbootargs
+setenv bootargs console=ttyMSM0,115200n8
+setenv bootcmd bootipq
+saveenv
+imxtract 0x44000000 bootconfig 0x45000000
+mw.b 0x4500006c 0x01
+nand device 0
+nand erase 0x400000 0x80000
+nand write 0x45000000 0x400000 0x80000
+nand erase 0x480000 0x80000
+nand write 0x45000000 0x480000 0x80000
+echo ========================================================
+echo REINICIANDO AGORA NO FIRMWARE ORIGINAL DA ACER...
+echo ========================================================
+reset

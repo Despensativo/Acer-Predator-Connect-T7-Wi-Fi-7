@@ -1,0 +1,59 @@
+From 7cd94582e0bc16ee8580fcbdfb18ebd4125e4743 Mon Sep 17 00:00:00 2001
+From: Praveenkumar I <quic_ipkumar@quicinc.com>
+Date: Mon, 03 Aug 2026 18:38:28 +0400
+Subject: [PATCH v2 07/17] dt-bindings: usb: qcom,snps-dwc3: Add clocks for USB3 on Qualcomm IPQ5332
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260803-ipq5018-usb3-v2-7-3a4136712b20@outlook.com>
+
+Add aux and lfps clocks in Qualcomm IPQ5332. These clocks are required
+only for USB Super-Speed support.
+
+Signed-off-by: Praveenkumar I <quic_ipkumar@quicinc.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ .../devicetree/bindings/usb/qcom,snps-dwc3.yaml      | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/usb/qcom,snps-dwc3.yaml b/Documentation/devicetree/bindings/usb/qcom,snps-dwc3.yaml
+index ea60f7220afe..ce36109f5df7 100644
+--- a/Documentation/devicetree/bindings/usb/qcom,snps-dwc3.yaml
++++ b/Documentation/devicetree/bindings/usb/qcom,snps-dwc3.yaml
+@@ -173,7 +173,6 @@ allOf:
+           contains:
+             enum:
+               - qcom,ipq4019-dwc3
+-              - qcom,ipq5332-dwc3
+     then:
+       properties:
+         clocks:
+@@ -185,6 +184,25 @@ allOf:
+             - const: sleep
+             - const: mock_utmi
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - qcom,ipq5332-dwc3
++    then:
++      properties:
++        clocks:
++          minItems: 5
++          maxItems: 5
++        clock-names:
++          items:
++            - const: core
++            - const: sleep
++            - const: mock_utmi
++            - const: aux
++            - const: lfps
++
+   - if:
+       properties:
+         compatible:
+
+-- 
+2.53.0

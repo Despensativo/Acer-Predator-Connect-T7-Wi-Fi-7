@@ -1,0 +1,655 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload TCP using the
+ parser's control-flag exceptions
+
+No TCP flow has ever been hardware-offloaded by this driver.
+nf_flow_rule_match() builds every TCP flow with tcp.flags = 0 masked to
+FIN|RST -- it is asking the driver to accelerate only segments with those
+flags clear, so conntrack still observes the connection close. A PPE flow
+entry matches on the 5-tuple alone and cannot express that, so
+ppe_offload_flow_replace() declined any flow carrying the mask. Since the
+mask is present on *every* TCP flow, that declined all of them, leaving
+only UDP accelerated. It was invisible because the decline is pr_debug and
+this target builds with CONFIG_DYNAMIC_DEBUG unset.
+
+Simply accepting the flow is not an option. NF_FLOW_CLOSING is only ever
+set on the software forwarding path (nf_flow_table_ip.c), so an offloaded
+flow never sets it and flow_offload_fixup_ct() falls through to
+timeouts[ESTABLISHED] instead of timeouts[CLOSE] -- 7440s rather than 10s
+on a stock OpenWrt. Every closed-but-offloaded connection would sit in
+conntrack for two hours; at nf_conntrack_max = 55808 a sustained 7.5
+offloaded connections/second exhausts the table.
+
+Hardware has the right mechanism, and the vendor driver uses it. The
+ingress parser holds eight TCP flag value/mask slots, each raising its own
+exception; L3_EXCEPTION_CMD gives an exception its action and
+L3_EXP_L3_FLOW_CTRL enables it for packets that hit an L3 flow entry.
+qca-nss-ppe programs FIN, SYN and RST as redirect-to-CPU with
+de-acceleration, and mtk_ppe / airoha_ppe do the equivalent with their own
+TCP-FIN ageing. Program the same three here and accept TCP flows whose
+mask asks for nothing outside them.
+
+The registers are taken from the APPE branch of the vendor headers, as
+IPQ5332 is an APPE/MPPE part (see patch 0434):
+
+  L4_EXCEPTION_PARSING_CTRL_0..3  IPR_CSR  0x1e0000 + 0x28/0x2c/0x30/0x34
+  L3_EXCEPTION_CMD                IPE_L3   0x200000 + 0x81c, 72 entries
+  L3_FLOW_HIT_EXP_CTRL            IPE_L3   0x200000 + 0x1678, 72 entries
+
+Note the enable is L3_FLOW_HIT_EXP_CTRL, not the L3_EXP_L3_FLOW_CTRL that
+the register name suggests: on APPE the SDK splits the generic "any L3
+flow" enable into hit and miss registers and clears the generic one
+whenever it uses them. Scoping to a flow hit also confines this change to
+traffic the driver already offloads -- a FIN on a connection nobody
+offloaded raises no exception and takes the ordinary software path.
+
+Because picking the wrong branch is silent -- which is exactly what 0434
+had to undo -- the init path reads a slot back and refuses to offload TCP
+if it does not hold what was just written. That failure is not fatal: UDP
+offload does not depend on these exceptions, so TCP simply keeps being
+declined rather than being accelerated unsafely.
+
+That guard earned itself on the first hardware boot: ppe_offload_init()
+runs before ppe_clock_init_and_reset() and ppe_hw_config(), so register
+writes from it land on a block that is still unclocked and in reset. The
+readback returned 0x3 instead of the 0x0101 written. Hardware programming
+therefore moves to a separate ppe_offload_hw_init() called after
+ppe_hw_config(); until it runs tcp_exceptions_ok is false, and no traffic
+can reach the offload path before edma_setup() brings the netdevs up.
+
+Measured on a GL-BE9300 with a 1 Gbit LAN client: a TCP flow reaches
+[HW_OFFLOAD] and runs at 937 Mbit/s with the CPU 96% idle; on close it
+enters CLOSE with the 10s timeout and is gone in ~12s instead of being
+held as ESTABLISHED; and 80 short connections in a row leave no residue
+(conntrack settles to 20 entries from a 96 baseline, with none of the
+test's own 5-tuples left).
+
+The readback covers every field on every slot -- parser value and mask,
+the action word, and both the flow-hit and flow-miss enables -- because
+checking one is not enough: the whole parser window is writable, so a
+wrong-branch address would read back whatever was written to it and pass.
+The action word matters most: a slot that raises its exception while the
+action sits at its reset value (FORWARD) would accelerate the teardown
+anyway, reintroducing the bug while looking fully configured.
+
+Also make the decline diagnostic pr_info_once per call site rather than
+ratelimited, so each distinct reason announces itself once per boot and is
+then silent. Declining is the normal case here -- the reply direction of
+every NAT connection and every IPv6 flow -- and flow_offload_refresh()
+retries roughly once a second per live flow, so a ratelimited print would
+sit at its ceiling permanently. Gate TCP on the protocol rather than on
+the presence of the TCP dissector key, so a hand-written tc filter cannot
+reach hardware with the exceptions unprogrammed. Document the shared
+ingress-L3-interface limitation (the flow key cannot distinguish two
+firewall zones sharing an EDMA conduit) and record that the exceptions
+become the sole teardown mechanism once the reply direction is offloaded.
+Finally correct the ppe_flow_ipv4.h comment on @deacclr_en, which
+described it as a conditional TCP-flag mechanism. It is not: it applies to
+every packet matching the entry and its action is the global
+L3_ROUTE_CTRL.FLOW_DE_ACCE_CMD, which resets to redirect-to-CPU.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -252,6 +252,11 @@
+ 		return dev_err_probe(dev, ret, "PPE HW config failed\n");
+ 	}
+ 
++	/* Needs the PPE clocked and out of reset, so it cannot live in
++	 * ppe_offload_init() above.
++	 */
++	ppe_offload_hw_init(ppe_dev);
++
+ 	ret = edma_setup(ppe_dev);
+ 	if (ret) {
+ 		ppe_offload_destroy(ppe_dev);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -1392,4 +1392,83 @@
+ 
+ /* Word 5. */
+ #define PPE_FLOW_TBL_PMTU_1			GENMASK(2, 0)
++
++/* TCP-flag exception matchers, in the ingress parser block ("Ingress parse",
++ * 0x1e0000, in ppe_readable_ranges[]). Hardware compares each TCP segment's
++ * flags against eight independent value/mask slots; a hit raises its own
++ * exception, which L3_EXCEPTION_CMD below turns into an action. Eight slots
++ * are packed two per register across four consecutive registers.
++ *
++ * Vendor: IPR_CSR_BASE_ADDR (0x1e0000, the APPE branch -- see patch 0434) +
++ * L4_EXCEPTION_PARSING_CTRL_{0,1,2,3}_REG_ADDRESS (0x28, 0x2c, 0x30, 0x34).
++ */
++#define PPE_L4_EXCEPTION_PARSING_CTRL_ADDR	0x1e0028
++#define PPE_L4_EXCEPTION_PARSING_CTRL_INC	0x4
++#define PPE_L4_EXCEPTION_TCP_FLAG_SLOTS		8
++
++/* Even slot in the low half of its register, odd slot in the high half. */
++#define PPE_L4_EXCEPTION_TCP_FLAGS_EVEN		GENMASK(5, 0)
++#define PPE_L4_EXCEPTION_TCP_FLAGS_EVEN_MASK	GENMASK(13, 8)
++#define PPE_L4_EXCEPTION_TCP_FLAGS_ODD		GENMASK(21, 16)
++#define PPE_L4_EXCEPTION_TCP_FLAGS_ODD_MASK	GENMASK(29, 24)
++
++/* The six TCP control flags hardware matches on, in their on-the-wire order. */
++#define PPE_TCP_FLAG_FIN			BIT(0)
++#define PPE_TCP_FLAG_SYN			BIT(1)
++#define PPE_TCP_FLAG_RST			BIT(2)
++#define PPE_TCP_FLAG_PSH			BIT(3)
++#define PPE_TCP_FLAG_ACK			BIT(4)
++#define PPE_TCP_FLAG_URG			BIT(5)
++
++/* Per-exception action, and per-exception enable for packets that hit an L3
++ * flow entry. Both are 72-entry arrays indexed by exception code, in IPE_L3.
++ *
++ * Vendor: IPE_L3_BASE_ADDR (0x200000) + L3_EXCEPTION_CMD_ADDRESS (0x81c) and
++ * + L3_EXP_L3_FLOW_CTRL_ADDRESS (0xcdc), both the APPE branch.
++ */
++#define PPE_L3_EXCEPTION_CMD_ADDR		0x20081c
++#define PPE_L3_EXCEPTION_CMD_INC		0x4
++#define PPE_L3_EXCEPTION_ENTRIES		72
++#define PPE_L3_EXCEPTION_CMD_CMD		GENMASK(1, 0)
++#define PPE_L3_EXCEPTION_CMD_DE_ACCE		BIT(2)
++
++#define PPE_L3_EXP_L3_FLOW_CTRL_ADDR		0x200cdc
++#define PPE_L3_EXP_L3_FLOW_CTRL_INC		0x4
++#define PPE_L3_EXP_L3_FLOW_CTRL_EXCEP_EN	BIT(0)
++
++/* On APPE the "any L3 flow" enable above is superseded by a pair that splits
++ * flow hit from flow miss, and the SDK sets the generic one to 0 whenever it
++ * uses them (adpt_hppe_sec_l3_excep_ctrl_set(), "#if defined(APPE)" branch).
++ * Only the hit register is wanted here: an exception must fire for a packet
++ * that matched an offloaded flow, never for one that missed.
++ *
++ * Vendor: IPE_L3_BASE_ADDR (0x200000) + L3_FLOW_HIT_EXP_CTRL_ADDRESS (0x1678).
++ */
++#define PPE_L3_FLOW_HIT_EXP_CTRL_ADDR		0x201678
++#define PPE_L3_FLOW_HIT_EXP_CTRL_INC		0x4
++#define PPE_L3_FLOW_HIT_EXP_CTRL_EXCEP_EN	BIT(0)
++
++/* The flow-MISS half of that APPE split. Wanted off: an exception must fire for
++ * a packet that matched an offloaded flow, never for one that missed -- a miss
++ * goes to the CPU by the ordinary path anyway. Its reset default is documented
++ * as 0, but this driver programs the shared action register for the same
++ * exception codes, so leave nothing to assumption and clear it explicitly.
++ *
++ * Vendor: IPE_L3_BASE_ADDR (0x200000) + L3_FLOW_HIT_MISS_EXP_CTRL_ADDRESS (0x17a8).
++ */
++#define PPE_L3_FLOW_HIT_MISS_EXP_CTRL_ADDR	0x2017a8
++#define PPE_L3_FLOW_HIT_MISS_EXP_CTRL_INC	0x4
++#define PPE_L3_FLOW_HIT_MISS_EXP_CTRL_EXCEP_EN	BIT(0)
++
++/* Action values for PPE_L3_EXCEPTION_CMD_CMD (vendor fal_fwd_cmd_t). */
++#define PPE_L3_EXCEPTION_FORWARD		0
++#define PPE_L3_EXCEPTION_DROP			1
++#define PPE_L3_EXCEPTION_COPY_TO_CPU		2
++#define PPE_L3_EXCEPTION_REDIRECT_TO_CPU	3
++
++/* Exception code of the first TCP-flag slot (vendor FAL_SEC_EXP_TCP_FLAGS_0);
++ * slot n is at PPE_L3_EXCEPTION_TCP_FLAGS_0 + n.
++ */
++#define PPE_L3_EXCEPTION_TCP_FLAGS_0		46
++
+ #endif
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.h
+@@ -12,6 +12,7 @@
+ enum tc_setup_type;
+ 
+ int ppe_offload_init(struct ppe_device *ppe_dev);
++void ppe_offload_hw_init(struct ppe_device *ppe_dev);
+ void ppe_offload_destroy(struct ppe_device *ppe_dev);
+ 
+ int ppe_offload_setup_tc(struct net_device *netdev, enum tc_setup_type type,
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -51,6 +51,36 @@
+  *   which is what stops the flowtable ageing out a connection that
+  *   hardware is still forwarding.
+  *
++ * - TCP is accepted only because the parser's control-flag exceptions
++ *   (FIN/SYN/RST -> redirect to CPU + de-accelerate, armed on an L3
++ *   flow hit) are programmed and read back at init; see
++ *   ppe_offload_tcp_exception_init(). Without them the flowtable's
++ *   FIN|RST mask cannot be honoured and a teardown would be
++ *   accelerated, leaving conntrack holding closed connections at
++ *   timeouts[ESTABLISHED] instead of timeouts[CLOSE].
++ *
++ *   NOTE for whoever implements reply-direction offload: today a
++ *   remote peer's FIN/RST always traverses the software path anyway,
++ *   because the reply direction is declined, and that is what sets
++ *   NF_FLOW_CLOSING. The exceptions are therefore currently a second
++ *   line of defence for the LAN-initiated case (an RST abort draws no
++ *   reply). Once the reply direction IS offloaded they become the only
++ *   mechanism -- do not weaken them in that milestone.
++ *
++ * - SECURITY LIMITATION: a flow entry is keyed on the 5-tuple plus an
++ *   ingress L3 interface, and nothing finer. ppe_offload_ingress_edma_dev()
++ *   resolves a VLAN upper and a DSA user port down to the conduit, so
++ *   every DSA port and every VLAN on that conduit collapse into one
++ *   src_l3_if -- whereas the software flowtable key it stands in for
++ *   carries the exact iifidx. Where two firewall zones share a conduit
++ *   (this board runs a trusted and a guest VLAN over the same one), a
++ *   host in the weaker zone can source-spoof a victim's offloaded
++ *   5-tuple and have silicon forward and translate its packets with no
++ *   software inspection -- no rp_filter, no interface-scoped rule. The
++ *   hardware offers no finer qualifier, so this is a property of
++ *   enabling the flowtable across such a boundary, not something this
++ *   driver can validate away.
++ *
+  * Hardware itself may also not consult the flow table at all yet for
+  * genuinely external ingress traffic -- ppe_servcode_init() bypasses
+  * flow lookup (PPE_SC_BYPASS_INGRESS_FLOW_LOOKUP) only for service
+@@ -72,6 +102,7 @@
+ #include <linux/list.h>
+ #include <linux/mutex.h>
+ #include <linux/netdevice.h>
++#include <linux/regmap.h>
+ #include <net/dsa.h>
+ #include <linux/rhashtable.h>
+ #include <linux/slab.h>
+@@ -152,6 +183,11 @@
+  * and ppe_offload_flow_replace()/_destroy() for how it's used to stop
+  * a superseded entry's later destroy from deleting a different, live
+  * flow's hardware entry.
++ * @tcp_exceptions_ok: Whether the TCP control-flag exceptions were programmed
++ * and read back correctly at init. TCP flows are only offloaded when they
++ * were: without them hardware would accelerate a FIN/RST teardown that the
++ * flowtable explicitly asked us not to -- see
++ * ppe_offload_tcp_exception_init().
+  * @lock: Serializes the whole replace/destroy sequence -- looking up
+  * @flow_table, allocating from the pools, and programming hardware --
+  * against concurrent calls for different flows, mirroring
+@@ -164,6 +200,7 @@
+ 	struct ppe_pub_ip_pool pub_ip_pool;
+ 	struct rhashtable flow_table;
+ 	struct ppe_offload_flow_entry **flow_owner;
++	bool tcp_exceptions_ok;
+ 	struct mutex lock;
+ };
+ 
+@@ -239,12 +276,27 @@
+ 	return 0;
+ }
+ 
+-/* Diagnostic: logs exactly which check declined a flow. pr_debug so an
+- * unauthenticated client cannot flood the log by generating unoffloadable
+- * flows; enable with dynamic debug when investigating a silent decline.
++/* Diagnostic: logs exactly which check declined a flow, once per reason.
++ *
++ * This target builds with CONFIG_DYNAMIC_DEBUG unset, so a plain pr_debug
++ * compiles to nothing and leaves "offload silently does not happen"
++ * indistinguishable from "offload is not enabled" -- that cost a full
++ * hardware-test cycle to diagnose. But a ratelimited print is far too loud
++ * here: declining is the NORMAL case on this board (the reply direction of
++ * every NAT connection is declined, as is every IPv6 flow), and
++ * flow_offload_refresh() retries an unoffloaded flow about once a second for
++ * as long as it lives. A handful of ordinary connections would sit at the
++ * ratelimit ceiling forever and push everything else out of the ring buffer.
++ *
++ * pr_info_once expands a separate static flag per call site, so each distinct
++ * reason announces itself exactly once per boot and is then silent -- the
++ * diagnostic signal without the steady-state noise. The pr_debug keeps the
++ * per-occurrence detail available to anyone who does build with dynamic debug.
+  */
+ #define ppe_offload_decline(fmt, ...) \
+-	({ pr_debug("ppe_offload: declined - " fmt "\n", ##__VA_ARGS__); -EOPNOTSUPP; })
++	({ pr_info_once("ppe_offload: declined - " fmt " (further declines for this reason are silent)\n", \
++			 ##__VA_ARGS__); \
++	   pr_debug("ppe_offload: declined - " fmt "\n", ##__VA_ARGS__); -EOPNOTSUPP; })
+ 
+ /* Resolve the device a flow's packets arrive on down to the EDMA port
+  * whose ingress L3 interface hardware will match against, mirroring
+@@ -341,6 +393,15 @@
+ 		flow_rule_match_basic(rule, &basic);
+ 		switch (basic.key->ip_proto) {
+ 		case IPPROTO_TCP:
++			/* Fail closed. Keyed on the protocol, not on the presence of
++			 * FLOW_DISSECTOR_KEY_TCP or a non-zero flag mask: the
++			 * flowtable always supplies both, but a hand-written tc
++			 * flower filter on this same block need not, and such a rule
++			 * must not slip past into hardware while the control-flag
++			 * exceptions are unprogrammed.
++			 */
++			if (!priv->tcp_exceptions_ok)
++				return ppe_offload_decline("tcp offload disabled: control-flag exceptions unavailable");
+ 			ip_proto = PPE_FLOW_PROTO_TCP;
+ 			break;
+ 		case IPPROTO_UDP:
+@@ -371,17 +432,39 @@
+ 	 */
+ 	/* nf_flow_rule_match() builds TCP flows with tcp.flags = 0 masked to
+ 	 * RST|FIN, precisely so that a teardown is NOT accelerated and conntrack
+-	 * still observes it. We program no TCP-flag exception, so an entry would
+-	 * match a superset of the software rule and swallow FIN/RST. Decline
+-	 * instead of silently accelerating more than we were asked to.
++	 * still observes it. A flow entry matches on the 5-tuple alone, so that
++	 * condition is carried by the parser-level TCP-flag exceptions programmed
++	 * in ppe_offload_tcp_exception_init(): a FIN, SYN or RST segment is
++	 * redirected to the CPU and de-accelerates the flow.
++	 *
++	 * netfilter expresses the mask in the same bit order hardware uses (the
++	 * low byte of the TCP flags word), so the vendor PPE_TCP_FLAG_* values
++	 * are directly comparable against it.
+ 	 */
+ 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_TCP)) {
++		u16 covered = PPE_TCP_FLAG_FIN | PPE_TCP_FLAG_SYN | PPE_TCP_FLAG_RST;
+ 		struct flow_match_tcp tcp;
++		u16 flag_mask, flag_key;
+ 
+ 		flow_rule_match_tcp(rule, &tcp);
+-		if (tcp.mask->flags)
++		flag_mask = be16_to_cpu(tcp.mask->flags);
++		flag_key = be16_to_cpu(tcp.key->flags);
++
++		/* Anything outside the flags we punt to the CPU would be a
++		 * condition the hardware entry silently ignores.
++		 */
++		if (flag_mask & ~covered)
+ 			return ppe_offload_decline("tcp flag mask %#x not honoured",
+-						    be16_to_cpu(tcp.mask->flags));
++						    flag_mask);
++
++		/* The exceptions can only EXCLUDE a flagged segment from
++		 * acceleration. A rule wanting to match packets that HAVE one
++		 * of these flags set is the opposite, and unimplementable here.
++		 */
++		if (flag_key & flag_mask)
++			return ppe_offload_decline("tcp flag key %#x/%#x not honoured",
++						    flag_key, flag_mask);
++
+ 	}
+ 
+ 	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META))
+@@ -1018,6 +1101,244 @@
+ 	}
+ }
+ 
++/* TCP control flags that must never be accelerated.
++ *
++ * nf_flow_rule_match() builds every TCP flow with tcp.flags = 0 masked to
++ * FIN|RST: the flowtable is asking us to accelerate only segments with those
++ * flags clear, so that conntrack still sees the connection close. A PPE flow
++ * entry matches on the 5-tuple alone and cannot express a flag condition, so
++ * the parser-level exceptions programmed below carry it instead -- a segment
++ * carrying one of these flags is redirected to the CPU and de-accelerates its
++ * flow, leaving the software path to finish the teardown.
++ *
++ * SYN is included, beyond what the mask asks for, because it is how a new
++ * connection reusing a still-live 5-tuple announces itself; the software fast
++ * path makes the same check (nf_flow_table_ip.c keys TCP reopen off tcph->syn).
++ * Without it hardware would forward the new connection under the old entry's
++ * translation. The vendor driver programs exactly these three.
++ */
++static const u8 ppe_offload_tcp_exception_flags[] = {
++	PPE_TCP_FLAG_FIN,
++	PPE_TCP_FLAG_SYN,
++	PPE_TCP_FLAG_RST,
++};
++
++/* Point one parser slot at @flags. Value and mask are set to the same bits, so
++ * hardware hits when those flags are set and ignores the others -- FIN,ACK, the
++ * ordinary way a peer closes, still matches the FIN slot.
++ */
++static int ppe_offload_tcp_exception_slot(struct ppe_device *ppe_dev,
++					   unsigned int slot, u8 flags)
++{
++	u32 addr, mask, val;
++
++	addr = PPE_L4_EXCEPTION_PARSING_CTRL_ADDR +
++		(slot / 2) * PPE_L4_EXCEPTION_PARSING_CTRL_INC;
++
++	if (slot % 2) {
++		mask = PPE_L4_EXCEPTION_TCP_FLAGS_ODD |
++			PPE_L4_EXCEPTION_TCP_FLAGS_ODD_MASK;
++		val = FIELD_PREP(PPE_L4_EXCEPTION_TCP_FLAGS_ODD, flags) |
++			FIELD_PREP(PPE_L4_EXCEPTION_TCP_FLAGS_ODD_MASK, flags);
++	} else {
++		mask = PPE_L4_EXCEPTION_TCP_FLAGS_EVEN |
++			PPE_L4_EXCEPTION_TCP_FLAGS_EVEN_MASK;
++		val = FIELD_PREP(PPE_L4_EXCEPTION_TCP_FLAGS_EVEN, flags) |
++			FIELD_PREP(PPE_L4_EXCEPTION_TCP_FLAGS_EVEN_MASK, flags);
++	}
++
++	return regmap_update_bits(ppe_dev->regmap, addr, mask, val);
++}
++
++/* Give a TCP-flag slot's exception its action: redirect the segment to the CPU
++ * and de-accelerate the flow, and enable the exception for packets that hit an
++ * L3 flow entry (without that, an accelerated flow would bypass it entirely).
++ *
++ * Scoping it to a flow *hit* is what keeps this change confined to traffic the
++ * driver already offloads -- a FIN on a connection nobody offloaded never
++ * raises the exception and takes the ordinary software path.
++ */
++static int ppe_offload_tcp_exception_action(struct ppe_device *ppe_dev,
++					     unsigned int slot)
++{
++	u32 index = PPE_L3_EXCEPTION_TCP_FLAGS_0 + slot;
++	int ret;
++
++	ret = regmap_update_bits(ppe_dev->regmap,
++				  PPE_L3_EXCEPTION_CMD_ADDR +
++				  index * PPE_L3_EXCEPTION_CMD_INC,
++				  PPE_L3_EXCEPTION_CMD_CMD | PPE_L3_EXCEPTION_CMD_DE_ACCE,
++				  FIELD_PREP(PPE_L3_EXCEPTION_CMD_CMD,
++					      PPE_L3_EXCEPTION_REDIRECT_TO_CPU) |
++				  PPE_L3_EXCEPTION_CMD_DE_ACCE);
++	if (ret)
++		return ret;
++
++	/* APPE splits the generic "any L3 flow" enable into hit and miss, and
++	 * the generic one must be left clear when they are used.
++	 */
++	ret = regmap_update_bits(ppe_dev->regmap,
++				  PPE_L3_EXP_L3_FLOW_CTRL_ADDR +
++				  index * PPE_L3_EXP_L3_FLOW_CTRL_INC,
++				  PPE_L3_EXP_L3_FLOW_CTRL_EXCEP_EN, 0);
++	if (ret)
++		return ret;
++
++	ret = regmap_update_bits(ppe_dev->regmap,
++				  PPE_L3_FLOW_HIT_EXP_CTRL_ADDR +
++				  index * PPE_L3_FLOW_HIT_EXP_CTRL_INC,
++				  PPE_L3_FLOW_HIT_EXP_CTRL_EXCEP_EN,
++				  PPE_L3_FLOW_HIT_EXP_CTRL_EXCEP_EN);
++	if (ret)
++		return ret;
++
++	/* And the miss half explicitly off. Its reset default is 0, but this
++	 * function has just repointed the shared action for these exception
++	 * codes at redirect-to-CPU, so a stale enable here would start punting
++	 * every TCP control segment that missed the flow table too.
++	 */
++	return regmap_update_bits(ppe_dev->regmap,
++				   PPE_L3_FLOW_HIT_MISS_EXP_CTRL_ADDR +
++				   index * PPE_L3_FLOW_HIT_MISS_EXP_CTRL_INC,
++				   PPE_L3_FLOW_HIT_MISS_EXP_CTRL_EXCEP_EN, 0);
++}
++
++/**
++ * ppe_offload_tcp_exception_init() - Program the TCP control-flag exceptions.
++ * @ppe_dev: PPE device.
++ *
++ * Return: true if TCP flows may be offloaded, false if they must keep being
++ * declined.
++ *
++ * Failure is deliberately not fatal. UDP offload does not depend on these
++ * exceptions, so a failure here costs TCP acceleration and nothing else --
++ * whereas offloading TCP without them would silently swallow FIN/RST and leave
++ * conntrack holding closed connections as ESTABLISHED.
++ */
++static bool ppe_offload_tcp_exception_init(struct ppe_device *ppe_dev)
++{
++	unsigned int i;
++	u32 val;
++	int ret;
++
++	BUILD_BUG_ON(ARRAY_SIZE(ppe_offload_tcp_exception_flags) >
++		      PPE_L4_EXCEPTION_TCP_FLAG_SLOTS);
++	BUILD_BUG_ON(PPE_L3_EXCEPTION_TCP_FLAGS_0 + PPE_L4_EXCEPTION_TCP_FLAG_SLOTS >
++		      PPE_L3_EXCEPTION_ENTRIES);
++
++	for (i = 0; i < ARRAY_SIZE(ppe_offload_tcp_exception_flags); i++) {
++		ret = ppe_offload_tcp_exception_slot(ppe_dev, i,
++						      ppe_offload_tcp_exception_flags[i]);
++		if (!ret)
++			ret = ppe_offload_tcp_exception_action(ppe_dev, i);
++		if (ret) {
++			dev_err(ppe_dev->dev,
++				"failed to program TCP exception slot %u: %d\n", i, ret);
++			return false;
++		}
++	}
++
++	/* Verify EVERY field that was just written, on every slot, before
++	 * trusting any of it.
++	 *
++	 * The point is not to re-check the address arithmetic -- that is
++	 * readable in the code above -- but to catch silicon interpreting the
++	 * register map differently from the vendor headers, which is exactly
++	 * the mistake patch 0434 had to undo and is completely silent. Checking
++	 * one slot is not enough: the whole 0x1e0000 parser window is writable,
++	 * so a wrong-branch address would read back whatever was written to it
++	 * and pass. The safety-critical one is the action register: if a slot
++	 * raised its exception but the action stayed at its reset value
++	 * (FORWARD), the segment would be accelerated anyway and TCP teardown
++	 * would be silently swallowed -- the 7440s-ESTABLISHED bug this whole
++	 * patch exists to prevent, with every indication of being configured.
++	 */
++	for (i = 0; i < ARRAY_SIZE(ppe_offload_tcp_exception_flags); i++) {
++		u8 want = ppe_offload_tcp_exception_flags[i];
++		u32 index = PPE_L3_EXCEPTION_TCP_FLAGS_0 + i;
++		u32 got_val, got_mask;
++
++		ret = regmap_read(ppe_dev->regmap,
++				   PPE_L4_EXCEPTION_PARSING_CTRL_ADDR +
++				   (i / 2) * PPE_L4_EXCEPTION_PARSING_CTRL_INC, &val);
++		if (ret)
++			goto read_failed;
++
++		if (i % 2) {
++			got_val = FIELD_GET(PPE_L4_EXCEPTION_TCP_FLAGS_ODD, val);
++			got_mask = FIELD_GET(PPE_L4_EXCEPTION_TCP_FLAGS_ODD_MASK, val);
++		} else {
++			got_val = FIELD_GET(PPE_L4_EXCEPTION_TCP_FLAGS_EVEN, val);
++			got_mask = FIELD_GET(PPE_L4_EXCEPTION_TCP_FLAGS_EVEN_MASK, val);
++		}
++
++		if (got_val != want || got_mask != want) {
++			dev_err(ppe_dev->dev,
++				"TCP exception slot %u parser mismatch: flags %#x/%#x, wanted %#x/%#x\n",
++				i, got_val, got_mask, want, want);
++			return false;
++		}
++
++		ret = regmap_read(ppe_dev->regmap,
++				   PPE_L3_EXCEPTION_CMD_ADDR +
++				   index * PPE_L3_EXCEPTION_CMD_INC, &val);
++		if (ret)
++			goto read_failed;
++
++		if (FIELD_GET(PPE_L3_EXCEPTION_CMD_CMD, val) != PPE_L3_EXCEPTION_REDIRECT_TO_CPU ||
++		    !(val & PPE_L3_EXCEPTION_CMD_DE_ACCE)) {
++			dev_err(ppe_dev->dev,
++				"TCP exception %u action mismatch (%#x); would not punt the segment\n",
++				index, val);
++			return false;
++		}
++
++		ret = regmap_read(ppe_dev->regmap,
++				   PPE_L3_EXP_L3_FLOW_CTRL_ADDR +
++				   index * PPE_L3_EXP_L3_FLOW_CTRL_INC, &val);
++		if (ret)
++			goto read_failed;
++
++		if (val & PPE_L3_EXP_L3_FLOW_CTRL_EXCEP_EN) {
++			dev_err(ppe_dev->dev,
++				"TCP exception %u: generic flow enable still set (%#x)\n",
++				index, val);
++			return false;
++		}
++
++		ret = regmap_read(ppe_dev->regmap,
++				   PPE_L3_FLOW_HIT_EXP_CTRL_ADDR +
++				   index * PPE_L3_FLOW_HIT_EXP_CTRL_INC, &val);
++		if (ret)
++			goto read_failed;
++
++		if (!(val & PPE_L3_FLOW_HIT_EXP_CTRL_EXCEP_EN)) {
++			dev_err(ppe_dev->dev,
++				"TCP exception %u not armed on flow hit (%#x)\n", index, val);
++			return false;
++		}
++
++		ret = regmap_read(ppe_dev->regmap,
++				   PPE_L3_FLOW_HIT_MISS_EXP_CTRL_ADDR +
++				   index * PPE_L3_FLOW_HIT_MISS_EXP_CTRL_INC, &val);
++		if (ret)
++			goto read_failed;
++
++		if (val & PPE_L3_FLOW_HIT_MISS_EXP_CTRL_EXCEP_EN) {
++			dev_err(ppe_dev->dev,
++				"TCP exception %u still armed on flow miss (%#x)\n", index, val);
++			return false;
++		}
++	}
++
++	dev_dbg(ppe_dev->dev, "TCP control-flag exceptions programmed and verified\n");
++	return true;
++
++read_failed:
++	dev_err(ppe_dev->dev, "TCP exception readback failed: %d\n", ret);
++	return false;
++}
++
+ /**
+  * ppe_offload_init() - Initialize PPE hardware flow-offload state.
+  * @ppe_dev: PPE device.
+@@ -1059,6 +1380,30 @@
+ 	return 0;
+ }
+ 
++/**
++ * ppe_offload_hw_init() - Program the offload settings that need live hardware.
++ * @ppe_dev: PPE device.
++ *
++ * Split out of ppe_offload_init() because that runs before
++ * ppe_clock_init_and_reset() and ppe_hw_config(): at that point the PPE is
++ * still unclocked and held in reset, register writes do not stick, and reads
++ * come back as reset-state junk. Must be called after ppe_hw_config().
++ *
++ * Nothing here is fatal to probe. Until it runs, @tcp_exceptions_ok is false
++ * (the priv is zero-allocated), so TCP simply keeps being declined -- and no
++ * traffic can reach the offload path before edma_setup() brings the netdevs up
++ * anyway.
++ */
++void ppe_offload_hw_init(struct ppe_device *ppe_dev)
++{
++	struct ppe_offload_priv *priv = ppe_dev->offload;
++
++	if (!priv)
++		return;
++
++	priv->tcp_exceptions_ok = ppe_offload_tcp_exception_init(ppe_dev);
++}
++
+ /* Free one tracked flow during teardown, removing whatever it still owns in
+  * hardware first. Called with no concurrent users: the indirect block callback
+  * is already unregistered.
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flow_ipv4.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flow_ipv4.h
+@@ -60,8 +60,12 @@
+  * traffic egresses through after SNAT rewrite.
+  * @nat_l4_port: L4 port to rewrite matched packets to -- source for
+  * SNAT, destination for DNAT.
+- * @deacclr_en: Whether to de-accelerate (stop hardware-offloading) this
+- * flow under hardware-defined conditions (e.g. a TCP control flag).
++ * @deacclr_en: Whether to de-accelerate this flow. NOT conditional: hardware
++ * applies it to every packet matching the entry, and the action is the global
++ * L3_ROUTE_CTRL.FLOW_DE_ACCE_CMD, which resets to 3 (redirect to CPU). Setting
++ * this therefore disables acceleration for the flow entirely; it is not a way
++ * to except TCP control flags, which is what the parser-level exceptions in
++ * ppe_offload_tcp_exception_init() are for.
+  * @copy_to_cpu: Whether to also copy matched packets to the CPU path.
+  * @syn_toggle: Updated by hardware; not meaningful to set on creation.
+  * @pri_profile: QoS priority profile index for this flow.

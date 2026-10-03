@@ -1,0 +1,86 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: do not leave the RPS sysctl behind
+
+edma_setup() registers net/edma/rps_bitmap_cores as its first action,
+before the EDMA clocks are configured and before the rings exist, and
+every error return after that point leaves it registered.  Probe does
+not call edma_destroy() when edma_setup() fails, so the only unregister
+site never runs: the file stays in /proc after a failed probe while
+edma_ctx, which its handler dereferences, has been released with the
+rest of the device managed memory.  Writing to it then touches freed
+memory.  In the window before the clocks are configured, a write reaches
+PPE registers with the clocks off.
+
+Register the table once the clocks and the hardware are configured, and
+unregister it on the error paths that follow.
+
+Do not fail the probe when the table cannot be registered.  The datapath
+does not need the knob, and by this point the rings are allocated, their
+buffers are posted and NAPI is added, none of which edma_setup() knows
+how to undo on its way out.
+
+That is also the limit of the new label: it withdraws the registration
+and nothing else.  An IRQ failure still leaves the rings configured and
+filled and the hardware enabled, as it did before this change.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -947,13 +947,6 @@ int edma_setup(struct ppe_device *ppe_de
+ 	if (tx_requeue_stop != 0)
+ 		edma_ctx->tx_requeue_stop = true;
+ 
+-	edma_ctx->rx_rps_ctl_table_hdr = register_sysctl("net/edma",
+-							 edma_rx_rps_core_table);
+-	if (!edma_ctx->rx_rps_ctl_table_hdr) {
+-		pr_err("Rx rps sysctl table configuration failed\n");
+-		return -EINVAL;
+-	}
+-
+ 	ret = edma_clock_configure();
+ 	if (ret) {
+ 		dev_err(dev, "Error in configuring the EDMA clocks\n");
+@@ -966,10 +959,19 @@ int edma_setup(struct ppe_device *ppe_de
+ 		return ret;
+ 	}
+ 
++	/* The handler programs the PPE, so expose the knob only once the
++	 * clocks are on and the rings are configured.  The datapath works
++	 * without it, so a failure here is not worth failing the probe for.
++	 */
++	edma_ctx->rx_rps_ctl_table_hdr = register_sysctl("net/edma",
++							 edma_rx_rps_core_table);
++	if (!edma_ctx->rx_rps_ctl_table_hdr)
++		dev_warn(dev, "Rx rps sysctl table configuration failed\n");
++
+ 	ret = edma_irq_configure();
+ 	if (ret) {
+ 		dev_err(dev, "Error in irq initialization\n");
+-		return ret;
++		goto unregister_sysctl;
+ 	}
+ 
+ 	ret = edma_irq_register();
+@@ -979,7 +981,7 @@ int edma_setup(struct ppe_device *ppe_de
+ 		edma_ctx->intr_info.intr_rx = NULL;
+ 		kfree(edma_ctx->intr_info.intr_txcmpl);
+ 		edma_ctx->intr_info.intr_txcmpl = NULL;
+-		return ret;
++		goto unregister_sysctl;
+ 	}
+ 
+ 	edma_cfg_rx_enable_interrupts();
+@@ -988,4 +990,12 @@ int edma_setup(struct ppe_device *ppe_de
+ 	dev_info(dev, "EDMA configuration successful\n");
+ 
+ 	return 0;
++
++unregister_sysctl:
++	if (edma_ctx->rx_rps_ctl_table_hdr) {
++		unregister_sysctl_table(edma_ctx->rx_rps_ctl_table_hdr);
++		edma_ctx->rx_rps_ctl_table_hdr = NULL;
++	}
++
++	return ret;
+ }

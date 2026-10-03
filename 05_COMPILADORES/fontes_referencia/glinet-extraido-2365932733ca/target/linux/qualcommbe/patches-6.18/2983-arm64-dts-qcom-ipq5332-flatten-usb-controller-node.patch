@@ -1,0 +1,114 @@
+From 9a9f7c2740a86436d7398dc1679c8be7cebaafdd Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Mon, 03 Aug 2026 18:38:26 +0400
+Subject: [PATCH v2 05/17] arm64: dts: qcom: ipq5332: Flatten usb controller node
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260803-ipq5018-usb3-v2-5-3a4136712b20@outlook.com>
+
+Flatten usb controller node and update to using latest bindings and
+flattened driver approach.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5332-rdp468.dts |  6 ++--
+ arch/arm64/boot/dts/qcom/ipq5332.dtsi       | 51 +++++++++++++----------------
+ 2 files changed, 24 insertions(+), 33 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5332-rdp468.dts b/arch/arm64/boot/dts/qcom/ipq5332-rdp468.dts
+index c224ffc65b08..25a70cd884c0 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5332-rdp468.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5332-rdp468.dts
+@@ -90,11 +90,9 @@ spi_0_cs_pins: spi-0-cs-state {
+ };
+ 
+ &usb {
+-	status = "okay";
+-};
+-
+-&usb_dwc {
+ 	dr_mode = "host";
++
++	status = "okay";
+ };
+ 
+ &usbphy0 {
+diff --git a/arch/arm64/boot/dts/qcom/ipq5332.dtsi b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+index 348f1e0906a9..1dd1fe76272b 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+@@ -509,16 +509,9 @@ qpic_nand: spi@79b0000 {
+ 			status = "disabled";
+ 		};
+ 
+-		usb: usb@8af8800 {
+-			compatible = "qcom,ipq5332-dwc3", "qcom,dwc3";
+-			reg = <0x08af8800 0x400>;
+-
+-			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
+-			interrupt-names = "pwr_event",
+-					  "dp_hs_phy_irq",
+-					  "dm_hs_phy_irq";
++		usb: usb@8a00000 {
++			compatible = "qcom,ipq5332-dwc3", "qcom,snps-dwc3";
++			reg = <0x08a00000 0xe000>;
+ 
+ 			clocks = <&gcc GCC_USB0_MASTER_CLK>,
+ 				 <&gcc GCC_USB0_SLEEP_CLK>,
+@@ -529,31 +522,31 @@ usb: usb@8af8800 {
+ 
+ 			resets = <&gcc GCC_USB_BCR>;
+ 
+-			qcom,select-utmi-as-pipe-clk;
++			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "dwc_usb3",
++					  "pwr_event",
++					  "dp_hs_phy_irq",
++					  "dm_hs_phy_irq";
+ 
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+-			ranges;
+ 			interconnects = <&gcc MASTER_SNOC_USB &gcc SLAVE_SNOC_USB>,
+ 					<&gcc MASTER_SNOC_USB &gcc SLAVE_SNOC_USB>;
+ 			interconnect-names = "usb-ddr", "apps-usb";
+ 
+-			status = "disabled";
++			phys = <&usbphy0>;
++			phy-names = "usb2-phy";
+ 
+-			usb_dwc: usb@8a00000 {
+-				compatible = "snps,dwc3";
+-				reg = <0x08a00000 0xe000>;
+-				clocks = <&gcc GCC_USB0_MOCK_UTMI_CLK>;
+-				clock-names = "ref";
+-				interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
+-				phy-names = "usb2-phy";
+-				phys = <&usbphy0>;
+-				tx-fifo-resize;
+-				snps,is-utmi-l1-suspend;
+-				snps,hird-threshold = /bits/ 8 <0x0>;
+-				snps,dis_u2_susphy_quirk;
+-				snps,dis_u3_susphy_quirk;
+-			};
++			qcom,select-utmi-as-pipe-clk;
++
++			tx-fifo-resize;
++			snps,is-utmi-l1-suspend;
++			snps,hird-threshold = /bits/ 8 <0x0>;
++			snps,dis_u2_susphy_quirk;
++			snps,dis_u3_susphy_quirk;
++
++			status = "disabled";
+ 		};
+ 
+ 		intc: interrupt-controller@b000000 {
+
+-- 
+2.53.0

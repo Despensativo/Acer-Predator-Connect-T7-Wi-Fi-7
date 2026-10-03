@@ -1,0 +1,73 @@
+Parallel unsquashfs: Using 1 processor
+1 inodes (1 blocks) to write
+
+
+created 1 files
+created 2 directories
+created 0 symlinks
+created 0 devices
+created 0 fifos
+1.01.000024
+Parallel mksquashfs: Using 1 processor
+Creating 4.0 filesystem on /mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Feito por ChatGPT/artefatos/squashfs-compat-20261002-v1/synthetic.squashfs, block size 262144.
+
+[===================================================================|] 1/1 100%
+Exportable Squashfs 4.0 filesystem, xz compressed, data block size 262144
+	compressed data, compressed metadata, compressed fragments, no xattrs
+	duplicates are removed
+Filesystem size 0.30 Kbytes (0.00 Mbytes)
+	107.04% of uncompressed filesystem size (0.28 Kbytes)
+Inode table size 66 bytes (0.06 Kbytes)
+	100.00% of uncompressed inode table size (66 bytes)
+Directory table size 30 bytes (0.03 Kbytes)
+	100.00% of uncompressed directory table size (30 bytes)
+Number of duplicate files found 0
+Number of inodes 2
+Number of files 1
+Number of fragments 1
+Number of symbolic links  0
+Number of device nodes 0
+Number of fifo nodes 0
+Number of socket nodes 0
+Number of directories 1
+Number of ids (unique uids + gids) 1
+Number of uids 1
+	root (0)
+Number of gids 1
+	root (0)
+Parallel unsquashfs: Using 1 processor
+1 inodes (1 blocks) to write
+
+
+created 1 files
+created 1 directories
+created 0 symlinks
+created 0 devices
+created 0 fifos
+{
+  "exact_compressor_options_match": true,
+  "images": [
+    {
+      "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Backups_MTD/backup_predator_t7_ubi_rootfs.bin",
+      "option_size": 12,
+      "options_hex": "000004001c00090090004000",
+      "decoded_dict_flags_bitopts_fb": [
+        262144,
+        589852,
+        144,
+        64
+      ]
+    },
+    {
+      "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Feito por ChatGPT/artefatos/squashfs-compat-20261002-v1/synthetic.squashfs",
+      "option_size": 12,
+      "options_hex": "000004001c00090090004000",
+      "decoded_dict_flags_bitopts_fb": [
+        262144,
+        589852,
+        144,
+        64
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+Parallel mksquashfs: Using 2 processors
+Creating 4.0 filesystem on /mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Feito por ChatGPT/artefatos/squashfs-roundtrip-mtime-20261002-212028/rootfs-rebuilt-offline.squashfs, block size 262144.
+
+Exportable Squashfs 4.0 filesystem, xz compressed, data block size 262144
+	compressed data, compressed metadata, compressed fragments, no xattrs
+	duplicates are removed
+Filesystem size 38667.63 Kbytes (37.76 Mbytes)
+	27.89% of uncompressed filesystem size (138640.61 Kbytes)
+Inode table size 37410 bytes (36.53 Kbytes)
+	22.41% of uncompressed inode table size (166917 bytes)
+Directory table size 52546 bytes (51.31 Kbytes)
+	45.04% of uncompressed directory table size (116678 bytes)
+Number of duplicate files found 618
+Number of inodes 5031
+Number of files 4303
+Number of fragments 214
+Number of symbolic links  473
+Number of device nodes 1
+Number of fifo nodes 0
+Number of socket nodes 0
+Number of directories 254
+Number of ids (unique uids + gids) 1
+Number of uids 1
+	root (0)
+Number of gids 1
+	root (0)

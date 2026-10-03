@@ -1,0 +1,59 @@
+{
+  "exact_acer_toolchain_provenance_confirmed": false,
+  "date": "2026-10-02",
+  "full_rootfs_repacked": false,
+  "openwrt_tag": "v17.01.0",
+  "source_hashes": [
+    {
+      "name": "160-expose_lzma_xz_options.patch",
+      "sha256": "623da4b086cf79b432cf57b272265846031bca3454cef365b045ef15906f3c0f"
+    },
+    {
+      "name": "Makefile",
+      "sha256": "1dcc1fa0bceed303af2cdd3ec2f3dc804a8cea7189fde3d70b8fc0f5ff8deddf"
+    },
+    {
+      "name": "openwrt-v17.01.0-110-allow_static_liblzma.patch",
+      "sha256": "c62c91bcbaa866cdcc07920b01c5cf93fd026d59fdf9dee064925dbe8410970c"
+    },
+    {
+      "name": "openwrt-v17.01.0-160.patch",
+      "sha256": "13c116169ad0c70cc108683d43d7a6791207f14ecafd5faf22765f4b17d8268d"
+    },
+    {
+      "name": "openwrt-v17.01.0-190-no_nonstatic_inline.patch",
+      "sha256": "737c4a79fba3b56e540b3d9cf173e93c24a9699f53bc681f9b1933679d86123f"
+    },
+    {
+      "name": "ORIGEM-README.md",
+      "sha256": "e9177a6ed24ff58b151babaf795330d72fac65a4622fc691fe67452a25ddd9cd"
+    },
+    {
+      "name": "squashfs4.2.tar.gz",
+      "sha256": "d9e0195aa922dbb665ed322b9aaa96e04a476ee650f39bbeadb0d00b24022e96"
+    }
+  ],
+  "artifacts": [
+    {
+      "sha256": "0b6341e0080f6f8f03ca6d06ce51e078da908f2b03d201f98035d33d86131ac6",
+      "name": "mksquashfs4-compat",
+      "bytes": 298856
+    },
+    {
+      "sha256": "109a7a2514e006bc8818c6d36892b129e04540094355cd71835dc902220d837f",
+      "name": "synthetic.squashfs",
+      "bytes": 304
+    },
+    {
+      "sha256": "aa06b1c11dfa42e05694b98ad54f9bdd75ae6edb9f62e5458c3db2e5afa24d4c",
+      "name": "unsquashfs4-compat",
+      "bytes": 247264
+    }
+  ],
+  "original_options_hex": "000004001c00090090004000",
+  "offline_version_extraction": "1.01.000024",
+  "netgear_reference_commit": "7267622a7417d7ebce3ae0a821e396e9f60e6026",
+  "compressor_options_exact_match": true,
+  "router_tested": false,
+  "openwrt_commit": "ac733df99c78f54b4cf9a8710f70a506f73e66fc"
+}

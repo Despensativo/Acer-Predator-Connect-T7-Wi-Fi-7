@@ -1,0 +1,128 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: re-arm a flow whose hardware entry stopped matching
+
+The flowtable re-offers a flow (flow_offload_refresh(), FLOW_CLS_REPLACE
+about once a second) for as long as its packets cross the software path.
+For a cookie already in hardware the driver answered -EEXIST, which is
+right while the other direction of the connection is declined and this
+one keeps hitting, and wrong once the hardware entry has stopped
+matching: the kernel keeps the flow marked offloaded, the refresh can
+never repair it, and the connection stays in software for the rest of
+its life. Measured on a GL-BE9300: after a burst of 1000 hop-limit-1
+TCP segments carrying a live IPv6 download's 5-tuple, about one run in
+two dropped from 2320 Mbit/s at 99% idle to 74% idle and stayed there,
+the entry's hit counter frozen, both conntrack tuples still
+[HW_OFFLOAD]; what removes the entry is still open (the L3 interface's
+TTL-exceed de-accelerate flag was ruled out by flipping it live).
+
+Read the entry's packet counter on every refresh instead. The first
+refresh only takes a baseline; when the counter has not moved since the
+previous refresh, or the entry was superseded in the table, drop the
+tracked flow (ppe_offload_flow_forget(), so far only used by the FDB
+move path) and let that same refresh program it afresh. A healthy
+direction whose reverse runs in software keeps moving its counter and is
+never touched; a direction that is idle for two refreshes while its
+reverse carries traffic is re-added at no cost beyond a counter reset.
+One ratelimited line reports a re-arm. With this the same burst test
+never showed a dip in the 2-second idle samples (6 runs, one of them
+re-armed both tuples), 2319 Mbit/s throughout.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -268,6 +268,11 @@
+ 	u64 stats_packets;
+ 	u64 stats_bytes;
+ 	unsigned long lastused;
++	/* Packet count at the last refresh the flowtable sent for this
++	 * cookie, and whether one was seen at all (ppe_offload_flow_stale()).
++	 */
++	u64 refresh_packets;
++	bool refresh_seen;
+ };
+ 
+ static const struct rhashtable_params ppe_offload_flow_ht_params = {
+@@ -837,6 +842,52 @@
+ 			priv->flow_owner[entry->flow_index + i] = NULL;
+ }
+ 
++static u64 ppe_offload_counter_delta(u64 now, u64 prev, u64 mask);
++static void ppe_offload_flow_forget(struct ppe_offload_priv *priv,
++				    struct ppe_offload_flow_entry *entry);
++
++/* Whether a flow the flowtable re-offers (flow_offload_refresh(), about
++ * once a second for as long as its packets cross the software path) has
++ * stopped matching in hardware. Called under priv->lock.
++ *
++ * A refresh for a cookie already in hardware means software is forwarding
++ * packets of this flow. That is normal while the other direction of the
++ * connection is declined, and the hardware counters of this direction keep
++ * moving then. When they have not moved since the previous refresh either,
++ * the entry no longer matches (measured on a GL-BE9300: after a burst of
++ * hop-limit-1 segments carrying a live IPv6 download's tuple, the download
++ * stayed in software for the rest of the connection, the entry's counter
++ * frozen, conntrack still marked offloaded). Answering -EEXIST forever
++ * keeps such a zombie; dropping it lets this very refresh program the flow
++ * afresh. An entry superseded in the table (flow_valid clear) is stale by
++ * definition. The first refresh only takes the baseline.
++ */
++static bool ppe_offload_flow_stale(struct ppe_offload_priv *priv,
++				   struct ppe_offload_flow_entry *entry)
++{
++	u64 packets, bytes;
++
++	if (!entry->flow_valid)
++		return true;
++
++	if (ppe_flow_counter_get(priv->ppe_dev, entry->flow_index, &packets, &bytes))
++		return false;
++
++	if (!entry->refresh_seen) {
++		entry->refresh_seen = true;
++		entry->refresh_packets = packets;
++		return false;
++	}
++
++	if (ppe_offload_counter_delta(packets, entry->refresh_packets,
++				      PPE_IN_FLOW_CNT_TBL_PKT_MAX)) {
++		entry->refresh_packets = packets;
++		return false;
++	}
++
++	return true;
++}
++
+ static int ppe_offload_flow_replace(struct net_device *netdev,
+ 				     struct ppe_offload_priv *priv,
+ 				     struct flow_cls_offload *cls)
+@@ -1364,10 +1415,17 @@
+ 
+ 	mutex_lock(&priv->lock);
+ 
+-	if (rhashtable_lookup_fast(&priv->flow_table, &cls->cookie, ppe_offload_flow_ht_params)) {
+-		ret = -EEXIST;
+-		stage = "exists";
+-		goto unlock;
++	entry = rhashtable_lookup_fast(&priv->flow_table, &cls->cookie,
++				       ppe_offload_flow_ht_params);
++	if (entry) {
++		if (!ppe_offload_flow_stale(priv, entry)) {
++			ret = -EEXIST;
++			stage = "exists";
++			goto unlock;
++		}
++		pr_info_ratelimited("ppe_offload: flow %lx re-armed: hardware entry idle across refreshes\n",
++				    cls->cookie);
++		ppe_offload_flow_forget(priv, entry);
+ 	}
+ 
+ 	/* Public IP entry for the translated (post-SNAT) source address.
+@@ -1816,6 +1874,7 @@
+ 	WRITE_ONCE(entry->dsa_ifindex, dev->ifindex);
+ 	entry->dsa_index = dp->index;
+ 	entry->stats_packets = 0;
++	entry->refresh_seen = false;
+ 	entry->stats_bytes = 0;
+ 
+ 	return 0;

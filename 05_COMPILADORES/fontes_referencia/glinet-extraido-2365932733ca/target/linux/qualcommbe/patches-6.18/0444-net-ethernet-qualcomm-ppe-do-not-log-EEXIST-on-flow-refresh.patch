@@ -1,0 +1,38 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: do not log -EEXIST on flow
+ refresh
+
+Only the SNAT direction of a connection is programmed into the PPE, so
+the reply direction keeps crossing the software flowtable path. Every
+such packet runs flow_offload_refresh(), which -- at most once a second
+per flow -- re-offers the flow with FLOW_CLS_REPLACE. The flow is already
+in our table, so ppe_offload_flow_replace() returns -EEXIST, exactly as
+mtk_ppe_offload does for the same re-offer, and the flowtable ignores it.
+
+The failure log did not distinguish this expected case, so a router with
+a handful of live connections printed "replace failed at exists: -17"
+continuously (some 220 lines, plus ratelimit suppression, over 20 minutes
+of two iperf3 flows on the bench). Skip the log for -EEXIST; genuine
+programming failures still print.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -743,7 +743,15 @@
+ unlock:
+ 	mutex_unlock(&priv->lock);
+ 
+-	if (stage)
++	/* -EEXIST is not a failure: flow_offload_refresh() re-offers a
++	 * flow that is already in hardware once a second for as long as
++	 * its packets keep crossing the software path -- which, with only
++	 * the SNAT direction accelerated (see the file comment), is the
++	 * reply direction of every accepted connection. mtk_ppe_offload
++	 * returns the same -EEXIST for this; only a genuine programming
++	 * failure is worth a line.
++	 */
++	if (stage && ret != -EEXIST)
+ 		pr_info_ratelimited("ppe_offload: replace failed at %s: %d\n", stage, ret);
+ 
+ 	return ret;

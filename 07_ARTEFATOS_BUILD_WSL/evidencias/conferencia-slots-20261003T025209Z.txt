@@ -1,0 +1,80 @@
+echo T7_REVIEW_CURRENT; uname -a
+T7_REVIEW_CURRENT
+Linux Predator Connect T7 5.4.213 #0 SMP PREEMPT Fri Jan 17 04:02:54 2025 armv7l GNU/Linux
+/ # for x in $(cat /proc/cmdline); do case $x in ubi.mtd=*|root=*|rootfstype=*) 
+echo $x;; esac; done
+ubi.mtd=rootfs
+root=mtd:ubi_rootfs
+rootfstype=squashfs
+/ # cat /proc/mtd
+dev:    size   erasesize  name
+mtd0: 00180000 00040000 "0:SBL1"
+mtd1: 00180000 00040000 "0:SBL1_1"
+mtd2: 00100000 00040000 "0:MIBIB"
+mtd3: 00080000 00040000 "0:BOOTCONFIG"
+mtd4: 00080000 00040000 "0:BOOTCONFIG1"
+mtd5: 00380000 00040000 "0:QSEE"
+mtd6: 00380000 00040000 "0:QSEE_1"
+mtd7: 00080000 00040000 "0:DEVCFG_1"
+mtd8: 00080000 00040000 "0:DEVCFG"
+mtd9: 00080000 00040000 "0:TME"
+mtd10: 00080000 00040000 "0:TME_1"
+mtd11: 00080000 00040000 "0:CDT_1"
+mtd12: 00080000 00040000 "0:CDT"
+mtd13: 00080000 00040000 "0:APPSBLENV"
+mtd14: 00180000 00040000 "0:APPSBL_1"
+mtd15: 00180000 00040000 "0:APPSBL"
+mtd16: 00100000 00040000 "0:ETHPHYFW"
+mtd17: 00080000 00040000 "0:TRAINING"
+mtd18: 00200000 00040000 "0:ART"
+mtd19: 00040000 00040000 "0:LICENSE"
+mtd20: 0f000000 00040000 "rootfs_1"
+mtd21: 0f000000 00040000 "rootfs"
+mtd22: 00600000 00040000 "0:TRAFFIC"
+mtd23: 00080000 00040000 "0:SYSTRACE"
+mtd24: 00300000 00040000 "0:TRAFFIC_DAY"
+mtd25: 00828800 0003e000 "wifi_fw"
+mtd26: 0040ad48 0003e000 "kernel"
+mtd27: 02606000 0003e000 "ubi_rootfs"
+mtd28: 0a71c000 0003e000 "rootfs_data"
+/ # for d in /sys/class/ubi/ubi[0-9]*; do [ -d "$d" ] || continue; echo UBI=$d; 
+for f in mtd_num name type data_bytes reserved_ebs usable_eb_size; do [ ! -f "$d
+/$f" ] || { printf '%s=' "$f"; cat "$d/$f"; }; done; done
+UBI=/sys/class/ubi/ubi0
+mtd_num=21
+UBI=/sys/class/ubi/ubi0_0
+name=wifi_fw
+type=static
+data_bytes=8554496
+reserved_ebs=44
+usable_eb_size=253952
+UBI=/sys/class/ubi/ubi0_1
+name=kernel
+type=static
+data_bytes=4238664
+reserved_ebs=25
+usable_eb_size=253952
+UBI=/sys/class/ubi/ubi0_2
+name=ubi_rootfs
+type=dynamic
+data_bytes=39870464
+reserved_ebs=157
+usable_eb_size=253952
+UBI=/sys/class/ubi/ubi0_3
+name=rootfs_data
+type=dynamic
+data_bytes=175226880
+reserved_ebs=690
+usable_eb_size=253952
+/ # awk '$2=="/rom" || $2=="/overlay" || $3=="ubifs" {print $1,$2,$3,$4}' /proc/
+mounts
+/dev/mtdblock27 /rom squashfs ro,relatime
+/dev/ubi0_3 /overlay ubifs rw,noatime,assert=read-only,ubi=0,vol=3
+/ # for k in bootcmd fsbootargs primaryboot ipaddr serverip; do fw_printenv $k 2
+>/dev/null; done
+bootcmd=bootipq
+ipaddr=192.168.10.1
+serverip=192.168.10.10
+/ # printf '\nT7_REVIEW_DONE\n'
+
+T7_REVIEW_DONE

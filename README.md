@@ -2,182 +2,192 @@
   <img src="assets/acer-predator-t7-banner.jpg" alt="Acer Predator Connect T7 Wi-Fi 7 Banner" width="100%">
 </p>
 
-# Acer Predator Connect T7 - Desbloqueio, Modo Access Point 2.5 Gbps & Wi-Fi 7
+<p align="center">
+  <b>🌐 Language / Idioma:</b>
+  <a href="README.md"><b>🇺🇸 English</b></a> |
+  <a href="README_PT.md">🇧🇷 Português (Brasil)</a>
+</p>
 
-> **Resumo Executivo**: Documentação completa da transformação do roteador gamer **Acer Predator Connect T7** (Qualcomm IPQ5332 Wi-Fi 7) em um **Ponto de Acesso (AP) / Switch de 2.5 Gbps de altíssima performance**, sem duplo NAT, com desbloqueio permanente de terminal Root (SSH / Telnet), canais de rádio otimizados e backups de baixo nível para recuperação de desastre.
+# Acer Predator Connect T7 — Root Unlock, 2.5 Gbps AP Mode, Wi-Fi 7 & Dual-Boot Architecture
 
-> **Keywords / SEO**: Acer Predator Connect T7, Wi-Fi 7 router unlock, Qualcomm IPQ5332, MLO 6GHz, AP Mode 2.5Gbps, root access dropbear, telnet unlock, unbrick predator t7, openwrt predator t7, double NAT fix, firmware dump MTD.
+> **Project Status (October 2026)**: Running in production on **Slot 2 (`rootfs_1`)** with **Official Firmware v1.01.000027 (v27)**, native **LuCI on Port 80**, **pure 2.5 Gbps Layer-2 switch acceleration**, **Wi-Fi 7 (320 MHz / 5.76 Gbps)** with 802.11k/v Roaming, and comprehensive debloat. **Slot 1 (`rootfs`) is retained 100% untouched as an unbrickable golden recovery image**.
+
+> **Keywords / SEO**: Acer Predator Connect T7, Wi-Fi 7 router unlock, Qualcomm IPQ5332, MLO 6GHz, AP Mode 2.5Gbps, root access dropbear, telnet unlock, unbrick predator t7, openwrt predator t7, double NAT fix, dual-boot slot rollback, firmware dump MTD.
+
+---
+
+## ⚡ Quick Feature Summary
+
+* 🛡️ **Safe A/B Dual-Boot:** Slot 1 (`mtd21` / factory v24) is an immutable recovery reserve. All custom work runs on Slot 2 (`mtd20` / v27).
+* 🔄 **Instant 1-Command Rollback:** If Slot 2 has any issue, `/usr/sbin/boot-acer` restores boot to Slot 1 in seconds.
+* 🌐 **Native LuCI on Port 80:** Acer's proprietary web server (`lighttpd`) disabled; standard LuCI (`uhttpd`) promoted to primary web server.
+* 🚀 **Pure 2.5 Gbps Switch (AP Mode):** Netfilter bridge bypass (`net.bridge.bridge-nf-call-iptables = 0`) eliminates DHCP/mDNS/AirPlay drops and provides wire-speed Layer-2 throughput.
+* 📶 **Fine-Tuned Wi-Fi 7:** 6 GHz radio in 320 MHz width (5.76 Gbps), 802.11k/v fast roaming (BSS Transition + RRM), and DTIM=2.
+* 🧹 **Aggressive Debloat:** Orphaned 5G cellular daemons (`at_ril`, `modem_readd`), telemetry daemons (`monitord`, `sodd`, `cwmp`, `breakpad`), and Samba halted, freeing **+50 MB of RAM**.
+* 💾 **1-Click Backup & Recovery Suite:** Interactive Windows tool `RESTAURAR_OU_BACKUP_T7.bat` for instant backup snapshots and restores.
 
 ---
 
 > [!IMPORTANT]
-> ### ⚠️ Atenção sobre o Endereço IP do Roteador:
-> * **IP Padrão de Fábrica (Stock Default):** **`192.168.76.1`** (Modo Roteador tradicional com servidor DHCP ativo na faixa `192.168.76.x`).
-> * **IP Customizado deste Projeto (Lab / Modo AP):** **`192.168.73.2`** (Alterado manualmente pelo usuário para operar como Access Point / Bridge na mesma sub-rede do roteador mestre `192.168.73.1`, com DHCP desativado).
-> * **Regra Prática:** Se o seu roteador está com as configurações de fábrica ou foi recém-resetado, utilize **`192.168.76.1`**. Se já aplicou o arquivo de backup para AP deste projeto, utilize **`192.168.73.2`**.
+> ### ⚠️ IP Addresses, Credentials & Password Rules:
+> * **Factory Default IP (Stock):** **`192.168.76.1`** (Standard Router mode with DHCP server on `192.168.76.x`).
+> * **High-Performance AP Mode IP:** **`192.168.73.2`** (Acts as an L2 Switch / AP on upstream network `192.168.73.1`, DHCP disabled).
+> * **🔐 What password will be active after unlocking?**
+>   - **If you used your own router backup (`unlock_only_ssh.py`):** The password for both `Admin` and `root` is **EXACTLY THE SAME PASSWORD** you already used to log into the Acer Web GUI! Your Wi-Fi networks and SSIDs remain 100% untouched.
+>   - **If you restored a repo template or factory image:** The default password is **`admin0100`**.
+>   - **Emergency Failsafe (Zero Lockout Risk):** **Telnet on port 23** (`telnet 192.168.76.1 23`) drops straight to a root `ash` shell **without requiring any password**. If you ever forget your password, connect via Telnet and run `passwd root`.
+> * **LuCI Web Interface (Port 80):** `http://192.168.76.1` (or `73.2`) | User: `root` or `Admin`.
+> * **SSH Access (Port 22):** `ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.76.1` (or `root@...`).
 
 ---
 
-## 1. Dados e Credenciais da Rede
+## 1. 🛡️ Dual-Boot A/B Architecture & Anti-Brick Protection
 
-| Parâmetro | Padrão de Fábrica (Stock) | Configuração Ativa (Modo AP Lab) | Detalhes |
+The Acer Predator Connect T7 features a 1 GB SPI NAND flash with **dual redundant partitioning (Slots A and B)** managed by the Qualcomm IPQ5332 SoC.
+
+```
+       +-----------------------------------------------------------+
+       |                  1 GB SPI NAND FLASH                      |
+       +-----------------------------------------------------------+
+                                     |
+           +-------------------------+-------------------------+
+           |                                                   |
+     [SLOT 1 - A]                                        [SLOT 2 - B]
+  Partition: mtd21 (rootfs)                          Partition: mtd20 (rootfs_1)
+  State: UNTOUCHED / FACTORY RESERVE                 State: ACTIVE IN PRODUCTION
+  Firmware: Factory OEM v24                          Firmware: Optimized v27
+  Role: Anti-Brick Failsafe Image                    Role: LuCI Port 80 + Wi-Fi 7 AP
+```
+
+### What Controls Active Boot?
+U-Boot reads partitions **`mtd3` (`0:BOOTCONFIG`)** and **`mtd4` (`0:BOOTCONFIG1`)**. They store the binary variable `primaryboot`:
+* `primaryboot = 1`: Bootloader loads Slot 1 (`mtd21`).
+* `primaryboot = 2`: Bootloader loads Slot 2 (`mtd20`).
+
+---
+
+### 🚨 What to Do If Slot 2 Breaks or Crashes?
+
+#### Scenario A: Router is Still Reachable via Terminal (Telnet or SSH)
+If you are running Slot 2 and want to return to factory Slot 1:
+1. Run a single command in the router terminal:
+   ```sh
+   /usr/sbin/boot-acer
+   ```
+2. The script rewrites `primaryboot = 1` across `mtd3`/`mtd4`, synchronizes flash, and reboots directly into **Slot 1 (Factory OEM intact)**.
+
+*(Windows alternative: run [`04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/executar_chaveamento_slot1_recovery.py`](04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/executar_chaveamento_slot1_recovery.py)).*
+
+#### Scenario B: Router DOES NOT Boot (Complete Brick / Loop / No Network)
+* **The Reality of UART and Watchdog:** Retail board pads are covered with black solder mask (no header pins or tin), and the Qualcomm watchdog can freeze if the kernel hangs early during driver init.
+* **The Definitive Hardware Recovery: Failsafe Web on IP `192.168.1.1`**
+  1. Unplug the power adapter.
+  2. Press and hold the **physical WPS button** on the router chassis.
+  3. Plug the power adapter back in while **holding the WPS button for 5 to 10 seconds** until the LEDs flash into recovery mode. Release the button.
+  4. U-Boot spins up an **Emergency Web Recovery page on `http://192.168.1.1`**.
+  5. Set your PC network card to static IP `192.168.1.66` (Netmask `255.255.255.0`, Gateway `192.168.1.1`).
+  6. Open your browser to `http://192.168.1.1` and upload the desired recovery image:
+     * **[`restaurar_slot1_acer.itb`](02_BACKUPS_E_DUMPS/Imagens_Recuperacao_WPS_Failsafe/restaurar_slot1_acer.itb):** Writes `primaryboot = 1` and boots into **Slot 1 (Factory OEM v24)**.
+     * **[`chavear_slot2_acer.itb`](02_BACKUPS_E_DUMPS/Imagens_Recuperacao_WPS_Failsafe/chavear_slot2_acer.itb):** Writes `primaryboot = 0` and boots into **Slot 2 (Optimized v27 LuCI)**.
+  *U-Boot extracts the payload into RAM, rewrites the `BOOTCONFIG` NAND partitions, and reboots in under 60 seconds without needing serial cables or disassembly!*
+
+#### Scenario C: Clean Reflash of Slot 2 from Scratch
+If Slot 2 filesystem is wiped or corrupted:
+1. Boot into Slot 1.
+2. Run the direct network flash script:
+   ```powershell
+   python "04_SCRIPTS_E_FERRAMENTAS\Automacao_e_Unlock\gravar_v27_slot2.py"
+   ```
+3. It flashes official v27 to `mtd20`, sets `primaryboot = 2`, and reboots into a fresh Slot 2.
+
+---
+
+## 2. 🚀 High-Performance Configuration (2.5 Gbps AP Mode)
+
+| Parameter | Stock OEM Default | Optimized AP Mode | Technical Benefit |
 | :--- | :--- | :--- | :--- |
-| **Endereço IP** | **`192.168.76.1`** | **`192.168.73.2`** | IP estático na rede local |
-| **Máscara de Sub-rede** | `255.255.255.0` (`/24`) | `255.255.255.0` (`/24`) | Sub-rede alinhada ao roteador mestre |
-| **Gateway / DNS** | `192.168.76.1` | `192.168.73.1` | Roteador Mestre (Cudy WR3000) |
-| **Servidor DHCP** | **Ativado** (Pool 76.x) | **Desativado** | Evita duplo NAT; todos os IPs vêm do Mestre |
-| **Porta WAN (2.5 Gbps)** | Roteamento NAT | Em Bridge com LAN | Tráfego de 2 Gbps flui sem gargalo |
-| **Usuário do Painel Web** | `Admin` | `Admin` | Senha configurada pelo usuário |
-| **Usuário Terminal (SSH / Telnet)**| *(Bloqueado de fábrica)* | `Admin` ou `root` | UID 0 (Superusuário completo) |
-| **Acesso Telnet (Sem senha)** | Porta `23` | Porta `23` | `telnet 192.168.73.2` (ou `76.1`) |
-| **Acesso SSH (Criptografado)** | Porta `22` | Porta `22` | `ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.73.2` (ou `76.1`) |
+| **WAN Port (2.5G)** | L3 NAT Routing | Bridged into `br-lan` | All 3 physical ports become a unified 2.5 Gbps switch |
+| **Netfilter Bypass** | `iptables = 1` | `sysctl net.bridge.bridge-nf-call-iptables=0` | Zero drops on DHCP/mDNS/AirPlay; wire-speed L2 throughput |
+| **DHCP Server** | Active (Pool 76.x) | Disabled | No double NAT; IP assigned by primary network router |
+| **DNS Cache** | 150 entries | 10,000 entries (TTL min 300s) | Instant local DNS resolution (0 ms) |
+| **Conntrack Table**| 16,384 connections| 65,536 connections (timeout 7440s) | Stable handling of hundreds of concurrent P2P/gaming streams |
+| **TCP Fast Open** | Disabled | Enabled (`tcp_fastopen = 3`) | Accelerated web page and API loading |
+| **Gaming UPnP** | Basic | `miniupnpd` with NAT-PMP & IGDv1 | Automatic Open / Type 1 NAT on PS5, Xbox, and PC |
 
 ---
 
-## 2. Configuração dos Rádios e Redes Wi-Fi
+## 3. 📶 Radio Channels and Wi-Fi 7 Tuning
 
-| Rádio | Frequência | SSID | Canal Travado | Largura | Potência | Finalidade |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`wifi0`** | 2.4 GHz | **`CASA_ARK`** | **1** | **`HT20` (20 MHz)** | 25 dBm | Máxima penetração de paredes e alcance (25m) |
-| **`wifi0`** | 2.4 GHz | **`TV casa`** | **1** | **`HT20` (20 MHz)** | 25 dBm | Na bridge `lan` principal (espelhamento liberado) |
-| **`wifi1`** | 5 GHz | **`CASA_ARK_5G`** | **36** | **`HT160` (160 MHz)** | 25 dBm | Mais de 1.5 a 2 Gbps sem risco de queda por radar DFS |
-| **`wifi2`** | 6 GHz | **`CASA_ARK_6G`** | **37 (PSC)** | **`HT320` (320 MHz)** | 25 dBm | Wi-Fi 7 ultra-rápido no canal de varredura preferencial |
-| **MLD** | 5G + 6G | **`CASA_ARK_7G`** | MLO Agregado | 160 + 320 MHz | 25 dBm | **Wi-Fi 7 Multi-Link Operation** ativo em hardware |
+| Radio | Frequency | SSID | Channel / Width | Link Rate | Roaming / Features |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`wifi2`** | 6 GHz | **Customizable (AP Mode)** | Auto / **`HT320` (320 MHz)** | **5.7648 Gb/s** | WPA3-SAE, Mandatory PMF, 802.11k/v, DTIM=2 |
+| **`wifi1`** | 5 GHz | **Customizable (AP Mode)** | Auto / **`HT80` (80 MHz)** | **1.44 Gb/s** | 4 Beamforming Antennas (8.38 dBi), 802.11k/v, DTIM=2 |
+| **`wifi0`** | 2.4 GHz | *(Optional / IoT)* | Auto / `HT20` | 688 Mb/s | WPA2-PSK AES (Universal legacy compatibility) |
 
-*As senhas das redes Wi-Fi podem ser mantidas ou customizadas livremente no painel web ou via terminal UCI (`uci set wireless.@wifi-iface[X].key='suasenha'`).*
-
----
-
-## 3. Comandos Rápidos de Acesso
-
-### Acesso Instantâneo via Telnet (Recomendado na LAN):
-No Prompt de Comando ou PowerShell do Windows:
-```powershell
-# Se o roteador estiver com o IP padrão de fábrica:
-telnet 192.168.76.1
-
-# Se o roteador já estiver configurado como AP na rede deste lab:
-telnet 192.168.73.2
-```
-*Você cai direto no terminal de superusuário (`/ #`) sem necessidade de senha.*
-
-### Acesso via SSH:
-```powershell
-# Se o roteador estiver com o IP de fábrica:
-ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.76.1
-
-# Se o roteador já estiver configurado no modo AP:
-ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.73.2
-```
-*(ou `ssh -o HostKeyAlgorithms=+ssh-rsa root@...`, utilizando a sua senha de Admin).*
+> [!NOTE]
+> **Regarding TX Power (dBm):** The 5 GHz radio already runs at the physical ceiling of the Qualcomm FEMs (~27.3 dBm conducted / ~35 dBm EIRP with beamforming). The 6 GHz radio is calibrated from factory under the international LPI (Low Power Indoor - 5 dBm/MHz) mask. Forcing higher dBm in software on 320 MHz channels saturates the amplifiers and causes EVM constellation distortion on 4096-QAM, lowering throughput. Factory calibration delivers the mathematically optimal speed/range balance.
 
 ---
 
-## 4. Estrutura deste Repositório
+## 4. 📁 Repository Architecture in 7 Modules
 
 ```text
 Acer-Predator-Connect-T7/
-├── Backups_MTD/                                 # [CRÍTICO] Imagens brutas da memória Flash (Full Dump)
-│   ├── backup_predator_t7_art.bin               # Calibração Wi-Fi 7 (Atheros Radio Test - 2 MB)
-│   ├── backup_predator_t7_ubi_rootfs.bin        # Imagem bruta 1:1 do SquashFS de fábrica (38 MB)
-│   ├── backup_predator_t7_wifi_fw_raw.bin       # Partição bruta do firmware Wi-Fi (8.16 MB)
-│   ├── backup_predator_t7_kernel.bin            # Partição bruta do Kernel Linux 5.4 Qualcomm (4.04 MB)
-│   ├── backup_predator_t7_qsee_tz.bin           # Qualcomm TrustZone / QSEE (3.5 MB)
-│   ├── backup_predator_t7_uboot_appsbl.bin      # Bootloader U-Boot APPSBL principal (1.5 MB)
-│   ├── backup_predator_t7_appsbl_1.bin          # Cópia secundária do U-Boot (1.5 MB)
-│   ├── backup_predator_t7_sbl1.bin              # Bootloader primário Qualcomm SBL1 (1.5 MB)
-│   ├── backup_predator_t7_ethphy_fw.bin         # Firmware da PHY Ethernet 2.5G (1 MB)
-│   ├── backup_predator_t7_mibib.bin             # Tabela de partições do SoC (1 MB)
-│   ├── backup_predator_t7_uboot_env.bin         # Variáveis de ambiente do U-Boot (512 KB)
-│   ├── backup_predator_t7_devcfg.bin            # Device Config Qualcomm (512 KB)
-│   └── backup_predator_t7_cdt.bin               # Platform Data CDT (512 KB)
+├── INDEX.md                                     # [GROUND TRUTH] Executive overview and critical specs
+├── CHANGELOG_BUILDS.md                          # Consolidated version and test matrix
+├── README.md                                    # Master English documentation
+├── README_PT.md                                 # Documentação completa em Português
+├── RESTAURAR_OU_BACKUP_T7.bat                   # Interactive backup and restore launcher (Windows)
 │
-├── Configuracoes_Roteador/                      # Arquivo .cfg pronto para restauração Web
-│   └── config_ap_ssh_unlocked_template.cfg      # Template público ativo (AP + Wi-Fi 7 + SSH + Canais)
+├── 01_FIRMWARES_E_IMAGENS/                      # Firmware images and rootfs files
+│   ├── OpenWrt_Imagens/                         # FIT images (.itb), sysupgrade and initramfs
+│   └── Custom_SquashFS/                         # Extracted and modified RootFS images
 │
-├── Engenharia_Reversa_OpenWrt/                  # [DEV] Kit de portabilidade para o OpenWrt Oficial
-│   ├── acer_predator_t7.dts                     # Árvore de dispositivos (Device Tree) DESCOMPILADA (100 KB)
-│   ├── acer_predator_t7.dtb                     # Binário original montado pelo kernel (/sys/firmware/fdt)
-│   ├── kernel_modules_5.4.213.tar.gz            # Drivers proprietários compilados (PPE, NSS, ECM, Wi-Fi 7 - 8.3 MB)
-│   ├── webapps_acer_oem.tar.gz                  # Binários e daemons da interface Acer, CGI e Killer QoS (3.4 MB)
-│   ├── qualcomm_ini_and_sawf.tar.gz             # Tabelas INI de calibração Qualcomm e classes SAWF QoS (8 KB)
-│   ├── etc_factory_tree.tar.gz                  # Árvore /etc/ de fábrica (scripts init.d, uci defaults - 435 KB)
-│   ├── ipq5332_wifi_fw.tar.gz                   # Pacote de firmwares Wi-Fi 7 Qualcomm IPQ5332 (4.3 MB)
-│   ├── gpio_table.txt                           # Tabela e mapa de pinos digitais GPIO
-│   ├── board.json                               # Definição OpenWrt de modelo e portas de rede
-│   ├── switch_config.txt                        # Configuração do switch gigabit integrado
-│   ├── loaded_modules.txt                       # Módulos de kernel carregados (lsmod)
-│   ├── network_interfaces.txt                   # Mapeamento completo de interfaces de rede
-│   ├── README_PORT_OPENWRT.md                   # Guia passo a passo para criar o Target no OpenWrt
-│   └── modem_5g_fibocom_x7/                     # [NOVO] Engenharia reversa do modem 5G Fibocom FM160 do X7
-│       ├── bin/                                 # Binários RIL (at_rild, ipqcm, modem-monitor, etc.)
-│       ├── config/                              # Configurações do modem, ril.json (/dev/mhi_at) e GPIOs
-│       ├── init.d/                              # Scripts de serviço de telefonia e discagem celular
-│       ├── kmod/                                # Drivers de kernel (rmnet_core.ko, rmnet_ctl.ko)
-│       └── README.md                            # Documentação técnica detalhada do subsistema celular
+├── 02_BACKUPS_E_DUMPS/                          # Flash dumps and recovery packages
+│   ├── Imagens_Recuperacao_WPS_Failsafe/        # Emergency WPS .itb images (Slot 1 & Slot 2)
+│   ├── MTD_Full_Dumps/                          # 1:1 factory partition dumps (ART, APPSBL, Kernel)
+│   └── Configuracoes_CFG/                       # OEM web interface .cfg templates
 │
-├── Scripts_Automacao/                           # Utilitários Python
-│   ├── apply_debloat.py                         # Limpeza cirúrgica de telemetria, FOTA e daemons não utilizados
-│   ├── dump_full_firmware.py                    # Script de dump completo 1:1 de MTDs e diretórios do sistema
-│   ├── unlock_only_ssh.py                       # Script para destravar SOMENTE SSH/Telnet em qualquer backup
-│   ├── build_ssh_unlocked.py                    # Script que compilou a injeção do SSH e canais
-│   └── test_router_access.py                    # Diagnóstico rápido de portas, temperatura e Wi-Fi
+├── 03_ENGENHARIA_REVERSA/                       # Low-level hardware reverse engineering
+│   ├── DeviceTree_DTS/                          # Decompiled board DTS and DTB files
+│   ├── Modulos_Kernel_QSDK/                     # Acceleration modules (PPE, NSS, ECM on Linux 5.4)
+│   ├── Modem_5G_Fibocom_X7/                     # Cellular daemons and RIL reverse engineering
+│   ├── Homologacao_FCC/                         # Official FCC filings and high-res PCB photos
+│   └── Desmontagem_U-Boot/                      # Static analysis tools and U-Boot scripts
 │
-├── README.md                                    # Este documento
-├── DESCOBERTAS_LUCI_DEBLOAT_E_ARQUITETURA.md    # [IMPORTANTE] LuCI nativo, fix de login, debloat e blueprint
-├── COMO_EDITAR_CFG_E_LIBERAR_SSH.md             # Guia: como editar o .cfg e destravar apenas SSH/Telnet
-├── GUIA_TECNICO_DESBLOQUEIO_E_AP.md             # Passo a passo da engenharia reversa e modificações
-├── MAPA_HARDWARE_E_PARTICOES.md                 # Tabela MTD, Dual-Boot e parâmetros do U-Boot
-└── RECUPERACAO_E_DESASTRE_UNBRICK.md            # Guia de recuperação de emergência (TFTP)
+├── 04_SCRIPTS_E_FERRAMENTAS/                    # Automation Tooling
+│   ├── Automacao_e_Unlock/                      # Optimization, debloat, AP, and slot rollback scripts
+│   │   ├── otimizar_e_ativar_luci_slot2.py      # Master debloat, LuCI port 80 & kernel optimization
+│   │   ├── aplicar_configuracao_pessoal_ap_t7.py# Declarative Wi-Fi 7 AP configurator
+│   │   ├── executar_chaveamento_slot1_recovery.py# Forces boot back to Slot 1
+│   │   └── gravar_v27_slot2.py                  # Clean Slot 2 network flasher
+│   ├── Diagnostico_de_Rede/                     # ARP scanners, DHCP listeners, ping monitors
+│   └── Servidor_TFTP/                           # Windows TFTP utilities and ITB binaries
+│
+├── 05_COMPILADORES/                             # Compilers & Toolchains
+│   └── SquashFS_QSDK_T7/                        # mksquashfs and unsquashfs (256k XZ)
+│
+├── 06_DOCUMENTACAO/                             # Layered Technical Documentation
+│   ├── PROCEDIMENTOS/                           # Step-by-step operational runbooks (00 to 09)
+│   └── NOTAS_HARDWARE/                          # Partitioning, FOTA, and TrustZone technical notes
+│
+└── assets/                                      # Banners and architecture diagrams
 ```
 
 ---
 
-## 5. 📦 Boas Práticas de Download e Armazenamento (GitHub & Repositório)
+## 5. 🔗 Twin Device: Parity with the Acer Predator Connect X7 5G CPE
 
-Este repositório preserva imagens de calibração e partições MTD essenciais (`Backups_MTD/`). Para garantir downloads rápidos e respeitar as diretrizes da comunidade:
+The **Acer Predator Connect X7 5G CPE** shares **99% identical hardware and codebase** with the **Predator Connect T7** (Qualcomm IPQ5332 SoC, Linux kernel 5.4.213, identical MTD layout, and BE11000 Wi-Fi 7 radios). The sole physical distinction is that the X7 mounts a Fibocom FM160 (Snapdragon X62 5G) module on its internal M.2 slot.
 
-> [!TIP]
-> ### ⚡ Dica para Clonagem Rápida:
-> Para economizar tempo e largura de banda, recomenda-se realizar uma **clonagem rasa** (*shallow clone*), que baixa apenas a revisão atual dos arquivos sem todo o histórico de commits:
-> ```bash
-> git clone --depth 1 https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git
-> ```
+The non-invasive root unlock script ([`unlock_only_ssh.py`](04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/unlock_only_ssh.py)) works 1:1 on the X7 without modifications.
 
-> [!IMPORTANT]
-> ### 🛡️ Diretrizes de Armazenamento e Limites do GitHub:
-> * **Limite de Arquivo do Git:** O GitHub impõe um limite estrito de **100 MB** por arquivo individual no Git tradicional (com alertas a partir de 50 MB) e recomenda manter o repositório abaixo de **1 GB a 5 GB**.
-> * **Publicação de Novos Dumps ou Imagens Compiladas:** Imagens completas de firmware (`.bin`, `.img`, `.iso`) ou pacotes compilados pesados **não devem ser commitados diretamente na árvore do Git**. Em vez disso, utilize a aba **[Releases](https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/releases)** do repositório, que suporta gratuitamente arquivos de até **2 GB cada**, mantendo o repositório leve, ágil e dentro das diretrizes gratuitas do GitHub.
+For complete binary analysis, GPIO pinouts, and cellular reverse-engineering notes:  
+👉 **[Fibocom FM160 5G Modem Reverse Engineering Documentation](03_ENGENHARIA_REVERSA/Modem_5G_Fibocom_X7/README.md)**
 
 ---
 
-## 6. 🔗 Compatibilidade com o Acer Predator Connect X7 5G CPE (Irmão Gêmeo)
-
-Conforme identificado em discussões de desenvolvedores no fórum oficial do OpenWrt, o roteador **Acer Predator Connect X7 5G CPE** compartilha **99% do mesmo hardware e código-fonte base** com o **Predator Connect T7**.
-
-### 🔍 Evidências Forenses Comprovadas nos Dumps:
-1. **Mesma Plataforma Base:** Ambos utilizam a arquitetura Qualcomm Immersive Home `IPQ5332/AP-MI01.6`, com kernel Linux 5.4.213, mesmo particionamento MTD e rádios Wi-Fi 7 BE11000.
-2. **Código do Modem no T7:** No dump original da partição `rootfs` do T7, o binário `/usr/bin/at_rild` contém a rotina de detecção `AT+CGMI?` validando o fabricante `"Fibocom"` e a função interna dedicada `set_fm160_usb_lock`.
-3. **Device Tree (DTS):** O Device Tree extraído do T7 (`acer_predator_t7.dts`) declara ativamente o barramento PCIe 0 (`pcie@20000000`) com o controlador MHI (`qcom,mhi@0`), aliases de rede `rmnet_mhi` e os pinos GPIO 33 (`mdm2ap`) e 34 (`ap2mdm`).
-4. **Módulos Celulares Ativos:** O kernel carrega nativamente os módulos `rmnet_core.ko` e `rmnet_ctl.ko`.
-
-### 📊 Comparativo Técnico: T7 vs. X7
-
-| Componente | Predator Connect T7 | Predator Connect X7 5G CPE |
-| :--- | :--- | :--- |
-| **SoC Principal** | Qualcomm IPQ5332 (Quad-Core A53 @ 1.5 GHz) | Qualcomm IPQ5332 (Quad-Core A53 @ 1.5 GHz) |
-| **Wi-Fi** | Tri-Band Wi-Fi 7 BE11000 (2.4G + 5G + 6G) | Tri-Band Wi-Fi 7 BE11000 (2.4G + 5G + 6G) |
-| **Portas de Rede** | 1x 2.5 Gbps WAN + 2x 1 Gbps LAN | 1x 2.5 Gbps WAN + 2x 1 Gbps LAN |
-| **Slot M.2 WWAN** | Desocupado na PCB | **Módulo Fibocom FM160 (Snapdragon X62 5G)** |
-| **Slot Cartão SIM** | Ausente / Não soldado | Slot Nano-SIM / eSIM presente |
-| **Estrutura de Backup** | `config.cfg` (tar.gz descompactado) | `config.cfg` (tar.gz descompactado) |
-
-### 🚀 Desbloqueio de Root no X7:
-Como a infraestrutura de firmware e backup Web é idêntica, **o script [`unlock_only_ssh.py`](Scripts_Automacao/unlock_only_ssh.py) funciona 1:1 no Predator Connect X7**, permitindo aos donos do X7:
-* Obter acesso Root Shell (SSH / Telnet) sem abrir o roteador e sem soldar cabos UART.
-* Conversar diretamente com o modem Fibocom FM160 via comandos AT na porta serial `/dev/mhi_at` (bloqueio de bandas 5G, ajuste de TTL / Mangle para planos ilimitados, telemetria de sinal).
-* Realizar o dump preventivo das partições de calibração Wi-Fi (`0:ART`) e do sistema.
-
-Para detalhes completos dos binários, GPIOs e scripts do modem 5G, consulte:
-👉 **[Documentação da Engenharia Reversa do Modem 5G Fibocom FM160](Engenharia_Reversa_OpenWrt/modem_5g_fibocom_x7/README.md)**
-
+<p align="center">
+  <b>Developed by the Independent OpenWrt & Reverse Engineering Community</b><br>
+  MIT License — Free to modify and improve.
+</p>

@@ -1,0 +1,18 @@
+================================================================================
+RELATORIO DE EXTRACAO DA CAIXA-PRETA RAMOOPS - ACER PREDATOR CONNECT T7
+Data: Fri Oct  2 15:14:31 2026
+Tamanho Analisado: 1048576 bytes
+================================================================================
+
+[DIAGNOSTICO PRELIMINAR]
+[+] SUCESSO: A regiao de memoria foi sobrescrita pelo sistema!
+[-] Nenhum marcador formal de console Linux encontrado no buffer decodificado.
+
+================================================================================
+STRINGS EXTRAIDAS DA MEMORIA RAM (0x4CC00000 - 0x4CD00000):
+================================================================================
+
+
+
+================================================================================
+FIM DO RELATORIO

@@ -1,0 +1,409 @@
+[
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/1 - Firmware e Imagens OpenWrt/openwrt-predator-t7-kernel-618-final.fit",
+    "bytes": 4544444,
+    "sha256": "cea9308213d2762595864a44b77f9faff8bb9d3fd9b402303803eecfd02a5352",
+    "images": [
+      {
+        "node": "/images/kernel-1",
+        "type": "kernel",
+        "arch": "arm64",
+        "compression": "lzma",
+        "load": "0x41000000",
+        "entry": "0x41000000",
+        "data_bytes": 4519081,
+        "data_sha256": "03b50a02ebe639f81a8c3b08a77f36960bc8ed7c72169e72c0605c6e27a8467e",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "raw_bytes": 15046664,
+        "raw_sha256": "0b059663b8499c170e113a2ca78b2804154f01270c5ed35dee81666787a34a13",
+        "arm64_magic": "41524d64",
+        "text_offset": "0x0",
+        "image_size": "0xeb0000"
+      },
+      {
+        "node": "/images/fdt-1",
+        "type": "flat_dt",
+        "arch": "arm64",
+        "compression": "none",
+        "load": null,
+        "entry": null,
+        "data_bytes": 23950,
+        "data_sha256": "b119ebfa5956d16172f64c6303fbabe00a2a3b7c1c0523af165fb467da825a89",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "memory_reg": "00000000400000000000000000000000",
+        "bootargs": "console=ttyMSM0,115200n8 earlycon=msm_serial_dm,0x078af000 maxcpus=1 nowatchdog panic=0 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait",
+        "flash_nodes": [],
+        "reserved": {
+          "/reserved-memory/ramoops@4cc00000": "000000004cc000000000000000100000",
+          "/reserved-memory/bootloader@4a100000": "000000004a1000000000000000400000",
+          "/reserved-memory/sbl@4a500000": "000000004a5000000000000000100000",
+          "/reserved-memory/tz@4a600000": "000000004a6000000000000000200000",
+          "/reserved-memory/smem@4a800000": "000000004a8000000000000000100000",
+          "/reserved-memory/tzapp@49b00000": "0000000049b000000000000000600000",
+          "/reserved-memory/wcnss@4a900000": "000000004a9000000000000002300000",
+          "/reserved-memory/m3_dump@4cc00000": "000000004cc000000000000000100000",
+          "/reserved-memory/q6_etr_dump@1": "000000004cd000000000000000100000",
+          "/reserved-memory/q6_caldb_region@4ce00000": "000000004ce000000000000000500000",
+          "/reserved-memory/mlo_global_mem_0@4db00000": "000000004db000000000000001100000",
+          "/reserved-memory/qcn9224_pcie1@51e00000": "0000000051e000000000000003200000"
+        }
+      }
+    ]
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/1 - Firmware e Imagens OpenWrt/openwrt-predator-t7-kernel-arm64.fit",
+    "bytes": 4544236,
+    "sha256": "7606b58dd80625d32474d579055adcca8a32929d402d3e3da7167b32935001aa",
+    "images": [
+      {
+        "node": "/images/kernel-1",
+        "type": "kernel",
+        "arch": "arm64",
+        "compression": "lzma",
+        "load": "0x41000000",
+        "entry": "0x41000000",
+        "data_bytes": 4519081,
+        "data_sha256": "03b50a02ebe639f81a8c3b08a77f36960bc8ed7c72169e72c0605c6e27a8467e",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "raw_bytes": 15046664,
+        "raw_sha256": "0b059663b8499c170e113a2ca78b2804154f01270c5ed35dee81666787a34a13",
+        "arm64_magic": "41524d64",
+        "text_offset": "0x0",
+        "image_size": "0xeb0000"
+      },
+      {
+        "node": "/images/fdt-1",
+        "type": "flat_dt",
+        "arch": "arm64",
+        "compression": "none",
+        "load": null,
+        "entry": null,
+        "data_bytes": 23759,
+        "data_sha256": "66e45330dbaafe5a972d1a6019e0d53f2fe2b6f7be98eb8ec01b07e011836669",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "memory_reg": "00000000400000000000000000000000",
+        "bootargs": "console=ttyMSM0,115200n8 earlycon nowatchdog panic=0 ubi.mtd=rootfs_1 root=mtd:ubi_rootfs rootfstype=squashfs rootwait",
+        "flash_nodes": [],
+        "reserved": {
+          "/reserved-memory/bootloader@4a100000": "000000004a1000000000000000400000",
+          "/reserved-memory/sbl@4a500000": "000000004a5000000000000000100000",
+          "/reserved-memory/tz@4a600000": "000000004a6000000000000000200000",
+          "/reserved-memory/smem@4a800000": "000000004a8000000000000000100000",
+          "/reserved-memory/tzapp@49b00000": "0000000049b000000000000000600000",
+          "/reserved-memory/wcnss@4a900000": "000000004a9000000000000002300000",
+          "/reserved-memory/m3_dump@4cc00000": "000000004cc000000000000000100000",
+          "/reserved-memory/q6_etr_dump@1": "000000004cd000000000000000100000",
+          "/reserved-memory/q6_caldb_region@4ce00000": "000000004ce000000000000000500000",
+          "/reserved-memory/mlo_global_mem_0@4db00000": "000000004db000000000000001100000",
+          "/reserved-memory/qcn9224_pcie1@51e00000": "0000000051e000000000000003200000"
+        }
+      }
+    ]
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/1 - Firmware e Imagens OpenWrt/openwrt-predator-t7-kernel-ramoops.fit",
+    "bytes": 4544480,
+    "sha256": "a8407376aee1a13fd71fce92a4fe9fc8b0a9b677449cad10e45edb4b3438ca3b",
+    "images": [
+      {
+        "node": "/images/kernel-1",
+        "type": "kernel",
+        "arch": "arm64",
+        "compression": "lzma",
+        "load": "0x41000000",
+        "entry": "0x41000000",
+        "data_bytes": 4519081,
+        "data_sha256": "03b50a02ebe639f81a8c3b08a77f36960bc8ed7c72169e72c0605c6e27a8467e",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "raw_bytes": 15046664,
+        "raw_sha256": "0b059663b8499c170e113a2ca78b2804154f01270c5ed35dee81666787a34a13",
+        "arm64_magic": "41524d64",
+        "text_offset": "0x0",
+        "image_size": "0xeb0000"
+      },
+      {
+        "node": "/images/fdt-1",
+        "type": "flat_dt",
+        "arch": "arm64",
+        "compression": "none",
+        "load": null,
+        "entry": null,
+        "data_bytes": 23954,
+        "data_sha256": "706e9a88f8fbc5c790c84ae134a8f9f6fe7dda08e2ec7c79aaef42695359ca52",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "memory_reg": "00000000400000000000000000000000",
+        "bootargs": "console=ttyMSM0,115200n8 earlycon=msm_serial_dm,0x078af000 maxcpus=1 nowatchdog panic=0 ubi.mtd=rootfs_1 root=mtd:ubi_rootfs rootfstype=squashfs rootwait",
+        "flash_nodes": [],
+        "reserved": {
+          "/reserved-memory/ramoops@4cc00000": "000000004cc000000000000000100000",
+          "/reserved-memory/bootloader@4a100000": "000000004a1000000000000000400000",
+          "/reserved-memory/sbl@4a500000": "000000004a5000000000000000100000",
+          "/reserved-memory/tz@4a600000": "000000004a6000000000000000200000",
+          "/reserved-memory/smem@4a800000": "000000004a8000000000000000100000",
+          "/reserved-memory/tzapp@49b00000": "0000000049b000000000000000600000",
+          "/reserved-memory/wcnss@4a900000": "000000004a9000000000000002300000",
+          "/reserved-memory/m3_dump@4cc00000": "000000004cc000000000000000100000",
+          "/reserved-memory/q6_etr_dump@1": "000000004cd000000000000000100000",
+          "/reserved-memory/q6_caldb_region@4ce00000": "000000004ce000000000000000500000",
+          "/reserved-memory/mlo_global_mem_0@4db00000": "000000004db000000000000001100000",
+          "/reserved-memory/qcn9224_pcie1@51e00000": "0000000051e000000000000003200000"
+        }
+      }
+    ]
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/1 - Firmware e Imagens OpenWrt/openwrt-predator-t7-kernel.fit",
+    "bytes": 4540440,
+    "sha256": "b2578f0b2e6ac99db776aea53c172b040540a67fb09d2199393b7066a081a6af",
+    "images": [
+      {
+        "node": "/images/kernel-1",
+        "type": "kernel",
+        "arch": "arm64",
+        "compression": "lzma",
+        "load": "0x40008000",
+        "entry": "0x40008000",
+        "data_bytes": 4519081,
+        "data_sha256": "03b50a02ebe639f81a8c3b08a77f36960bc8ed7c72169e72c0605c6e27a8467e",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "raw_bytes": 15046664,
+        "raw_sha256": "0b059663b8499c170e113a2ca78b2804154f01270c5ed35dee81666787a34a13",
+        "arm64_magic": "41524d64",
+        "text_offset": "0x0",
+        "image_size": "0xeb0000"
+      },
+      {
+        "node": "/images/fdt-1",
+        "type": "flat_dt",
+        "arch": "arm64",
+        "compression": "none",
+        "load": null,
+        "entry": null,
+        "data_bytes": 19984,
+        "data_sha256": "9534a55072980fa53aeb5dd6fa143e1e3246c63f06be6fb5fdb427e09da3108b",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "memory_reg": "00000000400000000000000000000000",
+        "bootargs": "console=ttyMSM0,115200n8",
+        "flash_nodes": [],
+        "reserved": {
+          "/reserved-memory/bootloader@4a100000": "000000004a1000000000000000400000",
+          "/reserved-memory/sbl@4a500000": "000000004a5000000000000000100000",
+          "/reserved-memory/tz@4a600000": "000000004a6000000000000000200000",
+          "/reserved-memory/smem@4a800000": "000000004a8000000000000000100000"
+        }
+      }
+    ]
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/1 - Firmware e Imagens OpenWrt/openwrt-qualcommbe-ipq53xx-acer_predator-t7-initramfs.itb",
+    "bytes": 13238272,
+    "sha256": "6ca31f2c11a483301d84d07dd0039586059b0565a579c8a8875f4e95bd69732f",
+    "images": [
+      {
+        "node": "/images/kernel@1",
+        "type": "kernel",
+        "arch": "arm64",
+        "compression": "lzma",
+        "load": "0x41000000",
+        "entry": "0x41000000",
+        "data_bytes": 13185944,
+        "data_sha256": "7bf2d3d0afb7c3bd977907b45f0405f1f81c5cd48193041ebae77ad1dd616871",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "raw_bytes": 52533256,
+        "raw_sha256": "70f38365464f253a93012b606efa0334d3bf89e1a32e66f1824d87fa94783ba2",
+        "arm64_magic": "41524d64",
+        "text_offset": "0x0",
+        "image_size": "0x3270000"
+      },
+      {
+        "node": "/images/fdt@1",
+        "type": "flat_dt",
+        "arch": "arm64",
+        "compression": "none",
+        "load": null,
+        "entry": null,
+        "data_bytes": 19984,
+        "data_sha256": "9534a55072980fa53aeb5dd6fa143e1e3246c63f06be6fb5fdb427e09da3108b",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "memory_reg": "00000000400000000000000000000000",
+        "bootargs": "console=ttyMSM0,115200n8",
+        "flash_nodes": [],
+        "reserved": {
+          "/reserved-memory/bootloader@4a100000": "000000004a1000000000000000400000",
+          "/reserved-memory/sbl@4a500000": "000000004a5000000000000000100000",
+          "/reserved-memory/tz@4a600000": "000000004a6000000000000000200000",
+          "/reserved-memory/smem@4a800000": "000000004a8000000000000000100000"
+        }
+      }
+    ]
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/1 - Firmware e Imagens OpenWrt/openwrt-qualcommbe-ipq53xx-acer_predator-t7-squashfs-sysupgrade.bin",
+    "bytes": 15769919,
+    "sha256": "3fef06c74b582e7ed0ea04e6b6c0dd971ffd47257f38af67c3ad6817f1379764"
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/1 - Firmware e Imagens OpenWrt/openwrt_live_boot.itb",
+    "bytes": 13260076,
+    "sha256": "49b8164bfb0ba6bb0dd478b09d92ac08b5f34448d206f896219c939bbef559f0",
+    "images": [
+      {
+        "node": "/images/script",
+        "type": "script",
+        "arch": "",
+        "compression": "none",
+        "load": null,
+        "entry": null,
+        "data_bytes": 166,
+        "data_sha256": "337ca79d3e5f19d416db084437e033240174acf39ef54e95a08aa989a0de4602",
+        "hashes": {
+          "crc32": true
+        }
+      },
+      {
+        "node": "/images/kernel@1",
+        "type": "kernel",
+        "arch": "arm64",
+        "compression": "lzma",
+        "load": "0x41000000",
+        "entry": "0x41000000",
+        "data_bytes": 13238272,
+        "data_sha256": "6ca31f2c11a483301d84d07dd0039586059b0565a579c8a8875f4e95bd69732f",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "decompress_error": "Input format not supported by decoder"
+      },
+      {
+        "node": "/images/fdt@1",
+        "type": "flat_dt",
+        "arch": "arm64",
+        "compression": "none",
+        "load": null,
+        "entry": null,
+        "data_bytes": 19984,
+        "data_sha256": "9534a55072980fa53aeb5dd6fa143e1e3246c63f06be6fb5fdb427e09da3108b",
+        "hashes": {
+          "crc32": true,
+          "sha1": true
+        },
+        "memory_reg": "00000000400000000000000000000000",
+        "bootargs": "console=ttyMSM0,115200n8",
+        "flash_nodes": [],
+        "reserved": {
+          "/reserved-memory/bootloader@4a100000": "000000004a1000000000000000400000",
+          "/reserved-memory/sbl@4a500000": "000000004a5000000000000000100000",
+          "/reserved-memory/tz@4a600000": "000000004a6000000000000000200000",
+          "/reserved-memory/smem@4a800000": "000000004a8000000000000000100000"
+        }
+      }
+    ]
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/1 - Firmware e Imagens OpenWrt/root.squashfs",
+    "bytes": 11242176,
+    "sha256": "3589ffa2dbae6451f31f9c0dcd3eabeddbf36d270863acdbbf2710b73aca98f2"
+  },
+  {
+    "file": "/home/builder/openwrt/build_dir/target-aarch64_cortex-a53_musl/linux-qualcommbe_ipq53xx/linux-6.18.52/.config",
+    "bytes": 156338,
+    "sha256": "2e14935e4f2a3cc872b5934f2b4ad0abd525a93fbd13b1322d148de12f2d88c8"
+  },
+  {
+    "file": "/home/builder/openwrt/build_dir/target-aarch64_cortex-a53_musl/linux-qualcommbe_ipq53xx/linux-6.18.52/include/generated/autoconf.h",
+    "bytes": 44471,
+    "sha256": "2eb8bf5d1702f7d362c3bdb52844699f314c2647416783502d291406f2aa0f68"
+  },
+  {
+    "file": "/home/builder/openwrt/build_dir/target-aarch64_cortex-a53_musl/linux-qualcommbe_ipq53xx/Image",
+    "bytes": 15046664,
+    "sha256": "18f86dca1e08af144177d82d39d2de46113ab3ce19591c158339973b572a6867"
+  },
+  {
+    "file": "/home/builder/openwrt/build_dir/target-aarch64_cortex-a53_musl/linux-qualcommbe_ipq53xx/Image-initramfs",
+    "bytes": 52533256,
+    "sha256": "7f08ea02e56b743bed0b25cde443c008018a388de4f4f1f00e9d9e6a28dce8c7"
+  },
+  {
+    "file": "/home/builder/openwrt/target/linux/qualcommbe/dts/ipq5332-acer-predator-t7.dts",
+    "bytes": 3691,
+    "sha256": "71418492a5893fa9ba7a69a68f77d0823498f1a6485f3d11db5506baa3de25e0"
+  },
+  {
+    "file": "/home/builder/openwrt/target/linux/qualcommbe/image/ipq53xx.mk",
+    "bytes": 2447,
+    "sha256": "258d8fe8d6952cad119ea7b01c778b89b5e089ab8d51266e6938b42e9568a170"
+  },
+  {
+    "file": "/home/builder/openwrt/target/linux/qualcommbe/ipq53xx/base-files/lib/upgrade/platform.sh",
+    "bytes": 578,
+    "sha256": "0e5604a7dcb286363a6446e590fe2cc5a2693795c822eb6cae623e9541e35d8f"
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/5 - Codigo Fonte e DTS/ipq5332-acer-predator-t7.dts",
+    "bytes": 3422,
+    "sha256": "ab5b70c61c56877673c5d6f1b0040b8d6b98bcce871a77c273028a5dfd8f78ab"
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Logs_Diagnostico/ramoops_raw.bin",
+    "bytes": 1048576,
+    "sha256": "86a13075e6730c536628b2f5a4e3e7d0aefd444664833956705ae86859ba7e48"
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Scripts_Automacao/executar_teste_618_completo.py",
+    "bytes": 6049,
+    "sha256": "aa9125a676bf5ac614baa4bcc57da6204d66aa08b5606a0fa0be48dc5e7daf61"
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Scripts_Automacao/executar_teste_618_estatico.py",
+    "bytes": 4710,
+    "sha256": "77e874b9d651f2219ac146d574fd59467644e23965797405975d2146f8e65faa"
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Scripts_Automacao/preparar_kernel_618_perfeito.py",
+    "bytes": 5820,
+    "sha256": "a0c76b74141ca7f24e87efcd266c82bbf74b6045e52d8fcbf3ef27b8e9515879"
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Scripts_Automacao/build_kernel_ramoops_fit.py",
+    "bytes": 6886,
+    "sha256": "893829ab69906e425c63b1e5fed36dd3e032a5201d32a4498682e916a52fa145"
+  },
+  {
+    "file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Scripts_Automacao/extrair_ramoops_log.py",
+    "bytes": 8182,
+    "sha256": "dac62453d750300bdb80aebad724d4e18845990c1033cb72c9f1f6a17b5e8f1d"
+  }
+]
+

@@ -1,0 +1,302 @@
+[
+  {
+    "path": "manifesto-sessao-PENDENTE.json",
+    "bytes": 754,
+    "sha256": "0100e72e6ce9dafbea99e65778c69325ed48cf7dcce9975f0d4e22de39f31bfc"
+  },
+  {
+    "path": "PREPARACAO-CONCLUIDA-2026-10-02.md",
+    "bytes": 6498,
+    "sha256": "ee39e6e028106ea2f1ce029f68015a713df676523fe9a1443fe60df4c95a824a"
+  },
+  {
+    "path": "README.md",
+    "bytes": 1465,
+    "sha256": "823c09ee1519e0057775b21a7e10ec8c834bf3ce9bebeb948a3e824e11e7edac"
+  },
+  {
+    "path": "TASK.md",
+    "bytes": 1733,
+    "sha256": "a4c075e07f7c7cb47b0888d06e56a82ad4b70ba5a195f54ba0c49aa22cdbcce3"
+  },
+  {
+    "path": "validar_config_diagnostico.py",
+    "bytes": 3371,
+    "sha256": "dc980eaae1304b935c118b1e49e0eb51adc6676cce2e811d06844398dda65631"
+  },
+  {
+    "path": "VERIFICACAO-CONFIG-2026-10-02.md",
+    "bytes": 2245,
+    "sha256": "547e9b5b46bb2c11182afe2fb18dc4114be5e17431a87efc29446228b5626a94"
+  },
+  {
+    "path": "Relatorios anteriores\\BOOT-RAM-TFTP-VERIFICACAO-2026-10-02.md",
+    "bytes": 8325,
+    "sha256": "49ecec28ff4e09acca502057a7969dd3aca6c0d117d5bf06a2a1234aaae0fb77"
+  },
+  {
+    "path": "Relatorios anteriores\\COMPARACAO-FIRMWARE-100000032-101000027-2026-10-02-evidencias.json",
+    "bytes": 46302,
+    "sha256": "03e452cef8cbb9bd073109f7cab43451e01fc9baf986b563c11fe32619b220ad"
+  },
+  {
+    "path": "Relatorios anteriores\\COMPARACAO-FIRMWARE-100000032-101000027-2026-10-02.md",
+    "bytes": 8936,
+    "sha256": "9c9963c30ec2ed59cfe83d1928f165ca4b147bda9e6da24d6449354ac0242df2"
+  },
+  {
+    "path": "Relatorios anteriores\\COMPARACAO-UBOOT-JANEIRO-MARCO-2025.md",
+    "bytes": 3254,
+    "sha256": "9d55a0d5d88fd595aaaf775d0e2c51ba5da17ab1d0b357988f1fd269d31f8c7b"
+  },
+  {
+    "path": "Relatorios anteriores\\ESPECIFICACAO-DIAGNOSTICO-RAM-2026-10-02.json",
+    "bytes": 4848,
+    "sha256": "7d4d9fffb1cdfe617a5d34b9a833c55354e27369bc40451362e2df762b2820c5"
+  },
+  {
+    "path": "Relatorios anteriores\\ESPECIFICACAO-DIAGNOSTICO-RAM-2026-10-02.md",
+    "bytes": 16974,
+    "sha256": "3501a72731f49914729aabdfc0e951796f47ccbd7a2ad732c7616b6c17a73692"
+  },
+  {
+    "path": "Relatorios anteriores\\INSPECAO-FIRMWARE-101000027-2026-10-02.md",
+    "bytes": 6706,
+    "sha256": "efecd529346fc40a8b01ecf94a36bfb7b95c15d65db2580bef4b065e6d504eab"
+  },
+  {
+    "path": "Relatorios anteriores\\LEVANTAMENTO-MEMORIA-BOOT-RAM-2026-10-02-evidencias.json",
+    "bytes": 7713,
+    "sha256": "9c295601a0c48779f756504a5218fec550fb290e295e36fb0921b62c02e6b6c0"
+  },
+  {
+    "path": "Relatorios anteriores\\LEVANTAMENTO-MEMORIA-BOOT-RAM-2026-10-02.md",
+    "bytes": 13835,
+    "sha256": "9288a46b69dd58528ad4bcd74f4b22c939dd54ef2907eab0470019e3f5926e21"
+  },
+  {
+    "path": "Relatorios anteriores\\REVISAO-COMPILACAO-ARM64-2026-10-02-evidencias.json",
+    "bytes": 16527,
+    "sha256": "16ff416766985888d3685921bec4738f403856404712743ceef1e318276465a6"
+  },
+  {
+    "path": "Relatorios anteriores\\REVISAO-COMPILACAO-ARM64-2026-10-02.md",
+    "bytes": 14122,
+    "sha256": "bd155b12629240107e59607cc3b2c1675d7d90881137563b6c181711d278c910"
+  },
+  {
+    "path": "evidencias\\inventario-entregaveis-20261002.json",
+    "bytes": 10035,
+    "sha256": "b3d351e1de7e9fa26a5aca253282cfc0300449beefb142acc74228cad78d9260"
+  },
+  {
+    "path": "evidencias\\kernel-config-2026-10-02.txt",
+    "bytes": 156338,
+    "sha256": "2e14935e4f2a3cc872b5934f2b4ad0abd525a93fbd13b1322d148de12f2d88c8"
+  },
+  {
+    "path": "evidencias\\manifesto-intermediario-com-qfprom.json",
+    "bytes": 1671,
+    "sha256": "d29c57902ad838d9e738064a8625af26cd194575831abac87aa17ef52b041e52"
+  },
+  {
+    "path": "evidencias\\verificacao-config-2026-10-02.json",
+    "bytes": 3720,
+    "sha256": "fbeb30bdd730d5c64d09da2204b3cfe0256475f91a7a8b74735e028dd2fb9360"
+  },
+  {
+    "path": "evidencias\\verificacao-config-nova-20261002-v1.json",
+    "bytes": 3619,
+    "sha256": "6ee43cee82f6f9161c08e1b663cd136ba5ac04f58c2de1d8fff5c66c77dd6ced"
+  },
+  {
+    "path": "evidencias\\verificacao-offline-antes-crc-fit.json",
+    "bytes": 1541,
+    "sha256": "cdddcd978c2a801a69b4c9ac182a6a5113f1a6c4b005ea7b79d51f6b94df8a98"
+  },
+  {
+    "path": "fontes\\diag_init.c",
+    "bytes": 2202,
+    "sha256": "2bd95f344fb67ebb48ee6f79ae36540c3f3bbfdc68d83162d28dc4207b14a6bb"
+  },
+  {
+    "path": "fontes\\t7-diagnostico.dts",
+    "bytes": 1869,
+    "sha256": "daec7b74358ef92bd7d54478f4fa62776d667809ef5d4589d6f070c1ab81c09a"
+  },
+  {
+    "path": "ferramentas\\compilar_diagnostico.sh",
+    "bytes": 3908,
+    "sha256": "cc20cf3eb84002889711363f5988de33733c432b39f31add2328b92f02e2c207"
+  },
+  {
+    "path": "ferramentas\\empacotar_candidato.py",
+    "bytes": 3821,
+    "sha256": "06d6f17baeec025b062cb884efa77dffcfa20e04342b169743ac9426bd2928ba"
+  },
+  {
+    "path": "ferramentas\\gerar_acionador_verificacao.py",
+    "bytes": 5333,
+    "sha256": "7e7d244bdbab4cabee5611c9ea317b129b51b3373ff88aef288591d214a24eaa"
+  },
+  {
+    "path": "ferramentas\\retomar_compilacao_v1_netcore.sh",
+    "bytes": 2160,
+    "sha256": "61f9137a0809fecb3d63726353c5cc5acd932c4223e00fd948ad16eefbd4d4f6"
+  },
+  {
+    "path": "ferramentas\\retomar_compilacao_v1_sem_qfprom.sh",
+    "bytes": 2220,
+    "sha256": "1cc699160e1936be5d399578d880e672dd1073ef885511b6e8340cb0741f08fc"
+  },
+  {
+    "path": "ferramentas\\retomar_compilacao_v1.sh",
+    "bytes": 2061,
+    "sha256": "7daa08071191d4c94186454ca4e4dda76adf02c9f26428b6d438013675d9f14f"
+  },
+  {
+    "path": "ferramentas\\tftp_restrito.py",
+    "bytes": 9081,
+    "sha256": "779bb62a34eda73f27d13a9c9d01c0d2acb252a133c00571a7d0a05e1ff1a1f5"
+  },
+  {
+    "path": "ferramentas\\verificar_artefatos.py",
+    "bytes": 7258,
+    "sha256": "37776cd7808c57a9ea38393b0585faec38ba1f84cc510eb4ca507d8aa05f69ca"
+  },
+  {
+    "path": "ferramentas\\verificar_protocolo_local.py",
+    "bytes": 3078,
+    "sha256": "ba4853e61747139a2f7c147809da6b86fe41b863224944027fd489a6dc67eddb"
+  },
+  {
+    "path": "logs\\compilacao-20261002-v1-netcore.log",
+    "bytes": 41405,
+    "sha256": "1ddd3b231f4d9736e63fe975f9369ea1ca9f29ce4a839eb70298fa83c807b2c3"
+  },
+  {
+    "path": "logs\\compilacao-20261002-v1-retomada.log",
+    "bytes": 62639,
+    "sha256": "453871882f03a27da74865e36fe74a92375fe36445faad82fea157b82dbdd240"
+  },
+  {
+    "path": "logs\\compilacao-20261002-v1-sem-qfprom.log",
+    "bytes": 2996,
+    "sha256": "ad6cd79f93a6291c33e66dfae8848dce03b8e8c3995869b54e254250b1af1a04"
+  },
+  {
+    "path": "logs\\compilacao-20261002-v1.log",
+    "bytes": 6707,
+    "sha256": "083e0cfa67c92b917318e19f3b3237a81be4a2eb6e28c96b70dde684d53ac78e"
+  },
+  {
+    "path": "logs\\verificacao-protocolo-local.txt",
+    "bytes": 883,
+    "sha256": "27a03e8b447e616a02092e36e34800da7ec9ecc9368f49d5b2f3f57dee294962"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\candidato.its",
+    "bytes": 860,
+    "sha256": "9d96010248ec8e202535537602d7fba3773e131897656620313d5f50229406f0"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\config-original-antes.sha256",
+    "bytes": 176,
+    "sha256": "89fe6992823b28df88ac77384f3847dd699e6a324f6be4c350604c4990692415"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\config-original-depois.sha256",
+    "bytes": 176,
+    "sha256": "89fe6992823b28df88ac77384f3847dd699e6a324f6be4c350604c4990692415"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\config-original.txt",
+    "bytes": 156338,
+    "sha256": "2e14935e4f2a3cc872b5934f2b4ad0abd525a93fbd13b1322d148de12f2d88c8"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\fontes-kernel-isoladas.tar.gz",
+    "bytes": 282605259,
+    "sha256": "4d5f57365b78d92e2dc9c92203721bba3cb75d9a02a0c8f84ef3f4cdcc306912"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\Image",
+    "bytes": 10156040,
+    "sha256": "d159beb8ad4f8e1a27348754b95fc8f0d675d85d642467fe30c6711e298f116a"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\Image.lzma",
+    "bytes": 3043526,
+    "sha256": "87bbabae2676a667140211d190d70c523484bbd35adf9f0dac066daa1664e732"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\init",
+    "bytes": 282624,
+    "sha256": "6ab7dc55fa27995f75a47171e0a15ef3f8c4705568e431767158f5ec503fe769"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\init-readelf.txt",
+    "bytes": 1882,
+    "sha256": "8eb9b7940c541ac8482d821220d4627f47d2e31d6411775276a0b6a4fbedbe6b"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\initramfs.cpio",
+    "bytes": 283648,
+    "sha256": "e35e23efe2df780df751ca219f44f5388f5b3735048c3cf1dc91736f15bbe33c"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\initramfs.list",
+    "bytes": 182,
+    "sha256": "e67a1a29faf37a0feaedee96d7f94668966dfbbe1090c8925fdd82908320b100"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\kernel.config",
+    "bytes": 115589,
+    "sha256": "b2d247a1ba7fea569e052b42111723968e2f991abb1d4c08990f2a68942c9863"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\manifesto-candidato.json",
+    "bytes": 1671,
+    "sha256": "54d05d2a921e2dc99cfe8caff8449850f99a9eec1f44470fa1e6112ea9dc7606"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\NAO-ENVIAR-AO-ROTEADOR.md",
+    "bytes": 394,
+    "sha256": "e1065208969b9fa25b2f43f5e47336ad8c1c18c12e6c0ecb6c4667bb599b37fa"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\simbolos-diagnostico.txt",
+    "bytes": 180,
+    "sha256": "c9fc34faa2f9d04df4d66a92e34866bb56103e8522cb08c20f6f7b140d16c2cf"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\System.map",
+    "bytes": 1339234,
+    "sha256": "4bb55318b25e25d6d7b1bd4f19e794c587823cd515321e880c2f7bdef0a9105a"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\t7-arm64-diag-CANDIDATO-NAO-ENVIAR.itb",
+    "bytes": 3063368,
+    "sha256": "084c54473930040cc14e0b6790d25bef2f56951e3a5cc24670d54cdbd840302d"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\t7-diagnostico.dtb",
+    "bytes": 18775,
+    "sha256": "3fe8ac341a0adf41f90e21a9ac5e5e8534c6f0000fe92ac7d56f6da544d9dbbd"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\t7-diagnostico.preprocessed.dts",
+    "bytes": 26734,
+    "sha256": "a0294dbe8b922cf7d481c33c9cdf432bd0a004c2d9b3324f40adf17dd70816e9"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\verificacao-offline.json",
+    "bytes": 1541,
+    "sha256": "cdddcd978c2a801a69b4c9ac182a6a5113f1a6c4b005ea7b79d51f6b94df8a98"
+  },
+  {
+    "path": "artefatos\\t7-diag-20261002-v1\\vmlinux",
+    "bytes": 11718240,
+    "sha256": "79987809530de17d3d602023f63beccf66f73c9541e07edb3261c929554cb80a"
+  }
+]

@@ -1,0 +1,41 @@
+From b80e86bc8587b0ed734775ba2d8ae4c7eaac2361 Mon Sep 17 00:00:00 2001
+From: Praveenkumar I <quic_ipkumar@quicinc.com>
+Date: Mon, 03 Aug 2026 18:38:30 +0400
+Subject: [PATCH v2 09/17] arm64: dts: qcom: ipq5332: Add clocks required for USB3 support
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260803-ipq5018-usb3-v2-9-3a4136712b20@outlook.com>
+
+Add aux and lfps clocks to USB controller node for Super-Speed support.
+
+Signed-off-by: Praveenkumar I <quic_ipkumar@quicinc.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5332.dtsi | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5332.dtsi b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+index 1dd1fe76272b..382691a77d61 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+@@ -515,10 +515,14 @@ usb: usb@8a00000 {
+ 
+ 			clocks = <&gcc GCC_USB0_MASTER_CLK>,
+ 				 <&gcc GCC_USB0_SLEEP_CLK>,
+-				 <&gcc GCC_USB0_MOCK_UTMI_CLK>;
++				 <&gcc GCC_USB0_MOCK_UTMI_CLK>,
++				 <&gcc GCC_USB0_AUX_CLK>,
++				 <&gcc GCC_USB0_LFPS_CLK>;
+ 			clock-names = "core",
+ 				      "sleep",
+-				      "mock_utmi";
++				      "mock_utmi",
++				      "aux",
++				      "lfps";
+ 
+ 			resets = <&gcc GCC_USB_BCR>;
+ 
+
+-- 
+2.53.0

@@ -1,0 +1,2892 @@
+{
+  "status": "differences",
+  "router_tested": false,
+  "original": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Backups_MTD/backup_predator_t7_ubi_rootfs.bin",
+  "scratch": "/home/builder/t7-squashfs-roundtrip-20261002-211254",
+  "output": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Feito por ChatGPT/artefatos/squashfs-roundtrip-20261002-211254",
+  "original_sha256_before": "57d1427dad607e6f30373fff8c27681d6fc7d02c3276c0b3ef8aa45755f8e7d3",
+  "01-extract-original_exit": 0,
+  "02-rebuild_exit": 0,
+  "03-extract-rebuilt_exit": 0,
+  "original_header": {
+    "bytes_used": 39589954,
+    "compression": 4,
+    "block_size": 262144,
+    "flags": 1728,
+    "options_hex": "000004001c00090090004000",
+    "file_bytes": 39870464
+  },
+  "rebuilt_header": {
+    "bytes_used": 39595738,
+    "compression": 4,
+    "block_size": 262144,
+    "flags": 1728,
+    "options_hex": "000004001c00090090004000",
+    "file_bytes": 39595738
+  },
+  "counts_original": {
+    "directory": 254,
+    "file": 4303,
+    "symlink": 473,
+    "char": 1
+  },
+  "counts_rebuilt": {
+    "directory": 254,
+    "file": 4303,
+    "symlink": 473,
+    "char": 1
+  },
+  "missing": [],
+  "extra": [],
+  "changed": [
+    {
+      "path": "bin/ash",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/base64",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/cat",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/chgrp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/chmod",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/chown",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/cp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/date",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/dd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/df",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/dmesg",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/echo",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/egrep",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/false",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/fgrep",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/fsync",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/getopt",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/grep",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/gunzip",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/gzip",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/kill",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/ln",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/lock",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/login",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/ls",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/mkdir",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/mknod",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/mktemp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/mount",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/mv",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/netmsg",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/netstat",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/nice",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/passwd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/pidof",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/ping",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/ping6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/ps",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/pwd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/rbash",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/rm",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/rmdir",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/run-parts",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/sed",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/sh",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/sleep",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/stat",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/sync",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/tar",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/touch",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/traceroute",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/traceroute6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/true",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/umount",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/uname",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/usleep",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/vi",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "bin/zcat",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libcrypto.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libjansson.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libjansson.so.4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libjsoncpp.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libjsoncpp.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libmnl.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libmnl.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libshn_dc.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libshn_dc.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libssl.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libtdts.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libz.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libz.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libzip.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "data/tm_hns_acer/libzip.so.4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/TZ",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/easy-rsa/openssl-easyrsa.cnf",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/hotplug.d/dump/00-q6dump",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/localtime",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/modules-boot.d/30-button-hotplug",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/modules-boot.d/30-gpio-button-hotplug",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/modules-boot.d/56-bootconfig",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/mtab",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/os-release",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/ppp/resolv.conf",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K01lldpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K05samba4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K100lighttpd.init",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K104ipqcm",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K10ddns",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K10gpio_switch",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K10openvpn",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K10sysstat",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K15miniupnpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K50dropbear",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K50pppoe-server",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K80pppoe-relay",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K85odhcpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K89log",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K90boot",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K90network",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K90sysfixtime",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K90umount",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K91cnss_diag",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K95qnicornd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K95wifi_fw_mount",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/K98boot-ftm",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S00load_cnss2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S00sysfixtime",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S00urngd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S00wifi_fw_mount",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S08boot-ftm",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S09modem-monitor",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S0license-pfm",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S100lighttpd.init",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S10boot",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S10qca-acfg",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S10qcawifi-config-cmd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S10sodd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S11sysctl",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S12breakpad",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S12log",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S12rpcd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S13qca-hostapd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S13qca-wpa-supplicant",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S15system",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S16qca-ssdk",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S18qca-nss-dp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S19cnss_diag",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S19dnsmasq",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S19dropbear",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S20network",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S21dhcp_monitor",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S21monitord",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S21sysntpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S26qca-nss-ecm",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S30modem_read_init",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S35odhcpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S4001_skb_recycler",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S40fstab",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S48ipqcm",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S49firewall",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S50at_ril",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S50pppoe-server",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S50ril",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S50telnet",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S50uhttpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S52wsplcd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S54hyfi-bridging",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S55ezmesh",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S55rstp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S56mesh_app",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S60dbus",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S60mcsd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S60pppoe-relay",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S61avahi-daemon",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S65alsa",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S70xl2tpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S80rngd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S80ucitrack",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S82mwan3",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S90lldpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S90openvpn",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S90quagga",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S90sysstat",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S91dhcrelay4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S91wrtbwmon",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S94gpio_switch",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S94miniupnpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S95ddns",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S95done",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S96led",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S96wifi_fw_done",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S97ftm",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S97qnicornd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S97repacd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S98autorole",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S98diag_socket_app",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S98ksmbd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S98powerctl",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S98samba4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S98thermal",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99cron",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99cwmp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99ledd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99logrecord",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99mcproxy",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99mesh_info",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99modem_datausage",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99mqtt_client",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99online_device",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99rsrcmgr",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99trymodedone",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99urandom_seed",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99wifi_status",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/rc.d/S99wsdd2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/resolv.conf",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "etc/ssl/cert.pem",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "lib/ld-musl-armhf.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "lib/libatomic.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/arp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/bootchartd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/devmem",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/halt",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/hwclock",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/ifconfig",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/ifdown",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/insmod",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/ip",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/jffs2mark",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/lsmod",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/mkswap",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/modinfo",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/modprobe",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/mount.ntfs",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/mount.ntfs-3g",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/pivot_root",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/poweroff",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/reboot",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/rmmod",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/route",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/start-stop-daemon",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/swapoff",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/swapon",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/switch_root",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/sysctl",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/udhcpc",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "sbin/vconfig",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/[",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/[[",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/awk",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/basename",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/clear",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/cmp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/crontab",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/cut",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/dbclient",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/dirname",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/dropbearkey",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/du",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/env",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/expr",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/find",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/flock",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/free",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/ftpget",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/ftpput",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/head",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/hexdump",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/hostid",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/id",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/ipcs",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/killall",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/ldd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/less",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/logger",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/md5sum",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/mkfifo",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/nc",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/nslookup",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/pgrep",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/printf",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/readlink",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/reset",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/scp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/seq",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/sha256sum",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/signify",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/sort",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/ssh",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/strings",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/tail",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/taskset",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/tee",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/telnet",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/test",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/tftp",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/time",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/timeout",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/top",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/tr",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/uniq",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/unxz",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/uptime",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/wc",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/wget",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/which",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/xargs",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/xz",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/yes",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/bin/zipinfo",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libasound.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libattr.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libattr.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libavahi-client.so.3",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libavahi-common.so.3",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libavahi-core.so.7",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libblkid.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libbz2.so.1.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libcap.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libcap.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libcares.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libcom_err.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libcurl.so.4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdaemon.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdbus-1.so.3",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdcerpc-binding.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdcerpc-binding.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdcerpc-samr.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdcerpc-samr.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdcerpc-server-core.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdcerpc-server-core.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdcerpc.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libdcerpc.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libe2p.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libelf.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libevent-2.1.so.7",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libexpat.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libext2fs.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libfcgi++.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libfcgi.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libform.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libform.so.6.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libformw.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libgmp.so.10",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libgnutls.so.30",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libhistory.so.8",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libhogweed.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libi2c.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libi2c.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libip4tc.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libip6tc.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libipset.so.13",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libjansson.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libjansson.so.4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libjson-c.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/liblldpctl.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/liblldpctl.so.4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/liblucihttp.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/liblzma.so.5",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/liblzo2.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libmagic.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libmenu.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libmenu.so.6.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libmenuw.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libmnl.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libmosquitto.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libmount.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libncurses.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libncurses.so.6.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libncursesw.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libndr-krb5pac.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libndr-krb5pac.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libndr-nbt.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libndr-nbt.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libndr-standard.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libndr-standard.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libndr.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libndr.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnetapi.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnetfilter_conntrack.so.3",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnetfilter_cthelper.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnetfilter_cttimeout.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnetfilter_queue.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnettle.so.8",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnfnetlink.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnftables.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnftables.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnftnl.so.11",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnghttp2.so.14",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnl-3.so.200",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnl-genl-3.so.200",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnl-nf-3.so.200",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnl-route-3.so.200",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnss_winbind.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libnss_wins.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libntfs-3g.so.88",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpam.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpam.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpam_misc.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpam_misc.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpamc.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpamc.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpanel.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpanel.so.6.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpanelw.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpcap.so.0.8",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpcre.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpcre.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpcreposix.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libpopt.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libreadline.so.8",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libroxml.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-credentials.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-credentials.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-errors.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-hostconfig.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-hostconfig.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-passdb.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-passdb.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-util.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamba-util.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamdb.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsamdb.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsmartcols.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsmbclient.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsmbclient.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsmbconf.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libss.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libstdc++.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libsysfs.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libtasn1.so.6",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libtirpc.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libtirpc.so.3",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libuClibc++.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libuuid.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libwbclient.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libwbclient.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libxml2.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libxtables.so.12",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libz.so",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libz.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/libzebra.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libasn1-samba4.so.8",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libcom_err-samba4.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libgssapi-samba4.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libhcrypto-samba4.so.5",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libhdb-samba4.so.11",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libheimbase-samba4.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libheimntlm-samba4.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libhx509-samba4.so.5",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libkdc-samba4.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libkrb5-samba4.so.26",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libldb.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libroken-samba4.so.19",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libtalloc.so.2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libtdb.so.1",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libtevent-util.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libtevent.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/lib/samba/libwind-samba4.so.0",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/arping",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/brctl",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/cfg80211tool_mesh",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/chpasswd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/chroot",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/crond",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/flash_eraseall",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/fsck.ext2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/fsck.ext3",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/fsck.ext4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/ftpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/fw_setenv",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/inetd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/ip6tables",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/ip6tables-restore",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/ip6tables-save",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/iptables",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/iptables-restore",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/iptables-save",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/iwlist",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/iwpriv",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/lldpctl",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/mkfs.ext2",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/mkfs.ext3",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/mkfs.ext4",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/ntpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/swapoff",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/swapon",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/telnetd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "usr/sbin/tftpd",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "var",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "www/cgi-bin/cgi-backup",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "www/cgi-bin/cgi-download",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "www/cgi-bin/cgi-exec",
+      "fields": [
+        "mtime"
+      ]
+    },
+    {
+      "path": "www/cgi-bin/cgi-upload",
+      "fields": [
+        "mtime"
+      ]
+    }
+  ],
+  "hardlink_groups_original": 0,
+  "hardlink_groups_rebuilt": 0,
+  "hardlinks_identical": true,
+  "rebuilt_sha256": "26a1d6097c8727959539b05900c9730681bc91d7a95ad32fbcf70bc5034ffa9a",
+  "original_sha256_after": "57d1427dad607e6f30373fff8c27681d6fc7d02c3276c0b3ef8aa45755f8e7d3",
+  "original_unchanged": true,
+  "compressor_options_identical": true,
+  "content_and_metadata_identical": false,
+  "reference_volume_capacity_bytes": 39870464,
+  "fits_reference_volume": true,
+  "reference_volume_margin_bytes": 274726
+}

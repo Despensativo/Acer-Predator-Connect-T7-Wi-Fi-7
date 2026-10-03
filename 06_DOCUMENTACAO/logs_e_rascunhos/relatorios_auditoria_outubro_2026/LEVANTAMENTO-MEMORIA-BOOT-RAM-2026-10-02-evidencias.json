@@ -1,0 +1,269 @@
+{
+  "inputs": {
+    "Backups_MTD/backup_predator_t7_uboot_appsbl.bin": {
+      "size": 1572864,
+      "sha256": "3d6281190512ba50b83eea1a2d6fca69f01da5bb390d52b601e762ce8f1df2fc"
+    },
+    "Backups_MTD/backup_predator_t7_uboot_env.bin": {
+      "size": 524288,
+      "sha256": "31aae58a48b66a7fe90ed89a84d8a836b8ceacbe8a659098b57c7cc68330dfce"
+    },
+    "Engenharia_Reversa_OpenWrt/acer_predator_t7.dtb": {
+      "size": 61440,
+      "sha256": "8430c97b12dbfcbe58d37ebd12a9f598f4e16b4a6b63b7b6206dee1b109be324"
+    },
+    "Backups_MTD/stock_mi01_6.dtb": {
+      "size": 56644,
+      "sha256": "a908096ada36ffd5c2ffc9bbdfa8fa11810c607ff222cf91c0305e81ddea0482"
+    },
+    "Servidor_TFTP_Windows/tftp_server.py": {
+      "size": 5837,
+      "sha256": "f7d9ce9c4407fd5adb61d7836ac165dbb51f8f0c8f7e41a874a8d9000e8afa03"
+    },
+    "3 - Ferramentas de Recuperacao/extract_uboot_dtb.py": {
+      "size": 370,
+      "sha256": "d4f4c65838978aca07788502a30e2a0dfd044240215c356d64c7b607a20b62ef"
+    },
+    "3 - Ferramentas de Recuperacao/acionar_tftp.itb": {
+      "size": 33582,
+      "sha256": "2b2da1a9f5a9177ff82f8c85cef1f4f63dd9d389810ac46500459bac6dd0866c"
+    },
+    "1 - Firmware e Imagens OpenWrt/openwrt-qualcommbe-ipq53xx-acer_predator-t7-initramfs.itb": {
+      "size": 13238272,
+      "sha256": "6ca31f2c11a483301d84d07dd0039586059b0565a579c8a8875f4e95bd69732f"
+    }
+  },
+  "dtbs": {
+    "Engenharia_Reversa_OpenWrt/acer_predator_t7.dtb": {
+      "memory_start": "0x40000000",
+      "memory_size": "0x40000000",
+      "memory_end": "0x80000000",
+      "reservations": [
+        {
+          "node": "/reserved-memory/tzapp@49B00000",
+          "status": null,
+          "start": "0x49b00000",
+          "size": "0x600000",
+          "end": "0x4a100000"
+        },
+        {
+          "node": "/reserved-memory/uboot@4A100000",
+          "status": null,
+          "start": "0x4a100000",
+          "size": "0x400000",
+          "end": "0x4a500000"
+        },
+        {
+          "node": "/reserved-memory/sbl@4A500000",
+          "status": null,
+          "start": "0x4a500000",
+          "size": "0x100000",
+          "end": "0x4a600000"
+        },
+        {
+          "node": "/reserved-memory/tz@4A600000",
+          "status": null,
+          "start": "0x4a600000",
+          "size": "0x200000",
+          "end": "0x4a800000"
+        },
+        {
+          "node": "/reserved-memory/smem@4A800000",
+          "status": null,
+          "start": "0x4a800000",
+          "size": "0x100000",
+          "end": "0x4a900000"
+        },
+        {
+          "node": "/reserved-memory/wcnss@4a900000",
+          "status": null,
+          "start": "0x4a900000",
+          "size": "0x2300000",
+          "end": "0x4cc00000"
+        },
+        {
+          "node": "/reserved-memory/m3_dump@4cc00000",
+          "status": null,
+          "start": "0x4cc00000",
+          "size": "0x100000",
+          "end": "0x4cd00000"
+        },
+        {
+          "node": "/reserved-memory/q6_etr_dump@1",
+          "status": null,
+          "start": "0x4cd00000",
+          "size": "0x100000",
+          "end": "0x4ce00000"
+        },
+        {
+          "node": "/reserved-memory/q6_caldb_region@4ce00000",
+          "status": null,
+          "start": "0x4ce00000",
+          "size": "0x500000",
+          "end": "0x4d300000"
+        },
+        {
+          "node": "/reserved-memory/mlo_global_mem_0@0x4db00000",
+          "status": null,
+          "start": "0x4db00000",
+          "size": "0x1100000",
+          "end": "0x4ec00000"
+        },
+        {
+          "node": "/reserved-memory/qcn9224_pcie0@4ec00000",
+          "status": "disabled",
+          "start": "0x4ec00000",
+          "size": "0x3200000",
+          "end": "0x51e00000"
+        },
+        {
+          "node": "/reserved-memory/qcn9224_pcie1@51e00000",
+          "status": "ok",
+          "start": "0x51e00000",
+          "size": "0x3200000",
+          "end": "0x55000000"
+        },
+        {
+          "node": "/reserved-memory/dma_pool0@0",
+          "status": "ok",
+          "dynamic_size": "0x900000"
+        },
+        {
+          "node": "/reserved-memory/dma_pool1@1",
+          "status": "ok",
+          "dynamic_size": "0x900000"
+        }
+      ]
+    },
+    "Backups_MTD/stock_mi01_6.dtb": {
+      "memory_start": "0x40000000",
+      "memory_size": "0x20000000",
+      "memory_end": "0x60000000",
+      "reservations": [
+        {
+          "node": "/reserved-memory/tzapp@49B00000",
+          "status": null,
+          "start": "0x49b00000",
+          "size": "0x600000",
+          "end": "0x4a100000"
+        },
+        {
+          "node": "/reserved-memory/uboot@4A100000",
+          "status": null,
+          "start": "0x4a100000",
+          "size": "0x400000",
+          "end": "0x4a500000"
+        },
+        {
+          "node": "/reserved-memory/sbl@4A500000",
+          "status": null,
+          "start": "0x4a500000",
+          "size": "0x100000",
+          "end": "0x4a600000"
+        },
+        {
+          "node": "/reserved-memory/tz@4A600000",
+          "status": null,
+          "start": "0x4a600000",
+          "size": "0x200000",
+          "end": "0x4a800000"
+        },
+        {
+          "node": "/reserved-memory/smem@4A800000",
+          "status": null,
+          "start": "0x4a800000",
+          "size": "0x100000",
+          "end": "0x4a900000"
+        },
+        {
+          "node": "/reserved-memory/wcnss@4a900000",
+          "status": null,
+          "start": "0x4a900000",
+          "size": "0x2300000",
+          "end": "0x4cc00000"
+        },
+        {
+          "node": "/reserved-memory/m3_dump@4cc00000",
+          "status": null,
+          "start": "0x4cc00000",
+          "size": "0x100000",
+          "end": "0x4cd00000"
+        },
+        {
+          "node": "/reserved-memory/q6_etr_dump@1",
+          "status": null,
+          "start": "0x4cd00000",
+          "size": "0x100000",
+          "end": "0x4ce00000"
+        },
+        {
+          "node": "/reserved-memory/q6_caldb_region@4ce00000",
+          "status": null,
+          "start": "0x4ce00000",
+          "size": "0x500000",
+          "end": "0x4d300000"
+        },
+        {
+          "node": "/reserved-memory/mlo_global_mem_0@0x4db00000",
+          "status": null,
+          "start": "0x4db00000",
+          "size": "0x1100000",
+          "end": "0x4ec00000"
+        },
+        {
+          "node": "/reserved-memory/qcn9224_pcie0@4ec00000",
+          "status": "disabled",
+          "start": "0x4ec00000",
+          "size": "0x3200000",
+          "end": "0x51e00000"
+        },
+        {
+          "node": "/reserved-memory/qcn9224_pcie1@51e00000",
+          "status": "ok",
+          "start": "0x51e00000",
+          "size": "0x3200000",
+          "end": "0x55000000"
+        },
+        {
+          "node": "/reserved-memory/dma_pool0@0",
+          "status": "ok",
+          "dynamic_size": "0x900000"
+        },
+        {
+          "node": "/reserved-memory/dma_pool1@1",
+          "status": "ok",
+          "dynamic_size": "0x900000"
+        }
+      ]
+    }
+  },
+  "candidate_layout": {
+    "kernel": {
+      "start": "0x41000000",
+      "end": "0x43000000",
+      "budget_mib": 32
+    },
+    "http_launcher": {
+      "start": "0x44000000",
+      "end": "0x44010000",
+      "budget_kib": 64
+    },
+    "checkpoint_buffer": {
+      "start": "0x45000000",
+      "end": "0x45001000",
+      "budget_kib": 4
+    },
+    "tftp_fit": {
+      "start": "0x46000000",
+      "end": "0x47000000",
+      "budget_mib": 16
+    },
+    "status": "provisional_not_validated"
+  },
+  "invalid_extracted_uboot_dtb": {
+    "path": "/home/builder/uboot.dtb",
+    "size": 1236784,
+    "sha256": "6c59cfe460a12b3073a0dace6f320e10f23f2f83614b6022e4edef774143c041"
+  }
+}
+

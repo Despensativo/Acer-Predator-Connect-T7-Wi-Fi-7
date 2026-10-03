@@ -1,0 +1,197 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: apply the configured Rx RPS bitmap
+
+net/edma/rps_bitmap_cores selects the cores that PPE hash values are
+spread over.  Its handler validates what was written and calls
+edma_cfg_rx_rps_hash_map() to reprogram the hardware, but that function
+builds its cpumask from the compile-time EDMA_RX_DEFAULT_BITMAP rather
+than from the configured value, so a write is accepted, logged and
+ignored, and the file reports a setting that was never applied.
+
+Pass the bitmap to the programming function instead of reading it from a
+global, so it can be given a value that has not been committed yet.
+
+The handler also wrote the user's value straight into the global before
+validating it.  Two writers could interleave so that one of them
+programmed the other's unvalidated value, including a zero, which then
+selects no core; map_len stays zero and the hash loop divides by it.
+Parse into a local and commit it only once the hardware has taken it,
+serialise the update, and reject an out of range value with -EINVAL
+through proc_douintvec_minmax() instead of silently substituting the
+default.  Refuse an empty core set in the programming function as well,
+so no caller can reach the division.
+
+A write the parser ignores, such as one at a non-zero file offset,
+returns success without storing anything.  Start the local at zero,
+which the new bounds exclude, so such a write cannot replay the value
+that was read before the lock was taken over a value another writer
+committed in the meantime.
+
+Iterate the bitmap with for_each_set_bit() over the cores the queue map
+has room for.  The cpumask it replaces was bounded by nr_cpu_ids, which
+is what let a bitmap of cores that the running system does not have
+produce an empty map.
+
+If programming fails part way the map is left between the two settings;
+put back the one the reported bitmap describes and say so if that fails
+too.  A write of the value already in force is programmed again rather
+than skipped, because after a restore has failed the reported value is
+the one setting the hardware is known not to hold.
+
+The "EDMA RPS bitmap value" message on a successful write is gone; the
+file reports the value that is in force.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -898,14 +898,22 @@ void edma_destroy(struct ppe_device *ppe
+ 	kfree(edma_ctx->netdev_arr);
+ }
+ 
++/* Must stay above zero: edma_cfg_rx_rps_bitmap() uses zero to tell a write
++ * the parser ignored from one it stored.
++ */
++static u32 edma_rx_rps_bitmap_min = 1;
++static u32 edma_rx_rps_bitmap_max = EDMA_RX_DEFAULT_BITMAP;
++
+ /* EDMA Rx RPS core sysctl table */
+ static struct ctl_table edma_rx_rps_core_table[] = {
+ 	{
+ 		.procname	=	"rps_bitmap_cores",
+ 		.data		=	&edma_cfg_rx_rps_bitmap_cores,
+-		.maxlen		=	sizeof(int),
++		.maxlen		=	sizeof(edma_cfg_rx_rps_bitmap_cores),
+ 		.mode		=	0644,
+-		.proc_handler	=	edma_cfg_rx_rps_bitmap
++		.proc_handler	=	edma_cfg_rx_rps_bitmap,
++		.extra1		=	&edma_rx_rps_bitmap_min,
++		.extra2		=	&edma_rx_rps_bitmap_max,
+ 	},
+ };
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -9,6 +9,7 @@
+ #include <linux/cpumask.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/kernel.h>
++#include <linux/mutex.h>
+ #include <linux/netdevice.h>
+ #include <linux/printk.h>
+ #include <linux/regmap.h>
+@@ -45,6 +46,8 @@ static u32 edma_rx_ring_queue_map[][EDMA
+ 
+ u32 edma_cfg_rx_rps_bitmap_cores = EDMA_RX_DEFAULT_BITMAP;
+ 
++static DEFINE_MUTEX(edma_rps_mutex);
++
+ static int edma_cfg_rx_desc_rings_reset_queue_mapping(void)
+ {
+ 	struct edma_hw_info *hw_info = edma_ctx->hw_info;
+@@ -959,14 +962,14 @@ void edma_cfg_rx_napi_add(void)
+ 	netdev_dbg(edma_ctx->dummy_dev, "Rx NAPI budget: %d\n", edma_rx_napi_budget);
+ }
+ 
+-/**
+- * edma_cfg_rx_rps_hash_map - Configure rx rps hash map.
++/* Program the PPE hash to queue map from @bitmap, which selects the cores
++ * whose Rx queues the hash values are spread over.
+  *
+- * Initialize and configure RPS hash map for queues
++ * The caller must hold edma_rps_mutex.
+  */
+-int edma_cfg_rx_rps_hash_map(void)
++static int __edma_cfg_rx_rps_hash_map(u32 bitmap)
+ {
+-	cpumask_t edma_rps_cpumask = {{EDMA_RX_DEFAULT_BITMAP}};
++	unsigned long cores = bitmap;
+ 	int map_len = 0, idx = 0, ret = 0;
+ 	u32 q_off = EDMA_RX_QUEUE_START;
+ 	u32 q_map[EDMA_MAX_CORE] = {0};
+@@ -977,11 +980,14 @@ int edma_cfg_rx_rps_hash_map(void)
+ 	 * These queues are expected to be mapped to different Rx rings
+ 	 * which are assigned to different cores using IRQ affinity configuration.
+ 	 */
+-	for_each_cpu(cpu, &edma_rps_cpumask) {
++	for_each_set_bit(cpu, &cores, EDMA_MAX_CORE) {
+ 		q_map[map_len] = q_off + (cpu * EDMA_MAX_PRI_PER_CORE);
+ 		map_len++;
+ 	}
+ 
++	if (!map_len)
++		return -EINVAL;
++
+ 	for (hash = 0; hash < PPE_QUEUE_HASH_NUM; hash++) {
+ 		ret = ppe_edma_queue_offset_config(edma_ctx->ppe_dev,
+ 						   PPE_QUEUE_OFFSET_BY_HASH, hash, q_map[idx]);
+@@ -996,27 +1002,59 @@ int edma_cfg_rx_rps_hash_map(void)
+ 	return 0;
+ }
+ 
++/**
++ * edma_cfg_rx_rps_hash_map - Configure rx rps hash map.
++ *
++ * Initialize and configure RPS hash map for queues
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int edma_cfg_rx_rps_hash_map(void)
++{
++	int ret;
++
++	mutex_lock(&edma_rps_mutex);
++	ret = __edma_cfg_rx_rps_hash_map(edma_cfg_rx_rps_bitmap_cores);
++	mutex_unlock(&edma_rps_mutex);
++
++	return ret;
++}
++
+ /* Configure RPS hash mapping based on bitmap */
+ int edma_cfg_rx_rps_bitmap(const struct ctl_table *table, int write,
+ 			   void *buffer, size_t *lenp, loff_t *ppos)
+ {
++	struct ctl_table tbl = *table;
++	u32 bitmap;
+ 	int ret;
+ 
+-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
++	/* Act on a copy, so that a value that is rejected or that fails to
++	 * reach the hardware does not become the value the sysctl reports.
++	 * Zero is below the minimum the table allows, so it survives the
++	 * call only if the write was one the parser ignored, such as one at
++	 * a non-zero offset, and must not be programmed.
++	 */
++	bitmap = write ? 0 : READ_ONCE(edma_cfg_rx_rps_bitmap_cores);
++	tbl.data = &bitmap;
+ 
+-	if (!write)
++	ret = proc_douintvec_minmax(&tbl, write, buffer, lenp, ppos);
++	if (ret || !write || !bitmap)
+ 		return ret;
+ 
+-	if (!edma_cfg_rx_rps_bitmap_cores ||
+-	    edma_cfg_rx_rps_bitmap_cores > EDMA_RX_DEFAULT_BITMAP) {
+-		pr_warn("Incorrect CPU bitmap: %x. Setting it to default value: %d",
+-			edma_cfg_rx_rps_bitmap_cores, EDMA_RX_DEFAULT_BITMAP);
+-		edma_cfg_rx_rps_bitmap_cores = EDMA_RX_DEFAULT_BITMAP;
+-	}
++	mutex_lock(&edma_rps_mutex);
+ 
+-	ret = edma_cfg_rx_rps_hash_map();
++	ret = __edma_cfg_rx_rps_hash_map(bitmap);
++	if (ret) {
++		/* The map is left part way through the failed update; put
++		 * back the one the reported bitmap describes.
++		 */
++		if (__edma_cfg_rx_rps_hash_map(edma_cfg_rx_rps_bitmap_cores))
++			pr_err("Failed to restore the EDMA Rx RPS hash map\n");
++	} else {
++		WRITE_ONCE(edma_cfg_rx_rps_bitmap_cores, bitmap);
++	}
+ 
+-	pr_info("EDMA RPS bitmap value: %d\n", edma_cfg_rx_rps_bitmap_cores);
++	mutex_unlock(&edma_rps_mutex);
+ 
+ 	return ret;
+ }

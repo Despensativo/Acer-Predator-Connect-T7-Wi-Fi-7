@@ -1,0 +1,61 @@
+--- local/target/linux/qualcommbe/ipq53xx/base-files/etc/board.d/02_network
++++ glinet/target/linux/qualcommbe/ipq53xx/base-files/etc/board.d/02_network
+@@ -9,14 +9,26 @@
+ ipq53xx_setup_interfaces()
+ {
+ 	local board="$1"
++	local lan_mac wan_mac
+ 
+ 	case "$board" in
+-	acer,predator-t7|\
+-	qcom,ipq5332-ap-mi01.6)
+-		ucidef_set_interfaces_lan_wan "lan" "wan"
+-		;;
+ 	ubnt,u7-pro-xgs)
+ 		ucidef_set_interface_lan "lan"
++		;;
++	gl.inet,gl-be6500)
++		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
++		wan_mac=$(mtd_get_mac_binary "0:art" 0xa)
++		if [ -n "$wan_mac" ]; then
++			lan_mac=$(macaddr_add "$wan_mac" 1)
++			ucidef_set_network_device_mac "wan" "$wan_mac"
++			ucidef_set_network_device_mac "lan" "$lan_mac"
++			ucidef_set_interface_macaddr "wan" "$wan_mac"
++			ucidef_set_interface_macaddr "lan" "$lan_mac"
++			ucidef_set_label_macaddr "$wan_mac"
++		fi
++		;;
++	gl.inet,gl-be9300)
++		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+ 		;;
+ 	*)
+ 		echo "Unsupported hardware. Network interfaces not initialized"
+@@ -24,26 +36,9 @@
+ 	esac
+ }
+ 
+-ipq53xx_setup_wlan()
+-{
+-	local board="$1"
+-
+-	case "$board" in
+-	acer,predator-t7|\
+-	qcom,ipq5332-ap-mi01.6)
+-		ucidef_add_wlan "soc@0/18000000.pcie/pci0001:00/0001:00:00.0/0001:01:00.0"
+-		;;
+-	ubnt,u7-pro-xgs)
+-		ucidef_add_wlan "soc@0/18000000.pcie/pci0001:00/0001:00:00.0/0001:01:00.0" \
+-			"soc@0/10000000.pcie/pci0002:00/0002:00:00.0/0002:01:00.0"
+-		;;
+-	esac
+-}
+-
+ board_config_update
+ board=$(board_name)
+-ipq53xx_setup_interfaces "$board"
+-ipq53xx_setup_wlan "$board"
++ipq53xx_setup_interfaces $board
+ board_config_flush
+ 
+ exit 0

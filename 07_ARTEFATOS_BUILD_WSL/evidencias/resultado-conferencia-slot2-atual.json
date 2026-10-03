@@ -1,0 +1,31 @@
+{
+  "read_only": true,
+  "router": "192.168.73.2",
+  "active_slot": "rootfs mtd21 / Slot 1",
+  "inactive_slot": "rootfs_1 mtd20 / Slot 2",
+  "slot2_ubi_attached": false,
+  "volume_tables_match_reference": true,
+  "both_volume_table_crcs_valid": true,
+  "update_markers_clear": true,
+  "hashes_match_slot1": {
+    "wifi_fw": {
+      "sha256": "835763cc96fe2d798e5ba9ca9ff14c1cd82fab18848a9cf0bf1f514e320dac7b",
+      "bytes": 8554496
+    },
+    "kernel": {
+      "sha256": "ff131c1aeb280dfc9022a4474330e55e19b82f504723021546c46ea4fb4963fb",
+      "bytes": 4238664
+    },
+    "ubi_rootfs": {
+      "sha256": "57d1427dad607e6f30373fff8c27681d6fc7d02c3276c0b3ef8aa45755f8e7d3",
+      "bytes": 39870464
+    }
+  },
+  "slot2_overlay_allocated_lebs": 0,
+  "slot2_overlay_reserved_lebs": 690,
+  "slot2_boot_tested": false,
+  "writes_performed": false,
+  "reboot_sent": false,
+  "boot_selection_changed": false,
+  "conclusion": "No kernel/rootfs/wifi_fw rewrite needed based on current readback; overlay appears empty; slot2 boot remains untested."
+}

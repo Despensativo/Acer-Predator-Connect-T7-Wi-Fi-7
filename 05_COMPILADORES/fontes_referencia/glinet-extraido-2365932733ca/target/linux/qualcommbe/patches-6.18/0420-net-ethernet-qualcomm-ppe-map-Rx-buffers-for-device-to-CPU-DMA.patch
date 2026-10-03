@@ -1,0 +1,43 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: map Rx buffers for device to CPU DMA
+
+edma_rx_alloc_buffer_list() maps the buffers it posts to the Rx fill
+ring with DMA_TO_DEVICE, in both the linear and the page mode branch,
+while edma_rx_reap() unmaps them with DMA_FROM_DEVICE.  The device
+writes these buffers and the CPU reads them, and nothing writes the
+mapped region from the CPU between the mapping and the producer index
+update, so DMA_FROM_DEVICE is the direction both halves should use.
+The lengths already agree: alloc_size less the headroom and NET_IP_ALIGN
+on the linear path, PAGE_SIZE on the page path.
+
+Nothing is known to misbehave on this SoC, where the arm64
+implementation cleans the buffer on map whichever direction it is given
+and invalidates it on unmap.  This is an API correctness fix: dma_debug
+reports the map and unmap directions as a mismatch, and on a system
+where the device sits behind an IOMMU, dma-iommu derives the mapping
+permissions from the direction, so DMA_TO_DEVICE maps the buffer without
+device write permission and the device's write faults.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -58,7 +58,8 @@ static int edma_rx_alloc_buffer_list(str
+ 		skb_reserve(skb, EDMA_RX_SKB_HEADROOM + NET_IP_ALIGN);
+ 
+ 		if (likely(!page_mode)) {
+-			buff_addr = dma_map_single(dev, skb->data, dma_map_size, DMA_TO_DEVICE);
++			buff_addr = dma_map_single(dev, skb->data, dma_map_size,
++						   DMA_FROM_DEVICE);
+ 			if (dma_mapping_error(dev, buff_addr)) {
+ 				dev_dbg(dev, "edma_context:%pK Unable to dma for non page mode",
+ 					edma_ctx);
+@@ -77,7 +78,7 @@ static int edma_rx_alloc_buffer_list(str
+ 				break;
+ 			}
+ 
+-			buff_addr = dma_map_page(dev, pg, 0, PAGE_SIZE, DMA_TO_DEVICE);
++			buff_addr = dma_map_page(dev, pg, 0, PAGE_SIZE, DMA_FROM_DEVICE);
+ 			if (dma_mapping_error(dev, buff_addr)) {
+ 				dev_dbg(dev, "edma_context:%pK Mapping error for page mode",
+ 					edma_ctx);

@@ -1,0 +1,163 @@
+{
+  "scope": "offline_configuration_only",
+  "config_path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\artefatos\\t7-diag-20261002-v1\\kernel.config",
+  "config_sha256": "470c48b20dbf46a8e8faa988e2a8c28ca7453ec4b2057a4069edc0fc956a0f86",
+  "spec_sha256": "7d4d9fffb1cdfe617a5d34b9a833c55354e27369bc40451362e2df762b2820c5",
+  "checks": [
+    {
+      "symbol": "CONFIG_ARM64",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_BLK_DEV_INITRD",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_DEVTMPFS",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_PROC_FS",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_SYSFS",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_TMPFS",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_PRINTK",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_SERIAL_EARLYCON",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_SERIAL_MSM",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_SERIAL_MSM_CONSOLE",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_QCOM_SCM",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_IPQ_GCC_5332",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_PSTORE",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_PSTORE_RAM",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_PSTORE_CONSOLE",
+      "expected": "y",
+      "observed": "y",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_MTD",
+      "expected": "n",
+      "observed": "n",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_MODULES",
+      "expected": "n",
+      "observed": "n",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_DEVMEM",
+      "expected": "n",
+      "observed": "n",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_PSTORE_BLK",
+      "expected": "n",
+      "observed": "n",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_MMC",
+      "expected": "n",
+      "observed": "n",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_SCSI",
+      "expected": "n",
+      "observed": "n",
+      "pass": true
+    },
+    {
+      "symbol": "CONFIG_USB_STORAGE",
+      "expected": "n",
+      "observed": null,
+      "pass": false
+    },
+    {
+      "symbol": "CONFIG_BLK_DEV_NVME",
+      "expected": "n",
+      "observed": null,
+      "pass": false
+    },
+    {
+      "symbol": "CONFIG_NVMEM_SYSFS",
+      "expected": "n",
+      "observed": "n",
+      "pass": true
+    }
+  ],
+  "failed_count": 2,
+  "initramfs_source": "\"/home/builder/t7-chatgpt-work-20261002-v1/initramfs.list\"",
+  "initramfs_content_verified": false,
+  "hardware_ready": false,
+  "upload_authorized": false,
+  "limitations": [
+    "Nao examina o binario final nem prova ausencia de acesso a flash.",
+    "Ausencia de simbolo exige verificar o Kconfig; nao equivale a n.",
+    "Nao valida DTB, memoria, watchdog, FIT, U-Boot ou initramfs.",
+    "Mesmo com todas as verificacoes aprovadas, hardware_ready permanece false."
+  ]
+}

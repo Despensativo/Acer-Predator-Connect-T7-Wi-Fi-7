@@ -1,0 +1,70 @@
+#
+# configuration written to .config
+#
+Compilando kernel novo e initramfs minimo
+  SYNC    include/config/auto.conf
+  CALL    scripts/checksyscalls.sh
+  AR      drivers/thermal/qcom/built-in.a
+  AR      drivers/thermal/built-in.a
+  AR      drivers/nvmem/built-in.a
+  AR      drivers/built-in.a
+  AR      built-in.a
+  AR      vmlinux.a
+  LD      vmlinux.o
+  MODPOST vmlinux.symvers
+  CC      .vmlinux.export.o
+  GEN     modules.builtin.modinfo
+  GEN     modules.builtin
+  UPD     include/generated/utsversion.h
+  CC      init/version-timestamp.o
+  KSYMS   .tmp_vmlinux0.kallsyms.S
+  AS      .tmp_vmlinux0.kallsyms.o
+  LD      .tmp_vmlinux1
+  NM      .tmp_vmlinux1.syms
+  KSYMS   .tmp_vmlinux1.kallsyms.S
+  AS      .tmp_vmlinux1.kallsyms.o
+  LD      .tmp_vmlinux2
+  NM      .tmp_vmlinux2.syms
+  KSYMS   .tmp_vmlinux2.kallsyms.S
+  AS      .tmp_vmlinux2.kallsyms.o
+  LD      vmlinux.unstripped
+  NM      System.map
+  SORTTAB vmlinux.unstripped
+  OBJCOPY vmlinux
+  OBJCOPY arch/arm64/boot/Image
+arch/arm64/boot/dts/qcom/ipq5332.dtsi:199.30-202.6: Warning (unique_unit_address): /soc@0/efuse@a4000/s12@3a6: duplicate unit-address (also used in node /soc@0/efuse@a4000/s13@3a6)
+arch/arm64/boot/dts/qcom/ipq5332.dtsi:219.25-222.6: Warning (unique_unit_address): /soc@0/efuse@a4000/mode@3e1: duplicate unit-address (also used in node /soc@0/efuse@a4000/base0@3e1)
+candidato.its:6.18-13.11: Warning (unit_address_vs_reg): /images/kernel@1: node has a unit name, but no reg or ranges property
+candidato.its:12.20-40: Warning (unit_address_vs_reg): /images/kernel@1/hash@1: node has a unit name, but no reg or ranges property
+candidato.its:14.15-19.11: Warning (unit_address_vs_reg): /images/fdt@1: node has a unit name, but no reg or ranges property
+candidato.its:18.20-40: Warning (unit_address_vs_reg): /images/fdt@1/hash@1: node has a unit name, but no reg or ranges property
+candidato.its:23.23-63: Warning (unit_address_vs_reg): /configurations/config@mi01.6: node has a unit name, but no reg or ranges property
+FIT description: T7 diagnostic candidate - NOT FOR HTTP FAILSAFE UPLOAD
+Created:         Fri Oct  2 17:05:28 2026
+ Image 0 (kernel@1)
+  Description:  New ARM64 kernel with minimal embedded initramfs
+  Created:      Fri Oct  2 17:05:28 2026
+  Type:         Kernel Image
+  Compression:  lzma compressed
+  Data Size:    3043526 Bytes = 2972.19 KiB = 2.90 MiB
+  Architecture: AArch64
+  OS:           Linux
+  Load Address: 0x41000000
+  Entry Point:  0x41000000
+  Hash algo:    crc32
+  Hash value:   dc94d0c1
+ Image 1 (fdt@1)
+  Description:  T7 conservative diagnostic DTB candidate
+  Created:      Fri Oct  2 17:05:28 2026
+  Type:         Flat Device Tree
+  Compression:  uncompressed
+  Data Size:    18775 Bytes = 18.33 KiB = 0.02 MiB
+  Architecture: AArch64
+  Hash algo:    crc32
+  Hash value:   d1a89154
+ Default Configuration: 'config@mi01.6'
+ Configuration 0 (config@mi01.6)
+  Description:  unavailable
+  Kernel:       kernel@1
+  FDT:          fdt@1
+COMPILACAO_CONCLUIDA_SEM_TESTE_HARDWARE

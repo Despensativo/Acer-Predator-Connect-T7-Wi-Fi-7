@@ -1,0 +1,528 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: alias the rtl8_4 DSA tag as
+ QinQ in the ingress parser
+
+The PPE ingress parser only classifies past Ethernet framing plus up to
+two VLAN tags whose TPIDs match the VLAN_TPID registers. The Realtek
+rtl8_4 DSA tag occupies exactly the space of a QinQ pair, and the RTL8372N
+emits it as 0x8899 | 0x0400 | 0x0000 | <source port>. On a port that is the
+conduit of an rtl8_4 switch, set the S-TPID to 0x8899 and the C-TPID to the
+constant 0x0000 second word (IPR and TPR copies), and give the port the
+QinQ core role so the parser expects an S-tag first. The parser then walks
+over the tag, PPE flow lookup hits, and the pair is stripped on egress.
+
+Measured on a GL-BE9300 (IPQ5332 + RTL8372N), masqueraded 938 Mbit/s
+upload with hardware flow offload, CPU idle from /proc/stat:
+
+    rtl8_4, parser untouched      74.6%  (every packet through the CPU)
+    rtl8_4, aliased, role core    98.1%
+    rtl8_4, aliased, role edge    73.5%
+    802.1Q-based tagger           98.7%  (reference)
+
+The TPIDs and the CPU port's egress mode are chip-wide: the first rtl8_4
+conduit to open owns them, restores them on close, and a second DSA
+conduit is refused with -EBUSY. DSA attaches after netifd has already
+opened the conduit on this board, and assigns the conduit's dsa_ptr only
+after it has linked the user ports, so neither ndo_open nor CHANGEUPPER on
+the conduit sees a DSA conduit on a cold boot. A netdevice notifier
+therefore re-evaluates the conduit on a DSA user port's NETDEV_UP (which
+follows tree setup), with CHANGEUPPER kept for later re-links; the
+programming is idempotent through a per-port state. Cold and warm boots
+verified: the alias is applied without any interface cycle. QCOM_PPE now
+depends on NET_DSA || NET_DSA=n for the two DSA core symbols it calls. A non-conduit port only clears its own
+role. WAN-ingress broadcast through the changed CPU-port egress mode is
+verified (ARP requests to the WAN address answered 10/10 with the alias
+active). NOT covered by the hardware validation and to be checked before
+this is relied on with it: an 802.1Q-tagged WAN with hardware offload
+(the ingress C-TPID is 0x0000 while the alias is active). The egress
+C-TPID stays 0x8100: the tagger never reads the head tag's second word,
+so the flooded frames still parse (ARP 5/5, DHCP 3/3 measured with
+0x81008899) and a nexthop C-VLAN insert on the WAN port keeps 0x8100.
+
+Deployment note: enabling offload under rtl8_4 brings the documented
+ppe_offload.c limitation with it -- all switch ports on the conduit share
+one ingress L3 interface for flow lookup, so a host on a guest-PVID port
+can source-spoof a trusted host's offloaded outbound 5-tuple. The alias
+makes the switch source port visible to the parser as the C-VID, which is
+the qualifier a later change could bind to per-port L3 interfaces.
+
+Frames the L2 engine floods to the CPU (ARP, DHCP, multicast) are rebuilt
+by the egress VLAN engine from the parsed VIDs, so the egress S-TPID is
+aliased the same way and the CPU port is made an S-VLAN port emitting both
+tags; that reproduces the head tag's words the tagger reads (the second
+word comes out as the C-TPID 0x8100, which rtl8_4_read_tag() ignores).
+
+The switch side must egress frames on the CPU port in their ingress
+format (no extra VLAN-1 tag behind the head tag), which the rtl837x driver
+does when it enables the tag.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -63,6 +63,7 @@
+ config QCOM_PPE
+ 	tristate "Qualcomm Technologies, Inc. PPE Ethernet support"
+ 	depends on COMMON_CLK && HAS_IOMEM && OF
++	depends on NET_DSA || NET_DSA=n
+ 	depends on ARCH_QCOM || COMPILE_TEST
+ 	select REGMAP_MMIO
+ 	select PHYLINK
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -132,8 +132,19 @@
+ #define PPE_PORT_EG_VLAN_TBL_PCP_PROP_CMD	BIT(6)
+ #define PPE_PORT_EG_VLAN_TBL_DEI_PROP_CMD	BIT(7)
+ #define PPE_PORT_EG_VLAN_TBL_TX_COUNTING_EN	BIT(8)
++/* CTAG_MODE / STAG_MODE values (fal_pt_1q_egmode_t in the vendor SDK). */
++#define PPE_EG_VLAN_TAG_MODE_UNMODIFIED		0
++#define PPE_EG_VLAN_TAG_MODE_UNTAGGED		1
++#define PPE_EG_VLAN_TAG_MODE_TAGGED		2
+ 
+ /* PPE queue counters enable/disable control. */
++/* TPIDs the egress VLAN engine uses when it (re)inserts tags. Note the
++ * field order is the reverse of the ingress PPE_VLAN_TPID_* registers.
++ */
++#define PPE_EG_VLAN_TPID_ADDR			0x20040
++#define PPE_EG_VLAN_TPID_STPID			GENMASK(15, 0)
++#define PPE_EG_VLAN_TPID_CTPID			GENMASK(31, 16)
++
+ #define PPE_EG_BRIDGE_CONFIG_ADDR		0x20044
+ #define PPE_EG_BRIDGE_CONFIG_QUEUE_CNT_EN	BIT(2)
+ 
+@@ -290,6 +301,20 @@
+ #define PPE_VPORT_TX_DROP_CNT_TBL_INC		0x10
+ 
+ /* Counters for the tunnel packet. */
++/* Ingress parser: per-port QinQ role and the VLAN TPIDs the parser
++ * recognises. The IPQ5332 keeps these in the ingress-parse (IPR) block with a
++ * second copy of the TPID pair in the tunnel parser (TPR). Both TPID
++ * registers are global. Reset values: C-TPID 0x8100, S-TPID 0x88a8.
++ */
++#define PPE_TPR_VLAN_TPID_ADDR			0x1d0020
++#define PPE_PORT_PARSING_ADDR			0x1e0000
++#define PPE_PORT_PARSING_ENTRIES		8
++#define PPE_PORT_PARSING_INC			4
++#define PPE_PORT_PARSING_PORT_ROLE		BIT(0)
++#define PPE_IPR_VLAN_TPID_ADDR			0x1e0020
++#define PPE_VLAN_TPID_CTAG			GENMASK(15, 0)
++#define PPE_VLAN_TPID_STAG			GENMASK(31, 16)
++
+ #define PPE_TPR_PKT_CNT_TBL_ADDR		0x1d0080
+ #define PPE_TPR_PKT_CNT_TBL_ENTRIES		8
+ #define PPE_TPR_PKT_CNT_TBL_INC			4
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.h
+@@ -84,6 +84,8 @@
+  * @pcpu_stats: Per CPU netdev statistics
+  * @txr_map: Tx ring per-core mapping
+  * @flags: Feature flags
++ * @parser_state: What the ingress parser is programmed for on this port
++ *	(enum edma_parser_state in edma_port.c); makes re-evaluation idempotent.
+  * @l3_if_index: This port's L3 interface table index, used for both
+  * the egress and the ingress entry (see ppe_l3_if.h). Set once at port
+  * setup and kept in sync with the netdevice's own MAC address;
+@@ -98,6 +100,7 @@
+ 	struct edma_txdesc_ring *txr_map[EDMA_PORT_MAX_CORE];
+ 	unsigned long flags;
+ 	u16 l3_if_index;
++	u8 parser_state;
+ };
+ 
+ void edma_port_destroy(struct ppe_port *port);
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -4,6 +4,7 @@
+ 
+ /* EDMA port initialization, configuration and netdevice ops handling */
+ 
++#include <linux/bitfield.h>
+ #include <linux/etherdevice.h>
+ #include <linux/if_vlan.h>
+ #include <linux/net.h>
+@@ -11,11 +12,14 @@
+ #include <linux/of_net.h>
+ #include <linux/phylink.h>
+ #include <linux/printk.h>
++#include <linux/regmap.h>
++#include <net/dsa.h>
+ 
+ #include "edma.h"
+ #include "edma_cfg_rx.h"
+ #include "edma_cfg_tx.h"
+ #include "edma_port.h"
++#include "ppe.h"
+ #include "ppe_l3_if.h"
+ #include "ppe_offload.h"
+ #include "ppe_regs.h"
+@@ -94,11 +98,308 @@
+ 	return cpu;
+ }
+ 
++/* The ingress parser follows Ethernet framing plus at most two VLAN tags
++ * whose TPIDs match the VLAN_TPID registers; anything else in front of L3
++ * ends classification, and with it PPE flow lookup for that frame. The
++ * Realtek rtl8_4 DSA tag is 8 bytes at exactly that spot -- and so is a
++ * QinQ pair. The RTL8372N emits it as 0x8899 | 0x0400 | 0x0000 | <port>,
++ * so on a port that is the conduit of an rtl8_4 switch, program the S-TPID
++ * to 0x8899 and the C-TPID to the constant 0x0000 second word, and give the
++ * port the QinQ "core" role so the parser expects an S-tag first. It then
++ * walks over the tag, classifies L3/L4 as usual and strips the pair on
++ * egress like any QinQ frame. Measured on a GL-BE9300: a masqueraded
++ * 938 Mbit/s upload goes from 74.6% to 98.1% CPU idle, the same as with the
++ * 802.1Q-based tagger, and the "C-VID" the parser sees is the source port.
++ *
++ * Frames the L2 engine floods to the CPU port (broadcast, multicast,
++ * unknown unicast -- every ARP request and DHCP discover) pass through the
++ * egress VLAN engine, which rebuilds the tags from the parsed VIDs using the
++ * egress TPIDs. Left at their defaults that turns the head tag into a lone
++ * 0x8100 C-tag and the DSA tagger drops the frame, so alias the egress
++ * S-TPID the same way and make the CPU port an S-VLAN port that emits both
++ * tags: the flood path then reproduces 0x8899 | 0x0400 | <ctpid> | <port>.
++ * The tagger (tag_rtl8_4.c) never reads that second word, so the egress
++ * C-TPID stays 0x8100 and a nexthop C-VLAN insert on any other port (a
++ * tagged WAN) still emits a real 802.1Q tag; leaving the CPU port's egress
++ * mode unmodified instead was tried and floods nothing (dead LAN).
++ * Lookup-hit unicast reaches the CPU untouched either way.
++ *
++ * The TPID registers and the CPU port's egress mode are chip-wide, so the
++ * alias has exactly one owner: the first port evaluated as an rtl8_4 conduit,
++ * whether at open or when DSA attaches to it later. A second conduit, or a
++ * conduit under another tagger, while the alias is owned is a board
++ * configuration this code does not support and is refused loudly. The owner
++ * restores the reset values as soon as it leaves the aliased state: on close,
++ * on a DSA tag-protocol change (conduit down, change, up) and when DSA
++ * detaches from a running conduit.
++ *
++ * Verified on the same board with the alias active: broadcast arriving on
++ * the (non-conduit) WAN port still reaches the CPU intact (ARP requests to
++ * the WAN address answered 10/10), and a VLAN-tagged WAN (wan.10) behaves
++ * exactly as under the 802.1Q tagger. With the ingress C-TPID at 0x0000 an
++ * 802.1Q tag arriving on the WAN is only parsed if the hardware matches
++ * 0x8100 natively; a WAN-ingress offload milestone has to check that.
++ */
++#if IS_ENABLED(CONFIG_NET_DSA)
++/* PPE port that owns the chip-wide alias, or -1. One PPE per SoC. */
++static int edma_parser_alias_owner = -1;
++
++static int edma_port_parser_alias_program(struct ppe_port *ppe_port,
++					  bool rtl8_4)
++{
++	struct regmap *regmap = ppe_port->ppe_dev->regmap;
++	u32 in_tpid, eg_tpid, cpu_eg;
++	int ret;
++
++	if (rtl8_4) {
++		in_tpid = FIELD_PREP(PPE_VLAN_TPID_STAG, ETH_P_REALTEK) |
++			  FIELD_PREP(PPE_VLAN_TPID_CTAG, 0);
++		/* The C-TPID keeps its reset value, see above. */
++		eg_tpid = FIELD_PREP(PPE_EG_VLAN_TPID_STPID, ETH_P_REALTEK) |
++			  FIELD_PREP(PPE_EG_VLAN_TPID_CTPID, ETH_P_8021Q);
++		/* S-VLAN port type, both tags re-inserted, port mode rather
++		 * than per-VSI mode.
++		 */
++		cpu_eg = PPE_PORT_EG_VLAN_TBL_VLAN_TYPE |
++			 FIELD_PREP(PPE_PORT_EG_VLAN_TBL_CTAG_MODE,
++				    PPE_EG_VLAN_TAG_MODE_TAGGED) |
++			 FIELD_PREP(PPE_PORT_EG_VLAN_TBL_STAG_MODE,
++				    PPE_EG_VLAN_TAG_MODE_TAGGED);
++	} else {
++		in_tpid = FIELD_PREP(PPE_VLAN_TPID_STAG, ETH_P_8021AD) |
++			  FIELD_PREP(PPE_VLAN_TPID_CTAG, ETH_P_8021Q);
++		eg_tpid = FIELD_PREP(PPE_EG_VLAN_TPID_STPID, ETH_P_8021AD) |
++			  FIELD_PREP(PPE_EG_VLAN_TPID_CTPID, ETH_P_8021Q);
++		/* The reset value: tag modes per VSI. */
++		cpu_eg = FIELD_PREP(PPE_PORT_EG_VLAN_TBL_CTAG_MODE,
++				    PPE_EG_VLAN_TAG_MODE_TAGGED) |
++			 FIELD_PREP(PPE_PORT_EG_VLAN_TBL_STAG_MODE,
++				    PPE_EG_VLAN_TAG_MODE_TAGGED) |
++			 PPE_PORT_EG_VLAN_TBL_VSI_TAG_MODE_EN;
++	}
++
++	ret = regmap_write(regmap, PPE_IPR_VLAN_TPID_ADDR, in_tpid);
++	if (ret)
++		return ret;
++
++	ret = regmap_write(regmap, PPE_TPR_VLAN_TPID_ADDR, in_tpid);
++	if (ret)
++		return ret;
++
++	ret = regmap_write(regmap, PPE_EG_VLAN_TPID_ADDR, eg_tpid);
++	if (ret)
++		return ret;
++
++	/* PPE port 0 is the CPU port (EDMA_CPU_PORT_PROFILE_ID). */
++	return regmap_update_bits(regmap,
++				  PPE_PORT_EG_VLAN_TBL_ADDR +
++				  PPE_PORT_EG_VLAN_TBL_INC * EDMA_CPU_PORT_PROFILE_ID,
++				  PPE_PORT_EG_VLAN_TBL_VLAN_TYPE |
++				  PPE_PORT_EG_VLAN_TBL_CTAG_MODE |
++				  PPE_PORT_EG_VLAN_TBL_STAG_MODE |
++				  PPE_PORT_EG_VLAN_TBL_VSI_TAG_MODE_EN, cpu_eg);
++}
++#endif
++
++static int edma_port_parser_role(struct ppe_port *ppe_port, bool core)
++{
++	if (WARN_ON_ONCE(ppe_port->port_id >= PPE_PORT_PARSING_ENTRIES))
++		return -EINVAL;
++
++	return regmap_update_bits(ppe_port->ppe_dev->regmap,
++				  PPE_PORT_PARSING_ADDR +
++				  PPE_PORT_PARSING_INC * ppe_port->port_id,
++				  PPE_PORT_PARSING_PORT_ROLE,
++				  core ? PPE_PORT_PARSING_PORT_ROLE : 0);
++}
++
++/* Parser programming states per port (edma_port_priv.parser_state). */
++enum edma_parser_state {
++	EDMA_PARSER_UNSET,	/* never programmed since open */
++	EDMA_PARSER_PLAIN,	/* edge role, no DSA involvement */
++	EDMA_PARSER_DSA_8021Q,	/* DSA conduit, reset TPIDs (802.1Q-based tagger) */
++	EDMA_PARSER_DSA_RTL8_4,	/* DSA conduit, rtl8_4 alias active */
++	EDMA_PARSER_DENIED,	/* wanted the alias, another port owns it (logged once) */
++};
++
++/* Called from ndo_open (before the link comes up) and again from the
++ * netdevice notifier whenever DSA may have attached or changed the tagger
++ * behind an already-running port. Idempotent: nothing is written unless
++ * the desired state differs from what this port last programmed.
++ */
++static int edma_port_parser_dsa_setup(struct net_device *netdev,
++				      struct ppe_port *ppe_port)
++{
++	struct edma_port_priv *port_priv = netdev_priv(netdev);
++	bool rtl8_4 = false, dsa = false;
++	enum edma_parser_state want;
++	int ret;
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++	if (netdev_uses_dsa(netdev)) {
++		const struct dsa_device_ops *ops = netdev->dsa_ptr->tag_ops;
++
++		dsa = true;
++		rtl8_4 = ops && ops->proto == DSA_TAG_PROTO_RTL8_4;
++	}
++#endif
++	want = !dsa ? EDMA_PARSER_PLAIN :
++	       rtl8_4 ? EDMA_PARSER_DSA_RTL8_4 : EDMA_PARSER_DSA_8021Q;
++	if (want == port_priv->parser_state)
++		return 0;
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++	/* Leaving the aliased state in any direction (tagger change, DSA
++	 * detaching from a running conduit) gives the chip-wide registers
++	 * back before anything else.
++	 */
++	if (!dsa && edma_parser_alias_owner == ppe_port->port_id) {
++		ret = edma_port_parser_alias_program(ppe_port, false);
++		if (ret)
++			return ret;
++		edma_parser_alias_owner = -1;
++	}
++
++	if (dsa) {
++		if (edma_parser_alias_owner >= 0 &&
++		    edma_parser_alias_owner != ppe_port->port_id) {
++			if (port_priv->parser_state != EDMA_PARSER_DENIED)
++				netdev_err(netdev,
++					   "PPE port %d already aliases the parser for rtl8_4; a second DSA conduit is not supported\n",
++					   edma_parser_alias_owner);
++			port_priv->parser_state = EDMA_PARSER_DENIED;
++			return -EBUSY;
++		}
++
++		ret = edma_port_parser_alias_program(ppe_port, rtl8_4);
++		if (ret) {
++			/* Do not leave the chip-wide registers half way. */
++			edma_port_parser_alias_program(ppe_port, false);
++			return ret;
++		}
++
++		edma_parser_alias_owner = rtl8_4 ? ppe_port->port_id : -1;
++	}
++#endif
++
++	ret = edma_port_parser_role(ppe_port, rtl8_4);
++	if (ret) {
++#if IS_ENABLED(CONFIG_NET_DSA)
++		if (edma_parser_alias_owner == ppe_port->port_id) {
++			edma_port_parser_alias_program(ppe_port, false);
++			edma_parser_alias_owner = -1;
++		}
++#endif
++		return ret;
++	}
++
++	port_priv->parser_state = want;
++	if (dsa)
++		netdev_info(netdev, "PPE ingress parser: DSA conduit, %s\n",
++			    rtl8_4 ? "rtl8_4 head tag aliased as QinQ" : "802.1Q tagger, reset TPIDs");
++
++	return 0;
++}
++
++/* Called from ndo_stop: the owner puts the chip-wide state back. */
++static void edma_port_parser_dsa_teardown(struct net_device *netdev,
++					  struct ppe_port *ppe_port)
++{
++	int ret;
++
++	((struct edma_port_priv *)netdev_priv(netdev))->parser_state = EDMA_PARSER_UNSET;
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++	if (edma_parser_alias_owner == ppe_port->port_id) {
++		ret = edma_port_parser_alias_program(ppe_port, false);
++		if (ret)
++			netdev_err(netdev, "failed to restore the PPE parser TPIDs: %d\n", ret);
++		edma_parser_alias_owner = -1;
++	}
++#endif
++
++	ret = edma_port_parser_role(ppe_port, false);
++	if (ret)
++		netdev_err(netdev, "failed to reset the PPE parser port role: %d\n", ret);
++}
++
++/* DSA sets up the user ports (and links them as uppers of the conduit)
++ * before it assigns the conduit's dsa_ptr, and on this board netifd has
++ * opened the conduit before any of that, so ndo_open alone never sees a DSA
++ * conduit on a cold boot. The user ports come up only after the tree is
++ * complete, so a user port's NETDEV_UP is the reliable moment to
++ * re-evaluate its conduit; NETDEV_CHANGEUPPER on the conduit itself covers
++ * later re-links. The setup is idempotent, so spurious events cost nothing.
++ */
++static int edma_port_netdev_event(struct notifier_block *nb,
++				  unsigned long event, void *ptr)
++{
++	struct net_device *netdev = netdev_notifier_info_to_dev(ptr);
++	struct edma_port_priv *port_priv;
++	int ret;
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++	if (event == NETDEV_UP) {
++		/* Only a DSA user port is of interest here; the lookup rejects
++		 * everything else with -ENODEV.
++		 */
++		struct dsa_port *dp = dsa_port_from_netdev(netdev);
++
++		if (IS_ERR(dp) || !dp->cpu_dp)
++			return NOTIFY_DONE;
++		/* The physical conduit, not dsa_port_to_conduit(): under a LAG
++		 * that would be the bond, which is not an EDMA port.
++		 */
++		netdev = dp->cpu_dp->conduit;
++	} else if (event != NETDEV_CHANGEUPPER) {
++		return NOTIFY_DONE;
++	}
++#else
++	if (event != NETDEV_CHANGEUPPER)
++		return NOTIFY_DONE;
++#endif
++
++	if (!netdev || !edma_port_is_edma_netdev(netdev) || !netif_running(netdev))
++		return NOTIFY_DONE;
++
++	port_priv = netdev_priv(netdev);
++	ret = edma_port_parser_dsa_setup(netdev, port_priv->ppe_port);
++	if (ret)
++		netdev_err(netdev, "failed to reprogram the PPE parser: %d\n", ret);
++
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block edma_port_netdev_nb = {
++	.notifier_call = edma_port_netdev_event,
++};
++
++/* One notifier for all ports; registered with the first, dropped with the last. */
++static int edma_port_netdev_nb_users;
++
++static int edma_port_netdev_nb_get(void)
++{
++	int ret = 0;
++
++	if (!edma_port_netdev_nb_users++)
++		ret = register_netdevice_notifier(&edma_port_netdev_nb);
++	if (ret)
++		edma_port_netdev_nb_users--;
++	return ret;
++}
++
++static void edma_port_netdev_nb_put(void)
++{
++	if (!--edma_port_netdev_nb_users)
++		unregister_netdevice_notifier(&edma_port_netdev_nb);
++}
++
+ static int edma_port_open(struct net_device *netdev)
+ {
+ 	struct edma_port_priv *port_priv = (struct edma_port_priv *)netdev_priv(netdev);
+ 	struct ppe_port *ppe_port;
+ 	int port_id;
++	int ret;
+ 
+ 	if (!port_priv)
+ 		return -EINVAL;
+@@ -115,6 +413,13 @@
+ 	ppe_port  = port_priv->ppe_port;
+ 	port_id = ppe_port->port_id;
+ 
++	ret = edma_port_parser_dsa_setup(netdev, ppe_port);
++	if (ret) {
++		netdev_err(netdev, "failed to program the PPE parser: %d\n", ret);
++		edma_port_parser_dsa_teardown(netdev, ppe_port);
++		return ret;
++	}
++
+ 	if (ppe_port->phylink)
+ 		phylink_start(ppe_port->phylink);
+ 
+@@ -149,6 +454,8 @@
+ 	if (ppe_port->phylink)
+ 		phylink_stop(ppe_port->phylink);
+ 
++	edma_port_parser_dsa_teardown(netdev, ppe_port);
++
+ 	return 0;
+ }
+ 
+@@ -562,6 +869,7 @@
+ 	ppe_my_mac_entry_set(edma_ctx->ppe_dev, port_priv->l3_if_index - 1, NULL, false);
+ 	ppe_l3_if_eg_entry_set(edma_ctx->ppe_dev, port_priv->l3_if_index, &zero);
+ 
++	edma_port_netdev_nb_put();
+ 	unregister_netdev(netdev);
+ 	edma_port_deconfigure(netdev);
+ 	edma_port_stats_free(netdev);
+@@ -666,6 +974,13 @@
+ 		goto register_netdev_fail;
+ 	}
+ 
++	ret = edma_port_netdev_nb_get();
++	if (ret) {
++		netdev_err(netdev, "failed to register the netdevice notifier: %d\n", ret);
++		unregister_netdev(netdev);
++		goto register_netdev_fail;
++	}
++
+ 	/* Last: everything below this point succeeded, so the hardware
+ 	 * L3 interface state this programs has a netdevice behind it and
+ 	 * edma_port_destroy() to undo it.
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -67,6 +67,14 @@
+  *   reply). Once the reply direction IS offloaded they become the only
+  *   mechanism -- do not weaken them in that milestone.
+  *
++ *   Also for that milestone: while an rtl8_4 conduit aliases the parser
++ *   (edma_port.c), the global C-TPID is 0x0000. On the WAN port the
++ *   hardware then parses L3 four bytes after an EtherType of 0x0000 --
++ *   a frame Linux treats as 802.3 length and never as IP. Today that can
++ *   only end in a CPU punt; once WAN-ingress flows are offloaded, either
++ *   make the WAN port refuse such frames or verify the parser still
++ *   matches 0x8100 natively and revisit the TPID choice.
++ *
+  * - SECURITY LIMITATION: a flow entry is keyed on the 5-tuple plus an
+  *   ingress L3 interface, and nothing finer. ppe_offload_ingress_edma_dev()
+  *   resolves a VLAN upper and a DSA user port down to the conduit, so

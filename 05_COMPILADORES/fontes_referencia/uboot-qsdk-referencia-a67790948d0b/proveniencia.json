@@ -1,0 +1,24 @@
+{
+  "reference_commit": "a67790948d0b6e0fc68e3bebf268b3a6f5c12bba",
+  "router_tested": false,
+  "acer_appsbl_sha256": "3d6281190512ba50b83eea1a2d6fca69f01da5bb390d52b601e762ce8f1df2fc",
+  "acer_marker_offsets": {
+    "aarch64_monitor": 448861,
+    "cant_boot_kernel": 448838,
+    "config_not_available": 408756
+  },
+  "files": [
+    {
+      "Path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\fontes\\uboot-qsdk-referencia-a67790948d0b\\arm-bootm.c",
+      "Hash": "272B615A1A9DB0FF2CADA098FEC4B8ACD49168867BECF49CAE8F47DA26613F26"
+    },
+    {
+      "Path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\fontes\\uboot-qsdk-referencia-a67790948d0b\\scm.c",
+      "Hash": "04EA3567EDF40F67053B512A690E35C4D08122D1568FCA72C772A93949F1A824"
+    },
+    {
+      "Path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\fontes\\uboot-qsdk-referencia-a67790948d0b\\scm.h",
+      "Hash": "FA7A0DB2C800131EB096453921655E33210C236EB9E5261B58A6390BABE7EEBE"
+    }
+  ]
+}

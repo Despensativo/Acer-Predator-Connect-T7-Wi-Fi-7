@@ -1,0 +1,1172 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload the reply direction
+ towards DSA user ports
+
+Only the SNAT direction of a masqueraded connection was accelerated so
+far: the reply, a separate flow_cls_offload with its own cookie, was
+declined twice over, once as "not snat-outbound" and once because its
+redirect target is a DSA user port (lanN), not an EDMA netdevice. Every
+download therefore crossed the CPU.
+
+Accept single-ended NAT in both shapes. The flowtable builds the reply
+of a masquerade as "destination rewritten, source unchanged" (the
+inbound direction of a port forward has the same shape, its reply the
+SNAT shape), which the parameterised NAT encoder already covers with
+PPE_FLOW_FWD_DNAT: the nexthop carries the new destination address in
+its dnat_ip field and the flow entry the new destination port. The host
+table entry is the original source for both shapes -- the LAN client
+of an SNAT flow, the remote peer of a DNAT flow, marked WAN -- and the
+flow entry's own address the destination. The entry format allows the
+other assignment for DNAT (the public address as the host), and that
+was tried first: measured on a GL-BE9300 the flows showed as offloaded
+while every packet still crossed the CPU, on both taggers. No public IP
+table entry is taken for a DNAT flow. Hairpin NAT (both ends rewritten)
+and plain routing (neither) stay declined. The fail-closed check that
+declined any destination-port rewrite goes with the SNAT-only gate it
+belonged to; what replaces it pins the port on the side that must not
+change for each shape (the destination port of an SNAT flow, the source
+port of a DNAT flow), so an entry is only ever programmed with the one
+port rewrite it will actually perform, the one the flowtable asked for.
+
+A redirect to a DSA user port is resolved, mirroring
+mtk_flow_get_dsa_port(), to the conduit's PPE port plus the tag inserts
+the nexthop table offers (one C-tag, one S-tag) that make the switch
+deliver the frame to that port, since hardware cannot run the tagger:
+
+  - tag_8021q (vsc73xx-8021q): a C-tag with the port's tag_8021q VID.
+    For a port of a VLAN-unaware bridge that is the bridge VID, which is
+    what the software tagger sends straight onto a bridged port too
+    (pending-6.18/766): the switch picks the egress port from its own
+    FDB, so a client that moves ports is followed, and a miss floods no
+    further than the bridge's members. An unbridged port gets its
+    standalone VID.
+  - rtl8_4: the head tag emulated as S-tag TCI 0x0400 (protocol 0x04,
+    reason 0) plus C-tag TCI BIT(port) (ALLOW=0, forwarding port mask),
+    which the aliased egress TPIDs (S=0x8899, C=0x8100) turn into
+    0x8899 0400 8100 <mask>. For the S-tag to come out at all the
+    conduit has to be an S-VLAN egress port: with the port left a
+    C-VLAN port (its reset type) the switch delivered nothing for such
+    flows, with the type bit set the same flows ran at 2353 Mbit/s, and
+    the flood path, DHCP and ARP were unaffected either way -- so the
+    alias program in edma_port.c now sets that bit on the conduit while
+    the alias holds and clears it when it leaves. The switch accepts
+    word 2 as 0x8100 (a C-TPID of 0x00a0, the software tagger's flags,
+    changed nothing). Read by the switch as its flag byte pair, that
+    word is EFID_EN=1/EFID 0, PRI_EN=0, KEEP=0, LEARN_DIS=0, none of
+    which an explicit forwarding port mask consults. The port is always
+    named outright: an untagged frame would be classified to the CPU
+    port's PVID, the seeded VLAN 1 that every port is a member of under
+    this tagger, and an FDB miss would flood a routed frame across
+    every bridge on the switch.
+
+Only the DSA structures of the redirect target decide the port; the
+switch's FDB is never read. Declined: a port of a VLAN-aware bridge, a
+port behind a LAG conduit, a VLAN push on top of a DSA port, a tagger
+without an encapsulation here, and a conduit whose parser (and so the
+chip-wide egress TPIDs, edma_port.c) is not programmed for that tagger
+-- the parser state enum moves to edma_port.h for that check, and
+Kconfig gains the BRIDGE dependency the bridge checks need. The
+Ethernet mangle's source must be the conduit's MAC, which its user
+ports and, by default, their bridge inherit. The hairpin decline, the
+FLOW_CLS_STATS path and the TCP control-flag exceptions are unchanged;
+with both directions in hardware the exceptions are now the only thing
+that returns a FIN or RST to software, in either direction.
+
+A DNAT flow is accepted only when the address it translates is this
+router's own on the interface (or VLAN upper) the packets arrive
+through (__ip_dev_find()). The rule carries no trace of an
+encapsulation the flowtable cannot express, so a PPPoE WAN's reply
+would otherwise be programmed as a plain-IPv4 entry keyed on the raw
+WAN port, which a spoofed plain frame on the WAN segment could hit
+while software drops it.
+
+The reply on a tagged WAN arrives with a FLOW_DISSECTOR_KEY_VLAN match
+on the real device and a FLOW_ACTION_VLAN_POP. The flowtable fills the
+key in but does not mark it in used_keys (nf_flow_rule_match(),
+v6.18), so flow_rule_match_key() alone is blind to it and the pop would
+be declined as unmatched -- measured: every wan.10 reply declined on
+both taggers; the dissector offset, set together with the key, is the
+second signal. Hardware keys a flow on the ingress port's L3 interface,
+not the VLAN, so this is accepted with the same collapse the LAN side
+already documents (a flow entered through wan.10 also matches the
+5-tuple arriving untagged on wan, and vice versa), only when the VID
+names a VLAN upper really stacked on that device, and never on a DSA
+user port. It is accepted under the tag_8021q tagger and declined while
+the rtl8_4 parser alias holds the chip-wide ingress C-TPID at 0x0000:
+measured, such flows sat in hardware and never hit (the tag is not
+parsed as a VLAN at all), so they are declined and logged rather than
+programmed for nothing.
+
+Measured on a GL-BE9300 with a 2.5 Gbit/s peer on the WAN and a
+2.5 Gbit/s client on lan3, CPU idle from /proc/stat, software path
+about 74% idle. With tag_8021q, on the final build: download
+2353 Mbit/s in hardware, download through a VLAN-tagged WAN 2347,
+upload 2347; on the preceding build of the same tag_8021q path: upload
+2343 Mbit/s at 99.4%, tagged-WAN upload 2343, a DNAT port forward 2353
+and 2349 Mbit/s both directions in hardware, 40 teardowns leaving
+nothing ESTABLISHED, VLAN regression suite 4/4. With rtl8_4, the default
+tagger, from a cold boot with nothing else set: download 2353 Mbit/s
+at 99.3% idle, upload 2350 Mbit/s at 99.5%, tagged-WAN upload
+2344 Mbit/s, port forward 2353 and 2352 Mbit/s, 30 short connections
+leaving conntrack clean and the VLAN suite 4/4 (DHCP renewals were
+unaffected on the preceding build); tagged-WAN download stays on the
+software path (1454 Mbit/s at 74.4% idle) with the decline logged once.
+Frames forged on a LAN port with a 0x8899 head of their own arrive at
+the conduit as data inside the switch's genuine head tag; ten WAN
+frames of each kind that could exploit the aliased TPIDs, carrying a
+live flow's 5-tuple, reached neither the flow's port nor lan1 and left
+the flow untouched (the port their mask named was not watched yet).
+
+Note on the tagged-WAN reply match: nf_flow_rule_match() never sets the
+VLAN key in used_keys, so the reply direction of a flow through a VLAN
+upper is recognised through the dissector's key offset instead (meta is
+first in struct nf_flow_key, so a VLAN key at offset 0 is "absent"). That
+leans on an internal netfilter layout; if it changes the driver declines
+such flows (fail closed, pr_debug trail) rather than mis-matching them.
+The used_keys gap is worth fixing in nf_flow_rule_match() upstream.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -14,15 +14,31 @@
+  *
+  * - IPv4 only.
+  * - TCP, UDP or UDP-Lite only.
+- * - SNAT (source NAT / masquerade) direction only -- the reply/DNAT
+- *   direction of a NAT connection is a separate flow_cls_offload with
+- *   its own cookie and is declined here. A masqueraded connection is
+- *   therefore accelerated outbound but stays on the software path
+- *   inbound, which is a real, known limitation of this milestone, not
+- *   an oversight.
++ * - Single-ended NAT only: either the source address (and optionally
++ *   the source port) is rewritten and the destination is not -- SNAT,
++ *   the LAN->WAN direction of a masqueraded connection and the reply
++ *   direction of a port forward -- or the destination is rewritten and
++ *   the source is not -- DNAT, the WAN->LAN reply of a masquerade and
++ *   the inbound direction of a port forward. Each direction of a
++ *   connection is its own flow_cls_offload with its own cookie and is
++ *   accepted or declined on its own. A flow that rewrites both ends
++ *   (hairpin NAT) or neither (plain routing) is declined: the two NAT
++ *   overlays of the flow entry are the only ones implemented. A DNAT
++ *   flow is accepted only when the address it translates is this
++ *   router's own on the interface (or VLAN upper) the packets arrive
++ *   through: the rule carries no trace of an encapsulation the
++ *   flowtable cannot express, so a PPPoE WAN's reply would otherwise
++ *   be programmed as a plain-IPv4 entry that a spoofed frame on the
++ *   WAN segment could hit while software drops it.
++ *   The same check keeps a DNAT flow entering through a DSA user port
++ *   (a redirect from the LAN) in software, and likewise one entering a
++ *   WAN that is a bridge over the EDMA port: the address is the
++ *   bridge's, the rule's ingress is the port, and that is deliberate
++ *   for now.
+  * - Egress device must be one of this driver's own EDMA port
+- *   netdevices (edma_port_is_edma_netdev()). A tagged WAN (e.g. wan.10)
+- *   arrives as that plain EDMA device plus a FLOW_ACTION_VLAN_PUSH: the
++ *   netdevices (edma_port_is_edma_netdev()), or a DSA user port whose
++ *   conduit is one. A tagged WAN (e.g. wan.10) arrives as that plain
++ *   EDMA device plus a FLOW_ACTION_VLAN_PUSH: the
+  *   flowtable resolves the VLAN upper through dev_fill_forward_path()
+  *   and hands the tag over as the push, which the nexthop's C-VLAN
+  *   tag-insert fields carry (a redirect to the VLAN netdevice itself is
+@@ -30,17 +46,25 @@
+  *   The push must match a VLAN upper really stacked on that device,
+  *   whose MTU then bounds the flow's PMTU; a flow back out of its own
+  *   ingress port, a DSA conduit as egress, and a push with a PCP are
+- *   declined. A
+- *   second/S-tag push, or any other VLAN proto than 802.1Q, is
++ *   declined. A second/S-tag push, or any other VLAN proto than 802.1Q, is
+  *   declined -- untested, and this hardware's nexthop entry only has
+- *   a single C-VLAN + single S-VLAN insert field to begin with. Bridge
+- *   and DSA (rtl837x) netdevices themselves are still out of scope --
+- *   on this board's LAN side, real traffic's egress device is
+- *   typically a DSA/bridge netdevice, not an EDMA one (or a VLAN on
+- *   top of one), so this milestone in practice only accelerates the
+- *   WAN-side direction of traffic through a plain (or VLAN-tagged)
+- *   EDMA netdevice. Extending this to DSA/bridge devices (mirroring
+- *   mtk_flow_get_dsa_port()) is follow-up work.
++ *   a single C-VLAN + single S-VLAN insert field to begin with.
++ * - A DSA user port as egress (the LAN side of this board, mirroring
++ *   mtk_flow_get_dsa_port()) is programmed as the conduit's PPE port,
++ *   and the switch is told which port the frame is for through the
++ *   nexthop's tag inserts, since hardware cannot run the tagger:
++ *   see ppe_offload_dsa_egress(). The port is taken from the DSA
++ *   structures of the redirect target only; a port of a VLAN-aware
++ *   bridge, a port behind a LAG conduit, a VLAN push on top of a DSA
++ *   port, a tagger this code has no encapsulation for, and a conduit
++ *   whose parser is not programmed for that tagger are all declined.
++ * - Tagged ingress (the reply direction on a tagged WAN) arrives as a
++ *   FLOW_DISSECTOR_KEY_VLAN match on the real device plus a
++ *   FLOW_ACTION_VLAN_POP. The flow key cannot carry the VLAN, only the
++ *   port's ingress L3 interface, so this is accepted with the collapse
++ *   described under SECURITY LIMITATION below, and only when the VID
++ *   names a VLAN upper really stacked on that device. Tagged ingress on
++ *   a DSA user port (a VLAN-aware bridge) is declined.
+  * - The flow must carry a FLOW_ACTION_MANGLE for the Ethernet header:
+  *   this is the *only* source this code uses for the nexthop's
+  *   destination MAC, deliberately -- the kernel has already resolved
+@@ -64,21 +88,30 @@
+  *   accelerated, leaving conntrack holding closed connections at
+  *   timeouts[ESTABLISHED] instead of timeouts[CLOSE].
+  *
+- *   NOTE for whoever implements reply-direction offload: today a
+- *   remote peer's FIN/RST always traverses the software path anyway,
+- *   because the reply direction is declined, and that is what sets
+- *   NF_FLOW_CLOSING. The exceptions are therefore currently a second
+- *   line of defence for the LAN-initiated case (an RST abort draws no
+- *   reply). Once the reply direction IS offloaded they become the only
+- *   mechanism -- do not weaken them in that milestone.
+- *
+- *   Also for that milestone: while an rtl8_4 conduit aliases the parser
+- *   (edma_port.c), the global C-TPID is 0x0000. On the WAN port the
+- *   hardware then parses L3 four bytes after an EtherType of 0x0000 --
+- *   a frame Linux treats as 802.3 length and never as IP. Today that can
+- *   only end in a CPU punt; once WAN-ingress flows are offloaded, either
+- *   make the WAN port refuse such frames or verify the parser still
+- *   matches 0x8100 natively and revisit the TPID choice.
++ *   With both directions of a connection in hardware these exceptions
++ *   are the ONLY thing that returns a FIN or RST to software, in either
++ *   direction: nothing else sets NF_FLOW_CLOSING. Do not weaken them.
++ *
++ *   While an rtl8_4 conduit aliases the parser (edma_port.c), the
++ *   chip-wide ingress C-TPID is 0x0000. On the WAN port the hardware
++ *   then parses L3 four bytes after an EtherType of 0x0000 -- a frame
++ *   Linux treats as 802.3 length and never as IP -- and such a frame
++ *   can hit an offloaded WAN-ingress flow. That adds no exposure a
++ *   plain IP frame with the same 5-tuple does not already have: the
++ *   flow forwards either, and the nexthop's tag inserts replace
++ *   whatever was parsed (measured for the WAN egress, expected for the
++ *   conduit -- the same expectation covers a WAN frame carrying the
++ *   aliased 0x8899 S-TPID with an attacker-chosen TCI, which must not
++ *   survive into the emulated head tag -- measured so far: ten such
++ *   frames of each kind carrying a live flow's 5-tuple from the WAN,
++ *   the S+C kind naming lan2 in its mask, reached neither the flow's
++ *   client port nor lan1, and the flow they mimicked ran on; lan2 and
++ *   the CPU port were not watched, which a follow-up capture has to
++ *   cover before this counts as settled), so it is left alone. A real
++ *   0x8100 tag on the WAN is NOT parsed while the C-TPID is aliased
++ *   (measured: such flows sat in hardware and never hit), so a tagged
++ *   ingress is declined while the alias is active rather than
++ *   programmed for nothing.
+  *
+  * - SECURITY LIMITATION: a flow entry is keyed on the 5-tuple plus an
+  *   ingress L3 interface, and nothing finer. ppe_offload_ingress_edma_dev()
+@@ -90,28 +123,28 @@
+  *   host in the weaker zone can source-spoof a victim's offloaded
+  *   5-tuple and have silicon forward and translate its packets with no
+  *   software inspection -- no rp_filter, no interface-scoped rule. The
++ *   same holds for the VLANs of the WAN port once tagged ingress is
++ *   accepted: a flow entered through wan.10 also matches the 5-tuple
++ *   arriving untagged on wan, and vice versa. The
+  *   hardware offers no finer qualifier, so this is a property of
+  *   enabling the flowtable across such a boundary, not something this
+  *   driver can validate away.
+  *
+- * Hardware itself may also not consult the flow table at all yet for
+- * genuinely external ingress traffic -- ppe_servcode_init() bypasses
+- * flow lookup (PPE_SC_BYPASS_INGRESS_FLOW_LOOKUP) only for service
+- * code 1, which edma_tx.c applies solely to CPU-originated egress
+- * descriptors, not to arriving port traffic, so external ingress
+- * should default to an unbypassed (zeroed) bitmap and see flow lookup
+- * -- but this has not been confirmed against a live register read.
+- * That confirmation, along with everything else in this comment, is a
+- * hardware-testing-time question; nothing here changes it.
++ * Flow lookup on genuinely external ingress is a given by now: flows
++ * entering on the WAN port and on the conduit both hit in hardware
++ * (measured, both taggers).
+  */
+ 
+ #include <linux/bitfield.h>
++#include <linux/dsa/8021q.h>
+ #include <linux/errno.h>
+ #include <linux/etherdevice.h>
++#include <linux/if_bridge.h>
+ #include <linux/if_ether.h>
+ #include <linux/if_vlan.h>
+ #include <linux/in.h>
+ #include <linux/ip.h>
++#include <linux/inetdevice.h>
+ #include <linux/list.h>
+ #include <linux/mutex.h>
+ #include <linux/netdevice.h>
+@@ -164,6 +197,8 @@
+ 	u32 nexthop_index;
+ 	u32 pub_ip_index;
+ 	bool flow_valid;
++	/* Only an SNAT flow holds a public IP table entry. */
++	bool pub_ip_valid;
+ 	/* Hardware counters are cumulative and not clear-on-read, so keep the
+ 	 * previous reading and report the difference. lastused is refreshed only
+ 	 * when the packet count actually moves, which is what tells the flowtable
+@@ -265,8 +300,8 @@
+  * layout) and so can be covered by a single mangle at offset 0.
+  * Seeded from the original match ports, not zero: unlike the Ethernet
+  * header, only one of source/dest is ever actually being rewritten
+- * for the SNAT case this code supports, and the other must be
+- * preserved.
++ * for the single-ended NAT shapes this code supports, and the other
++ * must be preserved.
+  */
+ struct ppe_offload_l4_ports {
+ 	__be16 source;
+@@ -303,8 +338,8 @@
+  * compiles to nothing and leaves "offload silently does not happen"
+  * indistinguishable from "offload is not enabled" -- that cost a full
+  * hardware-test cycle to diagnose. But a ratelimited print is far too loud
+- * here: declining is the NORMAL case on this board (the reply direction of
+- * every NAT connection is declined, as is every IPv6 flow), and
++ * here: declining is the NORMAL case on this board (every IPv6 flow, every
++ * plain-routed or hairpin flow, every flow towards a Wi-Fi client), and
+  * flow_offload_refresh() retries an unoffloaded flow about once a second for
+  * as long as it lives. A handful of ordinary connections would sit at the
+  * ratelimit ceiling forever and push everything else out of the ring buffer.
+@@ -319,6 +354,228 @@
+ 			 ##__VA_ARGS__); \
+ 	   pr_debug("ppe_offload: declined - " fmt "\n", ##__VA_ARGS__); -EOPNOTSUPP; })
+ 
++/* Whether a rule carries its VLAN or CVLAN match key.
++ *
++ * The flowtable fills in the VLAN (and CVLAN) key of a tagged ingress
++ * but, unlike for every other key, does not set it in used_keys
++ * (nf_flow_rule_match(), v6.18), so flow_rule_match_key() alone says no
++ * and the pop action that comes with it would be declined as unmatched.
++ * The dissector's offset for the key is set together with the key and is
++ * never 0 for these two (meta comes first in struct nf_flow_key), so it
++ * serves as the second signal. Measured on a GL-BE9300 with wan.10: with
++ * flow_rule_match_key() alone every tagged-WAN reply was declined.
++ */
++static bool ppe_offload_rule_has_vlan_key(const struct flow_rule *rule,
++					  enum flow_dissector_key_id key)
++{
++	/* Only these two: the flowtable sets the offsets of the other keys
++	 * it knows unconditionally, so for them the offset says nothing.
++	 */
++	if (WARN_ON_ONCE(key != FLOW_DISSECTOR_KEY_VLAN && key != FLOW_DISSECTOR_KEY_CVLAN))
++		return false;
++
++	return flow_rule_match_key(rule, key) || rule->match.dissector->offset[key];
++}
++
++/**
++ * struct ppe_offload_egress - Where and how a flow leaves the PPE.
++ * @dev: The EDMA netdevice whose PPE port the nexthop names: the redirect
++ * target itself, the real device under a VLAN netdevice, or the conduit
++ * under a DSA user port.
++ * @stag: Insert an S-VLAN tag with @svid on egress.
++ * @svid: TCI of that tag (12-bit VID field; the insert has no PCP).
++ * @ctag: Insert a C-VLAN tag with @cvid on egress.
++ * @cvid: TCI of that tag.
++ * @dsa_index: Switch port index when the egress is a DSA user port.
++ * @dsa: Whether the egress is a DSA user port at all.
++ * @dsa_fixed: Whether the tag inserts name that port outright (rather than
++ * leaving the choice to the switch's own FDB), see ppe_offload_dsa_egress().
++ */
++struct ppe_offload_egress {
++	struct net_device *dev;
++	bool stag;
++	u16 svid;
++	bool ctag;
++	u16 cvid;
++	unsigned int dsa_index;
++	bool dsa;
++	bool dsa_fixed;
++};
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++/* rtl8_4 head tag words as the nexthop's S-tag and C-tag inserts see them.
++ *
++ * The RTL8372N expects 0x8899 | 0x0400 | <flags> | <port mask> in front
++ * of the EtherType on CPU->switch frames (net/dsa/tag_rtl8_4.c). While the
++ * conduit's parser is aliased (edma_port.c) the chip-wide egress S-TPID is
++ * 0x8899 and the C-TPID 0x8100, so an S-tag insert with TCI 0x0400
++ * reproduces the first two words (protocol 0x04, reason 0: PCP and DEI of
++ * that TCI are the protocol byte's top bits, all zero) and a C-tag insert
++ * with TCI = BIT(port) reproduces the fourth (ALLOW=0, RX = forwarding
++ * port mask). The third word comes out as the egress C-TPID, 0x8100 --
++ * in the tag's flag layout EFID_EN=1 with EFID 0, PRI_EN=0 (so the PRI
++ * bits, 001, are ignored), KEEP=0, VSEL=0, LEARN_DIS=0. An explicit
++ * forwarding port mask does not consult the FDB, so the EFID does not
++ * matter to the egress decision; LEARN_DIS=0 lets the switch learn the
++ * conduit's MAC on its CPU port from these frames, which is where that
++ * address lives anyway. Both TCIs are written to the 12-bit VID fields
++ * with PCP and DEI zero; the egress stage must not remark a PCP into
++ * them (it would corrupt the protocol byte and set ALLOW) -- the nexthop
++ * entry has no PCP field, so this is a hardware property the bench has to
++ * confirm (a corrupted tag is a dropped frame, a visible failure), not
++ * something this code controls. Measured on a GL-BE9300: the switch
++ * accepts the pair as programmed here -- 2353 Mbit/s delivered to the
++ * port at 99.3% CPU idle from a cold boot on the default tagger -- once
++ * the conduit is an S-VLAN egress port (edma_port.c); left a C-VLAN
++ * port, the S-tag never comes out and the switch delivers nothing.
++ * Frames a LAN port forges with a 0x8899 head of its own arrive at the
++ * conduit as data inside the switch's genuine head tag (measured), so
++ * nothing a client sends can pose as this emulation either.
++ *
++ * Always the port outright, never the switch's own FDB: an untagged frame
++ * would be classified to the CPU port's PVID, which under this tagger is
++ * the seeded VLAN 1 that every port is a member of, so an FDB miss would
++ * flood a routed frame across every bridge on the switch.
++ */
++#define PPE_OFFLOAD_RTL8_4_STAG_TCI	0x0400
++/* Width of the tag's RX (forwarding port mask) field. */
++#define PPE_OFFLOAD_RTL8_4_RX_BITS	11
++
++/* Resolve a redirect to a DSA user port into the conduit's PPE port plus
++ * the tag inserts that make the switch deliver the frame to that port,
++ * mirroring mtk_flow_get_dsa_port() for the port lookup. Hardware cannot
++ * run the DSA tagger, so the switch has to be addressed with what the
++ * nexthop table can insert -- one C-tag and one S-tag -- which depends on
++ * the tagger in use and on the parser (and with it the chip-wide egress
++ * TPIDs) being programmed for that tagger on the conduit:
++ *
++ * - tag_8021q (vsc73xx-8021q): a C-tag with the port's tag_8021q VID.
++ *   For a port of a VLAN-unaware bridge that is the bridge VID, exactly
++ *   what the software tagger sends straight onto a bridged port: the
++ *   switch then picks the egress port from its own FDB, so a client that
++ *   moves ports is followed by the hardware flow as well (measured: the
++ *   download resumed in hardware after a re-cable), and a miss floods no
++ *   further than the bridge's members. An unbridged port gets its
++ *   standalone VID, whose only other member is the CPU port.
++ * - rtl8_4: the head tag emulated as S-tag + C-tag with the port's
++ *   forwarding mask (see PPE_OFFLOAD_RTL8_4_STAG_TCI).
++ *
++ * Only the DSA structures of the redirect target decide the port; the
++ * switch's FDB is never read. Declined: a port of a VLAN-aware bridge
++ * (its frames would need the bridge VLAN as a further tag, and the
++ * VLAN-unaware bridge VID trick does not apply), a conduit in a LAG, a
++ * VLAN push on top of the port, a tagger without an encapsulation here,
++ * and a conduit whose parser state does not match the tagger.
++ *
++ * Runs on the flowtable's offload workqueue, which holds neither RTNL
++ * nor RCU by itself (and must not take RTNL: the flowtable flushes this
++ * work while holding it on a netdevice going down). The redirect target
++ * is referenced by the rule for the duration of the call; the bridge is
++ * read as its RCU-protected master upper. The port's DSA bridge
++ * bookkeeping (read once, for the tag_8021q bridge number) is freed under
++ * RTNL without an RCU grace period, so a port leaving its bridge at this
++ * very moment is a residual race this shares with the DSA taggers' own
++ * xmit path and with mtk_flow_get_dsa_port().
++ *
++ * The encapsulation is tied to the parser state at this moment. It cannot
++ * go stale underneath a live flow: DSA changes the tagger only with the
++ * conduit and every user port down, and a user port going down tears
++ * down every flow through it (nf_flow_table_cleanup() keys on the flow's
++ * own ingress ports, one of which is that user port); the alias otherwise
++ * only leaves with the conduit closed, when the port forwards nothing.
++ *
++ * Return: 0 with @egress filled in, a negative error code to decline.
++ */
++static int ppe_offload_dsa_egress(struct net_device *odev, struct dsa_port *dp,
++				  bool vlan_push_seen, struct ppe_offload_egress *egress)
++{
++	const struct dsa_device_ops *tag_ops = dp->cpu_dp->tag_ops;
++	struct edma_port_priv *port_priv;
++	const struct dsa_bridge *b;
++	unsigned int bridge_num = 0;
++	struct net_device *bridge;
++	struct net_device *conduit;
++	bool vlan_aware = false;
++	u8 parser_state;
++
++	if (vlan_push_seen)
++		return ppe_offload_decline("odev=%s vlan push on a dsa port unsupported",
++					    netdev_name(odev));
++
++	if (dp->cpu_port_in_lag)
++		return ppe_offload_decline("odev=%s conduit is a lag", netdev_name(odev));
++
++	conduit = dp->cpu_dp->conduit;
++	if (!conduit || !edma_port_is_edma_netdev(conduit))
++		return ppe_offload_decline("odev=%s conduit is not an edma netdev",
++					    netdev_name(odev));
++
++	if (!tag_ops)
++		return ppe_offload_decline("odev=%s has no tagger", netdev_name(odev));
++
++	rcu_read_lock();
++	bridge = netdev_master_upper_dev_get_rcu(odev);
++	if (bridge && !netif_is_bridge_master(bridge))
++		bridge = NULL;
++	if (bridge) {
++		vlan_aware = br_vlan_enabled(bridge);
++		/* Read once: this is the DSA bookkeeping the residual race
++		 * in the function comment is about.
++		 */
++		b = READ_ONCE(dp->bridge);
++		bridge_num = b ? b->num : 0;
++	}
++	rcu_read_unlock();
++
++	if (vlan_aware)
++		return ppe_offload_decline("odev=%s is a port of a vlan-aware bridge",
++					    netdev_name(odev));
++
++	port_priv = netdev_priv(conduit);
++	parser_state = READ_ONCE(port_priv->parser_state);
++
++	switch (tag_ops->proto) {
++	case DSA_TAG_PROTO_VSC73XX_8021Q:
++		if (parser_state != EDMA_PARSER_DSA_8021Q)
++			return ppe_offload_decline("odev=%s conduit parser state %u, not tag_8021q",
++						    netdev_name(odev), parser_state);
++		egress->ctag = true;
++		if (bridge) {
++			/* The port left its bridge between the two reads. */
++			if (!bridge_num)
++				return ppe_offload_decline("odev=%s bridge membership changed",
++							    netdev_name(odev));
++			egress->cvid = dsa_tag_8021q_bridge_vid(bridge_num);
++		} else {
++			egress->cvid = dsa_tag_8021q_standalone_vid(dp);
++		}
++		break;
++	case DSA_TAG_PROTO_RTL8_4:
++		if (parser_state != EDMA_PARSER_DSA_RTL8_4)
++			return ppe_offload_decline("odev=%s conduit parser state %u, not rtl8_4",
++						    netdev_name(odev), parser_state);
++		if (dp->index >= PPE_OFFLOAD_RTL8_4_RX_BITS)
++			return ppe_offload_decline("odev=%s port %u outside the rtl8_4 port mask",
++						    netdev_name(odev), dp->index);
++		egress->stag = true;
++		egress->svid = PPE_OFFLOAD_RTL8_4_STAG_TCI;
++		egress->ctag = true;
++		egress->cvid = BIT(dp->index);
++		egress->dsa_fixed = true;
++		break;
++	default:
++		return ppe_offload_decline("odev=%s tagger %d unsupported", netdev_name(odev),
++					    tag_ops->proto);
++	}
++
++	egress->dev = conduit;
++	egress->dsa = true;
++	egress->dsa_index = dp->index;
++
++	return 0;
++}
++#endif
++
+ /* Resolve the device a flow's packets arrive on down to the EDMA port
+  * whose ingress L3 interface hardware will match against, mirroring
+  * the redirect-target resolution done for egress. A VLAN upper or a
+@@ -366,6 +623,7 @@
+ {
+ 	struct ppe_offload_l4_ports l4 = {};
+ 	struct ppe_offload_eth_mangle eth = {};
++	struct ppe_offload_egress egress = {};
+ 	struct flow_rule *rule = flow_cls_offload_flow_rule(cls);
+ 	struct ppe_offload_flow_entry *entry;
+ 	struct ppe_host_ipv4_entry host_ipv4;
+@@ -381,11 +639,16 @@
+ 	__be16 match_sport, match_dport;
+ 	u32 flow_words[PPE_FLOW_TBL_ENTRY_WORDS];
+ 	u32 host_words[PPE_HOST_TBL_IPV4_ENTRY_WORDS];
+-	u32 host_index, nexthop_index, pub_ip_index, flow_index;
++	u32 host_index, nexthop_index, pub_ip_index = 0, flow_index;
+ 	const struct flow_action_entry *act;
+ 	bool vlan_push_seen = false;
++	bool ingress_vlan_bad = false;
++	bool dst_on_ingress = false;
++	unsigned int vlan_pops = 0;
++	u16 ingress_vlan_vid = 0;
+ 	u16 vlan_push_vid = 0;
+ 	unsigned int pmtu;
++	bool snat;
+ 	u8 ip_proto;
+ 	int action;
+ 	const char *stage = NULL;
+@@ -412,6 +675,13 @@
+ 			return ppe_offload_decline("addr_type=%d not ipv4", ctrl.key->addr_type);
+ 
+ 		flow_rule_match_basic(rule, &basic);
++		/* Fail closed on anything but plain IPv4 framing, independent
++		 * of the address checks below: an encapsulation the rule does
++		 * not spell out must not reach the encoder as IPv4.
++		 */
++		if (basic.mask->n_proto && basic.key->n_proto != htons(ETH_P_IP))
++			return ppe_offload_decline("n_proto=0x%04x not ipv4",
++						    ntohs(basic.key->n_proto));
+ 		switch (basic.key->ip_proto) {
+ 		case IPPROTO_TCP:
+ 			/* Fail closed. Keyed on the protocol, not on the presence of
+@@ -496,17 +766,84 @@
+ 		return ppe_offload_decline("ingress ifindex %d not an exact match",
+ 					    meta.key->ingress_ifindex);
+ 
++	/* A tagged ingress (the reply direction on a tagged WAN) is matched
++	 * on its VLAN by the flowtable; hardware can only match the port, so
++	 * this is accepted with the collapse noted in the file comment, and
++	 * only where the tag really belongs to the device (checked below).
++	 * A second tag has no counterpart in the parser's classification.
++	 */
++	if (ppe_offload_rule_has_vlan_key(rule, FLOW_DISSECTOR_KEY_CVLAN))
++		return ppe_offload_decline("double-tagged ingress unsupported");
++
++	if (ppe_offload_rule_has_vlan_key(rule, FLOW_DISSECTOR_KEY_VLAN)) {
++		struct flow_match_vlan vlan;
++
++		flow_rule_match_vlan(rule, &vlan);
++		if (vlan.mask->vlan_tpid && vlan.key->vlan_tpid != htons(ETH_P_8021Q))
++			return ppe_offload_decline("ingress vlan tpid=0x%04x unsupported",
++						    ntohs(vlan.key->vlan_tpid));
++		if (vlan.mask->vlan_id != VLAN_VID_MASK || !vlan.key->vlan_id)
++			return ppe_offload_decline("ingress vlan id %u/%#x not an exact match",
++						    vlan.key->vlan_id, vlan.mask->vlan_id);
++		if (vlan.mask->vlan_priority)
++			return ppe_offload_decline("ingress vlan priority match unsupported");
++		ingress_vlan_vid = vlan.key->vlan_id;
++	}
++
+ 	/* The device is only used to resolve the index it maps to, so
+ 	 * take it under RCU rather than holding a reference.
+ 	 */
+ 	rcu_read_lock();
+ 	idev = dev_get_by_index_rcu(dev_net(netdev), meta.key->ingress_ifindex);
++	if (idev) {
++		struct net_device *l3dev = idev;
++
++		if (ingress_vlan_vid) {
++			/* The tag must name a VLAN upper of the very device
++			 * the frames arrive on. A DSA user port is excluded:
++			 * its tags are a VLAN-aware bridge's, and the
++			 * collapse would then cross bridge VLANs, which
++			 * nobody has measured.
++			 */
++			l3dev = NULL;
++			if (!is_vlan_dev(idev) && edma_port_is_edma_netdev(idev))
++				l3dev = __vlan_find_dev_deep_rcu(idev, htons(ETH_P_8021Q),
++								 ingress_vlan_vid);
++			if (!l3dev) {
++				ingress_vlan_bad = true;
++				idev = NULL;
++			}
++		}
++
++		/* Whether the destination the packets are addressed to is
++		 * this router's own address on the interface they arrive
++		 * through. Used below to accept only such DNAT flows: the
++		 * rule carries no trace of an encapsulation the flowtable
++		 * cannot express (PPPoE), and a plain IPv4 frame on the
++		 * WAN segment addressed to a PPPoE session's address would
++		 * otherwise be translated and delivered where software would
++		 * drop it.
++		 */
++		if (l3dev)
++			dst_on_ingress = __ip_dev_find(dev_net(netdev), match_dst, false) == l3dev;
++	}
+ 	if (idev)
+ 		idev = ppe_offload_ingress_edma_dev(idev);
+ 	if (idev)
+ 		ingress_l3_if = ((struct edma_port_priv *)netdev_priv(idev))->l3_if_index;
+ 	rcu_read_unlock();
+ 
++	if (ingress_vlan_bad)
++		return ppe_offload_decline("ingress ifindex %d has no vlan %u upper",
++					    meta.key->ingress_ifindex, ingress_vlan_vid);
++
++	/* See edma_port_parser_alias_active(): the parser would not see
++	 * the tag, so the entry would never hit.
++	 */
++	if (ingress_vlan_vid && edma_port_parser_alias_active())
++		return ppe_offload_decline("tagged ingress ifindex %d unparsed under rtl8_4 alias",
++					    meta.key->ingress_ifindex);
++
+ 	if (ingress_l3_if == PPE_OFFLOAD_L3_IF_NONE)
+ 		return ppe_offload_decline("ingress ifindex %d not on an edma netdev",
+ 					    meta.key->ingress_ifindex);
+@@ -574,6 +911,14 @@
+ 			vlan_push_seen = true;
+ 			vlan_push_vid = act->vlan.vid;
+ 			break;
++		case FLOW_ACTION_VLAN_POP:
++			/* The parser has already classified past the ingress
++			 * tag and routed egress rebuilds L2 from the nexthop, so
++			 * the pop itself is free; it only has to be the one the
++			 * VLAN match above accounts for.
++			 */
++			vlan_pops++;
++			break;
+ 		default:
+ 			return ppe_offload_decline("action id=%d unsupported", act->id);
+ 		}
+@@ -582,6 +927,10 @@
+ 	if (!odev || !eth.seen)
+ 		return ppe_offload_decline("odev=%d eth.seen=%d", !!odev, eth.seen);
+ 
++	if (vlan_pops != !!ingress_vlan_vid)
++		return ppe_offload_decline("%u vlan pops for %s ingress tag", vlan_pops,
++					    ingress_vlan_vid ? "one" : "no");
++
+ 	/* Hardware checks each packet's L3 length against the flow's
+ 	 * PMTU and redirects oversized ones to the CPU. Take it from the
+ 	 * redirect target itself (before any VLAN unwrap below), as the
+@@ -630,47 +979,81 @@
+ 		odev = vlan_dev_real_dev(odev);
+ 	}
+ 
+-	if (!edma_port_is_edma_netdev(odev))
+-		return ppe_offload_decline("odev=%s not an edma netdev", netdev_name(odev));
++#if IS_ENABLED(CONFIG_NET_DSA)
++	{
++		/* The flowtable holds a reference on the redirect target for
++		 * as long as the rule lives, and the DSA port of a live user
++		 * netdevice is not going anywhere either.
++		 */
++		struct dsa_port *dp = dsa_port_from_netdev(odev);
+ 
+-	/* A DSA conduit carries the switch's CPU tag, which a routed
+-	 * hardware flow would not emit.
+-	 */
+-	if (netdev_uses_dsa(odev))
+-		return ppe_offload_decline("odev=%s is a dsa conduit", netdev_name(odev));
++		if (!IS_ERR(dp)) {
++			ret = ppe_offload_dsa_egress(odev, dp, vlan_push_seen, &egress);
++			if (ret)
++				return ret;
++		}
++	}
++#endif
++
++	if (!egress.dsa) {
++		if (!edma_port_is_edma_netdev(odev))
++			return ppe_offload_decline("odev=%s not an edma netdev", netdev_name(odev));
++
++		/* A DSA conduit carries the switch's CPU tag, which a routed
++		 * hardware flow would not emit; the switch is addressed
++		 * through its user ports above, never through the conduit.
++		 */
++		if (netdev_uses_dsa(odev))
++			return ppe_offload_decline("odev=%s is a dsa conduit", netdev_name(odev));
+ 
+-	/* SNAT only: source changed, destination didn't. Declines the
+-	 * DNAT/reply direction and anything that changes both or
+-	 * neither -- see the file comment.
+-	 */
+-	if (new_src == match_src || new_dst != match_dst)
+-		return ppe_offload_decline("not snat-outbound (src %pI4->%pI4, dst %pI4->%pI4)",
+-					    &match_src, &new_src, &match_dst, &new_dst);
+-
+-	/* Only the source port is programmed (nat_l4_port below); a flow
+-	 * that also rewrites the destination port would be forwarded to the
+-	 * wrong one, so fail closed instead of dropping the rewrite.
+-	 */
+-	if (l4.dest != match_dport)
+-		return ppe_offload_decline("destination port rewrite (%u->%u) unsupported",
+-					    be16_to_cpu(match_dport), be16_to_cpu(l4.dest));
++		egress.dev = odev;
++		if (vlan_push_seen) {
++			egress.ctag = true;
++			egress.cvid = vlan_push_vid;
++		}
++	}
++
++	/* Single-ended NAT only: exactly one address changes, and the L4
++	 * port on the other side stays. SNAT is the outbound direction of
++	 * a masquerade, DNAT its reply (and either direction of a port
++	 * forward, which is the same two shapes the other way round). Both
++	 * ends changing (hairpin NAT) or neither (plain routing) is declined
++	 * -- see the file comment.
++	 */
++	if (new_src != match_src && new_dst == match_dst && l4.dest == match_dport) {
++		snat = true;
++	} else if (new_dst != match_dst && new_src == match_src && l4.source == match_sport) {
++		if (!dst_on_ingress)
++			return ppe_offload_decline("dnat of %pI4, not an address of ingress %d",
++						    &match_dst, meta.key->ingress_ifindex);
++		snat = false;
++	} else {
++		return ppe_offload_decline("not single-ended nat (%pI4:%u>%pI4:%u %pI4:%u>%pI4:%u)",
++					    &match_src, ntohs(match_sport), &new_src,
++					    ntohs(l4.source), &match_dst, ntohs(match_dport),
++					    &new_dst, ntohs(l4.dest));
++	}
+ 
+ 	/* eth.bytes is {h_dest[6], h_source[6]}. The new source half
+ 	 * must be this egress port's own MAC -- if it isn't, either
+ 	 * this isn't the flow we think it is or the port's L3_IF entry
+ 	 * (edma_port_l3_if_update()) is out of sync, and egressing
+ 	 * with the wrong source MAC either way is worse than declining.
++	 * Behind a DSA user port that is the conduit's MAC, which its
++	 * user ports and (by default) their bridge inherit.
+ 	 */
+-	if (!ether_addr_equal(eth.bytes + ETH_ALEN, odev->dev_addr))
+-		return ppe_offload_decline("eth mangle src %pM != odev mac %pM",
+-					    eth.bytes + ETH_ALEN, odev->dev_addr);
++	if (!ether_addr_equal(eth.bytes + ETH_ALEN, egress.dev->dev_addr))
++		return ppe_offload_decline("eth mangle src %pM != egress %s mac %pM",
++					    eth.bytes + ETH_ALEN, netdev_name(egress.dev),
++					    egress.dev->dev_addr);
+ 
+-	port_priv = netdev_priv(odev);
++	port_priv = netdev_priv(egress.dev);
+ 
+ 	/* The flow key only knows the ingress port's L3 interface, not the
+ 	 * VLAN a frame came in on, so a flow leaving the port it entered
+-	 * (say untagged wan in, wan.10 out) would also match frames from the
+-	 * other VLAN of that port.
++	 * (say untagged wan in, wan.10 out, or one LAN VLAN to another over
++	 * the conduit) would also match frames from the other VLAN of that
++	 * port.
+ 	 */
+ 	if (ingress_l3_if == port_priv->l3_if_index)
+ 		return ppe_offload_decline("odev=%s hairpin to its own ingress port",
+@@ -680,16 +1067,21 @@
+ 		goto unlock;
+ 	}
+ 
+-	/* Public IP entry for the translated (post-SNAT) source address. */
+-	ret = ppe_pub_ip_pool_get_and_ref(priv->ppe_dev, &priv->pub_ip_pool, new_src,
+-					   &pub_ip_index);
+-	if (ret) {
+-		stage = "pub_ip";
+-		goto unlock;
++	/* Public IP entry for the translated (post-SNAT) source address.
++	 * DNAT carries its new destination in the nexthop entry instead.
++	 */
++	if (snat) {
++		ret = ppe_pub_ip_pool_get_and_ref(priv->ppe_dev, &priv->pub_ip_pool,
++						  new_src, &pub_ip_index);
++		if (ret) {
++			stage = "pub_ip";
++			goto unlock;
++		}
+ 	}
+ 
+-	/* Nexthop: egress port + resolved next-hop MAC + the public IP
+-	 * entry just obtained.
++	/* Nexthop: egress port + resolved next-hop MAC + the tag inserts
++	 * the egress needs + the public IP entry (SNAT) or the new
++	 * destination address (DNAT).
+ 	 */
+ 	memset(&nexthop, 0, sizeof(nexthop));
+ 	nexthop.port_valid = true;
+@@ -701,12 +1093,15 @@
+ 	 */
+ 	nexthop.port = port_priv->ppe_port->port_id;
+ 	nexthop.post_l3_if = port_priv->l3_if_index;
+-	nexthop.pub_addr_index = pub_ip_index;
+ 	memcpy(nexthop.dmac, eth.bytes, ETH_ALEN);
+-	if (vlan_push_seen) {
+-		nexthop.ctag_fmt = true;
+-		nexthop.cvid = vlan_push_vid;
+-	}
++	if (snat)
++		nexthop.pub_addr_index = pub_ip_index;
++	else
++		nexthop.dnat_ip = new_dst;
++	nexthop.stag_fmt = egress.stag;
++	nexthop.svid = egress.svid;
++	nexthop.ctag_fmt = egress.ctag;
++	nexthop.cvid = egress.cvid;
+ 
+ 	ret = ppe_nexthop_pool_get_and_ref(priv->ppe_dev, &priv->nexthop_pool, &nexthop,
+ 					    &nexthop_index);
+@@ -715,12 +1110,24 @@
+ 		goto deref_pub_ip;
+ 	}
+ 
+-	/* Host entry for the original (pre-NAT) source address -- the
+-	 * LAN client, shared across every flow through it.
++	/* Host entry for the original (pre-NAT) source address, for both
++	 * shapes: the LAN client of an SNAT flow, the remote peer of a DNAT
++	 * flow (marked WAN). The destination goes into the flow entry
++	 * itself. Keying the DNAT flow the other way round -- the public
++	 * address as the host, the remote as the flow's address, which the
++	 * entry format allows -- programs an entry hardware never hits:
++	 * measured on a GL-BE9300, such flows showed as offloaded while
++	 * every packet still crossed the CPU. A remote peer's entry is
++	 * shared by all its connections and returned when the last one
++	 * goes; a host table with no room left fails the add and the flow
++	 * stays on the software path (see the log note at the end). The
++	 * WAN mark is per address: an address that is the source of both
++	 * shapes (a routed segment that port-forwards without masquerade)
++	 * takes whichever flow programmed it last.
+ 	 */
+ 	memset(&host_ipv4, 0, sizeof(host_ipv4));
+ 	host_ipv4.valid = true;
+-	host_ipv4.wan = false;
++	host_ipv4.wan = !snat;
+ 	host_ipv4.ip_addr = match_src;
+ 	ppe_host_ipv4_entry_encode(&host_ipv4, host_words);
+ 
+@@ -736,9 +1143,9 @@
+ 	flow_ipv4.host_addr_is_dst = false;
+ 	flow_ipv4.host_addr_index = host_index;
+ 	flow_ipv4.protocol = ip_proto;
+-	flow_ipv4.fwd_type = PPE_FLOW_FWD_SNAT;
++	flow_ipv4.fwd_type = snat ? PPE_FLOW_FWD_SNAT : PPE_FLOW_FWD_DNAT;
+ 	flow_ipv4.nat_nexthop = nexthop_index;
+-	flow_ipv4.nat_l4_port = be16_to_cpu(l4.source);
++	flow_ipv4.nat_l4_port = be16_to_cpu(snat ? l4.source : l4.dest);
+ 	flow_ipv4.match_ip = match_dst;
+ 	flow_ipv4.match_sport = be16_to_cpu(match_sport);
+ 	flow_ipv4.match_dport = be16_to_cpu(match_dport);
+@@ -780,6 +1187,7 @@
+ 	entry->host_index = host_index;
+ 	entry->nexthop_index = nexthop_index;
+ 	entry->pub_ip_index = pub_ip_index;
++	entry->pub_ip_valid = snat;
+ 	entry->flow_valid = true;
+ 
+ 	ret = rhashtable_insert_fast(&priv->flow_table, &entry->node, ppe_offload_flow_ht_params);
+@@ -793,9 +1201,10 @@
+ 
+ 	mutex_unlock(&priv->lock);
+ 
+-	pr_debug("ppe_offload: accepted flow_index=%u host_index=%u nexthop_index=%u pub_ip_index=%u src=%pI4->%pI4 odev=%s\n",
+-		  flow_index, host_index, nexthop_index, pub_ip_index,
+-		  &match_src, &new_src, netdev_name(odev));
++	pr_debug("ppe_offload: accepted %s flow_index=%u host_index=%u nexthop_index=%u src=%pI4->%pI4 dst=%pI4->%pI4 odev=%s egress=%s\n",
++		 snat ? "snat" : "dnat", flow_index, host_index, nexthop_index,
++		 &match_src, &new_src, &match_dst, &new_dst, netdev_name(odev),
++		 netdev_name(egress.dev));
+ 
+ 	return 0;
+ 
+@@ -808,20 +1217,34 @@
+ deref_nexthop:
+ 	ppe_nexthop_pool_deref(priv->ppe_dev, &priv->nexthop_pool, nexthop_index);
+ deref_pub_ip:
+-	ppe_pub_ip_pool_deref(priv->ppe_dev, &priv->pub_ip_pool, pub_ip_index);
++	if (snat)
++		ppe_pub_ip_pool_deref(priv->ppe_dev, &priv->pub_ip_pool, pub_ip_index);
+ unlock:
+ 	mutex_unlock(&priv->lock);
+ 
+ 	/* -EEXIST is not a failure: flow_offload_refresh() re-offers a
+ 	 * flow that is already in hardware once a second for as long as
+-	 * its packets keep crossing the software path -- which, with only
+-	 * the SNAT direction accelerated (see the file comment), is the
+-	 * reply direction of every accepted connection. mtk_ppe_offload
+-	 * returns the same -EEXIST for this; only a genuine programming
+-	 * failure is worth a line.
+-	 */
+-	if (stage && ret != -EEXIST)
+-		pr_info_ratelimited("ppe_offload: replace failed at %s: %d\n", stage, ret);
++	 * its packets keep crossing the software path -- the other
++	 * direction of a connection whose one direction was declined, or
++	 * a flow hardware stopped matching. mtk_ppe_offload returns the
++	 * same -EEXIST for this; only a genuine programming failure is
++	 * worth a line.
++	 */
++	if (stage && ret != -EEXIST) {
++		/* A host table bucket with no room for one more address fails
++		 * the add the same way a fault does. The remote peers of DNAT
++		 * flows can fill it in ordinary use, and the flowtable re-offers
++		 * such a flow about once a second for as long as it lives, so
++		 * that case is said once rather than at the ratelimit forever.
++		 */
++		if (ret == -EIO && !strcmp(stage, "host"))
++			pr_info_once("ppe_offload: host table add failed (full?), flows stay in software\n");
++		else if (ret == -ENOSPC)
++			pr_info_once("ppe_offload: %s table full, flows stay in software\n",
++				     stage);
++		else
++			pr_info_ratelimited("ppe_offload: replace failed at %s: %d\n", stage, ret);
++	}
+ 
+ 	return ret;
+ }
+@@ -860,7 +1283,8 @@
+ 		ppe_flow_entry_del(priv->ppe_dev, entry->flow_index);
+ 	ppe_host_pool_deref(priv->ppe_dev, &priv->host_pool, entry->host_index);
+ 	ppe_nexthop_pool_deref(priv->ppe_dev, &priv->nexthop_pool, entry->nexthop_index);
+-	ppe_pub_ip_pool_deref(priv->ppe_dev, &priv->pub_ip_pool, entry->pub_ip_index);
++	if (entry->pub_ip_valid)
++		ppe_pub_ip_pool_deref(priv->ppe_dev, &priv->pub_ip_pool, entry->pub_ip_index);
+ 
+ 	mutex_unlock(&priv->lock);
+ 
+@@ -1496,7 +1920,8 @@
+ 		ppe_flow_entry_del(priv->ppe_dev, entry->flow_index);
+ 	ppe_host_pool_deref(priv->ppe_dev, &priv->host_pool, entry->host_index);
+ 	ppe_nexthop_pool_deref(priv->ppe_dev, &priv->nexthop_pool, entry->nexthop_index);
+-	ppe_pub_ip_pool_deref(priv->ppe_dev, &priv->pub_ip_pool, entry->pub_ip_index);
++	if (entry->pub_ip_valid)
++		ppe_pub_ip_pool_deref(priv->ppe_dev, &priv->pub_ip_pool, entry->pub_ip_index);
+ 	kfree(entry);
+ }
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -137,8 +137,10 @@
+  * the (non-conduit) WAN port still reaches the CPU intact (ARP requests to
+  * the WAN address answered 10/10), and a VLAN-tagged WAN (wan.10) behaves
+  * exactly as under the 802.1Q tagger. With the ingress C-TPID at 0x0000 an
+- * 802.1Q tag arriving on the WAN is only parsed if the hardware matches
+- * 0x8100 natively; a WAN-ingress offload milestone has to check that.
++ * 802.1Q tag arriving on the WAN is not parsed as a VLAN (measured: flows
++ * entering through a tagged WAN never hit in hardware), so ppe_offload.c
++ * declines such flows while the alias is active,
++ * see edma_port_parser_alias_active().
+  */
+ #if IS_ENABLED(CONFIG_NET_DSA)
+ /* PPE port that owns the chip-wide alias, or -1. One PPE per SoC. */
+@@ -151,6 +153,10 @@
+ 	u32 in_tpid, eg_tpid, cpu_eg;
+ 	int ret;
+ 
++	/* The conduit's own egress VLAN entry is written last, below. */
++	if (WARN_ON_ONCE(ppe_port->port_id >= PPE_PORT_EG_VLAN_TBL_ENTRIES))
++		return -EINVAL;
++
+ 	if (rtl8_4) {
+ 		in_tpid = FIELD_PREP(PPE_VLAN_TPID_STAG, ETH_P_REALTEK) |
+ 			  FIELD_PREP(PPE_VLAN_TPID_CTAG, 0);
+@@ -191,13 +197,44 @@
+ 		return ret;
+ 
+ 	/* PPE port 0 is the CPU port (EDMA_CPU_PORT_PROFILE_ID). */
++	ret = regmap_update_bits(regmap,
++				 PPE_PORT_EG_VLAN_TBL_ADDR +
++				 PPE_PORT_EG_VLAN_TBL_INC * EDMA_CPU_PORT_PROFILE_ID,
++				 PPE_PORT_EG_VLAN_TBL_VLAN_TYPE |
++				 PPE_PORT_EG_VLAN_TBL_CTAG_MODE |
++				 PPE_PORT_EG_VLAN_TBL_STAG_MODE |
++				 PPE_PORT_EG_VLAN_TBL_VSI_TAG_MODE_EN, cpu_eg);
++	if (ret)
++		return ret;
++
++	/* The conduit itself becomes an S-VLAN port too, keeping its
++	 * per-VSI tag modes: a routed flow's nexthop can then insert the
++	 * S-tag + C-tag pair that emulates the head tag towards the switch
++	 * (ppe_offload.c). Measured on a GL-BE9300: with the port left a
++	 * C-VLAN port the switch delivered nothing for such flows, with this
++	 * bit set the same flows ran at 2353 Mbit/s, and DHCP, ARP and the
++	 * software path were unaffected either way.
++	 */
+ 	return regmap_update_bits(regmap,
+ 				  PPE_PORT_EG_VLAN_TBL_ADDR +
+-				  PPE_PORT_EG_VLAN_TBL_INC * EDMA_CPU_PORT_PROFILE_ID,
+-				  PPE_PORT_EG_VLAN_TBL_VLAN_TYPE |
+-				  PPE_PORT_EG_VLAN_TBL_CTAG_MODE |
+-				  PPE_PORT_EG_VLAN_TBL_STAG_MODE |
+-				  PPE_PORT_EG_VLAN_TBL_VSI_TAG_MODE_EN, cpu_eg);
++				  PPE_PORT_EG_VLAN_TBL_INC * ppe_port->port_id,
++				  PPE_PORT_EG_VLAN_TBL_VLAN_TYPE,
++				  rtl8_4 ? PPE_PORT_EG_VLAN_TBL_VLAN_TYPE : 0);
++}
++
++/**
++ * edma_port_parser_alias_active() - Whether the rtl8_4 parser alias is on.
++ *
++ * The alias is chip-wide (one owner), and while it holds, the ingress
++ * C-TPID is 0x0000 on every port: an 802.1Q tag arriving on the WAN is
++ * not parsed as a VLAN at all. Measured on a GL-BE9300: flows entering
++ * through a VLAN-tagged WAN then never hit in hardware.
++ *
++ * Return: true while a conduit owns the alias.
++ */
++bool edma_port_parser_alias_active(void)
++{
++	return READ_ONCE(edma_parser_alias_owner) >= 0;
+ }
+ #endif
+ 
+@@ -213,15 +250,6 @@
+ 				  core ? PPE_PORT_PARSING_PORT_ROLE : 0);
+ }
+ 
+-/* Parser programming states per port (edma_port_priv.parser_state). */
+-enum edma_parser_state {
+-	EDMA_PARSER_UNSET,	/* never programmed since open */
+-	EDMA_PARSER_PLAIN,	/* edge role, no DSA involvement */
+-	EDMA_PARSER_DSA_8021Q,	/* DSA conduit, reset TPIDs (802.1Q-based tagger) */
+-	EDMA_PARSER_DSA_RTL8_4,	/* DSA conduit, rtl8_4 alias active */
+-	EDMA_PARSER_DENIED,	/* wanted the alias, another port owns it (logged once) */
+-};
+-
+ /* Called from ndo_open (before the link comes up) and again from the
+  * netdevice notifier whenever DSA may have attached or changed the tagger
+  * behind an already-running port. Idempotent: nothing is written unless
+@@ -257,7 +285,7 @@
+ 		ret = edma_port_parser_alias_program(ppe_port, false);
+ 		if (ret)
+ 			return ret;
+-		edma_parser_alias_owner = -1;
++		WRITE_ONCE(edma_parser_alias_owner, -1);
+ 	}
+ 
+ 	if (dsa) {
+@@ -278,7 +306,7 @@
+ 			return ret;
+ 		}
+ 
+-		edma_parser_alias_owner = rtl8_4 ? ppe_port->port_id : -1;
++		WRITE_ONCE(edma_parser_alias_owner, rtl8_4 ? ppe_port->port_id : -1);
+ 	}
+ #endif
+ 
+@@ -287,7 +315,7 @@
+ #if IS_ENABLED(CONFIG_NET_DSA)
+ 		if (edma_parser_alias_owner == ppe_port->port_id) {
+ 			edma_port_parser_alias_program(ppe_port, false);
+-			edma_parser_alias_owner = -1;
++			WRITE_ONCE(edma_parser_alias_owner, -1);
+ 		}
+ #endif
+ 		return ret;
+@@ -314,7 +342,7 @@
+ 		ret = edma_port_parser_alias_program(ppe_port, false);
+ 		if (ret)
+ 			netdev_err(netdev, "failed to restore the PPE parser TPIDs: %d\n", ret);
+-		edma_parser_alias_owner = -1;
++		WRITE_ONCE(edma_parser_alias_owner, -1);
+ 	}
+ #endif
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.h
+@@ -93,6 +93,28 @@
+  * packet out through this port, and by a flow entry's src_l3_if when
+  * the packet arrives on it.
+  */
++/**
++ * enum edma_parser_state - What the ingress parser was last programmed
++ * for on a port (struct edma_port_priv::parser_state).
++ * @EDMA_PARSER_UNSET: Never programmed since open.
++ * @EDMA_PARSER_PLAIN: Edge role, no DSA involvement.
++ * @EDMA_PARSER_DSA_8021Q: DSA conduit, reset TPIDs (802.1Q-based tagger).
++ * @EDMA_PARSER_DSA_RTL8_4: DSA conduit, rtl8_4 head tag aliased as QinQ.
++ * @EDMA_PARSER_DENIED: Wanted the alias, another port owns it (logged once).
++ *
++ * Written under RTNL from ndo_open/ndo_stop and the netdevice notifier.
++ * The flow-offload path reads it with READ_ONCE() to pick the egress
++ * encapsulation that matches what the parser, and with it the chip-wide
++ * egress TPIDs, are set to.
++ */
++enum edma_parser_state {
++	EDMA_PARSER_UNSET,
++	EDMA_PARSER_PLAIN,
++	EDMA_PARSER_DSA_8021Q,
++	EDMA_PARSER_DSA_RTL8_4,
++	EDMA_PARSER_DENIED,
++};
++
+ struct edma_port_priv {
+ 	struct ppe_port *ppe_port;
+ 	struct net_device *netdev;
+@@ -106,4 +128,12 @@
+ void edma_port_destroy(struct ppe_port *port);
+ int edma_port_setup(struct ppe_port *port);
+ bool edma_port_is_edma_netdev(const struct net_device *netdev);
++#if IS_ENABLED(CONFIG_NET_DSA)
++bool edma_port_parser_alias_active(void);
++#else
++static inline bool edma_port_parser_alias_active(void)
++{
++	return false;
++}
++#endif
+ #endif
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -64,6 +64,8 @@
+ 	tristate "Qualcomm Technologies, Inc. PPE Ethernet support"
+ 	depends on COMMON_CLK && HAS_IOMEM && OF
+ 	depends on NET_DSA || NET_DSA=n
++	depends on BRIDGE || BRIDGE=n
++	depends on VLAN_8021Q || VLAN_8021Q=n
+ 	depends on ARCH_QCOM || COMPILE_TEST
+ 	select REGMAP_MMIO
+ 	select PHYLINK

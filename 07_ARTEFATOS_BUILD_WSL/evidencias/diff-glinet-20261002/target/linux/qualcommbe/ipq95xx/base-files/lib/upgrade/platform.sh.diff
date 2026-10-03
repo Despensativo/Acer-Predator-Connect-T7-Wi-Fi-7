@@ -1,0 +1,25 @@
+--- local/target/linux/qualcommbe/ipq95xx/base-files/lib/upgrade/platform.sh
++++ glinet/target/linux/qualcommbe/ipq95xx/base-files/lib/upgrade/platform.sh
+@@ -15,12 +15,6 @@
+ 		CI_ROOTPART="rootfs"
+ 		emmc_do_upgrade "$1"
+ 		;;
+-	askey,sbe1v1k)
+-		CI_KERNPART="0:HLOS"
+-		CI_ROOTPART="rootfs"
+-		CI_DATAPART="rootfs_data"
+-		emmc_do_upgrade "$1"
+-		;;
+ 	*)
+ 		default_do_upgrade "$1"
+ 		;;
+@@ -29,8 +23,7 @@
+ 
+ platform_copy_config() {
+ 	case "$(board_name)" in
+-	8devices,kiwi-dvk|\
+-	askey,sbe1v1k)
++	8devices,kiwi-dvk)
+ 		emmc_copy_config
+ 		;;
+ 	esac

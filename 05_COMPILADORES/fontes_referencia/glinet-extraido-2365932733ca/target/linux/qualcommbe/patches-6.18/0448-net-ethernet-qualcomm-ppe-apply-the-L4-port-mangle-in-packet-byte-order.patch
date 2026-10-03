@@ -1,0 +1,81 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: apply the L4 port mangle in packet
+ byte order
+
+ppe_offload_apply_l4_mangle() combined the source and destination ports
+into a host-order u32 and applied the flow action's mask and value to
+it. The flowtable builds those from htonl() values describing the four
+header bytes as they sit in the packet, so on a little-endian CPU the
+rewrite lands in the wrong half: a masquerade that keeps the client's
+port happens to come out right, but one that remaps it is programmed
+with the original port. Conntrack only remaps when that public
+address:port towards the same destination is already taken, normally by
+another LAN client, so the offloaded flow reused that client's NAT
+mapping: the server's replies (handled in software) were delivered to
+the other client. A LAN host could arrange such a collision on purpose
+for fixed-port protocols (NTP, IKE, SIP, WireGuard with a set port) and
+receive another client's replies, across VLANs too when they share the
+WAN address; for other traffic it broke the connection. It never
+accepted inbound traffic conntrack had not approved. Affected: router
+mode with PPE hardware flow offload enabled.
+
+Combine and split the ports in their packet byte layout instead, and
+decline a flow that also rewrites the destination port: only the
+source port is programmed, so such a rewrite would otherwise be
+dropped silently.
+
+Found on the bench while testing reply-direction offload, whose
+destination-port check tripped over the garbled port. Measured on a
+GL-BE9300 with masquerade forced to remap (nft `masquerade to
+:61000-61010` for the test port): before, the remapped connection was
+offloaded and then carried no data at all (iperf3 hung until killed);
+after, 2351 Mbit/s offloaded with the CPU 98.2% idle.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -276,15 +276,23 @@
+ static int ppe_offload_apply_l4_mangle(struct ppe_offload_l4_ports *ports,
+ 					const struct flow_action_entry *act)
+ {
+-	u32 word;
++	__be16 word[2];
++	u32 w;
+ 
+ 	if (act->mangle.offset != 0)
+ 		return -EOPNOTSUPP;
+ 
+-	word = (__force u32)ports->source << 16 | (__force u32)ports->dest;
+-	word = (word & act->mangle.mask) | act->mangle.val;
+-	ports->source = (__force __be16)(word >> 16);
+-	ports->dest = (__force __be16)(word & 0xffff);
++	/* The mangle's mask and value describe the four header bytes as
++	 * they sit in the packet (source port, then destination port), so
++	 * combine them in that byte layout, not as a host-order integer.
++	 */
++	word[0] = ports->source;
++	word[1] = ports->dest;
++	memcpy(&w, word, sizeof(w));
++	w = (w & act->mangle.mask) | act->mangle.val;
++	memcpy(word, &w, sizeof(w));
++	ports->source = word[0];
++	ports->dest = word[1];
+ 
+ 	return 0;
+ }
+@@ -639,6 +647,14 @@
+ 		return ppe_offload_decline("not snat-outbound (src %pI4->%pI4, dst %pI4->%pI4)",
+ 					    &match_src, &new_src, &match_dst, &new_dst);
+ 
++	/* Only the source port is programmed (nat_l4_port below); a flow
++	 * that also rewrites the destination port would be forwarded to the
++	 * wrong one, so fail closed instead of dropping the rewrite.
++	 */
++	if (l4.dest != match_dport)
++		return ppe_offload_decline("destination port rewrite (%u->%u) unsupported",
++					    be16_to_cpu(match_dport), be16_to_cpu(l4.dest));
++
+ 	/* eth.bytes is {h_dest[6], h_source[6]}. The new source half
+ 	 * must be this egress port's own MAC -- if it isn't, either
+ 	 * this isn't the flow we think it is or the port's L3_IF entry

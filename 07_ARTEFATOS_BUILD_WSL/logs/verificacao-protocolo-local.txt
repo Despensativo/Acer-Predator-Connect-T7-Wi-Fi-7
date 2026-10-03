@@ -1,0 +1,13 @@
+test_path_and_mode_rejected (__main__.ProtocolTests.test_path_and_mode_rejected) ... ok
+test_reject_bad_crc_and_size (__main__.ProtocolTests.test_reject_bad_crc_and_size) ... ok
+test_reject_foreign_session (__main__.ProtocolTests.test_reject_foreign_session) ... ok
+test_reject_reserved_bytes (__main__.ProtocolTests.test_reject_reserved_bytes) ... ok
+test_rrq_exact_block_has_empty_final_block (__main__.ProtocolTests.test_rrq_exact_block_has_empty_final_block) ... ok
+test_rrq_retries_lost_ack (__main__.ProtocolTests.test_rrq_retries_lost_ack) ... ok
+test_valid_checkpoint_does_not_prove_linux (__main__.ProtocolTests.test_valid_checkpoint_does_not_prove_linux) ... ok
+test_wrq_rejects_oversized_record (__main__.ProtocolTests.test_wrq_rejects_oversized_record) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.000s
+
+OK

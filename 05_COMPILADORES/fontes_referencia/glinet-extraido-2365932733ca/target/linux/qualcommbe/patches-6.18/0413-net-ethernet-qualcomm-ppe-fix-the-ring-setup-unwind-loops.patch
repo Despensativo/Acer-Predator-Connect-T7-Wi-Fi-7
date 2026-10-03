@@ -1,0 +1,77 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: fix the ring setup unwind loops
+
+Every ring setup loop that unwinds after a failed allocation counts down
+with an unsigned index and tests it against zero:
+
+	u32 ring_idx;
+	...
+		while (--ring_idx >= 0)
+			edma_cfg_rx_fill_ring_cleanup(&edma_ctx->rxfill_rings[ring_idx]);
+
+The condition can never be false.  The loop cleans up the rings that
+were set up, then decrements past zero to UINT_MAX and keeps going,
+indexing gigabytes beyond the array and passing whatever it finds to a
+cleanup function that dereferences it.  The Tx loops spell the same
+non-terminating test as "while (i-- >= 0)".
+
+This is reached whenever dma_alloc_coherent() fails while the rings are
+being set up.  It is silent at build time: -Wtype-limits is a W=2
+warning.
+
+Count down with the loop variable itself, which stops the loops at the
+first ring and leaves what they visit otherwise unchanged: the rings
+that were set up, and not the one whose setup failed, which frees its
+own partial state before returning.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -581,7 +581,7 @@ static int edma_cfg_rx_rings_setup(void)
+ 		if (ret) {
+ 			pr_err("Error in setting up %d rxfill ring. ret: %d",
+ 			       rxfill_ring->ring_id, ret);
+-			while (--ring_idx >= 0)
++			while (ring_idx-- > 0)
+ 				edma_cfg_rx_fill_ring_cleanup(&edma_ctx->rxfill_rings[ring_idx]);
+ 
+ 			return -ENOMEM;
+@@ -600,7 +600,7 @@ static int edma_cfg_rx_rings_setup(void)
+ 
+ 		if (queue_id > EDMA_CPU_PORT_QUEUE_MAX(EDMA_RX_QUEUE_START)) {
+ 			pr_err("Invalid queue_id: %d\n", queue_id);
+-			while (--ring_idx >= 0)
++			while (ring_idx-- > 0)
+ 				edma_cfg_rx_desc_ring_cleanup(&edma_ctx->rx_rings[ring_idx]);
+ 
+ 			goto rxdesc_mem_alloc_fail;
+@@ -619,7 +619,7 @@ static int edma_cfg_rx_rings_setup(void)
+ 		if (ret) {
+ 			pr_err("Error in setting up %d rxdesc ring. ret: %d",
+ 			       rxdesc_ring->ring_id, ret);
+-			while (--ring_idx >= 0)
++			while (ring_idx-- > 0)
+ 				edma_cfg_rx_desc_ring_cleanup(&edma_ctx->rx_rings[ring_idx]);
+ 
+ 			goto rxdesc_mem_alloc_fail;
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+@@ -400,7 +400,7 @@ static int edma_cfg_tx_rings_setup(void)
+ 		if (ret) {
+ 			pr_err("Error in setting up %d txdesc ring. ret: %d",
+ 			       txdesc_ring->id, ret);
+-			while (i-- >= 0)
++			while (i-- > 0)
+ 				edma_cfg_tx_desc_ring_cleanup(&edma_ctx->tx_rings[i]);
+ 
+ 			return -ENOMEM;
+@@ -420,7 +420,7 @@ static int edma_cfg_tx_rings_setup(void)
+ 		if (ret != 0) {
+ 			pr_err("Error in setting up %d Tx cmpl ring. ret: %d",
+ 			       txcmpl_ring->id, ret);
+-			while (i-- >= 0)
++			while (i-- > 0)
+ 				edma_cfg_txcmpl_ring_cleanup(&edma_ctx->txcmpl_rings[i]);
+ 
+ 			goto txcmpl_mem_alloc_fail;

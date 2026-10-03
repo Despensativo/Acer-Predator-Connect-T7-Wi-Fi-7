@@ -1,0 +1,73 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: quiet flow re-arms while the table is full
+
+A flow whose hardware entry saw no hits across two refreshes is re-armed
+(dropped and programmed afresh), with one ratelimited line. That line
+printed the TC cookie, which is the flowtable's tuple pointer: a raw
+kernel address in a log that is often forwarded off the box.
+
+While the flow table is full the line is also constant noise. Many
+connections then have only one direction in hardware; the other is
+refused, crosses the software path and refreshes the flow about once a
+second, and the hardware direction is re-armed whenever it saw no
+packet in between. On a GL-BE9300 filled with 2000 NATed UDP flows
+that was about 8000 re-arms a minute at 3.6% CPU in total. The re-arms
+are harmless (the CPU-path packet rate matched what was refused, so
+the hardware halves kept forwarding), but the log was flooded.
+
+Print the flow's table index instead of the cookie, and while a
+full-table episode (see the previous patch) is running, report re-arms
+at debug level only. A re-arm outside an episode, the case the re-arm
+was added for, still gets its ratelimited line.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -864,6 +864,15 @@
+  */
+ #define PPE_OFFLOAD_FLOW_FULL_QUIET	(60 * HZ)
+ 
++/* Whether a refused add was seen within the last PPE_OFFLOAD_FLOW_FULL_QUIET,
++ * i.e. a full-table episode is still running. Under priv->lock.
++ */
++static bool ppe_offload_flow_tbl_full_recent(const struct ppe_offload_priv *priv)
++{
++	return priv->flow_full_last &&
++	       time_before(jiffies, priv->flow_full_last + PPE_OFFLOAD_FLOW_FULL_QUIET);
++}
++
+ /* Hardware refuses a hash-mode add (-ENOSPC) when every way of the key's
+  * bucket is taken. Report it with the table's occupancy, counted from the
+  * driver's own slot bookkeeping, so a full table can be told apart from a
+@@ -871,8 +880,7 @@
+  */
+ static void ppe_offload_flow_tbl_full(struct ppe_offload_priv *priv)
+ {
+-	bool new_episode = !priv->flow_full_last ||
+-			   time_after(jiffies, priv->flow_full_last + PPE_OFFLOAD_FLOW_FULL_QUIET);
++	bool new_episode = !ppe_offload_flow_tbl_full_recent(priv);
+ 	unsigned int i, used = 0;
+ 
+ 	priv->flow_full_last = jiffies ?: 1;
+@@ -1470,8 +1478,18 @@
+ 			stage = "exists";
+ 			goto unlock;
+ 		}
+-		pr_info_ratelimited("ppe_offload: flow %lx re-armed: hardware entry idle across refreshes\n",
+-				    cls->cookie);
++		/* While the table is full, many connections have only one
++		 * direction in hardware; the other crosses the software path
++		 * and refreshes the flow, and a direction that saw no packet
++		 * in between is re-armed here as a matter of course. Only a
++		 * re-arm outside such an episode is worth a line.
++		 */
++		if (ppe_offload_flow_tbl_full_recent(priv))
++			pr_debug("ppe_offload: flow entry %u re-armed while the table is full\n",
++				 entry->flow_index);
++		else
++			pr_info_ratelimited("ppe_offload: flow entry %u re-armed: no hardware hits across refreshes\n",
++					    entry->flow_index);
+ 		ppe_offload_flow_forget(priv, entry);
+ 	}
+ 

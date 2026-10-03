@@ -1,0 +1,29 @@
+{
+  "source": "C:\\Users\\User\\Desktop\\restaurar_slot1_acer.itb",
+  "bytes": 558686,
+  "sha256": "2908bb3e8d498c0fda728c935c5d13f32f9484b3996e9df7d5f06439ba16828e",
+  "fit_crc_checks": {
+    "script": true,
+    "bootconfig": true
+  },
+  "oem_marker": "Flas at 0x5c",
+  "persistent_environment_write": true,
+  "nand_write_ranges": [
+    {
+      "offset": "0x400000",
+      "length": "0x80000"
+    },
+    {
+      "offset": "0x480000",
+      "length": "0x80000"
+    }
+  ],
+  "embedded_bootconfig_sha256": "bcb6b37e13b0231ce735f31705ecd97dde563a35c2605c0de467a77c35d56ebe",
+  "embedded_bootconfig_equals_both_local_original_backups": true,
+  "slot2_backup_only_difference": "offset 0x6c: slot2=0, original/embedded=1",
+  "script_fail_closed": false,
+  "hardware_tested_this_review": false,
+  "uploaded": false,
+  "current_partition_map_verified": false,
+  "current_active_slot_verified": false
+}

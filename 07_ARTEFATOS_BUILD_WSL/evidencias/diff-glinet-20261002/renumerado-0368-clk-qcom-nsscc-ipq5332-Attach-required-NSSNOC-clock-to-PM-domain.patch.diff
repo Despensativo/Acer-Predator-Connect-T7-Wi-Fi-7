@@ -1,0 +1,34 @@
+--- local/0374-clk-qcom-nsscc-ipq5332-Attach-required-NSSNOC-clock-to-PM-domain.patch
++++ glinet/0368-clk-qcom-nsscc-ipq5332-Attach-required-NSSNOC-clock-to-PM-domain.patch
+@@ -1,4 +1,3 @@
+-From b0d06104e0a804ce3cd53e2ec3292db0f853a988 Mon Sep 17 00:00:00 2001
+ From: Til Kaiser <mail@tk154.de>
+ Date: Sun, 19 Apr 2026 00:00:00 +0200
+ Subject: [PATCH] clk: qcom: nsscc-ipq5332: attach required NSSNOC clocks to
+@@ -27,7 +26,7 @@
+  #include <linux/regmap.h>
+  
+  #include <dt-bindings/clock/qcom,ipq5332-nsscc.h>
+-@@ -1031,6 +1032,10 @@ static const struct qcom_cc_desc nss_cc_
++@@ -1024,6 +1025,10 @@ static const struct qcom_cc_desc nss_cc_
+  	.icc_first_node_id = IPQ_NSSCC_ID,
+  };
+  
+@@ -38,7 +37,7 @@
+  static const struct of_device_id nss_cc_ipq5332_match_table[] = {
+  	{ .compatible = "qcom,ipq5332-nsscc" },
+  	{ }
+-@@ -1039,7 +1044,65 @@ MODULE_DEVICE_TABLE(of, nss_cc_ipq5332_m
++@@ -1032,7 +1037,65 @@ MODULE_DEVICE_TABLE(of, nss_cc_ipq5332_m
+  
+  static int nss_cc_ipq5332_probe(struct platform_device *pdev)
+  {
+@@ -105,7 +104,7 @@
+  }
+  
+  static struct platform_driver nss_cc_ipq5332_driver = {
+-@@ -1047,6 +1110,7 @@ static struct platform_driver nss_cc_ipq
++@@ -1040,6 +1103,7 @@ static struct platform_driver nss_cc_ipq
+  	.driver = {
+  		.name = "qcom,ipq5332-nsscc",
+  		.of_match_table = nss_cc_ipq5332_match_table,

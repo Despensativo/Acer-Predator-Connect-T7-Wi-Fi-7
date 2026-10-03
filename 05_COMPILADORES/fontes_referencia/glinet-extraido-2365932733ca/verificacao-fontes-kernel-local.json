@@ -1,0 +1,1031 @@
+{
+  "renamed_by_name": [
+    {
+      "remote": "0356-arm64-dts-qcom-ipq5332-add-pwm-node.patch",
+      "local": "0362-arm64-dts-qcom-ipq5332-add-pwm-node.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0357-arm64-dts-qcom-ipq5332-add-mdio-device-tree.patch",
+      "local": "0363-arm64-dts-qcom-ipq5332-add-mdio-device-tree.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0358-dt-bindings-clock-ipq5332-add-definition-for-gpll0-out-aux-clock.patch",
+      "local": "0364-dt-bindings-clock-ipq5332-add-definition-for-gpll0-out-aux-clock.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0359-clk-qcom-ipq5332-add-gpll0-out-aux-clock.patch",
+      "local": "0365-clk-qcom-ipq5332-add-gpll0-out-aux-clock.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0360-dt-bindings-clock-add-qualcomm-ipq5332-nsscc-clock-and-reset-definitions.patch",
+      "local": "0366-dt-bindings-clock-add-qualcomm-ipq5332-nsscc-clock-and-reset-definitions.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0361-dt-bindings-interconnect-update-master-slave-id-list.patch",
+      "local": "0367-dt-bindings-interconnect-update-master-slave-id-list.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0362-clk-qcom-ipq5332-add-couple-of-more-interconnects.patch",
+      "local": "0368-clk-qcom-ipq5332-add-couple-of-more-interconnects.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0363-clk-qcom-add-nss-clock-controller-driver-for-qualcomm-ipq5332.patch",
+      "local": "0369-clk-qcom-add-nss-clock-controller-driver-for-qualcomm-ipq5332.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0364-arm64-dts-qcom-ipq5332-add-support-for-the-nsscc.patch",
+      "local": "0370-arm64-dts-qcom-ipq5332-add-support-for-the-nsscc.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0365-net-pcs-qcom-ipq9574-set-IPQ5332-MII-clocks-on-link-up.patch",
+      "local": "0371-net-pcs-qcom-ipq9574-set-IPQ5332-MII-clocks-on-link-up.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0366-net-ethernet-qualcomm-ppe-Add-initial-IPQ5332-supp.patch",
+      "local": "0372-net-ethernet-qualcomm-ppe-Add-initial-IPQ5332-supp.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0367-arm64-dts-qcom-ipq5332-add-PPE-and-PCS-nodes.patch",
+      "local": "0373-arm64-dts-qcom-ipq5332-add-PPE-and-PCS-nodes.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0368-clk-qcom-nsscc-ipq5332-Attach-required-NSSNOC-clock-to-PM-domain.patch",
+      "local": "0374-clk-qcom-nsscc-ipq5332-Attach-required-NSSNOC-clock-to-PM-domain.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0369-arm64-dts-qcom-ipq5332-add-required-NSSNOC-clocks-to-nss-node.patch",
+      "local": "0375-arm64-dts-qcom-ipq5332-add-required-NSSNOC-clocks-to-nss-node.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0370-net-ethernet-qualcomm-ppe-reset-all-EDMA-controls.patch",
+      "local": "0376-net-ethernet-qualcomm-ppe-reset-all-EDMA-controls.patch",
+      "byte_identical": false
+    },
+    {
+      "remote": "0373-arm64-dts-qcom-ipq5332-add-pcie2-uniphy-and-controller-nodes.patch",
+      "local": "0378-arm64-dts-qcom-ipq5332-add-pcie2-uniphy-and-controller-nodes.patch",
+      "byte_identical": false
+    }
+  ],
+  "checks": [
+    {
+      "file": "drivers/net/ethernet/qualcomm/ppe/ppe_port.c",
+      "needle": "XGMAC_MTL_TXQ_TSF",
+      "matches": []
+    },
+    {
+      "file": "drivers/net/ethernet/qualcomm/ppe/ppe_config.c",
+      "needle": "ipq5332_ppe_sch_bm_config",
+      "matches": []
+    },
+    {
+      "file": "drivers/net/ethernet/qualcomm/ppe/ppe_config.c",
+      "needle": "ipq5332_ppe_bm_group_config",
+      "matches": []
+    },
+    {
+      "file": "drivers/firmware/qcom/qcom_scm.c",
+      "needle": "QCOM_SCM_PIL_PAS_INIT_IMAGE_V2",
+      "matches": []
+    },
+    {
+      "file": "drivers/clk/qcom/gcc-ipq5332.c",
+      "needle": "gpll0_out_aux",
+      "matches": [
+        {
+          "line": 92,
+          "text": "static struct clk_alpha_pll_postdiv gpll0_out_aux = {"
+        },
+        {
+          "line": 97,
+          "text": "\t\t.name = \"gpll0_out_aux\","
+        },
+        {
+          "line": 3078,
+          "text": "\t[GPLL0_OUT_AUX] = &gpll0_out_aux.clkr,"
+        }
+      ]
+    },
+    {
+      "file": "drivers/clk/qcom/nsscc-ipq5332.c",
+      "needle": "GCC_NSSNOC_NSSCC_CLK",
+      "matches": []
+    },
+    {
+      "file": "arch/arm64/boot/dts/qcom/ipq5332.dtsi",
+      "needle": "qpic_nand:",
+      "matches": []
+    },
+    {
+      "file": "drivers/net/ethernet/qualcomm/ppe/edma_rx.c",
+      "excerpt": [
+        {
+          "line": 485,
+          "text": "\t\tstruct sk_buff *skb;"
+        },
+        {
+          "line": 486,
+          "text": "\t\tdma_addr_t dma_addr;"
+        },
+        {
+          "line": 487,
+          "text": "\t\tu32 dma_map_size;"
+        },
+        {
+          "line": 488,
+          "text": ""
+        },
+        {
+          "line": 489,
+          "text": "\t\tskb = next_skb;"
+        },
+        {
+          "line": 490,
+          "text": "\t\trxdesc_pri = next_rxdesc_pri;"
+        },
+        {
+          "line": 491,
+          "text": "\t\tdma_addr = EDMA_RXDESC_BUFFER_ADDR_GET(rxdesc_pri);"
+        },
+        {
+          "line": 492,
+          "text": "\t\tdma_map_size = alloc_size - EDMA_RX_SKB_HEADROOM - NET_IP_ALIGN;"
+        },
+        {
+          "line": 493,
+          "text": ""
+        },
+        {
+          "line": 494,
+          "text": "\t\tif (!page_mode)"
+        },
+        {
+          "line": 495,
+          "text": "\t\t\tdma_unmap_single(dev, dma_addr, dma_map_size, DMA_FROM_DEVICE);"
+        },
+        {
+          "line": 496,
+          "text": "\t\telse"
+        },
+        {
+          "line": 497,
+          "text": "\t\t\tdma_unmap_page(dev, dma_addr, PAGE_SIZE, DMA_FROM_DEVICE);"
+        },
+        {
+          "line": 498,
+          "text": ""
+        },
+        {
+          "line": 499,
+          "text": "\t\t/* Update consumer index. */"
+        },
+        {
+          "line": 500,
+          "text": "\t\tcons_idx = (cons_idx + 1) & EDMA_RX_RING_SIZE_MASK;"
+        },
+        {
+          "line": 501,
+          "text": ""
+        },
+        {
+          "line": 502,
+          "text": "\t\t/* Get the next Rx descriptor. */"
+        },
+        {
+          "line": 503,
+          "text": "\t\tnext_rxdesc_pri = EDMA_RXDESC_PRI_DESC(rxdesc_ring, cons_idx);"
+        },
+        {
+          "line": 504,
+          "text": ""
+        },
+        {
+          "line": 505,
+          "text": "\t\t/* Handle linear packets or initial segments first. */"
+        },
+        {
+          "line": 506,
+          "text": "\t\tif (likely(!(rxdesc_ring->head))) {"
+        },
+        {
+          "line": 507,
+          "text": "\t\t\tndev = edma_rx_get_src_dev(rxdesc_stats, rxdesc_pri, skb);"
+        },
+        {
+          "line": 508,
+          "text": "\t\t\tif (unlikely(!ndev)) {"
+        },
+        {
+          "line": 509,
+          "text": "\t\t\t\tdev_kfree_skb_any(skb);"
+        },
+        {
+          "line": 510,
+          "text": "\t\t\t\tgoto next_rx_desc;"
+        },
+        {
+          "line": 511,
+          "text": "\t\t\t}"
+        },
+        {
+          "line": 512,
+          "text": ""
+        },
+        {
+          "line": 513,
+          "text": "\t\t\t/* Update skb fields for head skb. */"
+        },
+        {
+          "line": 514,
+          "text": "\t\t\tskb->dev = ndev;"
+        },
+        {
+          "line": 515,
+          "text": "\t\t\tskb->skb_iif = ndev->ifindex;"
+        },
+        {
+          "line": 516,
+          "text": ""
+        },
+        {
+          "line": 517,
+          "text": "\t\t\t/* Handle linear packets. */"
+        },
+        {
+          "line": 518,
+          "text": "\t\t\tif (likely(!EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))) {"
+        },
+        {
+          "line": 519,
+          "text": "\t\t\t\tnext_skb ="
+        },
+        {
+          "line": 520,
+          "text": "\t\t\t\t\t(struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(next_rxdesc_pri);"
+        },
+        {
+          "line": 521,
+          "text": ""
+        },
+        {
+          "line": 522,
+          "text": "\t\t\t\tif (unlikely(!"
+        },
+        {
+          "line": 523,
+          "text": "\t\t\t\t\t     edma_rx_handle_linear_packets(rxdesc_ring,"
+        },
+        {
+          "line": 524,
+          "text": "\t\t\t\t\t\t\t\t\t   rxdesc_pri, skb)))"
+        },
+        {
+          "line": 525,
+          "text": "\t\t\t\t\tdev_kfree_skb_any(skb);"
+        },
+        {
+          "line": 526,
+          "text": ""
+        },
+        {
+          "line": 527,
+          "text": "\t\t\t\tgoto next_rx_desc;"
+        },
+        {
+          "line": 528,
+          "text": "\t\t\t}"
+        },
+        {
+          "line": 529,
+          "text": "\t\t}"
+        },
+        {
+          "line": 530,
+          "text": ""
+        },
+        {
+          "line": 531,
+          "text": "\t\tnext_skb = (struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(next_rxdesc_pri);"
+        },
+        {
+          "line": 532,
+          "text": ""
+        },
+        {
+          "line": 533,
+          "text": "\t\t/* Handle scatter frame processing for first/middle/last segments. */"
+        },
+        {
+          "line": 534,
+          "text": "\t\tpage_mode ? edma_rx_handle_nr_frags(rxdesc_ring, rxdesc_pri, skb) :"
+        },
+        {
+          "line": 535,
+          "text": "\t\t\tedma_rx_handle_frag_list(rxdesc_ring, rxdesc_pri, skb);"
+        },
+        {
+          "line": 536,
+          "text": ""
+        },
+        {
+          "line": 537,
+          "text": "next_rx_desc:"
+        },
+        {
+          "line": 538,
+          "text": "\t\t/* Update work done. */"
+        },
+        {
+          "line": 539,
+          "text": "\t\twork_done++;"
+        },
+        {
+          "line": 540,
+          "text": ""
+        },
+        {
+          "line": 541,
+          "text": "\t\t/* Check if we can refill EDMA_RX_MAX_PROCESS worth buffers,"
+        },
+        {
+          "line": 542,
+          "text": "\t\t * if yes, refill and update index before continuing."
+        },
+        {
+          "line": 543,
+          "text": "\t\t */"
+        },
+        {
+          "line": 544,
+          "text": "\t\tif (unlikely(!(work_done & (EDMA_RX_MAX_PROCESS - 1)))) {"
+        },
+        {
+          "line": 545,
+          "text": "\t\t\treg = EDMA_BASE_OFFSET + EDMA_REG_RXDESC_CONS_IDX(rxdesc_ring->ring_id);"
+        },
+        {
+          "line": 546,
+          "text": "\t\t\tregmap_write(regmap, reg, cons_idx);"
+        },
+        {
+          "line": 547,
+          "text": "\t\t\trxdesc_ring->cons_idx = cons_idx;"
+        },
+        {
+          "line": 548,
+          "text": "\t\t\tedma_rx_alloc_buffer_list(rxdesc_ring->rxfill, EDMA_RX_MAX_PROCESS);"
+        },
+        {
+          "line": 549,
+          "text": "\t\t}"
+        },
+        {
+          "line": 550,
+          "text": "\t}"
+        },
+        {
+          "line": 551,
+          "text": ""
+        },
+        {
+          "line": 552,
+          "text": "\t/* Check if we need to refill and update"
+        }
+      ]
+    },
+    {
+      "file": "drivers/net/ethernet/qualcomm/ppe/edma_rx.c",
+      "excerpt": [
+        {
+          "line": 150,
+          "text": "}"
+        },
+        {
+          "line": 151,
+          "text": ""
+        },
+        {
+          "line": 152,
+          "text": "static void edma_rx_process_last_segment(struct edma_rxdesc_ring *rxdesc_ring,"
+        },
+        {
+          "line": 153,
+          "text": "\t\t\t\t\t struct edma_rxdesc_pri *rxdesc_pri,"
+        },
+        {
+          "line": 154,
+          "text": "\t\t\t\t\t struct sk_buff *skb)"
+        },
+        {
+          "line": 155,
+          "text": "{"
+        },
+        {
+          "line": 156,
+          "text": "\tbool page_mode = rxdesc_ring->rxfill->page_mode;"
+        },
+        {
+          "line": 157,
+          "text": "\tstruct edma_port_pcpu_stats *pcpu_stats;"
+        },
+        {
+          "line": 158,
+          "text": "\tstruct edma_port_rx_stats *rx_stats;"
+        },
+        {
+          "line": 159,
+          "text": "\tstruct edma_port_priv *port_dev;"
+        },
+        {
+          "line": 160,
+          "text": "\tstruct sk_buff *skb_head;"
+        },
+        {
+          "line": 161,
+          "text": "\tstruct net_device *dev;"
+        },
+        {
+          "line": 162,
+          "text": "\tu32 pkt_length;"
+        },
+        {
+          "line": 163,
+          "text": ""
+        },
+        {
+          "line": 164,
+          "text": "\tpkt_length = EDMA_RXDESC_PACKET_LEN_GET(rxdesc_pri);"
+        },
+        {
+          "line": 165,
+          "text": ""
+        },
+        {
+          "line": 166,
+          "text": "\tskb_head = rxdesc_ring->head;"
+        },
+        {
+          "line": 167,
+          "text": "\tdev = skb_head->dev;"
+        },
+        {
+          "line": 168,
+          "text": ""
+        },
+        {
+          "line": 169,
+          "text": "\t/* Check Rx checksum offload status. */"
+        },
+        {
+          "line": 170,
+          "text": "\tif (likely(dev->features & NETIF_F_RXCSUM))"
+        },
+        {
+          "line": 171,
+          "text": "\t\tskb->ip_summed = edma_rx_checksum_verify(rxdesc_pri, skb_head);"
+        },
+        {
+          "line": 172,
+          "text": ""
+        },
+        {
+          "line": 173,
+          "text": "\t/* Get stats for the netdevice. */"
+        },
+        {
+          "line": 174,
+          "text": "\tport_dev = netdev_priv(dev);"
+        },
+        {
+          "line": 175,
+          "text": "\tpcpu_stats = &port_dev->pcpu_stats;"
+        },
+        {
+          "line": 176,
+          "text": "\trx_stats = this_cpu_ptr(pcpu_stats->rx_stats);"
+        },
+        {
+          "line": 177,
+          "text": ""
+        },
+        {
+          "line": 178,
+          "text": "\tif (unlikely(page_mode)) {"
+        }
+      ]
+    },
+    {
+      "file": "drivers/net/ethernet/qualcomm/ppe/edma_rx.c",
+      "excerpt": [
+        {
+          "line": 330,
+          "text": "\tport_dev = netdev_priv(skb->dev);"
+        },
+        {
+          "line": 331,
+          "text": "\tpcpu_stats = &port_dev->pcpu_stats;"
+        },
+        {
+          "line": 332,
+          "text": "\trx_stats = this_cpu_ptr(pcpu_stats->rx_stats);"
+        },
+        {
+          "line": 333,
+          "text": ""
+        },
+        {
+          "line": 334,
+          "text": "\tpkt_length = EDMA_RXDESC_PACKET_LEN_GET(rxdesc_pri);"
+        },
+        {
+          "line": 335,
+          "text": ""
+        },
+        {
+          "line": 336,
+          "text": "\tif (likely(!page_mode)) {"
+        },
+        {
+          "line": 337,
+          "text": "\t\tskb_put(skb, pkt_length);"
+        },
+        {
+          "line": 338,
+          "text": "\t\tgoto send_to_stack;"
+        },
+        {
+          "line": 339,
+          "text": "\t}"
+        },
+        {
+          "line": 340,
+          "text": ""
+        },
+        {
+          "line": 341,
+          "text": "\t/* Handle linear packet in page mode. */"
+        },
+        {
+          "line": 342,
+          "text": "\tfrag = &skb_shinfo(skb)->frags[0];"
+        },
+        {
+          "line": 343,
+          "text": "\tskb_add_rx_frag(skb, 0, skb_frag_page(frag), 0, pkt_length, PAGE_SIZE);"
+        },
+        {
+          "line": 344,
+          "text": ""
+        },
+        {
+          "line": 345,
+          "text": "\t/* Pull ethernet header into SKB data area for header processing. */"
+        },
+        {
+          "line": 346,
+          "text": "\tif (unlikely(!pskb_may_pull(skb, ETH_HLEN))) {"
+        },
+        {
+          "line": 347,
+          "text": "\t\tu64_stats_update_begin(&rx_stats->syncp);"
+        },
+        {
+          "line": 348,
+          "text": "\t\trx_stats->rx_nr_frag_headroom_err++;"
+        },
+        {
+          "line": 349,
+          "text": "\t\tu64_stats_update_end(&rx_stats->syncp);"
+        },
+        {
+          "line": 350,
+          "text": "\t\tdev_kfree_skb_any(skb);"
+        },
+        {
+          "line": 351,
+          "text": ""
+        },
+        {
+          "line": 352,
+          "text": "\t\treturn false;"
+        },
+        {
+          "line": 353,
+          "text": "\t}"
+        },
+        {
+          "line": 354,
+          "text": ""
+        },
+        {
+          "line": 355,
+          "text": "send_to_stack:"
+        }
+      ]
+    },
+    {
+      "file": "arch/arm64/boot/dts/qcom/ipq5332.dtsi",
+      "excerpt": [
+        {
+          "line": 130,
+          "text": "\tpsci {"
+        },
+        {
+          "line": 131,
+          "text": "\t\tcompatible = \"arm,psci-1.0\";"
+        },
+        {
+          "line": 132,
+          "text": "\t\tmethod = \"smc\";"
+        },
+        {
+          "line": 133,
+          "text": "\t};"
+        },
+        {
+          "line": 134,
+          "text": ""
+        },
+        {
+          "line": 135,
+          "text": "\treserved-memory {"
+        },
+        {
+          "line": 136,
+          "text": "\t\t#address-cells = <2>;"
+        },
+        {
+          "line": 137,
+          "text": "\t\t#size-cells = <2>;"
+        },
+        {
+          "line": 138,
+          "text": "\t\tranges;"
+        },
+        {
+          "line": 139,
+          "text": ""
+        },
+        {
+          "line": 140,
+          "text": "\t\tbootloader@4a100000 {"
+        },
+        {
+          "line": 141,
+          "text": "\t\t\treg = <0x0 0x4a100000 0x0 0x400000>;"
+        },
+        {
+          "line": 142,
+          "text": "\t\t\tno-map;"
+        },
+        {
+          "line": 143,
+          "text": "\t\t};"
+        },
+        {
+          "line": 144,
+          "text": ""
+        },
+        {
+          "line": 145,
+          "text": "\t\tsbl@4a500000 {"
+        },
+        {
+          "line": 146,
+          "text": "\t\t\treg = <0x0 0x4a500000 0x0 0x100000>;"
+        },
+        {
+          "line": 147,
+          "text": "\t\t\tno-map;"
+        },
+        {
+          "line": 148,
+          "text": "\t\t};"
+        },
+        {
+          "line": 149,
+          "text": ""
+        },
+        {
+          "line": 150,
+          "text": "\t\ttz_mem: tz@4a600000 {"
+        },
+        {
+          "line": 151,
+          "text": "\t\t\treg = <0x0 0x4a600000 0x0 0x200000>;"
+        },
+        {
+          "line": 152,
+          "text": "\t\t\tno-map;"
+        },
+        {
+          "line": 153,
+          "text": "\t\t};"
+        },
+        {
+          "line": 154,
+          "text": ""
+        },
+        {
+          "line": 155,
+          "text": "\t\tsmem@4a800000 {"
+        },
+        {
+          "line": 156,
+          "text": "\t\t\tcompatible = \"qcom,smem\";"
+        },
+        {
+          "line": 157,
+          "text": "\t\t\treg = <0x0 0x4a800000 0x0 0x100000>;"
+        },
+        {
+          "line": 158,
+          "text": "\t\t\tno-map;"
+        },
+        {
+          "line": 159,
+          "text": ""
+        },
+        {
+          "line": 160,
+          "text": "\t\t\thwlocks = <&tcsr_mutex 3>;"
+        },
+        {
+          "line": 161,
+          "text": "\t\t};"
+        },
+        {
+          "line": 162,
+          "text": "\t};"
+        },
+        {
+          "line": 163,
+          "text": ""
+        },
+        {
+          "line": 164,
+          "text": "\tsoc@0 {"
+        },
+        {
+          "line": 165,
+          "text": "\t\tcompatible = \"simple-bus\";"
+        },
+        {
+          "line": 166,
+          "text": "\t\t#address-cells = <1>;"
+        },
+        {
+          "line": 167,
+          "text": "\t\t#size-cells = <1>;"
+        },
+        {
+          "line": 168,
+          "text": "\t\tranges = <0 0 0 0xffffffff>;"
+        },
+        {
+          "line": 169,
+          "text": ""
+        },
+        {
+          "line": 170,
+          "text": "\t\tusbphy0: phy@7b000 {"
+        },
+        {
+          "line": 171,
+          "text": "\t\t\tcompatible = \"qcom,ipq5332-usb-hsphy\";"
+        },
+        {
+          "line": 172,
+          "text": "\t\t\treg = <0x0007b000 0x12c>;"
+        },
+        {
+          "line": 173,
+          "text": ""
+        },
+        {
+          "line": 174,
+          "text": "\t\t\tclocks = <&gcc GCC_USB0_PHY_CFG_AHB_CLK>;"
+        },
+        {
+          "line": 175,
+          "text": ""
+        },
+        {
+          "line": 176,
+          "text": "\t\t\tresets = <&gcc GCC_QUSB2_0_PHY_BCR>;"
+        },
+        {
+          "line": 177,
+          "text": ""
+        },
+        {
+          "line": 178,
+          "text": "\t\t\t#phy-cells = <0>;"
+        },
+        {
+          "line": 179,
+          "text": ""
+        },
+        {
+          "line": 180,
+          "text": "\t\t\tstatus = \"disabled\";"
+        },
+        {
+          "line": 181,
+          "text": "\t\t};"
+        },
+        {
+          "line": 182,
+          "text": ""
+        },
+        {
+          "line": 183,
+          "text": "\t\tqfprom: efuse@a4000 {"
+        },
+        {
+          "line": 184,
+          "text": "\t\t\tcompatible = \"qcom,ipq5332-qfprom\", \"qcom,qfprom\";"
+        },
+        {
+          "line": 185,
+          "text": "\t\t\treg = <0x000a4000 0x721>;"
+        },
+        {
+          "line": 186,
+          "text": "\t\t\t#address-cells = <1>;"
+        },
+        {
+          "line": 187,
+          "text": "\t\t\t#size-cells = <1>;"
+        },
+        {
+          "line": 188,
+          "text": ""
+        },
+        {
+          "line": 189,
+          "text": "\t\t\tcpu_speed_bin: cpu-speed-bin@1d {"
+        },
+        {
+          "line": 190,
+          "text": "\t\t\t\treg = <0x1d 0x2>;"
+        },
+        {
+          "line": 191,
+          "text": "\t\t\t\tbits = <7 2>;"
+        },
+        {
+          "line": 192,
+          "text": "\t\t\t};"
+        },
+        {
+          "line": 193,
+          "text": ""
+        },
+        {
+          "line": 194,
+          "text": "\t\t\ttsens_sens11_off: s11@3a5 {"
+        },
+        {
+          "line": 195,
+          "text": "\t\t\t\treg = <0x3a5 0x1>;"
+        },
+        {
+          "line": 196,
+          "text": "\t\t\t\tbits = <4 4>;"
+        },
+        {
+          "line": 197,
+          "text": "\t\t\t};"
+        },
+        {
+          "line": 198,
+          "text": ""
+        },
+        {
+          "line": 199,
+          "text": "\t\t\ttsens_sens12_off: s12@3a6 {"
+        },
+        {
+          "line": 200,
+          "text": "\t\t\t\treg = <0x3a6 0x1>;"
+        },
+        {
+          "line": 201,
+          "text": "\t\t\t\tbits = <0 4>;"
+        },
+        {
+          "line": 202,
+          "text": "\t\t\t};"
+        },
+        {
+          "line": 203,
+          "text": ""
+        },
+        {
+          "line": 204,
+          "text": "\t\t\ttsens_sens13_off: s13@3a6 {"
+        },
+        {
+          "line": 205,
+          "text": "\t\t\t\treg = <0x3a6 0x1>;"
+        },
+        {
+          "line": 206,
+          "text": "\t\t\t\tbits = <4 4>;"
+        },
+        {
+          "line": 207,
+          "text": "\t\t\t};"
+        },
+        {
+          "line": 208,
+          "text": ""
+        },
+        {
+          "line": 209,
+          "text": "\t\t\ttsens_sens14_off: s14@3ad {"
+        },
+        {
+          "line": 210,
+          "text": "\t\t\t\treg = <0x3ad 0x2>;"
+        },
+        {
+          "line": 211,
+          "text": "\t\t\t\tbits = <7 4>;"
+        },
+        {
+          "line": 212,
+          "text": "\t\t\t};"
+        },
+        {
+          "line": 213,
+          "text": ""
+        },
+        {
+          "line": 214,
+          "text": "\t\t\ttsens_sens15_off: s15@3ae {"
+        },
+        {
+          "line": 215,
+          "text": "\t\t\t\treg = <0x3ae 0x1>;"
+        },
+        {
+          "line": 216,
+          "text": "\t\t\t\tbits = <3 4>;"
+        },
+        {
+          "line": 217,
+          "text": "\t\t\t};"
+        },
+        {
+          "line": 218,
+          "text": ""
+        },
+        {
+          "line": 219,
+          "text": "\t\t\ttsens_mode: mode@3e1 {"
+        },
+        {
+          "line": 220,
+          "text": "\t\t\t\treg = <0x3e1 0x1>;"
+        },
+        {
+          "line": 221,
+          "text": "\t\t\t\tbits = <0 3>;"
+        },
+        {
+          "line": 222,
+          "text": "\t\t\t};"
+        },
+        {
+          "line": 223,
+          "text": ""
+        },
+        {
+          "line": 224,
+          "text": "\t\t\ttsens_base0: base0@3e1 {"
+        },
+        {
+          "line": 225,
+          "text": "\t\t\t\treg = <0x3e1 0x2>;"
+        }
+      ]
+    }
+  ],
+  "hardware_tested": false
+}

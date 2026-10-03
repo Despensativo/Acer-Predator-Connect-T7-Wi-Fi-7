@@ -1,0 +1,5 @@
+ffffffc080198684 t do_execveat_common
+ffffffc0802fc820 T pstore_register
+ffffffc0802fdbe0 t ramoops_probe
+ffffffc08002c360 T secondary_start_kernel
+ffffffc0807f0854 T start_kernel

@@ -1,0 +1,23 @@
+{
+  "checked_utc": "2026-10-03T01:59:08.186439+00:00",
+  "source": "Backups_MTD/backup_predator_t7_uboot_appsbl.bin",
+  "commands": [
+    {
+      "command": "tftpboot",
+      "table_file_offset": "0x7bafc",
+      "name_address": "0x4a460512",
+      "max_arguments": 3,
+      "repeatable": 1,
+      "function_address": "0x4a412499"
+    },
+    {
+      "command": "tftpput",
+      "table_file_offset": "0x7bb10",
+      "name_address": "0x4a4604d8",
+      "max_arguments": 4,
+      "repeatable": 1,
+      "function_address": "0x4a412481"
+    }
+  ],
+  "hardware_transfer_proven": false
+}

@@ -1,0 +1,524 @@
+{
+  "normalization": "SHA256 of diff payload ignoring hunk positions and mail header; not equivalence proof for nonmatches",
+  "patches": [
+    {
+      "patch": "0073-v7.0-arm64-dts-qcom-ipq5018-Remove-tsens-v1-fallback-compatible.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0075-v7.0-arm64-dts-qcom-ipq5018-Correct-USB-DWC3-wrapper-interrupts.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0076-v7.2-dt-bindings-pwm-add-IPQ6018-binding.patch",
+      "local_exact_payload_matches": [
+        "0400-dt-bindings-pwm-add-IPQ6018-binding.patch"
+      ],
+      "gl_exact_payload_matches": [
+        "0400-dt-bindings-pwm-add-IPQ6018-binding.patch"
+      ]
+    },
+    {
+      "patch": "0077-v7.2-pwm-Driver-for-qualcomm-ipq6018-pwm-block.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0078-v7.3-arm64-dts-qcom-ipq6018-add-pwm-node.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0079-v7.3-arm64-dts-qcom-ipq5018-add-pwm-node.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0080-v7.1-dt-bindings-clock-qcom-Add-CMN-PLL-support-for-IPQ6018.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0081-v7.1-dt-bindings-clock-qcom-Add-CMN-PLL-support-for-IPQ8074.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0082-v7.1-clk-qcom-ipq-cmn-pll-Add-IPQ6018-SoC-support.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0083-v7.1-clk-qcom-ipq-cmn-pll-Add-IPQ8074-SoC-support.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0087-v7.2-dt-bindings-net-ethernet-phy-increase-max-clock-count-to-two.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0088-v7.2-dt-bindings-net-qca-ar803x-Add-clocks-for-IPQ5018-PHY.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0089-v7.2-net-phy-at803x-add-RX-and-TX-clock-management-for-IPQ5018-PHY.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0090-v7.4-clk-qcom-gcc-ipq5018-mark-gpll0_main-clock-as-critical.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0091-v6.19-dt-bindings-usb-qcom-snps-dwc3-Correct-IPQ5018-interrupts.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0092-v7.3-pinctrl-qcom-ipq5018-add-missing-pwm3-function-on-gpio13.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0102-arm64-dts-ipq8074-add-reserved-memory-nodes.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0103-pwm-ipq-fix-period-calculation.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0120-arm64-dts-qcom-ipq8074-add-secure-WCSS-remoteproc.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0121-arm64-dts-ipq8074-Add-WLAN-node.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0122-arm64-dts-ipq8074-add-CPU-clock.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0123-arm64-dts-ipq8074-add-cooling-cells-to-CPU-nodes.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0129-arm64-dts-qcom-ipq8074-add-QFPROM-fuses.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0130-arm64-dts-qcom-ipq8074-add-CPU-OPP-table.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0135-arm64-dts-qcom-ipq6018-add-NSS-reserved-memory.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0140-usb-dwc3-core-Allow-glue-layer-to-pass-reference-clo.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0141-usb-dwc3-qcom-Add-support-for-selecting-UTMI-as-refe.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0142-arm64-dts-qcom-ipq5018-Flatten-usb-controller-node.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0143-arm64-dts-qcom-ipq6018-move-DR-mode-to-board-DTS.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0144-arm64-dts-qcom-ipq6018-Flatten-usb-controller-nodes.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0145-arm64-dts-qcom-ipq6018-add-uniphy-clocks-to-gcc.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0145-arm64-dts-qcom-ipq8074-move-DR-mode-to-board-DTS.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0146-arm64-dts-qcom-ipq8074-Flatten-usb-controller-nodes.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0147-arm64-dts-qcom-ipq8074-add-uniphy-clocks-to-gcc.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0150-dt-bindings-phy-qcom-ipq5332-uniphy-pcie-Document-th.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0151-phy-qualcomm-qcom-uniphy-pcie-28lp-Convert-to-PCIe-U.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0152-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Refactor-ini.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0153-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Use-bulk-res.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0154-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Improve-erro.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0155-phy-qualcomm-qcom-uniphy-pcie-usb3-28lp-Add-support-.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0156-arm64-dts-qcom-ipq5018-Add-USB-Super-Speed-PHY-node.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0157-dt-bindings-usb-qcom-snps-dwc3-Add-clocks-for-USB3-o.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0158-arm64-dts-qcom-ipq5018-Add-clocks-required-for-USB3-.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0159-arm64-dts-qcom-ipq5018-Add-Super-Speed-UNIPHY-to-USB.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0184-mailbox-tmelite-qmp-Introduce-TMEL-QMP-mailbox-driver.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0185-firmware-qcom_scm-ipq5332-add-support-to-pass-metadata-size.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0186-dt-bindings-remoteproc-qcom-document-hexagon-based-wcss-secure-pil.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0188-remoteproc-qcom-add-hexagon-based-wcss-secure-pil-driver.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0189-arm64-dts-qcom-ipq5018-add-nodes-to-bringup-q6.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0305-pinctrl-qcom-IPQ5018-update-pwm-groups.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0400-mtd-rawnand-add-support-for-TH58NYG3S0HBAI4.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0401-spi-spi-qpic-snand-default-to-4-bit-ECC.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0411-mtd-rawnand-qpic-only-support-max-4-bytes-ID.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0412-mtd-spinand-qpic-only-support-max-4-bytes-ID.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0715-arm64-dts-qcom-ipq5018-add-vendor-compatible-to-mdio-node.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0721-clk-gcc-ipq5018-remove-the-unsupported-clk-combinati.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0723-clk-qcom-gcc-ipq5018-fix-uniphy-soft-reset-issue.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0801-dt-bindings-remoteproc-qcom-Add-support-for-multipd-model.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0803-firmware-qcom_scm-ipq5332-add-msa-lock-unlock-suppor.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0804-remoteproc-qcom-q6v5-Add-multipd-interrupts-support.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0805-remoteproc-qcom-Add-Hexagon-based-multipd-rproc-driv.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0806-rproc-qcom_q6v5_mpd-split-q6_wcss-to-rootpd-and-user.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0807-remoteproc-qcom_q6v5_mpd-fix-incorrent-use-of-rproc-.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0808-remoteproc-qcom-wcss-sec-add-split-firmware-support.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0809-remoteproc-qcom-wcss-sec-enable-PRNG-clock.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0810-remoteproc-qcom-wcss-sec-add-ipq8074-compatible.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0811-firmware-qcom_scm-support-MPD.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0811-remoteproc-qcom-wcss-sec-enable-qdss-clock.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0812-remoteproc-qcom-wcss-sec-add-ipq6018-support.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0812-soc-qcom-mdt_loader-support-MPD.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0813-remoteproc-qcom_q6v5_mpd-enable-clocks.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0814-remoteproc-qcom_q6v5_mpd-support-ipq5018.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0815-remoteproc-qcom_q6v5_mpd-add-support-for-passing-v1-bootargs.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0816-arm64-dts-qcom-ipq5018-add-wifi-support.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0817-arm64-dts-qcom-ipq5018-add-tz_apps-reserved-memory-region.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0820-dt-bindings-net-wireless-ath11k-add-bindings-for-QCN6122.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0842-arm64-dts-qcom-ipq5018-add-uniphy-node.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0900-power-Add-Qualcomm-APM.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0901-regulator-add-Qualcomm-CPR-regulators.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0902-arm64-dts-ipq8074-add-label-to-clocks.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0903-psci-dont-advertise-OSI-support-for-IPQ6018.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0905-arm64-dts-qcom-ipq6018-use-secure-WCSS-remoteproc.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0906-arm64-dts-qcom-ipq6018-add-wifi-node.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0907-soc-qcom-fix-smp2p-ack-on-ipq6018.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0911-arm64-cmdline-replacement.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0912-arm64-dts-qcom-ipq5018-remove-cpufreq-scaling.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0917-clk-qcom-gcc-ipq6018-mark-gcc_xo_clk_src-as-critical.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0920-clk-add-clk_hw_recalc_rate-to-trigger-HW-clk-rate-re.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0950-net-dsa-add-out-of-band-tagging-protocol.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0951-net-pcs-Enable-for-QCA-UNIPHY-PCS-driver.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0952-net-ethernet-qca-add-ppe.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0953-net-ethernet-qca-add-EDMA.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    },
+    {
+      "patch": "0954-net-stmmac-Introduce-Qualcomm-IPQ5018-DWMAC-driver.patch",
+      "local_exact_payload_matches": [],
+      "gl_exact_payload_matches": []
+    }
+  ],
+  "local_source_checks": {
+    "drivers/remoteproc/qcom_q6v5_wcss_sec.c": {
+      "exists": false,
+      "markers": {}
+    },
+    "drivers/remoteproc/qcom_q6v5_mpd.c": {
+      "exists": false,
+      "markers": {}
+    },
+    "drivers/of/fdt.c": {
+      "exists": true,
+      "markers": {
+        "bootargs-find-1": false
+      }
+    },
+    "drivers/firmware/psci/psci.c": {
+      "exists": true,
+      "markers": {
+        "of_machine_is_compatible(\"qcom,ipq6018\")": false
+      }
+    },
+    "drivers/mtd/nand/raw/nand_ids.c": {
+      "exists": true,
+      "markers": {
+        "TH58NYG3S0HBAI4": false
+      }
+    },
+    "drivers/mtd/nand/raw/nand_base.c": {
+      "exists": true,
+      "markers": {
+        "min(4, type->id_len)": false
+      }
+    },
+    "drivers/mtd/nand/spi/core.c": {
+      "exists": true,
+      "markers": {
+        "min(3, info->devid.len)": false
+      }
+    },
+    "drivers/spi/spi-qpic-snand.c": {
+      "exists": true,
+      "markers": {
+        "ECC strength requirement of": false
+      }
+    },
+    "drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c": {
+      "exists": false,
+      "markers": {}
+    }
+  }
+}

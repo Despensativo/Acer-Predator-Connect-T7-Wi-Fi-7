@@ -1,0 +1,17 @@
+--- local/target/linux/qualcommbe/dts/ipq9570-kiwi-dvk.dts
++++ glinet/target/linux/qualcommbe/dts/ipq9570-kiwi-dvk.dts
+@@ -70,14 +70,6 @@
+ 	pinctrl-0 = <&uart2_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
+-};
+-
+-&crypto {
+-	status = "disabled";
+-};
+-
+-&cryptobam {
+-	status = "disabled";
+ };
+ 
+ &qcom_ppe {

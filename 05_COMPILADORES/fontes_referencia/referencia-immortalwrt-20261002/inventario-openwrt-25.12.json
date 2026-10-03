@@ -1,0 +1,31 @@
+{
+  "branch": "openwrt-25.12",
+  "commit": "313718c25f206cdeee399bdc6c002b7388c9a513",
+  "truncated": false,
+  "hits": [
+    {
+      "path": "target/linux/qualcommax/patches-6.12/0185-firmware-qcom_scm-ipq5332-add-support-to-pass-metadata-size.patch",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "103c4434d701b1853f89c54b1931d565e244ec8f",
+      "size": 2409,
+      "url": "https://api.github.com/repos/immortalwrt/immortalwrt/git/blobs/103c4434d701b1853f89c54b1931d565e244ec8f"
+    },
+    {
+      "path": "target/linux/qualcommax/patches-6.12/0803-firmware-qcom_scm-ipq5332-add-msa-lock-unlock-suppor.patch",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "438e553e2e4cc3f0a4b843929765570cd635f6b4",
+      "size": 3500,
+      "url": "https://api.github.com/repos/immortalwrt/immortalwrt/git/blobs/438e553e2e4cc3f0a4b843929765570cd635f6b4"
+    },
+    {
+      "path": "target/linux/qualcommbe/Makefile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7290c54d3d45a9a2941749b1de8e3351e06cf4cd",
+      "size": 498,
+      "url": "https://api.github.com/repos/immortalwrt/immortalwrt/git/blobs/7290c54d3d45a9a2941749b1de8e3351e06cf4cd"
+    }
+  ]
+}

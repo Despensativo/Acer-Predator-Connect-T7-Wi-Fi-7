@@ -1,0 +1,55 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: fix the Tx NAPI teardown
+
+edma_cfg_tx_napi_delete() disables every NAPI it deletes, the same way
+edma_cfg_rx_napi_delete() did, and the second disable of a NAPI spins
+forever waiting for NAPI_STATE_SCHED and NAPI_STATE_NPSVC to clear.  The
+Tx side reaches it two ways, and both are ordinary:
+
+netif_napi_add_weight() sets those two bits when the NAPI is added and
+only napi_enable() clears them.  edma_port_configure() adds the Tx NAPIs
+and edma_port_open() enables them, so a port that is registered but
+never brought up has NAPIs that were never enabled, and the disable
+inside the delete helper hangs on the first call.
+
+edma_port_destroy() deconfigures the port, and so deletes its NAPIs,
+before it unregisters the netdevice.  An interface the user has already
+brought down has been through edma_port_close(), which disables the Tx
+NAPIs, so the disable inside the delete is the second one and spins.  An
+interface that is still up is served no better: its NAPIs are deleted
+while the netdevice is registered and transmitting, so nothing reaps the
+Tx completions until ndo_stop finally runs inside unregister_netdev().
+
+Delete the Tx NAPIs without disabling them, and unregister the
+netdevice before tearing down what it is still using.  Unregistering
+brings an up interface down first, so edma_port_close() disables the
+NAPIs exactly once, and a port that was never up has nothing to
+disable.  It also means the Tx rings are disabled and the per-CPU
+statistics are freed after the netdevice is gone rather than while it
+is still visible.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+@@ -633,7 +633,6 @@ void edma_cfg_tx_napi_delete(u32 port_id
+ 		if (!txcmpl_ring->napi_added)
+ 			continue;
+ 
+-		napi_disable(&txcmpl_ring->napi);
+ 		netif_napi_del(&txcmpl_ring->napi);
+ 		txcmpl_ring->napi_added = false;
+ 	}
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -351,9 +351,9 @@ void edma_port_destroy(struct ppe_port *
+ 	int port_id = port->port_id;
+ 	struct net_device *netdev = edma_ctx->netdev_arr[port_id - 1];
+ 
++	unregister_netdev(netdev);
+ 	edma_port_deconfigure(netdev);
+ 	edma_port_stats_free(netdev);
+-	unregister_netdev(netdev);
+ 	free_netdev(netdev);
+ 	ppe_port_phylink_destroy(port);
+ 	edma_ctx->netdev_arr[port_id - 1] = NULL;

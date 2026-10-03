@@ -1,0 +1,22 @@
+[
+  {
+    "Path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\fontes\\referencia-immortalwrt-20261002\\0185-firmware-qcom_scm-ipq5332-add-support-to-pass-metadata-size.patch",
+    "Hash": "3A570BEBD46E58D1EDB5E211B576F92E8581EB4BFD45D00F418A2A6C9CAF551F"
+  },
+  {
+    "Path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\fontes\\referencia-immortalwrt-20261002\\0362-net-ethernet-qualcomm-ppe-fix-rx-dma-mapping-direction.patch",
+    "Hash": "3876D43FAB9C47685112D9C1BA3EA5EA34A5B30AFABDF13B5F53EACE74431AB9"
+  },
+  {
+    "Path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\fontes\\referencia-immortalwrt-20261002\\0803-firmware-qcom_scm-ipq5332-add-msa-lock-unlock-suppor.patch",
+    "Hash": "9561C19ACC465C380733610A6975A404E5FC83BB883127250FECA063BF62AC25"
+  },
+  {
+    "Path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\fontes\\referencia-immortalwrt-20261002\\Makefile",
+    "Hash": "F1FEDBAB1D11BEC263F028D9C915CEC76BFB564E1B2910F2683276BE581993F3"
+  },
+  {
+    "Path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\fontes\\referencia-immortalwrt-20261002\\target.mk",
+    "Hash": "ED8A02C981241767ED4A5802ACB0008CFB35A80C4F9DFE6EF7B5C4F987CAFF0C"
+  }
+]

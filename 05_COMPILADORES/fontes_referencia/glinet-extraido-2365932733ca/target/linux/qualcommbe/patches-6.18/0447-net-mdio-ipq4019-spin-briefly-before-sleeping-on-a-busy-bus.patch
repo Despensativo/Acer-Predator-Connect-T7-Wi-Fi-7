@@ -1,0 +1,53 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: mdio: ipq4019: spin briefly before sleeping on a busy
+ bus
+
+ipq4019_mdio_wait_busy() polls the busy bit with readl_poll_timeout()
+and a 10 us sleep. A frame at the 6.25 MHz MDC the bootloader leaves set
+takes ~10 us, so nearly every access sleeps once and pays the timer
+latency on top of the transfer. That adds up on buses driven through an
+indirect register window, where one logical access is dozens of frames:
+the RTL8372N switch on the GL-BE9300 needs ~36 frames per PHY register
+write, and its boot-time RTL8224 microcode load is thousands of those.
+
+Spin up to 100 us first (readl_poll_timeout() with no sleep, which still
+checks the clock every pass), which covers a normal frame, and only then
+fall back to the existing sleeping poll with the same 10 ms timeout. A
+wedged bus therefore still yields the CPU between polls, which matters
+on PREEMPT_NONE kernels, and still fails with -ETIMEDOUT. This affects
+every board using this driver, not just the one measured; the fast path
+only ever shortens a wait.
+
+Measured on a GL-BE9300: switch probe to DSA setup 2.89 s -> ~2.6 s.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/mdio/mdio-ipq4019.c
++++ b/drivers/net/mdio/mdio-ipq4019.c
+@@ -42,6 +42,11 @@
+ 
+ #define IPQ4019_MDIO_TIMEOUT	10000
+ #define IPQ4019_MDIO_SLEEP		10
++/* A frame at the usual 6.25 MHz MDC takes ~10 us: spin that long first
++ * rather than paying timer latency on every frame, then fall back to the
++ * sleeping poll so a wedged bus still yields the CPU.
++ */
++#define IPQ4019_MDIO_SPIN_US	100
+ 
+ /* MDIO clock source frequency is fixed to 100M */
+ #define IPQ_MDIO_CLK_RATE	100000000
+@@ -60,6 +65,14 @@
+ 	struct ipq4019_mdio_data *priv = bus->priv;
+ 	unsigned int busy;
+ 
++	/* sleep_us = 0 tight-loops but, unlike the _atomic variant with no
++	 * delay, still bounds the spin by time.
++	 */
++	if (!readl_poll_timeout(priv->membase + MDIO_CMD_REG, busy,
++				(busy & MDIO_CMD_ACCESS_BUSY) == 0,
++				0, IPQ4019_MDIO_SPIN_US))
++		return 0;
++
+ 	return readl_poll_timeout(priv->membase + MDIO_CMD_REG, busy,
+ 				  (busy & MDIO_CMD_ACCESS_BUSY) == 0,
+ 				  IPQ4019_MDIO_SLEEP, IPQ4019_MDIO_TIMEOUT);

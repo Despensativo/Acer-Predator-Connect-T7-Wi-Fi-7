@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "name": "Compilador oficial SquashFS T7 — referência interna do projeto",
+  "acer_official": false,
+  "date": "2026-10-02",
+  "openwrt_commit": "ac733df99c78f54b4cf9a8710f70a506f73e66fc",
+  "netgear_reference_commit": "7267622a7417d7ebce3ae0a821e396e9f60e6026",
+  "compiler": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "liblzma_sha256": "ce6991de066a8966f3122990d92db53d9dc92e0cb04b22ebdc7b9ede55935cc9",
+  "validated_original_sha256": "57d1427dad607e6f30373fff8c27681d6fc7d02c3276c0b3ef8aa45755f8e7d3",
+  "validated_image_sha256": "460995361d98b91a92455257cc6d039fccb17816daecb52f6a5fa87fc437b925",
+  "validated_image_bytes": 39595654,
+  "expected_options_hex": "000004001c00090090004000",
+  "router_tested": false,
+  "inputs": {
+    "squashfs4.2.tar.gz": "d9e0195aa922dbb665ed322b9aaa96e04a476ee650f39bbeadb0d00b24022e96",
+    "openwrt-v17.01.0-110-allow_static_liblzma.patch": "c62c91bcbaa866cdcc07920b01c5cf93fd026d59fdf9dee064925dbe8410970c",
+    "openwrt-v17.01.0-160.patch": "13c116169ad0c70cc108683d43d7a6791207f14ecafd5faf22765f4b17d8268d",
+    "openwrt-v17.01.0-190-no_nonstatic_inline.patch": "737c4a79fba3b56e540b3d9cf173e93c24a9699f53bc681f9b1933679d86123f",
+    "200-preservar-symlink-mtime.patch": "e5e51b79214519945f1c8e997f31e6bedd40e0cd88283bb57ee4a48d2160267d"
+  },
+  "binaries": {
+    "mksquashfs4-compat": "0b6341e0080f6f8f03ca6d06ce51e078da908f2b03d201f98035d33d86131ac6",
+    "unsquashfs4-compat-mtime": "daa0fa607de1f454b064ce0b503985044ea58009b005daadbd127a8698a1f0a4"
+  }
+}

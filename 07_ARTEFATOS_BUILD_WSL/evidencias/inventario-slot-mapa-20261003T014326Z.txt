@@ -1,0 +1,24 @@
+for d in /sys/class/ubi/ubi[0-9]*; do [ -d "$d" ] || continue; echo UBI=$d; 
+for f in mtd_num name type; do [ ! -f "$d/$f" ] || { printf '%s=' "$f"; cat "$d/
+$f"; }; done; done; awk '$2=="/rom" || $2=="/overlay" {print $1,$2,$3}' /proc/mo
+unts; for k in bootcmd primaryboot; do fw_printenv $k 2>/dev/null; done; printf 
+'\nT7_MAP_DONE\n'
+UBI=/sys/class/ubi/ubi0
+mtd_num=21
+UBI=/sys/class/ubi/ubi0_0
+name=wifi_fw
+type=static
+UBI=/sys/class/ubi/ubi0_1
+name=kernel
+type=static
+UBI=/sys/class/ubi/ubi0_2
+name=ubi_rootfs
+type=dynamic
+UBI=/sys/class/ubi/ubi0_3
+name=rootfs_data
+type=dynamic
+/dev/mtdblock27 /rom squashfs
+/dev/ubi0_3 /overlay ubifs
+bootcmd=bootipq
+
+T7_MAP_DONE

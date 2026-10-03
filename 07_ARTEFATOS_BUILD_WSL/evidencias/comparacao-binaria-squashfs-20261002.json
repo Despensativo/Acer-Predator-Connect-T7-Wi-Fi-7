@@ -1,0 +1,100 @@
+{
+  "original_file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Backups_MTD/backup_predator_t7_ubi_rootfs.bin",
+  "rebuilt_file": "/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Feito por ChatGPT/artefatos/squashfs-roundtrip-mtime-20261002-212028/rootfs-rebuilt-offline.squashfs",
+  "user_reported_slot_md5": "022605865983843c69395859b9ee7e64",
+  "original_file_hashes": {
+    "md5": "022605865983843c69395859b9ee7e64",
+    "sha256": "57d1427dad607e6f30373fff8c27681d6fc7d02c3276c0b3ef8aa45755f8e7d3"
+  },
+  "rebuilt_file_hashes": {
+    "md5": "d19a150765e7c7d6599f2aceb1a07299",
+    "sha256": "460995361d98b91a92455257cc6d039fccb17816daecb52f6a5fa87fc437b925"
+  },
+  "local_backup_matches_reported_slot_md5": true,
+  "original_bytes": 39870464,
+  "rebuilt_bytes": 39595654,
+  "binary_identical": false,
+  "different_bytes_in_common_span": 39438424,
+  "first_difference_offset": 8,
+  "first_difference_after_options_offset": 124,
+  "original_header": {
+    "magic": "68737173",
+    "inodes": 5031,
+    "mkfs_time": 1737086574,
+    "block_size": 262144,
+    "fragments": 214,
+    "compression": 4,
+    "flags": 1728,
+    "bytes_used": 39589954,
+    "inode_table_start": 39498624,
+    "directory_table_start": 39534110,
+    "fragment_table_start": 39585006,
+    "options_hex": "000004001c00090090004000"
+  },
+  "rebuilt_header": {
+    "magic": "68737173",
+    "inodes": 5031,
+    "mkfs_time": 1790986858,
+    "block_size": 262144,
+    "fragments": 214,
+    "compression": 4,
+    "flags": 1728,
+    "bytes_used": 39595654,
+    "inode_table_start": 39494456,
+    "directory_table_start": 39531866,
+    "fragment_table_start": 39585714,
+    "options_hex": "000004001c00090090004000"
+  },
+  "header_differences": {
+    "mkfs_time": {
+      "original": 1737086574,
+      "rebuilt": 1790986858
+    },
+    "bytes_used": {
+      "original": 39589954,
+      "rebuilt": 39595654
+    },
+    "inode_table_start": {
+      "original": 39498624,
+      "rebuilt": 39494456
+    },
+    "directory_table_start": {
+      "original": 39534110,
+      "rebuilt": 39531866
+    },
+    "fragment_table_start": {
+      "original": 39585006,
+      "rebuilt": 39585714
+    }
+  },
+  "original_payload_hashes": {
+    "md5": "8063cbee07b036e0df173bd9af43cca9",
+    "sha256": "04b7df656e36642ff11e02bad34adb762873d259415d755f3b2d803761e896ad"
+  },
+  "rebuilt_payload_hashes": {
+    "md5": "d19a150765e7c7d6599f2aceb1a07299",
+    "sha256": "460995361d98b91a92455257cc6d039fccb17816daecb52f6a5fa87fc437b925"
+  },
+  "original_tail_bytes": 280510,
+  "original_tail_byte_counts": {
+    "255": 278446,
+    "222": 10,
+    "173": 5,
+    "192": 5,
+    "0": 2044
+  },
+  "rebuilt_padded_to_original_length_hashes": {
+    "0": {
+      "md5": "58d44500e5c7a60b1c44578cbce83eb8",
+      "sha256": "9eaf67442e5f0c289c6938079f1b732725a3274792beb8b5c4876a189548a48c"
+    },
+    "255": {
+      "md5": "dffdaf3cba89041b09831a29ecc5847f",
+      "sha256": "345d46f8f796cab3294cee139d978eaa05a63d0bd0f532ef0061aa7612742287"
+    }
+  },
+  "padding_only_explains_difference": false,
+  "content_metadata_roundtrip_verified": true,
+  "content_metadata_evidence": "artefatos/squashfs-roundtrip-mtime-20261002-212028/resultado.json",
+  "router_accessed": false
+}

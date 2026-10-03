@@ -1,0 +1,119 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: close the Tx queue stop/wake
+ race
+
+edma_port_xmit() stops a Tx queue when its ring runs out of descriptors
+and relies on edma_tx_complete() to wake it again, but the two sides are
+unsynchronized: the stop is neither ordered against, nor rechecked
+after, the ring state it was based on.
+
+  CPU2 (xmit, ring N)              CPU0 (Tx cmpl NAPI, ring N)
+  ------------------------------   ---------------------------------
+  edma_tx_ring_xmit() -> NO_DESC
+                                   reap descriptors, write cons idx
+                                   netif_tx_queue_stopped() -> false,
+                                     no wake up
+  netif_tx_stop_queue()
+
+Ring N is now empty and its queue is stopped with nothing left to wake
+it: the queue wedges permanently, which is the failure
+e2599aafc2 ("qualcommbe: ppe: fix permanently stopped Tx queues") set
+out to remove but only fixed for the wrong-CPU case.
+
+Close the window the usual way: after stopping the queue, order the stop
+against a fresh read of the ring's descriptor availability and wake the
+queue again if descriptors did become available; on the completion side,
+order the consumer index update against the read of the queue state.
+Expose the availability re-read as edma_tx_ring_avail_desc(), which also
+refreshes the ring's cached count, so the retried xmit sees it.
+
+The stop path is enabled by default (tx_requeue_stop = 0), so every
+build takes this path.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -220,12 +220,30 @@
+ 
+ 		if (unlikely(ret == EDMA_TX_FAIL_NO_DESC)) {
+ 			if (likely(!edma_ctx->tx_requeue_stop)) {
++				struct netdev_queue *nq;
++
+ 				cpu_id = smp_processor_id();
+ 				netdev_dbg(dev, "Stopping tx queue due to lack of tx descriptors\n");
+ 				u64_stats_update_begin(&stats->syncp);
+ 				++stats->tx_queue_stopped[cpu_id];
+ 				u64_stats_update_end(&stats->syncp);
+-				netif_tx_stop_queue(netdev_get_tx_queue(dev, skbq));
++
++				nq = netdev_get_tx_queue(dev, skbq);
++				netif_tx_stop_queue(nq);
++
++				/* The Tx completion NAPI of this ring may have
++				 * freed the last descriptors just before the
++				 * queue was stopped, in which case it saw a
++				 * running queue and skipped the wake up,
++				 * leaving the queue stopped with an empty ring
++				 * and nothing left to wake it.  Order the stop
++				 * against a fresh read of the ring and undo it
++				 * if descriptors did become available.
++				 */
++				smp_mb();
++				if (edma_tx_ring_avail_desc(txdesc_ring))
++					netif_tx_wake_queue(nq);
++
+ 				return NETDEV_TX_BUSY;
+ 			}
+ 		}
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
+@@ -220,6 +220,13 @@
+ 	 * other stopped queue stopped forever once its ring fills.
+ 	 */
+ 	if (unlikely(!edma_ctx->tx_requeue_stop)) {
++		/* Pairs with the barrier in edma_port_xmit(): the consumer
++		 * index written above has to be visible before the queue
++		 * state is read, so that a queue being stopped concurrently
++		 * with this completion is not missed here.
++		 */
++		smp_mb();
++
+ 		queue_id = (txcmpl_ring->id - edma_ctx->hw_info->txcmpl->ring_start) %
+ 			   num_possible_cpus();
+ 		nq = netdev_get_tx_queue(txcmpl_ring->napi.dev, queue_id);
+@@ -666,6 +673,24 @@
+ }
+ 
+ /**
++ * edma_tx_ring_avail_desc - Re-read the descriptor availability of a Tx ring.
++ * @txdesc_ring: Tx descriptor ring.
++ *
++ * Refresh the ring's cached descriptor count from the hardware consumer
++ * index and return it.  Called from the Tx path only, so the cached count
++ * stays serialized by the netdev queue that owns the ring.
++ *
++ * Return: Number of descriptors currently available in the ring.
++ */
++u32 edma_tx_ring_avail_desc(struct edma_txdesc_ring *txdesc_ring)
++{
++	txdesc_ring->avail_desc = edma_tx_avail_desc(txdesc_ring,
++						     txdesc_ring->prod_idx);
++
++	return txdesc_ring->avail_desc;
++}
++
++/**
+  * edma_tx_ring_xmit - Transmit a packet.
+  * @netdev: Netdevice.
+  * @skb: Socket Buffer.
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
+@@ -296,6 +296,7 @@
+ 				      struct sk_buff *skb,
+ 			       struct edma_txdesc_ring *txdesc_ring,
+ 			       struct edma_port_tx_stats *stats);
++u32 edma_tx_ring_avail_desc(struct edma_txdesc_ring *txdesc_ring);
+ u32 edma_tx_complete(u32 work_to_do,
+ 		     struct edma_txcmpl_ring *txcmpl_ring);
+ irqreturn_t edma_tx_handle_irq(int irq, void *ctx);

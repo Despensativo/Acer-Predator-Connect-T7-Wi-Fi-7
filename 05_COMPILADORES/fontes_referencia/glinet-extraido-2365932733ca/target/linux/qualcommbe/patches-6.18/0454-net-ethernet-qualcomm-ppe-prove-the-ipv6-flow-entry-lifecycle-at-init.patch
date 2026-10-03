@@ -1,0 +1,159 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: prove the IPv6 flow entry lifecycle at init
+
+The IPv6 flow path assumes what ppe_flow.h states about the table: a
+nine-word entry takes two slots, a hash-mode add reports its index in
+slot units (so an even one), and an index-mode delete at the head
+clears both slots. Those were taken from the vendor SDK and confirmed
+on one GL-BE9300 by reading the table back; a unit that disagreed
+would leave stale slots forwarding traffic or delete the wrong entry,
+silently.
+
+Check them once at init, when the table is empty and nothing can match
+a probe: add a probe entry keyed on the unspecified address and zero
+ports (host and nexthop index 0), require an even index, the head slot
+valid and the tail slot not a valid head, delete it and require both
+slots empty. Any other outcome, or a failed op, keeps IPv6 on the
+software path with a decline reason of its own, next to the header
+exception gate. The table is read straight from the IPE L3 block for
+this, at the vendor's IN_FLOW_TBL address. On the GL-BE9300 the probe
+lands at an even index and the test passes; IPv6 throughput after it is
+unchanged (2321 Mbit/s both ways at 99% idle).
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -1398,6 +1398,14 @@
+  */
+ 
+ /* Word 0. */
++/* The flow table itself, as hardware lays it out in the IPE L3 block:
++ * vendor IPE_L3_BASE_ADDR (0x200000) + IN_FLOW_TBL_ADDRESS (0x40000), one
++ * 0x20-byte slot per index; a two-slot IPv6 entry starts at an even index.
++ * Written through the table op only; read directly for the IPv6 self-test.
++ */
++#define PPE_IN_FLOW_TBL_ADDR			0x240000
++#define PPE_IN_FLOW_TBL_INC			0x20
++
+ #define PPE_FLOW_TBL_VALID			BIT(0)
+ #define PPE_FLOW_TBL_ENTRY_TYPE			BIT(1)
+ #define PPE_FLOW_TBL_HOST_ADDR_INDEX_TYPE	BIT(2)
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -335,6 +335,11 @@
+ 	struct ppe_offload_flow_entry **flow_owner;
+ 	bool tcp_exceptions_ok;
+ 	bool hdr_exceptions_ok;
++	/* Whether a two-slot IPv6 entry was added at an even index, seen
++	 * valid there, and gone from both slots after its delete, at init
++	 * (ppe_offload_ipv6_selftest()). Without that IPv6 is declined.
++	 */
++	bool ipv6_table_ok;
+ 	struct mutex lock;
+ 	DECLARE_HASHTABLE(dsa_fixed_ht, 9);
+ 	spinlock_t dsa_fixed_lock; /* see @dsa_fixed_ht */
+@@ -1031,6 +1036,8 @@
+ 
+ 		if (ipv6 && !priv->hdr_exceptions_ok)
+ 			return ppe_offload_decline("ipv6 offload disabled: no header exceptions");
++		if (ipv6 && !priv->ipv6_table_ok)
++			return ppe_offload_decline("ipv6 offload disabled: table self-test failed");
+ 
+ 		flow_rule_match_ports(rule, &ports);
+ 		match_sport = ports.key->src;
+@@ -2727,6 +2734,86 @@
+ 	PPE_L3_EXCEPTION_IPV6_OTHER_EXT_HDR_CROSS_BORDER,
+ };
+ 
++/* Read word 0 of one flow table slot straight from the table. */
++static int ppe_offload_flow_slot_word0(struct ppe_device *ppe_dev, u32 slot, u32 *word0)
++{
++	return regmap_read(ppe_dev->regmap, PPE_IN_FLOW_TBL_ADDR + slot * PPE_IN_FLOW_TBL_INC,
++			   word0);
++}
++
++/**
++ * ppe_offload_ipv6_selftest() - Prove the two-slot IPv6 entry lifecycle on this hardware.
++ * @ppe_dev: PPE device.
++ *
++ * Return: true if IPv6 entries may be used, false otherwise.
++ *
++ * Everything the IPv6 path assumes about the table (see ppe_flow.h) is
++ * checked once with a probe entry, at init when the table is empty and
++ * nothing can match it: a hash-mode add of a nine-word entry must land at
++ * an even index, that slot must then read valid and the one after it
++ * must not read as a valid head, and after an index-mode delete both
++ * slots must read empty. The probe keys an unspecified address and zero
++ * ports against host and nexthop index 0, which no packet resolves to.
++ * Any other outcome leaves IPv6 on the software path (declined once
++ * per reason) rather than trusting slot arithmetic that hardware does
++ * not share.
++ */
++static bool ppe_offload_ipv6_selftest(struct ppe_device *ppe_dev)
++{
++	struct ppe_flow_ipv6_route_entry probe = {};
++	u32 words[PPE_FLOW_TBL_IPV6_ENTRY_WORDS];
++	u32 index, head, tail;
++	bool ok = false;
++	int ret;
++
++	probe.valid = true;
++	probe.protocol = PPE_FLOW_PROTO_TCP;
++	ppe_flow_ipv6_route_entry_encode(&probe, words);
++
++	ret = ppe_flow_entry_add(ppe_dev, PPE_FLOW_OP_MODE_HASH, words,
++				 PPE_FLOW_TBL_IPV6_ENTRY_WORDS, &index);
++	if (ret) {
++		pr_warn("ppe_offload: ipv6 self-test: probe add failed: %d\n", ret);
++		return false;
++	}
++
++	if (index & 1) {
++		pr_warn("ppe_offload: ipv6 self-test: probe landed at odd index %u\n", index);
++		goto del;
++	}
++
++	if (ppe_offload_flow_slot_word0(ppe_dev, index, &head) ||
++	    ppe_offload_flow_slot_word0(ppe_dev, index + 1, &tail)) {
++		pr_warn("ppe_offload: ipv6 self-test: slot read failed\n");
++		goto del;
++	}
++	if (!(head & PPE_FLOW_TBL_VALID) || (tail & PPE_FLOW_TBL_VALID)) {
++		pr_warn("ppe_offload: ipv6 self-test: after add slot %u word0 %08x, slot %u word0 %08x\n",
++			index, head, index + 1, tail);
++		goto del;
++	}
++	ok = true;
++
++del:
++	ret = ppe_flow_entry_del(ppe_dev, index);
++	if (ret) {
++		pr_warn("ppe_offload: ipv6 self-test: probe delete failed: %d\n", ret);
++		return false;
++	}
++	if (ppe_offload_flow_slot_word0(ppe_dev, index, &head) ||
++	    ppe_offload_flow_slot_word0(ppe_dev, index + 1, &tail))
++		return false;
++	if ((head & PPE_FLOW_TBL_VALID) || (tail & PPE_FLOW_TBL_VALID)) {
++		pr_warn("ppe_offload: ipv6 self-test: after delete slot %u word0 %08x, slot %u word0 %08x\n",
++			index, head, index + 1, tail);
++		return false;
++	}
++
++	if (ok)
++		pr_info("ppe_offload: ipv6 self-test passed at index %u\n", index);
++	return ok;
++}
++
+ /**
+  * ppe_offload_hdr_exception_init() - Program the fragment / extension-header exceptions.
+  * @ppe_dev: PPE device.
+@@ -2840,6 +2927,7 @@
+ 
+ 	priv->tcp_exceptions_ok = ppe_offload_tcp_exception_init(ppe_dev);
+ 	priv->hdr_exceptions_ok = ppe_offload_hdr_exception_init(ppe_dev);
++	priv->ipv6_table_ok = ppe_offload_ipv6_selftest(ppe_dev);
+ }
+ 
+ /* Free one tracked flow during teardown, removing whatever it still owns in

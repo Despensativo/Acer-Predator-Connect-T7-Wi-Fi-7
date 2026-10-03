@@ -1,0 +1,26 @@
+{
+  "status": "offline_probe_pending_hardware_preflight",
+  "hardware_ready": false,
+  "session_id": "30fa04acf23b48a7a705e5455ae728a0",
+  "mode": "upload_buffer_readback_only",
+  "server_ip": "192.168.1.5",
+  "router_ip": "192.168.1.1",
+  "current_service_ip_reported": "192.168.73.2",
+  "current_slot_verified": false,
+  "adapter_link_verified": false,
+  "filename": "t7-probe-30fa04acf23b48a7a705e5455ae728a0.bin",
+  "expected_header_hex": "d00dfeed000003020000003800000264000000280000001100000010000000000000004e0000022c000000000000000000000000000000000000000100000000",
+  "launcher": {
+    "path": "artefatos/sonda-uboot-rede-30fa04acf23b48a7a705e5455ae728a0/sonda.itb.PENDING",
+    "bytes": 33582,
+    "sha256": "66a25b2d44a9c80732193b138bdaba7ea6234978f5734e3dca6d54b779c556d8",
+    "oem_marker_offset": "0x5c",
+    "oem_marker": "Flas"
+  },
+  "no_kernel_download": true,
+  "no_bootm": true,
+  "no_saveenv": true,
+  "script_returns_to_oem_handler": true,
+  "warning": "OEM handler may reset after source returns; current slot and recovery must be confirmed before test",
+  "validated_static_memory_read": "0x44000000 first 64 bytes of existing HTTP upload buffer; no new fixed scratch address"
+}

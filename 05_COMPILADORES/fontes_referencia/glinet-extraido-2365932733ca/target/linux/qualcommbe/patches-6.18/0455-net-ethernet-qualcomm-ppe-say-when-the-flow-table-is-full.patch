@@ -1,0 +1,142 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: say when the flow table is full
+
+When every way of a flow's hash bucket is taken, hardware refuses the
+hash-mode add and the driver passed up -EIO, the same code as a fault.
+The flowtable leaves the flow in software and re-offers it about once a
+second, and each re-offer logged
+
+  ppe_offload: replace failed at flow: -5
+
+at the printk ratelimit for as long as the bucket stayed full. That
+reads like a fault, never says the table is full, and floods the log of
+a busy router.
+
+Return -ENOSPC for a refused hash-mode add (any other refusal stays
+-EIO) and report it once per episode, with how many slots the driver
+has in use, so a full table can be told apart from a bucket that filled
+early. An episode ends after a minute without a refusal. Everything
+else at the flow stage, -EIO included, is still logged as before.
+
+On a GL-BE9300 (IPQ5332) filled with NATed UDP flows, the first
+refusal came with 1126 of 2048 slots in use, at about 750
+connections; past roughly 1150 connections in hardware every further
+add was refused and the overflow stayed on the software path. No add
+returned an index of 2048 or above, which agrees with the 2048-entry
+MPPE table.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flow.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flow.c
+@@ -72,8 +72,13 @@
+ 	if (ret)
+ 		return ret;
+ 
++	/* A hash-mode add is refused when no way of the key's bucket is free:
++	 * the only refusal seen on the GL-BE9300, and what callers need to
++	 * tell from a fault. Any other refusal stays -EIO.
++	 */
+ 	if (FIELD_GET(PPE_IN_FLOW_TBL_OP_RSLT_OP_RSLT, rslt))
+-		return -EIO;
++		return op_type == PPE_FLOW_TBL_OP_ADD && mode == PPE_FLOW_OP_MODE_HASH ?
++		       -ENOSPC : -EIO;
+ 
+ 	*index = FIELD_GET(PPE_IN_FLOW_TBL_OP_RSLT_ENTRY_INDEX, rslt);
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -167,6 +167,7 @@
+ #include <linux/in6.h>
+ #include <linux/ip.h>
+ #include <linux/inetdevice.h>
++#include <linux/jiffies.h>
+ #include <linux/list.h>
+ #include <linux/mutex.h>
+ #include <linux/netdevice.h>
+@@ -310,6 +311,9 @@
+  * were programmed and read back at init, see ppe_offload_hdr_exception_init().
+  * IPv6 flows are only offloaded when they were; IPv4 keeps its measured
+  * behaviour either way.
++ * @flow_full_last: jiffies of the last hash-mode add hardware refused for
++ * want of a free slot, 0 while none has been refused; under @lock. See
++ * ppe_offload_flow_tbl_full().
+  * @lock: Serializes the whole replace/destroy sequence -- looking up
+  * @flow_table, allocating from the pools, and programming hardware --
+  * against concurrent calls for different flows, mirroring
+@@ -340,6 +344,7 @@
+ 	 * (ppe_offload_ipv6_selftest()). Without that IPv6 is declined.
+ 	 */
+ 	bool ipv6_table_ok;
++	unsigned long flow_full_last;
+ 	struct mutex lock;
+ 	DECLARE_HASHTABLE(dsa_fixed_ht, 9);
+ 	spinlock_t dsa_fixed_lock; /* see @dsa_fixed_ht */
+@@ -852,6 +857,35 @@
+ 			priv->flow_owner[entry->flow_index + i] = NULL;
+ }
+ 
++/* A full table is an ordinary state on a busy router, not a fault, and the
++ * flowtable re-offers every flow left in software about once a second, so
++ * it is said once per episode: an episode ends after this long without
++ * another refusal.
++ */
++#define PPE_OFFLOAD_FLOW_FULL_QUIET	(60 * HZ)
++
++/* Hardware refuses a hash-mode add (-ENOSPC) when every way of the key's
++ * bucket is taken. Report it with the table's occupancy, counted from the
++ * driver's own slot bookkeeping, so a full table can be told apart from a
++ * bucket that filled early. Under priv->lock.
++ */
++static void ppe_offload_flow_tbl_full(struct ppe_offload_priv *priv)
++{
++	bool new_episode = !priv->flow_full_last ||
++			   time_after(jiffies, priv->flow_full_last + PPE_OFFLOAD_FLOW_FULL_QUIET);
++	unsigned int i, used = 0;
++
++	priv->flow_full_last = jiffies ?: 1;
++	if (!new_episode)
++		return;
++
++	for (i = 0; i < PPE_OFFLOAD_FLOW_TBL_ENTRIES; i++)
++		if (priv->flow_owner[i])
++			used++;
++	pr_info("ppe_offload: flow table full: no free slot in the flow's hash bucket (%u of %u slots in use), flows hashing there stay in software\n",
++		used, PPE_IN_FLOW_TBL_ENTRIES);
++}
++
+ static u64 ppe_offload_counter_delta(u64 now, u64 prev, u64 mask);
+ static void ppe_offload_flow_forget(struct ppe_offload_priv *priv,
+ 				    struct ppe_offload_flow_entry *entry);
+@@ -932,6 +966,7 @@
+ 	bool src_via_ingress = false;
+ 	bool ingress_dsa = false;
+ 	bool ip6_mangled = false;
++	bool flow_full = false;
+ 	bool pub_ip = false;
+ 	bool ipv6 = false;
+ 	unsigned int vlan_pops = 0;
+@@ -1570,6 +1605,10 @@
+ 	ret = ppe_flow_entry_add(priv->ppe_dev, PPE_FLOW_OP_MODE_HASH, flow_words, flow_num_words,
+ 				 &flow_index);
+ 	if (ret) {
++		if (ret == -ENOSPC) {
++			ppe_offload_flow_tbl_full(priv);
++			flow_full = true;
++		}
+ 		stage = "flow";
+ 		goto deref_host;
+ 	}
+@@ -1671,9 +1710,10 @@
+ 	 * direction of a connection whose one direction was declined, or
+ 	 * a flow hardware stopped matching. mtk_ppe_offload returns the
+ 	 * same -EEXIST for this; only a genuine programming failure is
+-	 * worth a line.
++	 * worth a line. A full flow table was already said, once per
++	 * episode, by ppe_offload_flow_tbl_full().
+ 	 */
+-	if (stage && ret != -EEXIST) {
++	if (stage && ret != -EEXIST && !flow_full) {
+ 		/* A host table bucket with no room for one more address fails
+ 		 * the add the same way a fault does. The remote peers of DNAT
+ 		 * flows can fill it in ordinary use, and the flowtable re-offers

@@ -1,0 +1,83 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: clear the ring to queue map on reset
+
+edma_cfg_rx_desc_rings_reset_queue_mapping() is called before the Rx
+rings are configured and to unwind a failed mapping, and its error
+string says it unmaps the rings to disable their backpressure
+configuration.  It passes the same queue list that the mapping path
+passes, so every entry it is meant to withdraw is written again and
+nothing is cleared.
+
+Map no queues instead, which writes an empty queue bitmap.  Document
+that contract on ppe_edma_ring_to_queues_config(), whose loop over
+@queues does not run when @num is zero.  This clears the ten bitmap
+words the driver programs; the remaining words of the 64-byte entry are
+not written by any code in this driver.
+
+The unwind that calls this from the mapping path tests its return value
+inverted, so it reports an error when the reset succeeds and stays quiet
+when it fails.  The return value is also held in a u32 while the
+function returns a negative errno.
+
+rx_queues[] has no remaining users.  It was a non-static global that
+belonged to this file.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -32,8 +32,6 @@
+ /* EDMA Queue ID to Ring ID Table. */
+ #define EDMA_QID2RID_TABLE_MEM(q)	(0xb9000 + (0x4 * (q)))
+ 
+-int rx_queues[] = {0, 8, 16, 24};
+-
+ static u32 edma_rx_ring_queue_map[][EDMA_MAX_CORE] = {{ 0, 8, 16, 24 },
+ 						{ 1, 9, 17, 25 },
+ 						{ 2, 10, 18, 26 },
+@@ -49,7 +47,8 @@ static int edma_cfg_rx_desc_rings_reset_
+ {
+ 	struct edma_hw_info *hw_info = edma_ctx->hw_info;
+ 	struct edma_ring_info *rx = hw_info->rx;
+-	u32 i, ret;
++	u32 i;
++	int ret;
+ 
+ 	for (i = 0; i < rx->num_rings; i++) {
+ 		struct edma_rxdesc_ring *rxdesc_ring;
+@@ -57,7 +56,7 @@ static int edma_cfg_rx_desc_rings_reset_
+ 		rxdesc_ring = &edma_ctx->rx_rings[i];
+ 
+ 		ret = ppe_edma_ring_to_queues_config(edma_ctx->ppe_dev, rxdesc_ring->ring_id,
+-						     ARRAY_SIZE(rx_queues), rx_queues);
++						     0, NULL);
+ 		if (ret) {
+ 			pr_err("Error in unmapping rxdesc ring %d to PPE queue mapping to disable its backpressure configuration\n",
+ 			       i);
+@@ -143,7 +142,7 @@ static int edma_cfg_rx_desc_ring_to_queu
+ 		if (ret) {
+ 			pr_err("Error in configuring Rx ring to PPE queue mapping, ret: %d, id: %d\n",
+ 			       ret, rxdesc_ring->ring_id);
+-			if (!edma_cfg_rx_desc_rings_reset_queue_mapping())
++			if (edma_cfg_rx_desc_rings_reset_queue_mapping())
+ 				pr_err("Error in resetting Rx desc ring configurations\n");
+ 
+ 			return ret;
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_api.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_api.c
+@@ -92,11 +92,12 @@ int ppe_edma_queue_resource_get(struct p
+  * ppe_edma_ring_to_queues_config - Configure EDMA ring to queue mapping in PPE
+  * @ppe_dev: PPE device
+  * @ring_id: EDMA ring ID
+- * @num: Number of queues mapped to EDMA ring
+- * @queues: PPE queue IDs
++ * @num: Number of queues mapped to EDMA ring, zero to map none
++ * @queues: PPE queue IDs, not accessed when @num is zero
+  *
+  * Enable EDMA ring to PPE queue mapping configuration for packet
+- * receive to an EDMA ring.
++ * receive to an EDMA ring.  Mapping zero queues writes an empty queue
++ * bitmap, which leaves no queue associated with the ring.
+  *
+  * Return 0 on success, negative error code on failure.
+  */

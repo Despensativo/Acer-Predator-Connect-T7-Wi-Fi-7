@@ -1,0 +1,9 @@
+echo T7_NETWORK_PROBE_ONLY
+setenv ipaddr 192.168.1.1
+setenv serverip 192.168.1.5
+if tftpput 0x44000000 0x40 t7-probe-30fa04acf23b48a7a705e5455ae728a0.bin; then
+echo T7_CHECKPOINT_SENT
+else
+echo T7_CHECKPOINT_FAILED
+fi
+exit 0

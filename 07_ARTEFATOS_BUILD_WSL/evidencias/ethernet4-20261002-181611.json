@@ -1,0 +1,42 @@
+{
+  "timestamp": "2026-10-02T18:16:11.0775356-03:00",
+  "scope": "host_read_only_no_router_probe",
+  "adapter": {
+    "Name": "Ethernet 4",
+    "Status": "Up",
+    "LinkSpeed": "1 Gbps",
+    "ifIndex": 15
+  },
+  "ipv4": [
+    {
+      "IPAddress": "192.168.76.5",
+      "PrefixLength": 24,
+      "AddressState": 4,
+      "SkipAsSource": false
+    },
+    {
+      "IPAddress": "192.168.73.5",
+      "PrefixLength": 24,
+      "AddressState": 4,
+      "SkipAsSource": false
+    },
+    {
+      "IPAddress": "192.168.70.5",
+      "PrefixLength": 24,
+      "AddressState": 4,
+      "SkipAsSource": false
+    },
+    {
+      "IPAddress": "192.168.1.5",
+      "PrefixLength": 24,
+      "AddressState": 4,
+      "SkipAsSource": false
+    },
+    {
+      "IPAddress": "192.168.0.5",
+      "PrefixLength": 24,
+      "AddressState": 4,
+      "SkipAsSource": false
+    }
+  ]
+}

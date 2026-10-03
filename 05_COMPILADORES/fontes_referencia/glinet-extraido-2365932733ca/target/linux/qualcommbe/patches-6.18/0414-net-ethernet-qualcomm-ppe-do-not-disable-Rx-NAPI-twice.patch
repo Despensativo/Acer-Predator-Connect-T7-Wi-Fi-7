@@ -1,0 +1,38 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: do not disable Rx NAPI twice
+
+edma_cfg_rx_napi_delete() calls napi_disable() on every NAPI it deletes,
+and both of its callers, the edma_hw_configure() error unwind and
+edma_destroy(), have already called edma_cfg_rx_napi_disable() on the
+same instances immediately before.
+
+napi_disable() sets NAPI_STATE_SCHED and NAPI_STATE_NPSVC when it
+succeeds, and the next call waits for exactly those bits to clear:
+
+	while (val & (NAPIF_STATE_SCHED | NAPIF_STATE_NPSVC)) {
+		usleep_range(20, 200);
+		val = READ_ONCE(n->state);
+	}
+
+Nothing clears them until the NAPI is enabled again, so the second
+disable spins forever.  Removing the module, or unwinding a failed
+edma_hw_configure(), hangs in the delete helper with the rings still
+allocated and their buffers still mapped.
+
+Delete the NAPI without disabling it again.  Both callers disable first,
+and the Rx NAPIs are enabled in the statement that follows the one that
+adds them, so there is no path that reaches the delete with a NAPI that
+was never enabled.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -922,7 +922,6 @@ void edma_cfg_rx_napi_delete(void)
+ 		if (!rxdesc_ring->napi_added)
+ 			continue;
+ 
+-		napi_disable(&rxdesc_ring->napi);
+ 		netif_napi_del(&rxdesc_ring->napi);
+ 		rxdesc_ring->napi_added = false;
+ 	}

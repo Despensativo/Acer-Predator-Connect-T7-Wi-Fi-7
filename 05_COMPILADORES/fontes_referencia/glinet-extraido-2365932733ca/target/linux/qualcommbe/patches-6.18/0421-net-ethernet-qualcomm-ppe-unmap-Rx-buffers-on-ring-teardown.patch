@@ -1,0 +1,130 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: unmap Rx buffers on ring teardown
+
+Both Rx ring cleanup paths walk the descriptors that still hold a buffer
+and free the skb behind each one without unmapping the buffer first.
+edma_cfg_rx_fill_ring_cleanup() walks the fill descriptors the driver
+posted that the device has not taken, and edma_cfg_rx_desc_ring_cleanup()
+walks the descriptors the device has written that NAPI has not reaped;
+the buffer in each of them is mapped, and edma_rx_reap() is the only
+place that unmaps.
+
+Tearing the rings down therefore leaks a streaming mapping for every
+buffer in flight, and in page mode the page is handed back through the
+skb fragment while it is still mapped.  The rings are filled by
+edma_cfg_rx_rings(), so the unwind inside edma_cfg_rx_rings_setup() is
+not affected; what leaks close to a full ring per fill ring is an unwind
+from a failed edma_hw_configure() after the rings have been filled, and
+every module unload.
+
+Unmap each buffer with the length, direction and mapping type used when
+it was posted, before the skb that carries it is freed.  The fill
+descriptor has no accessor for its buffer address, so add one next to
+the setter; word0 is byte swapped by EDMA_RXFILL_ENDIAN_SET(), and the
+new accessor swaps it back the way EDMA_RXDESC_BUFFER_ADDR_GET() does.
+
+The descriptor ring cleanup now reads its fill ring's buffer geometry,
+and edma_cfg_rx_rings_cleanup() cleans the fill rings first.  That is
+safe because fill ring cleanup releases only the descriptor memory and
+the rings themselves are freed after both loops, but it is a dependency
+the order does not show.
+
+The rings are only disabled, not drained, before this runs, so a buffer
+the device is still writing is unmapped underneath it, and one taken
+from the fill ring but not yet produced into the descriptor ring is in
+neither walk.  That is not new, and wants a separate look at the ring
+disable path.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -405,10 +405,15 @@ void edma_cfg_rx_ring_mappings(void)
+ static void edma_cfg_rx_fill_ring_cleanup(struct edma_rxfill_ring *rxfill_ring)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	bool page_mode = rxfill_ring->page_mode;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	struct device *dev = ppe_dev->dev;
+ 	u16 cons_idx, curr_idx;
+ 	u32 data, reg;
++	u32 dma_map_size;
++
++	dma_map_size = rxfill_ring->alloc_size - EDMA_RX_SKB_HEADROOM -
++		       NET_IP_ALIGN;
+ 
+ 	/* Get RxFill ring producer index */
+ 	curr_idx = rxfill_ring->prod_idx & EDMA_RXFILL_PROD_IDX_MASK;
+@@ -421,6 +426,7 @@ static void edma_cfg_rx_fill_ring_cleanu
+ 	while (curr_idx != cons_idx) {
+ 		struct edma_rxfill_desc *rxfill_desc;
+ 		struct sk_buff *skb;
++		dma_addr_t dma_addr;
+ 
+ 		/* Get RxFill descriptor */
+ 		rxfill_desc = EDMA_RXFILL_DESC(rxfill_ring, cons_idx);
+@@ -435,6 +441,14 @@ static void edma_cfg_rx_fill_ring_cleanu
+ 			continue;
+ 		}
+ 
++		dma_addr = EDMA_RXFILL_BUFFER_ADDR_GET(rxfill_desc);
++		if (likely(!page_mode))
++			dma_unmap_single(dev, dma_addr, dma_map_size,
++					 DMA_FROM_DEVICE);
++		else
++			dma_unmap_page(dev, dma_addr, PAGE_SIZE,
++				       DMA_FROM_DEVICE);
++
+ 		dev_kfree_skb_any(skb);
+ 	}
+ 
+@@ -490,10 +504,15 @@ static int edma_cfg_rx_desc_ring_dma_all
+ 
+ static void edma_cfg_rx_desc_ring_cleanup(struct edma_rxdesc_ring *rxdesc_ring)
+ {
++	bool page_mode = rxdesc_ring->rxfill->page_mode;
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	struct device *dev = ppe_dev->dev;
+ 	u32 prod_idx, cons_idx, reg;
++	u32 dma_map_size;
++
++	dma_map_size = rxdesc_ring->rxfill->alloc_size - EDMA_RX_SKB_HEADROOM -
++		       NET_IP_ALIGN;
+ 
+ 	/* Get Rxdesc consumer & producer indices */
+ 	cons_idx = rxdesc_ring->cons_idx & EDMA_RXDESC_CONS_IDX_MASK;
+@@ -507,6 +526,7 @@ static void edma_cfg_rx_desc_ring_cleanu
+ 		struct edma_rxdesc_pri *rxdesc_pri =
+ 			EDMA_RXDESC_PRI_DESC(rxdesc_ring, cons_idx);
+ 		struct sk_buff *skb;
++		dma_addr_t dma_addr;
+ 
+ 		/* Update consumer index */
+ 		cons_idx = (cons_idx + 1) & EDMA_RX_RING_SIZE_MASK;
+@@ -519,6 +539,14 @@ static void edma_cfg_rx_desc_ring_cleanu
+ 			continue;
+ 		}
+ 
++		dma_addr = EDMA_RXDESC_BUFFER_ADDR_GET(rxdesc_pri);
++		if (likely(!page_mode))
++			dma_unmap_single(dev, dma_addr, dma_map_size,
++					 DMA_FROM_DEVICE);
++		else
++			dma_unmap_page(dev, dma_addr, PAGE_SIZE,
++				       DMA_FROM_DEVICE);
++
+ 		dev_kfree_skb_any(skb);
+ 	}
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
+@@ -124,6 +124,8 @@
+ }
+ 
+ #define EDMA_RXFILL_BUFFER_ADDR_SET(desc, addr)	(((desc)->word0) = (u32)(addr))
++#define EDMA_RXFILL_BUFFER_ADDR_GET(desc)	\
++				((u32)(le32_to_cpu((__force __le32)((desc)->word0))))
+ 
+ /* Opaque values are set in word2 and word3, they are not accessed by the EDMA HW,
+  * so endianness conversion is not needed.

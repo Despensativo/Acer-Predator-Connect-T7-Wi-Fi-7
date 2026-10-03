@@ -1,0 +1,7 @@
+ffffffc0809465fc d __initcall__kmod_netconsole__978_2041_init_netconsole7
+ffffffc080914aa4 t init_netconsole
+ffffffc0802fc820 T pstore_register
+ffffffc0805103e0 t qcom_ppe_probe
+ffffffc0802fdbe0 t ramoops_probe
+ffffffc08002c360 T secondary_start_kernel
+ffffffc0808f0854 T start_kernel

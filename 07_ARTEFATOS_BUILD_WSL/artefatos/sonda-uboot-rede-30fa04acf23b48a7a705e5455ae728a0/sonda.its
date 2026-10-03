@@ -1,0 +1,11 @@
+/dts-v1/;
+/ {
+ description = "Flash T7 network probe";
+ #address-cells = <1>;
+ images { script {
+  description = "Read upload buffer; no kernel boot or persistent commands";
+  data = /incbin/("script.txt");
+  type = "script"; arch = "arm"; os = "linux"; compression = "none";
+  hash@1 { algo = "crc32"; };
+ }; };
+};

@@ -1,0 +1,648 @@
+From: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: follow bridge FDB moves for
+ port-addressed flows
+
+A flow towards an rtl8_4 user port carries the port in its emulated head
+tag, so hardware keeps delivering to the port the flow was resolved for
+after the client has moved to another one. The software flowtable has
+the same blind spot (its direct transmit path is bound to the port it
+resolved at creation) and nothing lets a driver tear a flow down: the
+cookie is opaque and nf_flow_table_cleanup() is per interface and lives
+in a module this driver does not depend on. What the driver can do is
+follow the move.
+
+Register a switchdev notifier. The bridge learns the client's new port
+from the first frame that reaches the CPU (ARP, DHCP, a new
+connection's SYN) and reports it as SWITCHDEV_FDB_ADD_TO_DEVICE on the
+new port device. Only a move within the flow's own VLAN-unaware
+bridge, learned without a VLAN, counts: that is the one domain in
+which the bridge itself would send the client's traffic to the new
+port, whereas another bridge on the same switch learning the address
+(a guest port claiming a trusted client's MAC) must not pull the flow
+across, which the emulated head tag would otherwise do with no FDB or
+VLAN check in the switch. Within the bridge the follower trusts
+learning exactly as far as the bridge does. The atomic notifier looks
+the address up in a hash of the fixed-port flows, queues nothing for
+the addresses the bridge learns all day, for another bridge's learns,
+for locked (MAB) entries or while a move for the address is already
+waiting, and caps the items in flight; the work also requires the new
+port to be forwarding. For every matching flow not already on that
+port, the work item takes a nexthop with the new
+port mask, deletes the flow entry and writes it back at the same index
+(the key is unchanged, so the slot hardware hashed it to is still the
+right one) with the new nexthop, and drops the old nexthop. A packet
+arriving in between is punted to the CPU. The counters are zeroed by
+the add, so the stats baseline restarts. Should the write-back fail,
+the flow is forgotten altogether (its table entries released, its slot
+disowned) so that the flowtable's next refresh re-offers it as a new
+flow rather than collecting -EEXIST for a zombie. The move is only
+noticed when a frame of the moved client reaches the CPU (ARP, a lease
+renewal, a new connection): its own hardware-forwarded packets never
+reach the bridge, and the switch driver reports no hardware learning.
+The work runs under RTNL (DSA tears its ports down under it) and the
+driver's own lock, on an ordered workqueue so one move is done before
+the next is looked at. A tag_8021q port needs none of this: its bridge
+VID leaves the choice to the switch's FDB.
+
+The re-point also reaches a corner of ppe_flow_entry_add() nothing did
+before: a counter clear failing after the add itself landed used to
+report an error for an entry that was programmed, and every caller
+releases the entries it points at on error. It now takes the entry back
+out (best effort) before returning the error.
+
+Compile-tested (x86 COMPILE_TEST, W=1, with and without NET_DSA) and
+checkpatch clean. Measured on a GL-BE9300 with rtl8_4: a client
+re-cabled from lan3 to lan1 during a download was back at 2353 Mbit/s
+in hardware at 99.7% idle about 7 s later, 5 s of which were the link
+coming up, with "moved to lan1: 2 flow(s) re-pointed, 0 not re-pointed"
+in the log. On tag_8021q, where the switch's FDB does the following, a
+move the other way (lan1 to lan3, on an earlier build of the same path)
+resumed at 2354 Mbit/s with no driver involvement.
+
+Signed-off-by: Kamil Bienkiewicz <perceivalpercy@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_offload.c
+@@ -58,6 +58,9 @@
+  *   bridge, a port behind a LAG conduit, a VLAN push on top of a DSA
+  *   port, a tagger this code has no encapsulation for, and a conduit
+  *   whose parser is not programmed for that tagger are all declined.
++ *   Where the inserts name the port outright (rtl8_4), a client that
++ *   its own VLAN-unaware bridge later learns on another of its ports
++ *   has its flows re-pointed there, see ppe_offload_fdb_event().
+  * - Tagged ingress (the reply direction on a tagged WAN) arrives as a
+  *   FLOW_DISSECTOR_KEY_VLAN match on the real device plus a
+  *   FLOW_ACTION_VLAN_POP. The flow key cannot carry the VLAN, only the
+@@ -135,10 +138,12 @@
+  * (measured, both taggers).
+  */
+ 
++#include <linux/atomic.h>
+ #include <linux/bitfield.h>
+ #include <linux/dsa/8021q.h>
+ #include <linux/errno.h>
+ #include <linux/etherdevice.h>
++#include <linux/hashtable.h>
+ #include <linux/if_bridge.h>
+ #include <linux/if_ether.h>
+ #include <linux/if_vlan.h>
+@@ -152,9 +157,12 @@
+ #include <net/dsa.h>
+ #include <linux/rhashtable.h>
+ #include <linux/slab.h>
++#include <linux/spinlock.h>
+ #include <linux/tcp.h>
++#include <linux/workqueue.h>
+ #include <net/flow_offload.h>
+ #include <net/pkt_cls.h>
++#include <net/switchdev.h>
+ 
+ #include "edma_port.h"
+ #include "ppe.h"
+@@ -199,6 +207,27 @@
+ 	bool flow_valid;
+ 	/* Only an SNAT flow holds a public IP table entry. */
+ 	bool pub_ip_valid;
++	/* Set when the nexthop's tag inserts name a DSA user port outright
++	 * (struct ppe_offload_egress::dsa_fixed) and that port is in a
++	 * VLAN-unaware bridge: the entry sits in
++	 * ppe_offload_priv::dsa_fixed_ht so that the bridge learning @dmac
++	 * on another of its ports on the same switch can re-point it, for
++	 * which the programmed nexthop and flow entry are kept. @dsa_ds is
++	 * only ever compared, never dereferenced.
++	 */
++	bool dsa_fixed;
++	/* A move for @dmac is queued and has not looked at this entry yet;
++	 * under dsa_fixed_lock.
++	 */
++	bool move_pending;
++	struct hlist_node dsa_fixed_hnode;
++	const struct dsa_switch *dsa_ds;
++	int dsa_ifindex;
++	int dsa_bridge_ifindex;
++	unsigned int dsa_index;
++	u8 dmac[ETH_ALEN];
++	struct ppe_nexthop_entry nexthop;
++	struct ppe_flow_ipv4_nat_entry flow_ipv4;
+ 	/* Hardware counters are cumulative and not clear-on-read, so keep the
+ 	 * previous reading and report the difference. lastused is refreshed only
+ 	 * when the packet count actually moves, which is what tells the flowtable
+@@ -240,6 +269,17 @@
+  * @flow_table, allocating from the pools, and programming hardware --
+  * against concurrent calls for different flows, mirroring
+  * mtk_ppe_offload.c's single mtk_flow_offload_mutex.
++ * @dsa_fixed_ht: Flows whose tag inserts name a DSA user port outright,
++ * hashed by destination MAC, see ppe_offload_fdb_event(). Modified under
++ * @lock and @dsa_fixed_lock together, read under either; an entry's port
++ * (dsa_ifindex) is updated under @lock with WRITE_ONCE() for the
++ * notifier's READ_ONCE() under @dsa_fixed_lock.
++ * @dsa_fixed_lock: Lets the atomic switchdev notifier look @dsa_fixed_ht up.
++ * @fdb_wq: Ordered workqueue the FDB-move follower runs on, so that a
++ * move's re-pointing is done by the time a later move is looked at.
++ * @fdb_nb: The switchdev notifier that feeds it.
++ * @fdb_moves: Move work items queued and not yet done, see
++ * PPE_OFFLOAD_FDB_MOVES_MAX.
+  */
+ struct ppe_offload_priv {
+ 	struct ppe_device *ppe_dev;
+@@ -250,6 +290,11 @@
+ 	struct ppe_offload_flow_entry **flow_owner;
+ 	bool tcp_exceptions_ok;
+ 	struct mutex lock;
++	DECLARE_HASHTABLE(dsa_fixed_ht, 9);
++	spinlock_t dsa_fixed_lock; /* see @dsa_fixed_ht */
++	struct workqueue_struct *fdb_wq;
++	struct notifier_block fdb_nb;
++	atomic_t fdb_moves;
+ };
+ 
+ static LIST_HEAD(ppe_offload_block_cb_list);
+@@ -387,6 +432,9 @@
+  * @ctag: Insert a C-VLAN tag with @cvid on egress.
+  * @cvid: TCI of that tag.
+  * @dsa_index: Switch port index when the egress is a DSA user port.
++ * @bridge_ifindex: ifindex of the VLAN-unaware bridge that port is in, or 0.
++ * @dsa_ifindex: That user port's ifindex.
++ * @dsa_ds: That user port's switch, for identity comparison only.
+  * @dsa: Whether the egress is a DSA user port at all.
+  * @dsa_fixed: Whether the tag inserts name that port outright (rather than
+  * leaving the choice to the switch's own FDB), see ppe_offload_dsa_egress().
+@@ -398,6 +446,9 @@
+ 	bool ctag;
+ 	u16 cvid;
+ 	unsigned int dsa_index;
++	int dsa_ifindex;
++	const struct dsa_switch *dsa_ds;
++	int bridge_ifindex;
+ 	bool dsa;
+ 	bool dsa_fixed;
+ };
+@@ -519,6 +570,7 @@
+ 		bridge = NULL;
+ 	if (bridge) {
+ 		vlan_aware = br_vlan_enabled(bridge);
++		egress->bridge_ifindex = bridge->ifindex;
+ 		/* Read once: this is the DSA bookkeeping the residual race
+ 		 * in the function comment is about.
+ 		 */
+@@ -571,6 +623,8 @@
+ 	egress->dev = conduit;
+ 	egress->dsa = true;
+ 	egress->dsa_index = dp->index;
++	egress->dsa_ifindex = odev->ifindex;
++	egress->dsa_ds = dp->ds;
+ 
+ 	return 0;
+ }
+@@ -1199,6 +1253,22 @@
+ 	entry->lastused = jiffies;
+ 	priv->flow_owner[flow_index] = entry;
+ 
++	/* An unbridged port has no FDB to move the client with. */
++	if (egress.dsa_fixed && egress.bridge_ifindex) {
++		entry->dsa_fixed = true;
++		entry->dsa_ds = egress.dsa_ds;
++		entry->dsa_ifindex = egress.dsa_ifindex;
++		entry->dsa_bridge_ifindex = egress.bridge_ifindex;
++		entry->dsa_index = egress.dsa_index;
++		ether_addr_copy(entry->dmac, eth.bytes);
++		entry->nexthop = nexthop;
++		entry->flow_ipv4 = flow_ipv4;
++		spin_lock_bh(&priv->dsa_fixed_lock);
++		hash_add(priv->dsa_fixed_ht, &entry->dsa_fixed_hnode,
++			 ether_addr_to_u64(entry->dmac));
++		spin_unlock_bh(&priv->dsa_fixed_lock);
++	}
++
+ 	mutex_unlock(&priv->lock);
+ 
+ 	pr_debug("ppe_offload: accepted %s flow_index=%u host_index=%u nexthop_index=%u src=%pI4->%pI4 dst=%pI4->%pI4 odev=%s egress=%s\n",
+@@ -1262,6 +1332,11 @@
+ 	}
+ 
+ 	rhashtable_remove_fast(&priv->flow_table, &entry->node, ppe_offload_flow_ht_params);
++	if (entry->dsa_fixed) {
++		spin_lock_bh(&priv->dsa_fixed_lock);
++		hash_del(&entry->dsa_fixed_hnode);
++		spin_unlock_bh(&priv->dsa_fixed_lock);
++	}
+ 
+ 	/* Clear flow_owner[] by pointer identity, unconditionally on
+ 	 * flow_valid: if this entry's own add later failed after already
+@@ -1293,6 +1368,359 @@
+ 	return 0;
+ }
+ 
++#if IS_ENABLED(CONFIG_NET_DSA) && IS_ENABLED(CONFIG_NET_SWITCHDEV)
++/* Following bridge FDB moves for flows that name a switch port outright.
++ *
++ * A flow towards an rtl8_4 user port carries the port in its emulated head
++ * tag (see ppe_offload_dsa_egress()), so hardware keeps delivering to the
++ * port the flow was resolved for even after the client has moved to another
++ * one. The software flowtable has the same blind spot -- its direct transmit
++ * path is bound to the port it resolved at creation -- and nothing lets a
++ * driver tear a flow down (the cookie is opaque). What the driver can do is
++ * follow the move: the bridge learns the client's new port from the first
++ * frame that reaches the CPU and reports it as SWITCHDEV_FDB_ADD_TO_DEVICE
++ * on the new port device, and every fixed-port flow for that MAC is then
++ * re-pointed at the new port, in place. That first frame is the limit of
++ * this: a moved client's own hardware-forwarded packets never reach the
++ * bridge, so the move is noticed when the client next ARPs, renews its
++ * lease or opens a connection (the switch driver reports no hardware
++ * learning to the bridge), and until then its inbound traffic stays on the
++ * old port, exactly as the software flowtable would leave it for good. A
++ * tag_8021q port needs none of this: its bridge VID leaves the choice to
++ * the switch's own FDB.
++ *
++ * Only a move within the flow's own VLAN-unaware bridge counts, learned
++ * without a VLAN: that is the one domain in which the bridge itself would
++ * send the client's traffic to the new port. Another bridge on the same
++ * switch learning the address (a guest port claiming a trusted client's
++ * MAC) must not pull the flow across, which it otherwise would, since the
++ * emulated head tag addresses the port outright with no FDB or VLAN check
++ * in the switch. Within the bridge the follower trusts learning exactly as
++ * far as the bridge does: a port spoofing a client's MAC diverts the
++ * client's new traffic in software and its established hardware flows
++ * here.
++ *
++ * The notifier chain is atomic, so the work is done from a workqueue, and
++ * only queued when the address has a fixed-port flow in that bridge that
++ * is not already waiting for a move (the bridge notifies every address it
++ * learns, at the rate a host cares to make up source MACs, and a host
++ * with two ports can flap one address between them as fast as it likes);
++ * a small cap on the items in flight bounds the rest. The queued item pins
++ * the port device.
++ *
++ * Measured on a GL-BE9300: a client re-cabled from lan3 to lan1 during a
++ * download was back at 2353 Mbit/s in hardware about 7 s later, 5 s of
++ * which were the link coming up, with both of its flows re-pointed.
++ */
++/* Move work items in flight at most; a learn arriving beyond that is
++ * dropped, and the next learn of the address re-arms it.
++ */
++#define PPE_OFFLOAD_FDB_MOVES_MAX	64
++
++struct ppe_offload_fdb_move {
++	struct work_struct work;
++	struct ppe_offload_priv *priv;
++	struct net_device *dev;
++	netdevice_tracker tracker;
++	u8 addr[ETH_ALEN];
++};
++
++/* Drop a tracked flow whose hardware entry is already gone: release its
++ * table entries and forget its cookie, so that a later refresh from the
++ * flowtable re-offers it as a new flow. Called under priv->lock.
++ */
++static void ppe_offload_flow_forget(struct ppe_offload_priv *priv,
++				    struct ppe_offload_flow_entry *entry)
++{
++	rhashtable_remove_fast(&priv->flow_table, &entry->node, ppe_offload_flow_ht_params);
++	if (entry->dsa_fixed) {
++		spin_lock_bh(&priv->dsa_fixed_lock);
++		hash_del(&entry->dsa_fixed_hnode);
++		spin_unlock_bh(&priv->dsa_fixed_lock);
++	}
++	if (priv->flow_owner[entry->flow_index] == entry)
++		priv->flow_owner[entry->flow_index] = NULL;
++	ppe_host_pool_deref(priv->ppe_dev, &priv->host_pool, entry->host_index);
++	ppe_nexthop_pool_deref(priv->ppe_dev, &priv->nexthop_pool, entry->nexthop_index);
++	if (entry->pub_ip_valid)
++		ppe_pub_ip_pool_deref(priv->ppe_dev, &priv->pub_ip_pool, entry->pub_ip_index);
++	kfree(entry);
++}
++
++/* Re-point one fixed-port flow at @dp. Called under priv->lock.
++ *
++ * The key of the flow entry is unchanged, so it belongs in the slot
++ * hardware hashed it to: the entry is deleted and written back at that
++ * same index (PPE_FLOW_OP_MODE_INDEX) with the new nexthop; an
++ * index-mode write to the hashed slot is found by lookups like the
++ * hash-mode add was (measured: re-pointed flows resumed in hardware). A
++ * packet arriving in between is punted to the CPU, nothing more. The
++ * counters are zeroed by the add, so the stats baseline restarts with
++ * them.
++ *
++ * Return: 0 on success, a negative error code on failure. If the
++ * hardware entry is gone by then, the tracked flow is dropped altogether
++ * (ppe_offload_flow_forget()) so that the flowtable's next refresh
++ * re-offers it as a new flow instead of getting -EEXIST for a zombie.
++ */
++static int ppe_offload_flow_repoint(struct ppe_offload_priv *priv,
++				    struct ppe_offload_flow_entry *entry,
++				    const struct dsa_port *dp, const struct net_device *dev)
++{
++	struct ppe_flow_ipv4_nat_entry flow_ipv4 = entry->flow_ipv4;
++	struct ppe_nexthop_entry nexthop = entry->nexthop;
++	u32 flow_words[PPE_FLOW_TBL_ENTRY_WORDS];
++	u32 flow_index = entry->flow_index;
++	u32 nexthop_index;
++	int ret;
++
++	nexthop.cvid = BIT(dp->index);
++	ret = ppe_nexthop_pool_get_and_ref(priv->ppe_dev, &priv->nexthop_pool,
++					   &nexthop, &nexthop_index);
++	if (ret)
++		return ret;
++
++	flow_ipv4.nat_nexthop = nexthop_index;
++	ppe_flow_ipv4_nat_entry_encode(&flow_ipv4, flow_words);
++
++	ret = ppe_flow_entry_del(priv->ppe_dev, entry->flow_index);
++	if (ret)
++		goto deref_new;
++
++	ret = ppe_flow_entry_add(priv->ppe_dev, PPE_FLOW_OP_MODE_INDEX, flow_words, &flow_index);
++	if (ret) {
++		/* The old entry is gone. Disown the slot so nothing deletes
++		 * whatever lands there next, and forget the flow.
++		 */
++		if (priv->flow_owner[entry->flow_index] == entry)
++			priv->flow_owner[entry->flow_index] = NULL;
++		entry->flow_valid = false;
++		ppe_nexthop_pool_deref(priv->ppe_dev, &priv->nexthop_pool, nexthop_index);
++		ppe_offload_flow_forget(priv, entry);
++		return ret;
++	}
++
++	ppe_nexthop_pool_deref(priv->ppe_dev, &priv->nexthop_pool, entry->nexthop_index);
++	entry->nexthop_index = nexthop_index;
++	entry->nexthop = nexthop;
++	entry->flow_ipv4 = flow_ipv4;
++	/* The notifier reads this under dsa_fixed_lock only. */
++	WRITE_ONCE(entry->dsa_ifindex, dev->ifindex);
++	entry->dsa_index = dp->index;
++	entry->stats_packets = 0;
++	entry->stats_bytes = 0;
++
++	return 0;
++
++deref_new:
++	ppe_nexthop_pool_deref(priv->ppe_dev, &priv->nexthop_pool, nexthop_index);
++	return ret;
++}
++
++static void ppe_offload_fdb_move_work(struct work_struct *work)
++{
++	struct ppe_offload_fdb_move *move = container_of(work, struct ppe_offload_fdb_move, work);
++	struct ppe_offload_priv *priv = move->priv;
++	struct ppe_offload_flow_entry *entry;
++	unsigned int moved = 0, failed = 0;
++	struct edma_port_priv *port_priv;
++	struct net_device *bridge;
++	struct net_device *conduit;
++	struct hlist_node *tmp;
++	struct dsa_port *dp;
++
++	/* DSA tears its ports down under RTNL, and the device reference
++	 * alone keeps only the netdevice, not its port, alive.
++	 */
++	rtnl_lock();
++
++	/* The port may have left DSA, or its bridge, while this was queued. */
++	dp = dsa_port_from_netdev(move->dev);
++	if (IS_ERR(dp) || dp->index >= PPE_OFFLOAD_RTL8_4_RX_BITS)
++		goto out;
++	bridge = dsa_port_bridge_dev_get(dp);
++	if (!bridge || br_vlan_enabled(bridge))
++		goto out;
++
++	/* The bridge learns on a port before it forwards to it; a port it
++	 * would not deliver to is no destination for hardware either.
++	 */
++	if (dp->stp_state != BR_STATE_FORWARDING)
++		goto out;
++
++	/* What ppe_offload_dsa_egress() required of the original port: the
++	 * new one must hang off the same aliased EDMA conduit, whose PPE
++	 * port the kept nexthop names.
++	 */
++	if (dp->cpu_port_in_lag)
++		goto out;
++	conduit = dp->cpu_dp->conduit;
++	if (!conduit || !edma_port_is_edma_netdev(conduit))
++		goto out;
++	port_priv = netdev_priv(conduit);
++	if (READ_ONCE(port_priv->parser_state) != EDMA_PARSER_DSA_RTL8_4)
++		goto out;
++
++	mutex_lock(&priv->lock);
++
++	/* @lock keeps the entries alive; a failed re-point drops its entry. */
++	hash_for_each_possible_safe(priv->dsa_fixed_ht, entry, tmp, dsa_fixed_hnode,
++				    ether_addr_to_u64(move->addr)) {
++		if (!entry->flow_valid || entry->dsa_ds != dp->ds ||
++		    entry->nexthop.port != port_priv->ppe_port->port_id ||
++		    entry->dsa_bridge_ifindex != bridge->ifindex ||
++		    entry->dsa_ifindex == move->dev->ifindex ||
++		    !ether_addr_equal(entry->dmac, move->addr))
++			continue;
++
++		if (ppe_offload_flow_repoint(priv, entry, dp, move->dev))
++			failed++;
++		else
++			moved++;
++	}
++
++	mutex_unlock(&priv->lock);
++
++	/* A MAC flapping between two ports (a loop, a misbehaving client)
++	 * would otherwise turn this into a log storm.
++	 */
++	if (moved || failed)
++		pr_info_ratelimited("ppe_offload: %pM moved to %s: %u flow(s) re-pointed, %u not re-pointed\n",
++				    move->addr, netdev_name(move->dev), moved, failed);
++
++out:
++	rtnl_unlock();
++	/* Whether or not the move was applied, let the next learn of this
++	 * address queue again.
++	 */
++	spin_lock_bh(&priv->dsa_fixed_lock);
++	hash_for_each_possible(priv->dsa_fixed_ht, entry, dsa_fixed_hnode,
++			       ether_addr_to_u64(move->addr)) {
++		if (ether_addr_equal(entry->dmac, move->addr))
++			entry->move_pending = false;
++	}
++	spin_unlock_bh(&priv->dsa_fixed_lock);
++	atomic_dec(&priv->fdb_moves);
++	netdev_put(move->dev, &move->tracker);
++	kfree(move);
++}
++
++static int ppe_offload_fdb_event(struct notifier_block *nb, unsigned long event, void *ptr)
++{
++	struct ppe_offload_priv *priv = container_of(nb, struct ppe_offload_priv, fdb_nb);
++	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
++	const struct switchdev_notifier_fdb_info *fdb_info = ptr;
++	struct ppe_offload_flow_entry *entry;
++	struct ppe_offload_fdb_move *move;
++	struct net_device *bridge;
++	bool wanted = false;
++
++	if (event != SWITCHDEV_FDB_ADD_TO_DEVICE)
++		return NOTIFY_DONE;
++
++	/* The bridge reports a local (its own) address against the bridge
++	 * device, only a DSA user port can be the new home of a client this
++	 * driver addresses by port, a VLAN-aware bridge's entries carry a
++	 * VID this cannot follow, and a locked entry (MAB) is the bridge
++	 * withholding forwarding, not granting it.
++	 */
++	if (fdb_info->is_local || fdb_info->vid || fdb_info->locked ||
++	    !dsa_user_dev_check(dev))
++		return NOTIFY_DONE;
++
++	/* The chain runs under RCU, which is what the upper lookup needs. */
++	bridge = netdev_master_upper_dev_get_rcu(dev);
++	if (!bridge || !netif_is_bridge_master(bridge))
++		return NOTIFY_DONE;
++
++	if (atomic_read(&priv->fdb_moves) >= PPE_OFFLOAD_FDB_MOVES_MAX)
++		return NOTIFY_DONE;
++
++	/* Only an address with a live fixed-port flow of this very bridge
++	 * on some other port, not already waiting for a move, is worth a
++	 * work item; everything is re-checked under RTNL there.
++	 */
++	spin_lock_bh(&priv->dsa_fixed_lock);
++	hash_for_each_possible(priv->dsa_fixed_ht, entry, dsa_fixed_hnode,
++			       ether_addr_to_u64(fdb_info->addr)) {
++		if (!ether_addr_equal(entry->dmac, fdb_info->addr) ||
++		    entry->dsa_bridge_ifindex != bridge->ifindex ||
++		    READ_ONCE(entry->dsa_ifindex) == dev->ifindex ||
++		    entry->move_pending)
++			continue;
++		entry->move_pending = true;
++		wanted = true;
++	}
++	spin_unlock_bh(&priv->dsa_fixed_lock);
++
++	if (!wanted)
++		return NOTIFY_DONE;
++
++	move = kzalloc(sizeof(*move), GFP_ATOMIC);
++	if (!move)
++		goto unmark;
++	atomic_inc(&priv->fdb_moves);
++
++	INIT_WORK(&move->work, ppe_offload_fdb_move_work);
++	move->priv = priv;
++	netdev_hold(dev, &move->tracker, GFP_ATOMIC);
++	move->dev = dev;
++	ether_addr_copy(move->addr, fdb_info->addr);
++	queue_work(priv->fdb_wq, &move->work);
++
++	return NOTIFY_DONE;
++
++unmark:
++	spin_lock_bh(&priv->dsa_fixed_lock);
++	hash_for_each_possible(priv->dsa_fixed_ht, entry, dsa_fixed_hnode,
++			       ether_addr_to_u64(fdb_info->addr)) {
++		if (ether_addr_equal(entry->dmac, fdb_info->addr))
++			entry->move_pending = false;
++	}
++	spin_unlock_bh(&priv->dsa_fixed_lock);
++
++	return NOTIFY_DONE;
++}
++
++static int ppe_offload_fdb_follow_init(struct ppe_offload_priv *priv)
++{
++	int ret;
++
++	priv->fdb_wq = alloc_ordered_workqueue("ppe_offload_fdb", 0);
++	if (!priv->fdb_wq)
++		return -ENOMEM;
++
++	priv->fdb_nb.notifier_call = ppe_offload_fdb_event;
++	ret = register_switchdev_notifier(&priv->fdb_nb);
++	if (ret) {
++		destroy_workqueue(priv->fdb_wq);
++		priv->fdb_wq = NULL;
++	}
++
++	return ret;
++}
++
++/* Stops new moves, then waits for the queued ones. */
++static void ppe_offload_fdb_follow_exit(struct ppe_offload_priv *priv)
++{
++	if (!priv->fdb_wq)
++		return;
++
++	unregister_switchdev_notifier(&priv->fdb_nb);
++	destroy_workqueue(priv->fdb_wq);
++	priv->fdb_wq = NULL;
++}
++#else
++static inline int ppe_offload_fdb_follow_init(struct ppe_offload_priv *priv)
++{
++	return 0;
++}
++
++static inline void ppe_offload_fdb_follow_exit(struct ppe_offload_priv *priv)
++{
++}
++#endif
++
+ /* Difference between two readings of a counter that is @mask wide.
+  *
+  * The counters are narrower than u64 (32-bit packets, 40-bit bytes) and wrap,
+@@ -1870,8 +2298,18 @@
+ 	if (ret)
+ 		return ret;
+ 
++	hash_init(priv->dsa_fixed_ht);
++	spin_lock_init(&priv->dsa_fixed_lock);
++	atomic_set(&priv->fdb_moves, 0);
++	ret = ppe_offload_fdb_follow_init(priv);
++	if (ret) {
++		rhashtable_destroy(&priv->flow_table);
++		return ret;
++	}
++
+ 	ret = flow_indr_dev_register(ppe_offload_indr_setup_tc_cb, priv);
+ 	if (ret) {
++		ppe_offload_fdb_follow_exit(priv);
+ 		rhashtable_destroy(&priv->flow_table);
+ 		return ret;
+ 	}
+@@ -1914,6 +2352,8 @@
+ 	struct ppe_offload_flow_entry *entry = ptr;
+ 	struct ppe_offload_priv *priv = arg;
+ 
++	if (entry->dsa_fixed)
++		hash_del(&entry->dsa_fixed_hnode);
+ 	if (priv->flow_owner[entry->flow_index] == entry)
+ 		priv->flow_owner[entry->flow_index] = NULL;
+ 	if (entry->flow_valid)
+@@ -1938,6 +2378,8 @@
+ 
+ 	flow_indr_dev_unregister(ppe_offload_indr_setup_tc_cb, priv,
+ 				  ppe_offload_indr_block_unbind);
++	/* No more moves once the flows below start going away. */
++	ppe_offload_fdb_follow_exit(priv);
+ 	/* Free the tracked flows AND tear down the hardware entries they own.
+ 	 * rhashtable_destroy() would leak every entry and leave hardware still
+ 	 * forwarding for them -- and the pools torn down just below would then
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flow.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flow.c
+@@ -221,6 +221,17 @@
+ 	 * occupant's lifetime totals to this flow on its first stats poll.
+ 	 */
+ 	ret = ppe_flow_counter_clear(ppe_dev, *index);
++	if (ret) {
++		/* The add has landed; callers treat an error as "nothing
++		 * programmed" and release the entries it points at, so take
++		 * it back out rather than leave a live entry nobody tracks.
++		 */
++		if (ppe_flow_tbl_op_wait(ppe_dev, PPE_FLOW_TBL_OP_DEL,
++					 PPE_FLOW_OP_MODE_INDEX, index))
++			dev_warn(ppe_dev->dev,
++				 "flow entry %u left programmed after a counter clear failure\n",
++				 *index);
++	}
+ out:
+ 	mutex_unlock(&ppe_dev->flow_tbl_lock);
+ 	return ret;

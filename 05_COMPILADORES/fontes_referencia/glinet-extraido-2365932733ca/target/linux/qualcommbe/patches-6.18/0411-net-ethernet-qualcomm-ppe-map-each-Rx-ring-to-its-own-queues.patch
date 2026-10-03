@@ -1,0 +1,64 @@
+From: Francois Guerraz <kubrick@fgv6.net>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: map each Rx ring to its own queues
+
+The PPE RING_Q_MAP table holds one queue bitmap per EDMA ring, at
+0x42a000 + 0x40 * ring_id, and records the set of PPE queues associated
+with that ring.  edma_cfg_rx_desc_ring_to_queue_mapping() writes the
+same list, rx_queues[] = { 0, 8, 16, 24 }, into the entry of every Rx
+ring, so each ring is given one queue from each of the four cores.
+
+That disagrees with the QID2RID table the driver programs in
+edma_cfg_rx_qid_to_rx_desc_ring_mapping(), which delivers unicast queue
+q to ring ring_start + q / EDMA_MAX_PRI_PER_CORE.  A ring is therefore
+associated with three queues that are never delivered to it, while seven
+of the eight unicast queues that are delivered to it are left out of its
+bitmap.  The driver's own log strings call this the ring's backpressure
+configuration, and the sibling driver for the same block in this tree,
+qualcommax qca_ppe_scheduler.c ppe_edma_ring_map_init(), programs
+disjoint per-ring queue sets in the same table, so one list shared by
+every ring is not the intended use.
+
+Give each ring the queues that QID2RID routes to it, taken from
+edma_rx_ring_queue_map[] which already describes that layout.  That
+table has one column per ring, so bound the ring count by its width
+where the ring count is already validated; the existing check there
+bounds it by num_possible_cpus(), which is not the same thing, and
+edma_cfg_rx_desc_ring_reset_queue_priority() indexes the same table.
+
+The first ring is also the target of the CPU port multicast queues.
+Those are not in its bitmap before or after this change.
+
+Signed-off-by: Francois Guerraz <kubrick@fgv6.net>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -92,7 +92,8 @@ static int edma_cfg_rx_desc_ring_reset_q
+ 	struct edma_ring_info *rx = hw_info->rx;
+ 	u32 i, ret;
+ 
+-	if (unlikely(rx->num_rings > num_possible_cpus())) {
++	if (unlikely(rx->num_rings > num_possible_cpus() ||
++		     rx->num_rings > ARRAY_SIZE(edma_rx_ring_queue_map[0]))) {
+ 		pr_err("Invalid count of rxdesc rings: %d\n",
+ 		       rx->num_rings);
+ 		return -EINVAL;
+@@ -127,13 +128,18 @@ static int edma_cfg_rx_desc_ring_to_queu
+ 
+ 	/* Rxdesc ring to PPE queue mapping */
+ 	for (i = 0; i < rx->num_rings; i++) {
++		int queues[ARRAY_SIZE(edma_rx_ring_queue_map)];
+ 		struct edma_rxdesc_ring *rxdesc_ring;
++		u32 pri;
+ 
+ 		rxdesc_ring = &edma_ctx->rx_rings[i];
+ 
++		for (pri = 0; pri < ARRAY_SIZE(queues); pri++)
++			queues[pri] = edma_rx_ring_queue_map[pri][i];
++
+ 		ret = ppe_edma_ring_to_queues_config(edma_ctx->ppe_dev,
+ 						     rxdesc_ring->ring_id,
+-						ARRAY_SIZE(rx_queues), rx_queues);
++						     ARRAY_SIZE(queues), queues);
+ 		if (ret) {
+ 			pr_err("Error in configuring Rx ring to PPE queue mapping, ret: %d, id: %d\n",
+ 			       ret, rxdesc_ring->ring_id);

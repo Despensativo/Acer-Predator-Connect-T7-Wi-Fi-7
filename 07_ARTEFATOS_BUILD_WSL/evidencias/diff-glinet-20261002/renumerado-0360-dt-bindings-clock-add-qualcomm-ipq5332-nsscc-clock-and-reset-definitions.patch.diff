@@ -1,0 +1,7 @@
+--- local/0366-dt-bindings-clock-add-qualcomm-ipq5332-nsscc-clock-and-reset-definitions.patch
++++ glinet/0360-dt-bindings-clock-add-qualcomm-ipq5332-nsscc-clock-and-reset-definitions.patch
+@@ -1,4 +1,3 @@
+-From c4da3a47dcdc60513ee775e6fdef394281360078 Mon Sep 17 00:00:00 2001
+ From: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
+ Subject: dt-bindings: clock: add Qualcomm IPQ5332 NSSCC clock and reset definitions
+ Date: Thu, 29 Aug 2024 13:58:25 +0530

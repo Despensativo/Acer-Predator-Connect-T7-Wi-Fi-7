@@ -1,0 +1,98 @@
+{
+  "checked_utc": "2026-10-03T02:53:34.283036+00:00",
+  "host": "192.168.73.2",
+  "source": "/dev/mtd20 rootfs_1",
+  "read_only": true,
+  "ubi_attach_performed": false,
+  "volume_payload_hashes_checked": false,
+  "headers_and_volume_tables": [
+    {
+      "peb": 0,
+      "vid_magic": "ffffffff"
+    },
+    {
+      "peb": 1,
+      "vid_magic": "ffffffff"
+    },
+    {
+      "peb": 2,
+      "volume_id": 0,
+      "logical_eraseblock": 0,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 3,
+      "volume_id": 0,
+      "logical_eraseblock": 1,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 4,
+      "volume_id": 0,
+      "logical_eraseblock": 2,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 5,
+      "volume_id": 0,
+      "logical_eraseblock": 3,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 6,
+      "volume_id": 0,
+      "logical_eraseblock": 4,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 7,
+      "volume_id": 0,
+      "logical_eraseblock": 5,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 8,
+      "volume_id": 0,
+      "logical_eraseblock": 6,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 9,
+      "volume_id": 0,
+      "logical_eraseblock": 7,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 10,
+      "volume_id": 0,
+      "logical_eraseblock": 8,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    },
+    {
+      "peb": 11,
+      "volume_id": 0,
+      "logical_eraseblock": 9,
+      "vid_offset": 4096,
+      "data_offset": 8192,
+      "image_sequence": 22555172
+    }
+  ]
+}

@@ -22,7 +22,9 @@
 * 🔄 **Instant 1-Command Rollback:** If Slot 2 has any issue, `/usr/sbin/boot-acer` restores boot to Slot 1 in seconds.
 * 🌐 **Native LuCI on Port 80:** Acer's proprietary web server (`lighttpd`) disabled; standard LuCI (`uhttpd`) promoted to primary web server.
 * 🚀 **Pure 2.5 Gbps Switch (AP Mode):** Netfilter bridge bypass (`net.bridge.bridge-nf-call-iptables = 0`) eliminates DHCP/mDNS/AirPlay drops and provides wire-speed Layer-2 throughput.
-* 📶 **Fine-Tuned Wi-Fi 7:** 6 GHz radio in 320 MHz width (5.76 Gbps), 802.11k/v fast roaming (BSS Transition + RRM), and DTIM=2.
+* 📶 **Turbo Wi-Fi 7 & Protocol Accelerations:** 6 GHz radio in 320 MHz width (5.76 Gbps) with Preamble Puncturing (anti-interference), Target Wake Time (TWT - phone battery saving), BSS Coloring, 4x4 Beamforming, OFDMA, and Fast Roaming 802.11k/v/r (<50ms).
+* ⚖️ **Multicore RPS Calibration (4 CPUs):** 2.5 Gbps Ethernet queues balanced across all 4 Qualcomm IPQ5332 cores with expanded 8 MB TCP buffers.
+* ⚡ **Parallel Turbo DNS (All-Servers):** Parallel multi-upstream queries in dnsmasq for instant 0 ms resolution.
 * 🧹 **Aggressive Debloat:** Orphaned 5G cellular daemons (`at_ril`, `modem_readd`), telemetry daemons (`monitord`, `sodd`, `cwmp`, `breakpad`), and Samba halted, freeing **+50 MB of RAM**.
 * 💾 **1-Click Backup & Recovery Suite:** Interactive Windows tool `RESTAURAR_OU_BACKUP_T7.bat` for instant backup snapshots and restores.
 

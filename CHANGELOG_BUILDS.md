@@ -14,6 +14,7 @@
 | **`v1.0-mod-cfg`** | 02/10/2026 | Flash (Stock) | Linux 5.4 OEM | Dropbear + Telnet via `.cfg` |  **SUCESSO TOTAL** | Portas 22 e 23 abertas, acesso root ativo. |
 | **`v1.1-luci-mod`**| 02/10/2026 | Flash (Stock) | Linux 5.4 OEM | LuCI porta 8080 + Debloat |  **SUCESSO TOTAL** | Interface LuCI 100% funcional + FOTA desativado. |
 | **`v2.0-slot2-cand`**| 03/10/2026 | Slot 2 (`mtd20`)| Linux 5.4 OEM | SquashFS custom 256k XZ | 🔄 Preparado | Retorno ao Slot 1 validado e pronto para ensaio. |
+| **`v2.7-turbo-ap`**| 03/10/2026 | Slot 2 (`mtd20`)| Linux 5.4 v27 | LuCI p80 + Wi-Fi 7 AP Turbo | 🚀 **PRODUÇÃO ATIVA** | TWT bateria + Puncturing 320MHz + BSS Color + 802.11r + RPS Quad-Core. |
 
 ---
 

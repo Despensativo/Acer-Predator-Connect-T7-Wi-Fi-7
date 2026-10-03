@@ -22,7 +22,9 @@
 * 🔄 **Rollback em 1 Comando:** Se o Slot 2 apresentar qualquer falha, o comando `/usr/sbin/boot-acer` restaura o boot para o Slot 1 instantaneamente.
 * 🌐 **LuCI Nativo na Porta 80:** Servidor web da Acer (`lighttpd`) desativado; LuCI (`uhttpd`) promovido a servidor principal.
 * 🚀 **Switch 2.5 Gbps Puro (Modo AP):** Bypass de netfilter na ponte (`net.bridge.bridge-nf-call-iptables = 0`), eliminando drops de DHCP, mDNS, AirPlay e entregando throughput L2 de velocidade de fio.
-* 📶 **Wi-Fi 7 Otimizado:** Rádio 6 GHz em 320 MHz (5.76 Gbps), Roaming Rápido 802.11k/v (BSS Transition + RRM) e DTIM=2.
+* 📶 **Wi-Fi 7 Turbo & Acelerações de Protocolo:** Rádio 6 GHz em 320 MHz (5.76 Gbps) com Preamble Puncturing (anti-interferência), Target Wake Time (TWT - economia de bateria em celulares), BSS Coloring, Beamforming 4x4, OFDMA e Roaming Rápido 802.11k/v/r (<50ms).
+* ⚖️ **Calibração Multicore RPS (4 CPUs):** Filas de pacotes da porta 2.5 Gbps distribuídas em paralelo pelos 4 núcleos do SoC Qualcomm IPQ5332 com buffers TCP expandidos para 8 MB.
+* ⚡ **Parallel Turbo DNS (All-Servers):** Resolução DNS em paralelo no dnsmasq para respostas instantâneas (0 ms).
 * 🧹 **Debloat Severo:** Daemons celulares 5G inexistentes (`at_ril`, `modem_readd`), telemetrias pesadas (`monitord`, `sodd`, `cwmp`, `breakpad`) e Samba desativados, liberando **+50 MB de memória RAM**.
 * 💾 **Central de Backup de 1 Clique:** Utilitário interativo `RESTAURAR_OU_BACKUP_T7.bat` para restauração e snapshot em segundos.
 

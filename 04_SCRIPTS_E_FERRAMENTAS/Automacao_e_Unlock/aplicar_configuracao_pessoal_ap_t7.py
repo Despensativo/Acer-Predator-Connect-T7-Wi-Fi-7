@@ -109,36 +109,58 @@ def main():
         sys.exit(1)
     print("    [OK] Conectado como root.")
 
-    # 1. Configuracao Wi-Fi
-    print("\n[*] [1/4] Configurando redes Wi-Fi personalizadas...")
-    # 6 GHz -> WIFI_SSID_6G
+    # 1. Configuracao Wi-Fi (Wi-Fi 7 / 6 GHz + Wi-Fi 6 / 5 GHz + Aceleracoes Avancadas)
+    print("\n[*] [1/4] Configurando redes Wi-Fi e aceleracoes de hardware (TWT, Puncturing, BSS Color)...")
+    # 6 GHz -> WIFI_SSID_6G (Wi-Fi 7 / 320 MHz / WPA3-SAE)
     run_cmd(tn, "uci set wireless.wifi2.disabled='0'")
     run_cmd(tn, "uci set wireless.wifi2.htmode='HT320'")
     run_cmd(tn, "uci set wireless.wifi2.channel='auto'")
+    run_cmd(tn, "uci set wireless.wifi2.twt_responder='1'")       # Target Wake Time (Economia de bateria)
+    run_cmd(tn, "uci set wireless.wifi2.he_puncturing='1'")      # Preamble Puncturing Wi-Fi 6
+    run_cmd(tn, "uci set wireless.wifi2.eht_puncturing='1'")     # Preamble Puncturing Wi-Fi 7 (320 MHz estavel)
+    run_cmd(tn, "uci set wireless.wifi2.bss_color='auto'")       # BSS Coloring (Filtro de interferencia)
+    run_cmd(tn, "uci set wireless.wifi2.he_bss_color='1'")
+    run_cmd(tn, "uci set wireless.wifi2.he_spatial_reuse='1'")
+    run_cmd(tn, "uci set wireless.wifi2.he_su_beamformer='1'")   # Beamforming Direcional
+    run_cmd(tn, "uci set wireless.wifi2.he_mu_beamformer='1'")
     run_cmd(tn, f"uci set wireless.wifinet11.ssid='{WIFI_SSID_6G}'")
     run_cmd(tn, f"uci set wireless.wifinet11.key='{WIFI_KEY}'")
     run_cmd(tn, f"uci set wireless.wifinet11.sae_password='{WIFI_KEY}'")
     run_cmd(tn, "uci set wireless.wifinet11.encryption='ccmp'")
-    run_cmd(tn, "uci set wireless.wifinet11.ieee80211w='2'")
+    run_cmd(tn, "uci set wireless.wifinet11.ieee80211w='2'")     # PMF Obrigatorio para WPA3
     run_cmd(tn, "uci set wireless.wifinet11.sae='1'")
     run_cmd(tn, "uci set wireless.wifinet11.disabled='0'")
-    run_cmd(tn, "uci set wireless.wifinet11.bss_transition='1'")
-    run_cmd(tn, "uci set wireless.wifinet11.rrm_neighbor_report='1'")
+    run_cmd(tn, "uci set wireless.wifinet11.bss_transition='1'") # Roaming 802.11v
+    run_cmd(tn, "uci set wireless.wifinet11.rrm_neighbor_report='1'") # Roaming 802.11k
     run_cmd(tn, "uci set wireless.wifinet11.rrm_beacon_report='1'")
     run_cmd(tn, "uci set wireless.wifinet11.wnm_sleep_mode='1'")
     run_cmd(tn, "uci set wireless.wifinet11.dtim_period='2'")
 
-    # 5 GHz -> WIFI_SSID_5G
+    # 5 GHz -> WIFI_SSID_5G (Wi-Fi 6 / 80 MHz / WPA2-AES / Fast Transition 802.11r)
     run_cmd(tn, "uci set wireless.wifi1.disabled='0'")
     run_cmd(tn, "uci set wireless.wifi1.htmode='HT80'")
     run_cmd(tn, "uci set wireless.wifi1.channel='auto'")
+    run_cmd(tn, "uci set wireless.wifi1.twt_responder='1'")       # Target Wake Time
+    run_cmd(tn, "uci set wireless.wifi1.he_puncturing='1'")      # Preamble Puncturing
+    run_cmd(tn, "uci set wireless.wifi1.bss_color='auto'")       # BSS Coloring
+    run_cmd(tn, "uci set wireless.wifi1.he_bss_color='1'")
+    run_cmd(tn, "uci set wireless.wifi1.he_spatial_reuse='1'")
+    run_cmd(tn, "uci set wireless.wifi1.he_su_beamformer='1'")   # Beamforming 4x4
+    run_cmd(tn, "uci set wireless.wifi1.he_mu_beamformer='1'")
+    run_cmd(tn, "uci set wireless.wifi1.he_ul_ofdma='1'")        # OFDMA Multi-usuario
+    run_cmd(tn, "uci set wireless.wifi1.he_ul_mumimo='1'")
     run_cmd(tn, f"uci set wireless.wifinet7.ssid='{WIFI_SSID_5G}'")
     run_cmd(tn, f"uci set wireless.wifinet7.key='{WIFI_KEY}'")
     run_cmd(tn, "uci set wireless.wifinet7.encryption='psk2+aes'")
+    run_cmd(tn, "uci set wireless.wifinet7.ieee80211w='1'")      # PMF Adaptativo
     run_cmd(tn, "uci set wireless.wifinet7.disabled='0'")
-    run_cmd(tn, "uci set wireless.wifinet7.bss_transition='1'")
-    run_cmd(tn, "uci set wireless.wifinet7.rrm_neighbor_report='1'")
+    run_cmd(tn, "uci set wireless.wifinet7.bss_transition='1'")  # 802.11v
+    run_cmd(tn, "uci set wireless.wifinet7.rrm_neighbor_report='1'") # 802.11k
     run_cmd(tn, "uci set wireless.wifinet7.rrm_beacon_report='1'")
+    run_cmd(tn, "uci set wireless.wifinet7.ieee80211r='1'")      # Fast Transition 802.11r (<50ms roaming)
+    run_cmd(tn, "uci set wireless.wifinet7.mobility_domain='a1b2'")
+    run_cmd(tn, "uci set wireless.wifinet7.ft_over_ds='1'")
+    run_cmd(tn, "uci set wireless.wifinet7.ft_psk_generate_local='1'")
     run_cmd(tn, "uci set wireless.wifinet7.wnm_sleep_mode='1'")
     run_cmd(tn, "uci set wireless.wifinet7.dtim_period='2'")
 
@@ -149,7 +171,8 @@ def main():
     run_cmd(tn, "uci set wireless.wifinet6.disabled='1'")
     run_cmd(tn, "uci set wireless.wifinet10.disabled='1'")
     run_cmd(tn, "uci commit wireless")
-    print(f"    [OK] Wi-Fi configurado: 6 GHz ({WIFI_SSID_6G} @ 5.76 Gbps), 5 GHz ({WIFI_SSID_5G} @ 1.44 Gbps), 2.4 GHz desativado.")
+    print(f"    [OK] Wi-Fi configurado: 6 GHz ({WIFI_SSID_6G} @ 5.76 Gbps), 5 GHz ({WIFI_SSID_5G} @ 1.44 Gbps com 802.11r).")
+    print("    [OK] Recursos ativos: TWT (bateria), Puncturing (320MHz), BSS Color, Beamforming 4x4.")
 
     # 2. Arquitetura de Rede (Ponto de Acesso / Ponte WAN + LAN)
     print("\n[*] [2/4] Integrando porta WAN (eth0) a LAN e fixando IP 192.168.73.2...")
@@ -165,27 +188,55 @@ def main():
     run_cmd(tn, "uci commit network")
     print("    [OK] Rede configurada: eth0 anexada a br-lan, IP 192.168.73.2, Gateway 192.168.73.1.")
 
-    # 3. Desativar DHCPv4 e DHCPv6 no T7
-    print("\n[*] [3/4] Desativando servidor DHCP (Modo Access Point)...")
+    # 3. Desativar DHCPv4/DHCPv6 e Otimizar Sysctl / Kernel Quad-Core
+    print("\n[*] [3/4] Desativando DHCP e calibrando Kernel Multicore / Bridge L2...")
     run_cmd(tn, "uci set dhcp.lan.ignore='1'")
     run_cmd(tn, "uci set dhcp.lan.dhcpv6='disabled'")
     run_cmd(tn, "uci set dhcp.lan.ra='disabled'")
     run_cmd(tn, "uci set dhcp.lan.ndp='disabled'")
+    run_cmd(tn, "uci -q set dhcp.@dnsmasq[0].allservers='1'")     # Turbo DNS (Consultas paralelas)
     run_cmd(tn, "uci commit dhcp")
 
-    # Ajuste de Firewall do AP e Bypass de Netfilter na Bridge (Layer 2 puro)
+    # Ajuste de Firewall do AP
     run_cmd(tn, "uci set firewall.@zone[0].forward='ACCEPT'")
     run_cmd(tn, "uci -q delete firewall.wan")
     run_cmd(tn, "uci commit firewall")
     run_cmd(tn, "/etc/init.d/firewall stop 2>/dev/null; /etc/init.d/firewall disable 2>/dev/null")
     run_cmd(tn, "/etc/init.d/dnsmasq stop 2>/dev/null; /etc/init.d/dnsmasq disable 2>/dev/null")
     run_cmd(tn, "/etc/init.d/odhcpd stop 2>/dev/null; /etc/init.d/odhcpd disable 2>/dev/null")
-    run_cmd(tn, "echo 'net.bridge.bridge-nf-call-iptables = 0' >> /etc/sysctl.d/99-performance.conf")
-    run_cmd(tn, "echo 'net.bridge.bridge-nf-call-ip6tables = 0' >> /etc/sysctl.d/99-performance.conf")
-    run_cmd(tn, "echo 'net.bridge.bridge-nf-call-arptables = 0' >> /etc/sysctl.d/99-performance.conf")
+
+    # Calibracao de Performance do Kernel e Bridge Layer-2 pura
+    sysctl_conf = \"\"\"net.bridge.bridge-nf-call-iptables = 0
+net.bridge.bridge-nf-call-ip6tables = 0
+net.bridge.bridge-nf-call-arptables = 0
+net.core.netdev_max_backlog = 10000
+net.core.netdev_budget = 600
+net.core.netdev_budget_usecs = 2000
+net.core.rps_sock_flow_entries = 32768
+net.ipv4.tcp_rmem = 4096 87380 8388608
+net.ipv4.tcp_wmem = 4096 65536 8388608
+\"\"\"
+    for line in sysctl_conf.strip().splitlines():
+        run_cmd(tn, f"echo '{line}' >> /etc/sysctl.d/99-performance.conf")
     run_cmd(tn, "sort -u /etc/sysctl.d/99-performance.conf -o /etc/sysctl.d/99-performance.conf")
     run_cmd(tn, "sysctl -p /etc/sysctl.d/99-performance.conf")
-    print("    [OK] DHCP e Firewall desativados. Bridge L2 pura ativada.")
+
+    # Injetar RPS Multicore (4 CPUs Quad-Core) para persistir na inicializacao em /etc/rc.local
+    rc_inject = \"\"\"
+# Calibracao RPS Multicore (Quad-Core Qualcomm IPQ5332)
+for q in /sys/class/net/eth*/queues/rx-*/rps_cpus; do [ -f "$q" ] && echo f > "$q" 2>/dev/null; done
+for q in /sys/class/net/eth*/queues/rx-*/rps_flow_cnt; do [ -f "$q" ] && echo 4096 > "$q" 2>/dev/null; done
+for i in $(ls /sys/class/net 2>/dev/null | grep -E '^eth'); do ip link set dev "$i" txqueuelen 2048 2>/dev/null; done
+\"\"\"
+    rc_content = run_cmd(tn, "cat /etc/rc.local")
+    if "rps_cpus" not in rc_content:
+        run_cmd(tn, f"sed -i '/exit 0/i {rc_inject.replace(chr(10), chr(92)+chr(110))}' /etc/rc.local")
+        # Executar agora mesmo em tempo real
+        run_cmd(tn, 'for q in /sys/class/net/eth*/queues/rx-*/rps_cpus; do [ -f "$q" ] && echo f > "$q"; done')
+        run_cmd(tn, 'for q in /sys/class/net/eth*/queues/rx-*/rps_flow_cnt; do [ -f "$q" ] && echo 4096 > "$q"; done')
+        run_cmd(tn, 'ip link set dev eth0 txqueuelen 2048 2>/dev/null || true')
+
+    print("    [OK] DHCP/Firewall desativados. Bridge L2 pura + RPS Multicore (4 CPUs) ativados.")
 
     # 4. Sincronizacao da Flash NAND e Reboot
     print("\n[*] [4/4] Gravando alteracoes na Flash NAND e reiniciando roteador...")

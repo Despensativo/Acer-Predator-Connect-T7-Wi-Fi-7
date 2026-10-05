@@ -535,31 +535,31 @@ $HasRoot = ($TelnetOk -or $SshOk)
 Write-Header $M["auto_diag_header"]
 if ($HasRoot) {
     Write-Host "  $($M["auto_root_detected"])" -ForegroundColor Green
+    Write-Host ""
+    $NeedsUnlock = $false
+    Start-Sleep -Milliseconds 600
 } else {
     Write-Host "  $($M["auto_locked_detected"])" -ForegroundColor Yellow
-}
-Write-Host ""
+    Write-Host ""
 
-# Permite confirmacao automatica (ENTER) ou escolha manual / alterar IP caso o usuario queira
-$UserAction = (Read-Host "  $($M["auto_confirm_prompt"])").Trim()
+    # Permite confirmacao automatica (ENTER) ou escolha manual / alterar IP caso o usuario queira
+    $UserAction = (Read-Host "  $($M["auto_confirm_prompt"])").Trim()
 
-if ($UserAction -eq "") {
-    # Prosseguir automaticamente com base no diagnostico das portas
-    $NeedsUnlock = (-not $HasRoot)
-} elseif ($UserAction -eq "1") {
-    $NeedsUnlock = $false
-} elseif ($UserAction -eq "2") {
-    $NeedsUnlock = $true
-} else {
-    # Usuario solicitou escolha manual ou informou um IP diferente
-    if ($UserAction -match '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$') {
-        $RouterIP = $UserAction
+    if ($UserAction -eq "" -or $UserAction -eq "2") {
+        # Prosseguir automaticamente para o desbloqueio
+        $NeedsUnlock = $true
+    } elseif ($UserAction -eq "1") {
+        $NeedsUnlock = $false
     } else {
-        $NewIP = (Read-Host "  $($M["manual_ip_ask"] -f $RouterIP)").Trim()
-        if ($NewIP -and $NewIP -match '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$') {
-            $RouterIP = $NewIP
+        # Usuario solicitou escolha manual ou informou um IP diferente
+        if ($UserAction -match '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$') {
+            $RouterIP = $UserAction
+        } else {
+            $NewIP = (Read-Host "  $($M["manual_ip_ask"] -f $RouterIP)").Trim()
+            if ($NewIP -and $NewIP -match '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$') {
+                $RouterIP = $NewIP
+            }
         }
-    }
 
     Write-Info "Re-testando portas em $RouterIP..."
     $HttpOk   = Test-Port $RouterIP 80 500
@@ -583,6 +583,7 @@ if ($UserAction -eq "") {
         }
     }
     $NeedsUnlock = ($ManualChoice -eq "2")
+}
 }
 
 # 5. Fluxo de Desbloqueio se NAO tiver root

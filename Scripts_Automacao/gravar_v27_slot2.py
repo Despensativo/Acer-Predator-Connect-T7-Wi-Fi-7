@@ -267,24 +267,28 @@ def main():
         sys.exit(1)
     print("    [OK] Conexao Telnet estabelecida com sucesso.")
 
-    # 4. Validar o Modelo de Hardware (Trava Anti-Brick T7 vs X7)
-    model_str = run_cmd(tn, "cat /tmp/sysinfo/model 2>/dev/null").strip()
-    version_str = run_cmd(tn, "cat /etc/version 2>/dev/null").strip()
-    print(f"[*] Modelo detectado: {model_str or 'N/A'}")
-    print(f"[*] Versao detectada: {version_str or 'N/A'}")
+    # 4. Validar o Modelo de Hardware (Whitelist Estrita: Somente o modelo oficial autorizado)
+    board_name = run_cmd(tn, "cat /tmp/sysinfo/board_name 2>/dev/null").strip()
+    model_str  = run_cmd(tn, "cat /tmp/sysinfo/model 2>/dev/null").strip()
+    fdt_model  = run_cmd(tn, "cat /proc/device-tree/model 2>/dev/null").strip()
+    hw_tokens  = f"{board_name} {model_str} {fdt_model}".lower()
 
-    if "X7" in model_str.upper() or version_str.upper().startswith("X7"):
+    print(f"[*] Hardware detectado: {model_str or board_name or 'N/A'}")
+
+    # Whitelist Estrita: Somente a placa física homologada do Acer Predator Connect T7 (AP-MI01.6)
+    is_authorized = ("ap-mi01.6" in hw_tokens) or ("predator connect t7" in hw_tokens) or ("predator_t7" in hw_tokens)
+
+    if not is_authorized:
         print("\n" + "=" * 75)
-        print("[-] BLOQUEIO DE SEGURANÇA: HARDWARE X7 DETECTADO!")
-        print(f"    Dispositivo: Acer Predator Connect X7 (5G CPE)")
-        print(f"    Versão     : {version_str}")
+        print("[-] BLOQUEIO DE SEGURANÇA: HARDWARE NÃO AUTORIZADO!")
+        print(f"    Dispositivo Detectado : {model_str or board_name or 'Desconhecido'}")
+        print(f"    Dispositivo Autorizado: Acer Predator Connect T7 (Placa AP-MI01.6)")
         print("\n    ESTE PACOTE DE GRAVAÇÃO É EXCLUSIVO PARA O ACER PREDATOR CONNECT T7!")
-        print("    O X7 possui modem celular 5G e partições de flash incompatíveis.")
-        print("    Gravar a ROM do T7 no X7 causará BRICK no roteador.")
-        print("    A gravação foi cancelada automaticamente para proteger seu equipamento.")
+        print("    A gravação na memória flash foi CANCELADA para proteger seu equipamento.")
         print("=" * 75)
         tn.close()
         sys.exit(1)
+    print("    [OK] Hardware validado com sucesso: Acer Predator Connect T7 (Autorizado).")
 
     # 5. Validar se o Slot 1 esta ativo (Trava de Seguranca)
     slot_info = run_cmd(tn, "cat /proc/boot_info/bootconfig0/rootfs/primaryboot")

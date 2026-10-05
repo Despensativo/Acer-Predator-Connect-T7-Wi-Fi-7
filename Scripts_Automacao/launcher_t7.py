@@ -113,7 +113,8 @@ TEXTS = {
         "sync_header": "CHECKING & SYNCING UPDATES FROM GITHUB",
         "sync_checking": "[*] Connecting to GitHub to fetch manifest and verify files...",
         "sync_all_ok": "[OK] All suite files are 100% up-to-date and intact (SHA-256 verified)!",
-        "sync_updated": "[OK] Successfully synchronized {0} updated files from GitHub (backups saved to .bak)!",
+        "root_password_hint": "[🔑 ROOT CREDENTIAL]: Default password is 'root0100' (8 lowercase chars - Acer requirement).",
+        "ssh_active_telnet_closed": "NOTE: Telnet port (23) is closed, but SSH (port 22) is ACTIVE with Root!\nActivating Telnet now via SSH to run this option...",
         "goodbye": "\nExiting management suite. Goodbye!"
     },
     "pt": {
@@ -165,6 +166,8 @@ TEXTS = {
         "sync_checking": "[*] Conectando ao GitHub para buscar manifesto e verificar arquivos...",
         "sync_all_ok": "[OK] Todos os arquivos da suite estao 100% atualizados e integros (SHA-256 validado)!",
         "sync_updated": "[OK] Sincronizacao concluida! {0} arquivos atualizados do GitHub (backups salvos em .bak)!",
+        "root_password_hint": "[🔑 CREDENCIAL ROOT]: Senha padrão necessária é 'root0100' (8 caracteres minúsculos).",
+        "ssh_active_telnet_closed": "AVISO: Porta Telnet (23) fechada, mas SSH (porta 22) está ATIVO com Root!\nReativando Telnet agora via SSH para executar esta opção...",
         "goodbye": "\nEncerrando central. Ate logo!"
     },
 }
@@ -677,10 +680,13 @@ def main_menu():
         if info["telnet_ok"]:
             print(f"  [+] {t('active_slot')}: {info['active_slot_label']}")
             print(f"  [+] {t('default_boot')}: {info['boot_default_label']}")
+        elif info["ssh_ok"]:
+            print(f"  [+] Status Terminal: SSH Ativo (Porta 22) | Telnet Fechado (Porta 23)" if CURRENT_LANG == "pt" else "  [+] Terminal Status: SSH Active (Port 22) | Telnet Closed (Port 23)")
         elif info["http_ok"]:
             print(f"  [+] Status Terminal: {t('status_web_only')}")
         else:
             print(f"  [!] Conexao: {t('status_offline')}")
+        print(f"  {t('root_password_hint')}")
         print("=" * 75)
         if info["telnet_ok"]:
             print(f"  {t('telnet_active_warning')}")
@@ -702,13 +708,29 @@ def main_menu():
             print(t("goodbye"))
             break
 
-        if choice in ["1", "2", "3", "4", "5", "6"] and not info["telnet_ok"]:
-            print("\n" + "=" * 75)
-            print(t("terminal_required").format(rip=rip))
-            print("=" * 75)
-            log_event("LAUNCHER", f"Tentativa de executar opcao [{choice}] sem Telnet", "AVISO")
-            safe_input(t("press_enter"))
-            continue
+        if choice in ["1", "2", "3", "4", "6"] and not info["telnet_ok"]:
+            if info["ssh_ok"]:
+                print("\n" + "=" * 75)
+                print(f"  {t('ssh_active_telnet_closed')}")
+                print("=" * 75)
+                script_gt = get_script_path("gerenciar_telnet.py")
+                subprocess.call([sys.executable, script_gt, "ativar", f"--ip={rip}"])
+                time.sleep(1.0)
+                if check_port(rip, 23, 1.5):
+                    info["telnet_ok"] = True
+                    print("\n  [OK] Porta Telnet (23) reativada com sucesso! Prosseguindo...")
+                else:
+                    print("\n  [!] Nao foi possivel reativar o Telnet automaticamente.")
+                    print("      Por favor, selecione a Opcao [5] no menu para gerenciar o Telnet/SSH.")
+                    safe_input(t("press_enter"))
+                    continue
+            else:
+                print("\n" + "=" * 75)
+                print(t("terminal_required").format(rip=rip))
+                print("=" * 75)
+                log_event("LAUNCHER", f"Tentativa de executar opcao [{choice}] sem Telnet/SSH", "AVISO")
+                safe_input(t("press_enter"))
+                continue
 
         if choice == "1":
             log_event("MENU", "Opcao [1] Alternar Dual-Boot selecionada", "INFO")

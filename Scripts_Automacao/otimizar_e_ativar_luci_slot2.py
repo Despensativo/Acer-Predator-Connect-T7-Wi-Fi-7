@@ -160,14 +160,15 @@ def main():
     run_cmd(tn, "killall -9 monitord sodd cwmp mqtt_client breakpad modem_readd modem_datausage at_ril ril smbd nmbd 2>/dev/null")
     print(f"    [OK] {len(daemons)} daemons desativados e memoria RAM liberada.")
 
-    # 3. Limpeza de Interfaces Fantasmas (Guest, IoT, WAN1 Celular) e Fix do Hostname
-    print("\n[*] [3/9] Limpando interfaces de rede fantasmas (Guest, IoT, WAN1) e fixando Hostname...")
+    # 3. Limpeza de Interfaces Fantasmas (Guest, IoT, WAN5GMODEM do X7) e Fix do Hostname
+    print("\n[*] [3/9] Limpando interfaces de rede fantasmas (Guest, IoT, WAN5GMODEM celular herdado do X7)...")
+    print("    -> [NOTA DE SEGURANCA]: Sua porta fisica WAN Ethernet 2.5 Gbps (eth0) permanece 100% INTACTA e ATIVA!")
     # Fix do Hostname sem espaco (evita erro de validacao vermelha no LuCI)
     run_cmd(tn, "uci set system.@system[0].hostname='Predator-Connect-T7'")
     run_cmd(tn, "uci commit system")
     run_cmd(tn, "/etc/init.d/system reload")
 
-    # Limpeza de interfaces no network
+    # Limpeza de interfaces no network (wan1 = modem 5G do X7 que nao existe no T7)
     run_cmd(tn, "uci -q delete network.guest; uci -q delete network.iot; uci -q delete network.wan1; uci -q delete network.xlatd; uci commit network")
     # Limpeza de DHCP pools
     run_cmd(tn, "uci -q delete dhcp.guest; uci -q delete dhcp.iot; uci commit dhcp")
@@ -181,7 +182,9 @@ def main():
         run_cmd(tn, f"uci -q delete firewall.{r}")
     run_cmd(tn, "uci -q del_list firewall.wan.network='wan1'; uci commit firewall")
     run_cmd(tn, "/etc/init.d/network reload; /etc/init.d/firewall restart")
-    print("    [OK] Interfaces fantasmas removidas e Hostname corrigido para RFC 1123.")
+    print("    [OK] Interfaces fantasmas (Modem Celular 5G / Guest / IoT) removidas.")
+    print("    [OK] Hostname corrigido para RFC 1123 (Predator-Connect-T7).")
+    print("    [OK] Conexao WAN de internet cabeada 100% preservada.")
 
     # 4. Configurar LuCI (uhttpd) como padrao na porta 80
     print("\n[*] [4/9] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")

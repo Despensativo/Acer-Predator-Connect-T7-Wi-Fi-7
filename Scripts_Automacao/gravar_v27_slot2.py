@@ -295,30 +295,39 @@ def main():
     print("    [OK] Seguranca confirmada: Slot 1 OEM ativo. Slot 2 livre para gravacao.")
 
     # Submenu de Escolha de Modo de Instalacao
-    print("\n" + "=" * 72)
-    print("  MODO DE INSTALACAO NO SLOT 2:")
-    print("=" * 72)
-    print("  [1] Instalacao com ROOT Desbloqueado (Recomendado)")
-    print("      - Grava Kernel, Wi-Fi FW e RootFS v27")
-    print("      - Injeta automaticamente usuario 'root', SSH Dropbear e Telnet")
-    print("      - O Slot 2 ja inicia pronto com terminal aberto sem precisar de .cfg!")
-    print("")
-    print("  [2] Instalacao Pura de Fabrica (100% Stock OEM Travado)")
-    print("      - Grava Kernel, Wi-Fi FW e RootFS v27")
-    print("      - Limpa todas as configuracoes (Overlay zerado de fabrica)")
-    print("      - O Slot 2 inicia exatamente como veio de fabrica")
-    print("=" * 72)
-    inst_choice = input("  Escolha uma opcao [1 ou 2] (Padrao: 1): ").strip()
-    if inst_choice not in ["1", "2"]:
-        inst_choice = "1"
+    while True:
+        print("\n" + "=" * 72)
+        print("  MODO DE INSTALACAO DO FIRMWARE NO SLOT 2:")
+        print("=" * 72)
+        print("  [1] Firmware Oficial v27 + ROOT Desbloqueado (Recomendado)")
+        print("      - Grava o sistema oficial v27 da Acer")
+        print("      - Injeta automaticamente usuario 'root', SSH Dropbear e Telnet")
+        print("      - O Slot 2 ja acorda liberado no terminal sem precisar de .cfg!")
+        print("")
+        print("  [2] Firmware Oficial v27 Puro de Fabrica (100% Stock OEM Travado)")
+        print("      - Grava o sistema oficial v27 da Acer")
+        print("      - Formata e zera o volume de dados (sem qualquer alteracao)")
+        print("      - O Slot 2 acorda exatamente como veio de fabrica na caixa")
+        print("=" * 72)
+        inst_choice = input("  Digite o numero da opcao desejada [1 ou 2]: ").strip()
+        if inst_choice in ["1", "2"]:
+            break
+        print("\n  [!] Entrada invalida! Digite obrigatoriamente o numero 1 ou 2.")
 
     with_root = (inst_choice == "1")
     if with_root:
-        print("  [+] Modo selecionado: Instalacao com ROOT Desbloqueado.")
-        log_event("GRAVACAO_SLOT2", "Modo selecionado: Com ROOT Desbloqueado", "INFO")
+        print("  [+] Modo confirmado: Oficial v27 com ROOT Desbloqueado.")
+        log_event("GRAVACAO_SLOT2", "Modo selecionado: Oficial v27 com ROOT", "INFO")
     else:
-        print("  [+] Modo selecionado: Instalacao Pura de Fabrica (Stock OEM Travado).")
-        log_event("GRAVACAO_SLOT2", "Modo selecionado: Stock OEM Travado", "INFO")
+        print("  [+] Modo confirmado: Oficial v27 100% Stock OEM Travado de Fabrica.")
+        log_event("GRAVACAO_SLOT2", "Modo selecionado: Oficial v27 Stock OEM Travado", "INFO")
+
+    confirm = input("\n  Confirma o inicio da gravacao no Slot 2 (mtd20)? [S/N]: ").strip().upper()
+    if confirm not in ["S", "SIM", "Y", "YES"]:
+        print("\n  [!] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita.")
+        log_event("GRAVACAO_SLOT2", "Cancelado pelo usuario antes de gravar", "AVISO")
+        tn.close()
+        sys.exit(0)
 
     # Instala atalhos de rollback
     install_rollback_shortcuts(tn)

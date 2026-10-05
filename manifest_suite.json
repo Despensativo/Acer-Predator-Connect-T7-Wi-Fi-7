@@ -1,6 +1,6 @@
 {
   "suite_version": "1.0.1",
-  "updated_at": "2026-10-05T21:27:12Z",
+  "updated_at": "2026-10-05T21:32:13Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
@@ -34,9 +34,9 @@
     {
       "path": "Scripts_Automacao/gravar_v27_slot2.py",
       "category": "script",
-      "size": 19812,
-      "sha256": "F99FBB6A71CC161A477397D22ADBE1716D9FBADBF7E15CF7F0A8DD4F351B7F29",
-      "updated_at": "2026-10-05T21:27:06Z"
+      "size": 20369,
+      "sha256": "9C73FC7BC654ED664D1F915E9854DEACCB0ED91705BD037DF7E99EC7C0AC2EF3",
+      "updated_at": "2026-10-05T21:31:46Z"
     },
     {
       "path": "Scripts_Automacao/switch_boot_slot.py",
@@ -55,9 +55,9 @@
     {
       "path": "Scripts_Automacao/desbloquear_slot2_from_slot1.py",
       "category": "script",
-      "size": 8843,
-      "sha256": "74E219F9D85537B219D6A335B1C3DC70946D34751619616A067947682A21D64B",
-      "updated_at": "2026-10-05T20:48:52Z"
+      "size": 9470,
+      "sha256": "66A8C73A9F11D430EEC20126D33DEE9A376511A7F7A5362B694177764E628966",
+      "updated_at": "2026-10-05T21:31:24Z"
     },
     {
       "path": "Scripts_Automacao/logger_t7.py",

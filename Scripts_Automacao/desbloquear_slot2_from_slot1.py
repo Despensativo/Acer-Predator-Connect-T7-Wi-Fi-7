@@ -111,23 +111,26 @@ def main():
         return
 
     print("  [+] Confirmado: Roteador executando no Slot 1 (Acer Stock com Root).")
-    print("  [*] Anexando particao do Slot 2 (mtd21) ao subsistema UBI...")
-    log_event("DESBLOQUEIO_SLOT2", "Anexando mtd21 ao UBI", "INFO")
+    print("  [*] Anexando particao do Slot 2 (mtd20) ao subsistema UBI...")
+    log_event("DESBLOQUEIO_SLOT2", "Anexando mtd20 ao UBI", "INFO")
 
-    # Anexar mtd21
+    # Anexar mtd20 (Slot 2 = rootfs_1)
     run_cmd(tn, "mkdir -p /tmp/slot2_mnt")
-    run_cmd(tn, "ubiattach -m 21 -d 1 /dev/ubi_ctrl 2>/dev/null")
+    run_cmd(tn, "ubiattach -m 20 -d 1 /dev/ubi_ctrl 2>/dev/null")
     time.sleep(1)
+
+    # Garante criacao dos device nodes para ubi1_*
+    run_cmd(tn, "for v in /sys/class/ubi/ubi1_*; do [ -d \"$v\" ] && mknod /dev/$(basename $v) c $(cat $v/dev | tr : ' ') 2>/dev/null; done")
 
     print("  [*] Montando volume de configuracoes do Slot 2 (ubifs)...")
     out_mount = run_cmd(tn, "mount -t ubifs /dev/ubi1_3 /tmp/slot2_mnt 2>&1")
     time.sleep(0.5)
 
-    check_mnt = run_cmd(tn, "ls /tmp/slot2_mnt")
+    check_mnt = run_cmd(tn, "ls /tmp/slot2_mnt 2>/dev/null")
     if "upper" not in check_mnt and "etc" not in check_mnt:
         print("  [-] Falha ao montar overlay do Slot 2. Tentando recuperar...")
         log_event("DESBLOQUEIO_SLOT2", f"Falha de montagem: {out_mount}", "ERRO")
-        run_cmd(tn, "ubidetach -m 21 /dev/ubi_ctrl 2>/dev/null")
+        run_cmd(tn, "ubidetach -m 20 /dev/ubi_ctrl 2>/dev/null")
         tn.close()
         return
 
@@ -139,22 +142,25 @@ def main():
         "mkdir -p /tmp/slot2_mnt/upper/etc/config",
         "mkdir -p /tmp/slot2_mnt/upper/etc/dropbear",
         "mkdir -p /tmp/slot2_mnt/upper/etc/init.d",
+        "mkdir -p /tmp/slot2_mnt/upper/usr/sbin",
         "cp -f /etc/shadow /tmp/slot2_mnt/upper/etc/shadow",
         "cp -f /etc/config/dropbear /tmp/slot2_mnt/upper/etc/config/dropbear 2>/dev/null",
         "[ -f /etc/dropbear/authorized_keys ] && cp -f /etc/dropbear/authorized_keys /tmp/slot2_mnt/upper/etc/dropbear/authorized_keys",
         "cp -f /etc/init.d/telnet /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
         "chmod +x /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
+        "[ -f /usr/sbin/boot-acer ] && cp -f /usr/sbin/boot-acer /tmp/slot2_mnt/upper/usr/sbin/boot-acer && chmod +x /tmp/slot2_mnt/upper/usr/sbin/boot-acer",
+        "[ -f /usr/sbin/boot-openwrt ] && cp -f /usr/sbin/boot-openwrt /tmp/slot2_mnt/upper/usr/sbin/boot-openwrt && chmod +x /tmp/slot2_mnt/upper/usr/sbin/boot-openwrt",
         "sync"
     ]
     for c in injection_cmds:
         run_cmd(tn, c)
 
     print("  [OK] Arquivos de root injetados com sucesso!")
-    log_event("DESBLOQUEIO_SLOT2", "Injecao de arquivos (shadow, dropbear, telnet) concluida com sucesso", "OK")
+    log_event("DESBLOQUEIO_SLOT2", "Injecao de arquivos (shadow, dropbear, telnet, atalhos) concluida com sucesso", "OK")
 
     print("  [*] Desmontando volume e liberando UBI...")
-    run_cmd(tn, "umount /tmp/slot2_mnt")
-    run_cmd(tn, "ubidetach -m 21 /dev/ubi_ctrl 2>/dev/null")
+    run_cmd(tn, "umount /tmp/slot2_mnt 2>/dev/null")
+    run_cmd(tn, "ubidetach -m 20 /dev/ubi_ctrl 2>/dev/null")
     run_cmd(tn, "rm -rf /tmp/slot2_mnt")
     time.sleep(0.5)
 

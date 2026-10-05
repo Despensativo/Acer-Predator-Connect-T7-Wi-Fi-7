@@ -4,10 +4,19 @@ Utilitario de Chaveamento Dual-Boot: Alterna entre Slot 1 (Acer) e Slot 2 (OpenW
 Acer Predator Connect T7 (Qualcomm IPQ5332)
 """
 
-import telnetlib
 import sys
+import os
 import time
 import socket
+
+try:
+    from telnet_compat import Telnet
+except ImportError:
+    try:
+        from Scripts_Automacao.telnet_compat import Telnet
+    except ImportError:
+        import telnetlib
+        Telnet = telnetlib.Telnet
 
 def test_telnet(ip, timeout=1):
     try:
@@ -108,8 +117,8 @@ def main():
     for arg in sys.argv[1:]:
         if arg in ["1", "2", "acer", "openwrt"]:
             target_slot = arg
-        elif "." in arg:
-            explicit_ip = arg
+        elif "." in arg or arg.startswith("--ip="):
+            explicit_ip = arg.replace("--ip=", "").strip()
 
     router_ip = detect_router_ip(explicit_ip)
 
@@ -119,14 +128,16 @@ def main():
     print("=" * 65)
 
     try:
-        tn = telnetlib.Telnet(router_ip, 23, timeout=5)
+        tn = Telnet(router_ip, 23, timeout=5)
         tn.read_until(b"/ # ", timeout=5)
     except Exception as e:
         print(f"[-] Erro ao conectar via Telnet em {router_ip}:23: {e}")
         sys.exit(1)
 
     cur = get_current_slot(tn)
-    print(f"[*] Slot ativo atualmente configurado no BOOTCONFIG: {cur}")
+    out_cmd = run_cmd(tn, "cat /proc/boot_info/bootconfig0/rootfs/primaryboot")
+    raw_val = [l.strip() for l in out_cmd.splitlines() if l.strip() and not l.startswith("cat") and not l.startswith("/ #")][-1] if out_cmd else "?"
+    print(f"[*] Slot ativo atualmente no U-Boot: {cur} (primaryboot = {raw_val})")
 
     install_helper_scripts(tn)
     print("[*] Comandos rapidos instalados no roteador:")
@@ -142,9 +153,21 @@ def main():
         out = run_cmd(tn, "/usr/sbin/boot-acer")
         print(out)
     else:
-        print("\nUso para alternar imediatamente:")
-        print("  python switch_boot_slot.py 2   (para reiniciar no OpenWrt)")
-        print("  python switch_boot_slot.py 1   (para reiniciar na Acer)")
+        print("\nEscolha uma opcao de alternancia de boot:")
+        print("  [1] Reiniciar no SLOT 1 (Firmware OEM Acer Original de Fabrica)")
+        print("  [2] Reiniciar no SLOT 2 (OpenWrt Puro / LuCI)")
+        print("  [0] Voltar ao menu principal sem alterar nada")
+        opt = input("\nOpcao [0/1/2]: ").strip()
+        if opt == "1":
+            print("\n[*] Aplicando chaveamento para SLOT 1 (Acer Original)...")
+            out = run_cmd(tn, "/usr/sbin/boot-acer")
+            print(out)
+        elif opt == "2":
+            print("\n[*] Aplicando chaveamento para SLOT 2 (OpenWrt Puro)...")
+            out = run_cmd(tn, "/usr/sbin/boot-openwrt")
+            print(out)
+        else:
+            print("Nenhuma alteracao efetuada.")
 
     tn.close()
 

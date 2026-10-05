@@ -438,4 +438,4 @@ Ensure-Scripts
 # 7. Executar a Central de Gerenciamento (launcher_t7.py)
 Write-Header $M["launching_suite"]
 $LauncherPy = "$RepoDir\Scripts_Automacao\launcher_t7.py"
-& $PythonCmd $LauncherPy --lang $Lang
+& $PythonCmd $LauncherPy --lang $Lang --ip $RouterIP

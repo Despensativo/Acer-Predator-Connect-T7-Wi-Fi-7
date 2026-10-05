@@ -57,6 +57,11 @@ TEXTS = {
         "active_slot": "Active Slot",
         "slot1": "Slot 1 (OEM Factory)",
         "slot2": "Slot 2 (Pure OpenWrt)",
+        "slot1_desc": "Slot 1 (OEM Factory)",
+        "slot1_info": "Acer Stock Firmware (Factory OEM - Protected)",
+        "slot2_desc": "Slot 2 (Pure OpenWrt)",
+        "slot2_info": "OpenWrt v27 (LuCI on Port 80 / Debloated)",
+        "default_boot": "Default Boot Slot",
         "locked_notice": "NOTICE: Router Web GUI is up, but Telnet/SSH are closed (Factory Locked)!\n      Restore config_v27_ssh_unlocked.cfg via Web GUI to unlock.",
         "locked_status": "Locked (OEM Stock - Telnet Closed)",
         "unknown_locked": "Locked (Unlock via .cfg required)",
@@ -95,6 +100,11 @@ TEXTS = {
         "active_slot": "Particao Ativa",
         "slot1": "Slot 1 (Acer Original)",
         "slot2": "Slot 2 (OpenWrt Puro)",
+        "slot1_desc": "Slot 1 (Reserva OEM)",
+        "slot1_info": "Firmware Acer Original (Fabrica OEM - Protegido)",
+        "slot2_desc": "Slot 2 (OpenWrt Puro)",
+        "slot2_info": "OpenWrt v27 (LuCI na Porta 80 / Debloated)",
+        "default_boot": "Boot Padrao U-Boot",
         "locked_notice": "AVISO: O roteador responde na Web, mas Telnet e SSH estao fechados (Bloqueado de fábrica)!\n      Restaure o arquivo config_v27_ssh_unlocked.cfg pela Web GUI para liberar.",
         "locked_status": "Bloqueado (OEM Fábrica - Telnet Fechado)",
         "unknown_locked": "Bloqueado (Necessita desbloqueio via .cfg)",
@@ -140,7 +150,12 @@ def check_udp_bind(port=69):
     except Exception:
         return False
 
-def detect_router_ip():
+def detect_router_ip(explicit_ip=None):
+    if explicit_ip:
+        return explicit_ip
+    for cand in ["192.168.73.2", "192.168.76.1", "192.168.1.1"]:
+        if check_port(cand, 23, 0.5):
+            return cand
     candidates = ["192.168.76.1", "192.168.73.2", "192.168.1.1"]
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -173,7 +188,7 @@ def calc_md5(file_path):
             h.update(chunk)
     return h.hexdigest().lower()
 
-def preflight_check(quiet=False):
+def preflight_check(quiet=False, explicit_ip=None):
     if not quiet:
         print("\n" + "=" * 75)
         print(f"  {t('preflight_header')}")
@@ -183,13 +198,15 @@ def preflight_check(quiet=False):
         "os": f"{platform.system()} {platform.release()} ({platform.machine()})",
         "python": platform.python_version(),
         "files_ok": True,
-        "router_ip": detect_router_ip(),
+        "router_ip": detect_router_ip(explicit_ip),
         "http_ok": False,
         "telnet_ok": False,
         "ssh_ok": False,
         "model": "N/A",
         "version": "N/A",
         "slot": "N/A",
+        "active_slot_label": "N/A",
+        "boot_default_label": "N/A",
         "tftp_port_ok": check_udp_bind(69)
     }
 
@@ -232,7 +249,16 @@ def preflight_check(quiet=False):
             info["model"] = get_single_line("cat /tmp/sysinfo/model 2>/dev/null")
             info["version"] = get_single_line("cat /etc/version 2>/dev/null")
             slot_raw = get_single_line("cat /proc/boot_info/bootconfig0/rootfs/primaryboot 2>/dev/null")
-            info["slot"] = t("slot1") if slot_raw == "1" else t("slot2")
+            if slot_raw == "0":
+                info["active_slot_label"] = t("slot2")
+                info["boot_default_label"] = f"{t('slot2')} (primaryboot = 0)"
+            elif slot_raw == "1":
+                info["active_slot_label"] = t("slot1")
+                info["boot_default_label"] = f"{t('slot1')} (primaryboot = 1)"
+            else:
+                info["active_slot_label"] = t("slot2")
+                info["boot_default_label"] = f"{t('slot2')} (primaryboot = {slot_raw})"
+            info["slot"] = info["active_slot_label"]
             tn.close()
         except Exception:
             pass
@@ -252,6 +278,8 @@ def preflight_check(quiet=False):
             info["model"] = "Web Device (HTTP Port 80 Active)"
         info["version"] = t("locked_status")
         info["slot"] = t("unknown_locked")
+        info["active_slot_label"] = t("unknown_locked")
+        info["boot_default_label"] = t("unknown_locked")
 
     if not quiet:
         print(f"  [+] {t('os'):<24}: {info['os']}")
@@ -265,7 +293,10 @@ def preflight_check(quiet=False):
         if info["telnet_ok"]:
             print(f"  [+] {t('router_model'):<24}: {info['model']}")
             print(f"  [+] {t('router_version'):<24}: {info['version']}")
-            print(f"  [+] {t('active_slot'):<24}: {info['slot']}")
+            print(f"  [+] {t('slot1_desc'):<24}: {t('slot1_info')}")
+            print(f"  [+] {t('slot2_desc'):<24}: {t('slot2_info')}")
+            print(f"  [+] {t('active_slot'):<24}: {info['active_slot_label']}")
+            print(f"  [+] {t('default_boot'):<24}: {info['boot_default_label']}")
         elif info["http_ok"]:
             print(f"  [+] {t('router_model'):<24}: {info['model']}")
             print(f"  [+] {t('router_version'):<24}: {info['version']}")
@@ -300,6 +331,7 @@ def main_menu():
     global CURRENT_LANG
     parser = argparse.ArgumentParser(description="Acer Predator T7/X7 Management Suite")
     parser.add_argument("--lang", "-l", choices=["en", "pt"], default=None, help="Interface language (en or pt)")
+    parser.add_argument("--ip", default=None, help="Explicit router IP")
     args = parser.parse_args()
 
     if args.lang:
@@ -309,11 +341,11 @@ def main_menu():
         CURRENT_LANG = "en"
 
     while True:
-        info = preflight_check(quiet=True)
+        info = preflight_check(quiet=True, explicit_ip=args.ip)
         rip = info["router_ip"]
         status_line = f"{t('status_router')}: {rip} | "
         if info["telnet_ok"]:
-            status_line += f"{info['model']} | {info['slot']}"
+            status_line += f"{info['model']} | {info['active_slot_label']} | Boot: {info['boot_default_label']}"
         elif info["http_ok"]:
             status_line += t("status_web_only")
         else:
@@ -346,29 +378,29 @@ def main_menu():
             continue
 
         if choice == "1":
-            preflight_check(quiet=False)
+            preflight_check(quiet=False, explicit_ip=args.ip)
             safe_input(t("press_enter"))
         elif choice == "2":
             script = get_script_path("gravar_v27_slot2.py")
-            subprocess.call([sys.executable, script])
+            subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "3":
             script = get_script_path("otimizar_e_ativar_luci_slot2.py")
-            subprocess.call([sys.executable, script])
+            subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "4":
             script = get_script_path("switch_boot_slot.py")
-            subprocess.call([sys.executable, script])
+            subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "5":
             script = get_script_path("gerenciar_telnet.py")
-            subprocess.call([sys.executable, script])
+            subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "6":
             webbrowser.open(f"http://{rip}")
         elif choice == "7":
             script = get_script_path("diagnostico_x7.py")
-            subprocess.call([sys.executable, script])
+            subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
 
 if __name__ == "__main__":

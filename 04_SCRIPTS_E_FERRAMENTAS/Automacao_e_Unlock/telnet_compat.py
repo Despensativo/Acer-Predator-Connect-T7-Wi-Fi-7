@@ -80,6 +80,12 @@ except ImportError:
             self.sock.setblocking(True)
             return buf
 
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.close()
+
         def close(self):
             try:
                 self.sock.close()

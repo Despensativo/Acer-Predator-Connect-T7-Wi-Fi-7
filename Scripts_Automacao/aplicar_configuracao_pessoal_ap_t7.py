@@ -25,10 +25,18 @@ Acoes Executadas:
 """
 
 import os
-import telnetlib
-import time
 import sys
+import time
 import socket
+
+try:
+    from telnet_compat import Telnet
+except ImportError:
+    try:
+        from Scripts_Automacao.telnet_compat import Telnet
+    except ImportError:
+        import telnetlib
+        Telnet = telnetlib.Telnet
 
 ROUTER_OLD_IP = "192.168.76.1"
 ROUTER_NEW_IP = "192.168.73.2"
@@ -102,7 +110,7 @@ def main():
 
     print(f"\n[*] Conectando via Telnet em {target_ip}:23...")
     try:
-        tn = telnetlib.Telnet(target_ip, 23, timeout=5)
+        tn = Telnet(target_ip, 23, timeout=5)
         tn.read_until(b"/ # ", timeout=3)
     except Exception as e:
         print(f"[-] Erro ao conectar via Telnet em {target_ip}: {e}")

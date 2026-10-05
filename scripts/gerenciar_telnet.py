@@ -32,6 +32,9 @@ def test_port(ip, port, timeout=1.5):
 def detect_router_ip(explicit_ip=None):
     if explicit_ip:
         return explicit_ip
+    for cand in ["192.168.73.2", "192.168.76.1", "192.168.1.1"]:
+        if test_port(cand, 23):
+            return cand
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 53))
@@ -39,12 +42,12 @@ def detect_router_ip(explicit_ip=None):
         s.close()
         parts = my_ip.split(".")
         guess = f"{parts[0]}.{parts[1]}.{parts[2]}.1"
-        if test_port(guess, 23) or test_port(guess, 22) or test_port(guess, 80):
+        if test_port(guess, 23):
             return guess
     except Exception:
         pass
     for cand in ["192.168.76.1", "192.168.73.2", "192.168.1.1"]:
-        if test_port(cand, 23) or test_port(cand, 22) or test_port(cand, 80):
+        if test_port(cand, 80) or test_port(cand, 22):
             return cand
     return "192.168.76.1"
 
@@ -99,8 +102,8 @@ def main():
     for arg in sys.argv[1:]:
         if arg in ["status", "desativar", "ativar"]:
             action = arg
-        elif "." in arg:
-            explicit_ip = arg
+        elif "." in arg or arg.startswith("--ip="):
+            explicit_ip = arg.replace("--ip=", "").strip()
 
     router_ip = detect_router_ip(explicit_ip)
 
@@ -109,26 +112,38 @@ def main():
     print(f"  Roteador Alvo: {router_ip}")
     print("=" * 65)
 
-    if not action:
-        status_telnet(router_ip)
-        print("\nEscolha uma opcao:")
-        print("  [1] Desativar Telnet agora (Hardening - manter apenas SSH)")
-        print("  [2] Verificar status das portas (Telnet / SSH)")
-        print("  [0] Sair")
-        opt = input("\nOpcao: ").strip()
-        if opt == "1":
-            action = "desativar"
-        elif opt == "2":
-            return
-        else:
-            return
+    if action:
+        if action == "status":
+            status_telnet(router_ip)
+        elif action == "desativar":
+            desativar_telnet(router_ip)
+        elif action == "ativar":
+            ativar_telnet(router_ip)
+        return
 
-    if action == "status":
-        status_telnet(router_ip)
-    elif action == "desativar":
-        desativar_telnet(router_ip)
-    elif action == "ativar":
-        ativar_telnet(router_ip)
+    while True:
+        is_active = status_telnet(router_ip)
+        print("\nEscolha uma opcao:")
+        if is_active:
+            print("  [1] Desativar Telnet agora (Hardening - fechar porta 23 e manter apenas SSH)")
+        else:
+            print("  [1] Telnet ja esta DESATIVADO (Hardening Ativo)")
+            print(f"      (Para reativar via SSH: ssh root@{router_ip} '/usr/sbin/telnetd -l /bin/ash')")
+        print("  [2] Re-testar e atualizar status das portas")
+        print("  [0] Sair / Voltar ao menu principal")
+        opt = input("\nOpcao [0/1/2]: ").strip()
+        if opt == "1":
+            if is_active:
+                desativar_telnet(router_ip)
+            else:
+                print(f"\n[OK] O servico Telnet ja esta desativado no roteador ({router_ip}). Nenhuma acao necessaria.")
+            input("\nPressione ENTER para continuar...")
+        elif opt == "2":
+            print(f"\n[*] Re-testando conexao com {router_ip}...")
+            time.sleep(0.5)
+            continue
+        else:
+            break
 
 if __name__ == "__main__":
     main()

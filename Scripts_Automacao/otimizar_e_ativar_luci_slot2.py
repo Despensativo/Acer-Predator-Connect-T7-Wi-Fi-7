@@ -49,11 +49,20 @@ Acoes Realizadas:
    - Executa sync na memoria Flash NAND.
 """
 
-import telnetlib
-import urllib.request
-import time
 import sys
+import os
+import time
 import socket
+import urllib.request
+
+try:
+    from telnet_compat import Telnet
+except ImportError:
+    try:
+        from Scripts_Automacao.telnet_compat import Telnet
+    except ImportError:
+        import telnetlib
+        Telnet = telnetlib.Telnet
 
 def test_telnet(ip, timeout=1):
     try:
@@ -111,7 +120,7 @@ def main():
 
     print(f"\n[*] Conectando via Telnet em {target_ip}:23...")
     try:
-        tn = telnetlib.Telnet(target_ip, 23, timeout=5)
+        tn = Telnet(target_ip, 23, timeout=5)
         tn.read_until(b"/ # ", timeout=3)
     except Exception as e:
         print(f"[-] Erro ao conectar via Telnet: {e}")

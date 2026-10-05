@@ -108,10 +108,13 @@ def locate_v27_directory(explicit_dir=None):
     candidates = []
     if explicit_dir:
         candidates.append(explicit_dir)
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
     candidates.extend([
         REPO_V27_DIR,
-        os.path.join(tempfile.gettempdir(), "audit_work", "v27"),
-        r"C:\Users\User\AppData\Local\Temp\audit_work\v27"
+        os.path.join(desktop, "Acer-Predator-Connect-T7", "01_FIRMWARES_E_IMAGENS", "Official_v27_Componentes"),
+        r"C:\Users\User\Desktop\Acer-Predator-Connect-T7\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes",
+        r"H:\FEITOS COM IA\Acer-Predator-Connect-T7\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes",
+        r"C:\Users\User\Acer-Predator-Connect-T7\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes"
     ])
 
     for c in candidates:

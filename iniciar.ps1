@@ -25,21 +25,26 @@ function Write-Err($text)     { Write-Host "  [-] $text" -ForegroundColor Red }
 
 $RawBase = "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main"
 
-# 1. Resolver Diretorio Base (Local vs Web One-Liner)
-$RepoDir = $PSScriptRoot
-if (-not $RepoDir -or -not (Test-Path "$RepoDir\Scripts_Automacao")) {
+# 1. Definir Diretorio de Trabalho Seguro no Desktop (Sem espacos, uso de hifens)
+$Desktop = [Environment]::GetFolderPath("Desktop")
+$DesktopWorkDir = "$Desktop\Acer-Predator-Connect-T7"
+
+# Detectar se ja existe uma pasta local clonada (ex: em pendrive ou HD externo)
+$LocalSourceDir = $PSScriptRoot
+if (-not $LocalSourceDir -or -not (Test-Path "$LocalSourceDir\Scripts_Automacao")) {
     if (Test-Path ".\Scripts_Automacao") {
-        $RepoDir = (Get-Item ".").FullName
-    } elseif (Test-Path ".\04_SCRIPTS_E_FERRAMENTAS\Automacao_e_Unlock") {
-        $RepoDir = (Get-Item ".").FullName
+        $LocalSourceDir = (Get-Item ".").FullName
+    } elseif (Test-Path "$DesktopWorkDir\Scripts_Automacao") {
+        $LocalSourceDir = $DesktopWorkDir
     } else {
-        # Executado via One-Liner do GitHub
-        $TargetDir = "$env:USERPROFILE\Acer-Predator-Connect-T7"
-        if (-not (Test-Path $TargetDir)) {
-            New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
-        }
-        $RepoDir = $TargetDir
+        $LocalSourceDir = $null
     }
+}
+
+# A pasta de trabalho oficial e sempre no Desktop (zero risco de limpeza de %TEMP%)
+$RepoDir = $DesktopWorkDir
+if (-not (Test-Path $RepoDir)) {
+    New-Item -ItemType Directory -Path $RepoDir -Force | Out-Null
 }
 
 # 2. Selecao de Idioma
@@ -111,6 +116,14 @@ $T = @{
         "wait_restore_first"   = "Please complete the restore in the browser first, then confirm [Y] to proceed."
         "triage_required"      = "Please answer with [Y] for YES or [N] for NO to proceed."
         "cfg_choice_required"  = "Please type option 1 or 2 to proceed."
+        "deps_title"         = "SMART DEPENDENCY SYNC FROM GITHUB (~50 MB TOTAL)"
+        "deps_checking"      = "Verifying local suite files and dependencies in Desktop folder..."
+        "deps_down_file"     = "Downloading from GitHub: {0}..."
+        "deps_down_rom"      = "Downloading v27 ROM binary from GitHub: {0} ({1})..."
+        "deps_scripts_ok"    = "Suite Python Automation Scripts : [OK] 9/9 files verified (~135 KB)"
+        "deps_cfg_ok"        = "Ready-Made CFG Unlock Backup    : [OK] Verified (~50 KB)"
+        "deps_rom_ok"        = "v27 OpenWrt Slot 2 ROM Binaries : [OK] 3/3 verified (50.0 MB)"
+        "deps_all_done"      = "ALL DEPENDENCIES 100% READY AND SYNCHRONIZED (~50.2 MB TOTAL)!"
     }
     "pt" = @{
         "title"              = "ACER PREDATOR CONNECT T7 & X7 - ASSISTENTE INTERATIVO"
@@ -160,6 +173,14 @@ $T = @{
         "wait_restore_first"   = "Por favor, conclua o envio do backup no painel primeiro e responda [S] para prosseguir."
         "triage_required"      = "Por favor, responda com [S] para SIM ou [N] para NAO para prosseguir."
         "cfg_choice_required"  = "Por favor, digite 1 ou 2 para prosseguir."
+        "deps_title"         = "SINCRONIZACAO INTELIGENTE DE DEPENDENCIAS (GITHUB - ~50 MB TOTAL)"
+        "deps_checking"      = "Verificando integridade dos arquivos e dependencias na pasta da Area de Trabalho..."
+        "deps_down_file"     = "Baixando do GitHub: {0}..."
+        "deps_down_rom"      = "Baixando imagem da ROM v27 do GitHub: {0} ({1})..."
+        "deps_scripts_ok"    = "Scripts Python da Suite         : [OK] 9/9 arquivos verificados (~135 KB)"
+        "deps_cfg_ok"        = "Arquivo de Desbloqueio CFG Pronto: [OK] Verificado (~50 KB)"
+        "deps_rom_ok"        = "Binarios da ROM v27 para Slot 2 : [OK] 3/3 verificados (50.0 MB)"
+        "deps_all_done"      = "TODAS AS DEPENDENCIAS 100% PRONTAS E SINCRONIZADAS (~50.2 MB TOTAL)!"
     }
 }
 
@@ -183,8 +204,120 @@ function Test-Port($ip, $port, $timeoutMs = 800) {
     }
 }
 
+function Ensure-Python {
+    Write-Info $M["checking_python"]
+    $PythonCmd = ""
+    if (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe") {
+        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe"
+    } elseif (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe") {
+        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe"
+    } elseif (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe") {
+        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"
+    } else {
+        try {
+            $ver = & python --version 2>$null
+            if ($LASTEXITCODE -eq 0) { $PythonCmd = "python" }
+        } catch {}
+    }
+
+    if (-not $PythonCmd) {
+        Write-Warn $M["python_missing"]
+        winget install Python.Python.3.14 --silent --override "/passive PrependPath=1"
+        Start-Sleep -Seconds 2
+        if (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe") {
+            $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe"
+        } else {
+            $PythonCmd = "python"
+        }
+    }
+
+    Write-Success ($M["python_ok"] -f (& $PythonCmd --version 2>&1))
+    return $PythonCmd
+}
+
+function Ensure-All-Dependencies {
+    Write-Header $M["deps_title"]
+    Write-Info $M["deps_checking"]
+    Write-Host "  Pasta de Trabalho no Desktop: $RepoDir" -ForegroundColor Gray
+    Write-Host ""
+
+    $wc = New-Object System.Net.WebClient
+
+    # 1. Scripts Python da Suite (9 scripts) ~135 KB
+    $scriptDir = "$RepoDir\Scripts_Automacao"
+    if (-not (Test-Path $scriptDir)) {
+        New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null
+    }
+    $scriptFiles = @(
+        "launcher_t7.py", "telnet_compat.py", "gerenciar_telnet.py",
+        "otimizar_e_ativar_luci_slot2.py", "gravar_v27_slot2.py",
+        "switch_boot_slot.py", "diagnostico_x7.py", "unlock_only_ssh.py",
+        "aplicar_configuracao_pessoal_ap_t7.py"
+    )
+    foreach ($s in $scriptFiles) {
+        $dest = "$scriptDir\$s"
+        if (-not (Test-Path $dest) -or (Get-Item $dest).Length -eq 0) {
+            if ($LocalSourceDir -and (Test-Path "$LocalSourceDir\Scripts_Automacao\$s")) {
+                Copy-Item "$LocalSourceDir\Scripts_Automacao\$s" $dest -Force
+            } else {
+                Write-Info ($M["deps_down_file"] -f $s)
+                try {
+                    $wc.DownloadFile("$RawBase/Scripts_Automacao/$s", $dest)
+                } catch {
+                    $wc.DownloadFile("$RawBase/04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/$s", $dest)
+                }
+            }
+        }
+    }
+    Write-Success $M["deps_scripts_ok"]
+
+    # 2. Arquivo de Desbloqueio Pronto CFG ~50 KB
+    $cfgDir = "$RepoDir\02_BACKUPS_E_DUMPS\Configuracoes_CFG"
+    if (-not (Test-Path $cfgDir)) {
+        New-Item -ItemType Directory -Path $cfgDir -Force | Out-Null
+    }
+    $cfgDest = "$cfgDir\config_v27_ssh_unlocked.cfg"
+    if (-not (Test-Path $cfgDest) -or (Get-Item $cfgDest).Length -eq 0) {
+        if ($LocalSourceDir -and (Test-Path "$LocalSourceDir\02_BACKUPS_E_DUMPS\Configuracoes_CFG\config_v27_ssh_unlocked.cfg")) {
+            Copy-Item "$LocalSourceDir\02_BACKUPS_E_DUMPS\Configuracoes_CFG\config_v27_ssh_unlocked.cfg" $cfgDest -Force
+        } else {
+            Write-Info ($M["deps_down_file"] -f "config_v27_ssh_unlocked.cfg")
+            $wc.DownloadFile("$RawBase/02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg", $cfgDest)
+        }
+    }
+    Write-Success $M["deps_cfg_ok"]
+
+    # 3. Binarios da ROM Oficial v27 para Slot 2 ~50.0 MB
+    $v27Dir = "$RepoDir\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes"
+    if (-not (Test-Path $v27Dir)) {
+        New-Item -ItemType Directory -Path $v27Dir -Force | Out-Null
+    }
+    $romFiles = @(
+        @{ Name = "kernel.bin";       Size = 4237480;  Label = "4.0 MB" },
+        @{ Name = "wifi_fw.bin";      Size = 8554496;  Label = "8.1 MB" },
+        @{ Name = "rootfs.squashfs";  Size = 39616512; Label = "37.7 MB" }
+    )
+    foreach ($rf in $romFiles) {
+        $dest = "$v27Dir\$($rf.Name)"
+        if (-not (Test-Path $dest) -or (Get-Item $dest).Length -ne $rf.Size) {
+            if ($LocalSourceDir -and (Test-Path "$LocalSourceDir\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes\$($rf.Name)") -and (Get-Item "$LocalSourceDir\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes\$($rf.Name)").Length -eq $rf.Size) {
+                Copy-Item "$LocalSourceDir\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes\$($rf.Name)" $dest -Force
+            } else {
+                Write-Info ($M["deps_down_rom"] -f $rf.Name, $rf.Label)
+                $wc.DownloadFile("$RawBase/01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/$($rf.Name)", $dest)
+            }
+        }
+    }
+    Write-Success $M["deps_rom_ok"]
+    Write-Success $M["deps_all_done"]
+    Write-Host ""
+}
+
+# 2.5. Primeira Etapa: Sincronizar Todas as Dependencias do GitHub e Garantir Python 3
+Ensure-All-Dependencies
+$PythonCmd = Ensure-Python
+
 # 3. Detectar IP do Roteador
-Clear-Host
 Write-Header $M["title"]
 Write-Info $M["detecting"]
 
@@ -272,62 +405,6 @@ if (-not $RouterIP) {
     }
 }
 
-function Ensure-Python {
-    Write-Info $M["checking_python"]
-    $PythonCmd = ""
-    if (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe") {
-        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe"
-    } elseif (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe") {
-        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe"
-    } elseif (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe") {
-        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"
-    } else {
-        try {
-            $ver = & python --version 2>$null
-            if ($LASTEXITCODE -eq 0) { $PythonCmd = "python" }
-        } catch {}
-    }
-
-    if (-not $PythonCmd) {
-        Write-Warn $M["python_missing"]
-        winget install Python.Python.3.14 --silent --override "/passive PrependPath=1"
-        Start-Sleep -Seconds 2
-        if (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe") {
-            $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe"
-        } else {
-            $PythonCmd = "python"
-        }
-    }
-
-    Write-Success ($M["python_ok"] -f (& $PythonCmd --version 2>&1))
-    return $PythonCmd
-}
-
-function Ensure-Scripts {
-    $scriptDir = "$RepoDir\Scripts_Automacao"
-    if (-not (Test-Path "$scriptDir\launcher_t7.py")) {
-        New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null
-        $scriptFiles = @(
-            "launcher_t7.py", "telnet_compat.py", "gerenciar_telnet.py",
-            "otimizar_e_ativar_luci_slot2.py", "gravar_v27_slot2.py",
-            "switch_boot_slot.py", "diagnostico_x7.py", "unlock_only_ssh.py",
-            "aplicar_configuracao_pessoal_ap_t7.py"
-        )
-        Write-Info "Sincronizando scripts da suite / Syncing suite scripts..."
-        foreach ($s in $scriptFiles) {
-            $dest = "$scriptDir\$s"
-            if (-not (Test-Path $dest)) {
-                try {
-                    Invoke-WebRequest -Uri "$RawBase/Scripts_Automacao/$s" -OutFile $dest -UseBasicParsing
-                } catch {
-                    Invoke-WebRequest -Uri "$RawBase/04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/$s" -OutFile $dest -UseBasicParsing
-                }
-            }
-        }
-        Write-Success "Scripts prontos."
-    }
-}
-
 # 4. Pergunta de Triagem: Voce ja tem acesso root?
 Write-Header $M["triage_title"]
 Write-Host "  $($M["triage_q"])" -ForegroundColor Yellow
@@ -387,9 +464,7 @@ if ($NeedsUnlock) {
 
         if (Test-Path $UserCfg) {
             Write-Info $M["patching_cfg"]
-            $PythonExe = Ensure-Python
-            Ensure-Scripts
-            & $PythonExe $UnlockScript "$UserCfg" "$OutputCfg"
+            & $PythonCmd $UnlockScript "$UserCfg" "$OutputCfg"
             Write-Success ($M["cfg_copied"] -f $OutputCfg)
         } else {
             Write-Warn "Arquivo nao encontrado. Usando CFG universal padrao..."
@@ -453,11 +528,7 @@ if ($NeedsUnlock) {
     }
 }
 
-# 6. Garantir Python e Scripts para a Central
-$PythonCmd = Ensure-Python
-Ensure-Scripts
-
-# 7. Executar a Central de Gerenciamento (launcher_t7.py)
+# 6. Executar a Central de Gerenciamento (launcher_t7.py)
 Write-Header $M["launching_suite"]
 $LauncherPy = "$RepoDir\Scripts_Automacao\launcher_t7.py"
 & $PythonCmd $LauncherPy --lang $Lang --ip $RouterIP

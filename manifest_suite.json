@@ -1,6 +1,6 @@
 {
   "suite_version": "1.0.1",
-  "updated_at": "2026-10-05T21:50:01Z",
+  "updated_at": "2026-10-05T22:25:35Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
@@ -20,23 +20,23 @@
     {
       "path": "Scripts_Automacao/gerenciar_telnet.py",
       "category": "script",
-      "size": 20208,
-      "sha256": "ECB77078D389EAA889C87E32B7761EF130AFB25403BDF1095DD924A4009910A4",
-      "updated_at": "2026-10-05T21:49:30Z"
+      "size": 20220,
+      "sha256": "33C34C2D2C0376CDF82ACA73C4E083D3E98AE64AC9A5B93D7954DBF44A716663",
+      "updated_at": "2026-10-05T22:25:30Z"
     },
     {
       "path": "Scripts_Automacao/otimizar_e_ativar_luci_slot2.py",
       "category": "script",
-      "size": 15915,
-      "sha256": "5A79D2CAB672F2C2090FF8F411FEF777C4D25DFB8665FEF888978261A1617343",
-      "updated_at": "2026-10-05T21:48:28Z"
+      "size": 16247,
+      "sha256": "63E17FC1E3D09A566D860BA0FA951D97DBBA7E3E8E1392EA3F4256D1EF2A0694",
+      "updated_at": "2026-10-05T22:23:42Z"
     },
     {
       "path": "Scripts_Automacao/gravar_v27_slot2.py",
       "category": "script",
-      "size": 21328,
-      "sha256": "EAD3A8C49690514B52A4425674DACE4C948734456F828F0022C0E8B7D51EFDF4",
-      "updated_at": "2026-10-05T21:47:30Z"
+      "size": 21700,
+      "sha256": "710E8C678DE2D001004C33DDBAD50E09176F74AD80EEACA21086E267F1A97E50",
+      "updated_at": "2026-10-05T22:24:12Z"
     },
     {
       "path": "Scripts_Automacao/switch_boot_slot.py",
@@ -55,9 +55,9 @@
     {
       "path": "Scripts_Automacao/desbloquear_slot2_from_slot1.py",
       "category": "script",
-      "size": 9958,
-      "sha256": "AEBFFC24AA766FC79D94D4205F7CDAD32D888DDD5F2394467B8119A65E2FA7B0",
-      "updated_at": "2026-10-05T21:47:46Z"
+      "size": 10241,
+      "sha256": "CDA935F096E60DD459FA143AB024849AA6F1255CAFBC001DC3C3EBED4A9B03B6",
+      "updated_at": "2026-10-05T22:24:34Z"
     },
     {
       "path": "Scripts_Automacao/logger_t7.py",
@@ -83,9 +83,9 @@
     {
       "path": "Scripts_Automacao/unlock_only_ssh.py",
       "category": "script",
-      "size": 9339,
-      "sha256": "7F097BFF46B3D9776D1688EB445E74E46A08DEAEA8B582B500EA98B75913266A",
-      "updated_at": "2026-10-05T18:16:46Z"
+      "size": 9926,
+      "sha256": "DE86352EF6902F42B5DAD26FE2D52B10B66118E7CD4BAB51BE4479E2169CE234",
+      "updated_at": "2026-10-05T22:21:46Z"
     },
     {
       "path": "Scripts_Automacao/aplicar_configuracao_pessoal_ap_t7.py",
@@ -97,9 +97,9 @@
     {
       "path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg",
       "category": "cfg",
-      "size": 50464,
-      "sha256": "905AA894261B3808B0651DE466EB4619996C25184A97363308A12CA9E59186DB",
-      "updated_at": "2026-10-05T18:33:12Z"
+      "size": 50427,
+      "sha256": "B2F0D320C38C8FAD2E33878A5C5A3B67AB7B1255A8C71F6C428C49C1E3521CA1",
+      "updated_at": "2026-10-05T22:21:58Z"
     },
     {
       "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/kernel.bin",

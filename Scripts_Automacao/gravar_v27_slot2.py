@@ -403,6 +403,9 @@ def main():
                 "cp -f /etc/shadow /tmp/slot2_mnt/upper/etc/shadow 2>/dev/null",
                 "cp -f /etc/rc.local /tmp/slot2_mnt/upper/etc/rc.local 2>/dev/null",
                 "cp -f /etc/config/dropbear /tmp/slot2_mnt/upper/etc/config/dropbear 2>/dev/null",
+                "cp -f /etc/config/web_info /tmp/slot2_mnt/upper/etc/config/web_info 2>/dev/null",
+                "cp -f /etc/config/lighttpd.user /tmp/slot2_mnt/upper/etc/config/lighttpd.user 2>/dev/null",
+                "cp -f /etc/config/userinfo /tmp/slot2_mnt/upper/etc/config/userinfo 2>/dev/null",
                 "[ -f /etc/dropbear/authorized_keys ] && cp -f /etc/dropbear/authorized_keys /tmp/slot2_mnt/upper/etc/dropbear/authorized_keys 2>/dev/null",
                 "cp -f /etc/crontabs/* /tmp/slot2_mnt/upper/etc/crontabs/ 2>/dev/null",
                 "cp -f /etc/init.d/telnet /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
@@ -414,8 +417,8 @@ def main():
             for c in injection_cmds:
                 run_cmd(tn, c)
             run_cmd(tn, "umount /tmp/slot2_mnt 2>/dev/null")
-            print("       [OK] Root, SSH, Telnet e rc.local injetados com sucesso no Slot 2!")
-            log_event("GRAVACAO_SLOT2", "Root, SSH, Telnet e rc.local injetados com sucesso no Slot 2", "OK")
+            print("       [OK] Root, SSH, Telnet, rc.local e credenciais Web injetados com sucesso no Slot 2!")
+            log_event("GRAVACAO_SLOT2", "Root, SSH, Telnet, rc.local e credenciais Web injetados com sucesso no Slot 2", "OK")
         else:
             print("       [*] Volume de dados limpo via ubiupdatevol...")
             run_cmd(tn, "ubiupdatevol /dev/ubi1_3 -t", timeout=30)
@@ -446,9 +449,9 @@ def main():
         print("  1. Aguarde cerca de 90 segundos.")
         print(f"  2. Acesse http://{router_ip} no navegador.")
         if with_root:
-            print("  3. [OK] O Slot 2 ja acorda com ROOT, SSH e Telnet DESBLOQUEADOS!")
-            print("     - Usuario: 'root' (ou 'Admin')")
-            print("     - Senha  : 'root'")
+            print("  3. [OK] O Slot 2 ja acorda com ROOT, SSH, Web e Telnet DESBLOQUEADOS!")
+            print("     - Usuario Web / SSH : 'root' (ou 'Admin')")
+            print("     - Senha Universal   : 'root0100'")
         else:
             print("  3. [!] O Slot 2 acordou 100% Stock OEM bloqueado.")
             print("     Restaure 'config_v27_ssh_unlocked.cfg' pelo painel se desejar abrir o terminal.")

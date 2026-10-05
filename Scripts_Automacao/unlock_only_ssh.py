@@ -13,6 +13,7 @@ import tarfile
 import io
 import sys
 import os
+import hashlib
 
 def unlock_cfg(input_path, output_path, custom_ssid=None, custom_key=None):
     if not os.path.exists(input_path):
@@ -99,8 +100,8 @@ fi
         members_data["etc/crontabs/root"] = admin_cron_new.encode("utf-8")
         print("   [+] etc/crontabs/Admin atualizado com watchdog de 60 segundos")
 
-    # 4. Ajustar etc/passwd e etc/shadow (Definir usuario 'root' e 'Admin' com senha padrao 'root')
-    DEFAULT_ROOT_HASH = "$1$ARKroot1$RxlP7OYmB1xLe1obY775A/"  # Senha: root
+    # 4. Ajustar etc/passwd e etc/shadow (Definir usuario 'root' e 'Admin' com senha padrao 'root0100')
+    DEFAULT_ROOT_HASH = "$1$ARKroot1$inwXu9.r12/oWLrMAV9eX."  # Senha: root0100
 
     passwd_text = members_data["etc/passwd"].decode("utf-8", errors="ignore")
     if "root:x:0:0" not in passwd_text:
@@ -129,9 +130,19 @@ fi
         new_shadow_lines.insert(1, f"Admin:{DEFAULT_ROOT_HASH}:20729:0:99999:7:::")
 
     members_data["etc/shadow"] = ("\n".join(new_shadow_lines) + "\n").encode("utf-8")
-    print("   [+] Senha padronizada com sucesso: Usuario 'root' | Senha 'root'")
+    print("   [+] Senha padronizada com sucesso: Usuario 'root' e 'Admin' | Senha 'root0100'")
 
-    # 4.5. Opcional: Personalizar Wi-Fi (SSID e Senha)
+    # 4.5. Ajustar Credenciais da Interface Web da Acer (Lighttpd / FastCGI)
+    WEB_USER = "Admin"
+    WEB_PASS = "root0100"
+    WEB_MD5 = hashlib.md5(f"{WEB_PASS}\n".encode("utf-8")).hexdigest()
+
+    members_data["etc/config/web_info"] = f"{WEB_USER}:{WEB_PASS}\n".encode("utf-8")
+    members_data["etc/config/lighttpd.user"] = f"admin:{WEB_MD5}\n".encode("utf-8")
+    members_data["etc/config/userinfo"] = f"{WEB_USER}:{WEB_PASS}_ftm\n".encode("utf-8")
+    print(f"   [+] Interface Web sincronizada com senha '{WEB_PASS}' (Hash MD5: {WEB_MD5})")
+
+    # 4.6. Opcional: Personalizar Wi-Fi (SSID e Senha)
     if (custom_ssid or custom_key) and "etc/config/wireless" in members_data:
         import re
         w_text = members_data["etc/config/wireless"].decode("utf-8", errors="ignore")

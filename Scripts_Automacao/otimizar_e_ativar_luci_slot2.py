@@ -202,11 +202,15 @@ def main():
     print("    [OK] LuCI ativo na porta 80 com permissao total.")
 
     # Padronizar senhas de root e Admin
-    print("\n[*] Padronizando senhas de root e Admin para 'root'...")
-    hash_root = "$1$ARKroot1$RxlP7OYmB1xLe1obY775A/"
+    print("\n[*] Padronizando senhas de root e Admin para 'root0100'...")
+    hash_root = "$1$ARKroot1$inwXu9.r12/oWLrMAV9eX."
     run_cmd(tn, f"sed -i 's|^root:[^:]*:|root:{hash_root}:|' /etc/shadow")
     run_cmd(tn, f"sed -i 's|^Admin:[^:]*:|Admin:{hash_root}:|' /etc/shadow")
-    print("    [OK] Senhas de root e Admin padronizadas para 'root'.")
+    run_cmd(tn, "echo 'Admin:root0100' > /etc/config/web_info")
+    run_cmd(tn, "echo 'admin:24d23582a1b1c978e3c7a26ee034799b' > /etc/config/lighttpd.user")
+    run_cmd(tn, "echo 'admin:24d23582a1b1c978e3c7a26ee034799b' > /etc/lighttpd/lighttpd.user")
+    run_cmd(tn, "echo 'Admin:root0100_ftm' > /etc/config/userinfo")
+    print("    [OK] Senhas de root e Admin padronizadas para 'root0100'.")
 
     # 5. UPnP Gamer Automatico (miniupnpd)
     print("\n[*] [5/9] Ativando UPnP Gamer Automatico (NAT Aberto para PC e Consoles)...")
@@ -326,7 +330,7 @@ def main():
     print(f"  Interface LuCI ativa em: http://{target_ip}")
     print("  Credenciais de acesso (LuCI e SSH):")
     print("    - Usuario: root (ou Admin)")
-    print("    - Senha:   root")
+    print("    - Senha:   root0100")
     print("=" * 75)
 
 if __name__ == "__main__":

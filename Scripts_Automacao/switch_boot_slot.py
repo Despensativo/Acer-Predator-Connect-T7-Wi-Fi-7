@@ -18,6 +18,16 @@ except ImportError:
         import telnetlib
         Telnet = telnetlib.Telnet
 
+try:
+    from logger_t7 import log_event
+except ImportError:
+    try:
+        from Scripts_Automacao.logger_t7 import log_event
+    except ImportError:
+        def log_event(action, message, status="INFO", details=None):
+            pass
+
+
 def test_telnet(ip, timeout=1):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -134,62 +144,71 @@ def main():
         print(f"[-] Erro ao conectar via Telnet em {router_ip}:23: {e}")
         sys.exit(1)
 
-    cur = get_current_slot(tn)
     out_cmd = run_cmd(tn, "cat /proc/boot_info/bootconfig0/rootfs/primaryboot")
     raw_val = [l.strip() for l in out_cmd.splitlines() if l.strip() and not l.startswith("cat") and not l.startswith("/ #")][-1] if out_cmd else "?"
-    print(f"[*] Slot ativo atualmente no U-Boot: {cur} (primaryboot = {raw_val})")
+    is_slot1 = (raw_val == "1")
+    cur_num = "1" if is_slot1 else "2"
+    target_num = "2" if is_slot1 else "1"
+    cur_label = "SLOT 1 (Firmware OEM Acer Original)" if is_slot1 else "SLOT 2 (OpenWrt Puro / LuCI)"
+    target_label = "SLOT 2 (OpenWrt Puro / LuCI)" if is_slot1 else "SLOT 1 (Firmware OEM Acer Original)"
+
+    print(f"[*] Slot ativo atualmente no U-Boot: {cur_label} (primaryboot = {raw_val})")
 
     install_helper_scripts(tn)
-    print("[*] Comandos rapidos instalados no roteador:")
+    print("[*] Comandos rapidos instalados no terminal do roteador:")
     print("    - 'boot-openwrt' -> Inicia no OpenWrt puro (Slot 2)")
     print("    - 'boot-acer'    -> Inicia no sistema Acer original (Slot 1)")
 
     if target_slot in ["openwrt", "2"]:
         print("\n[*] Aplicando chaveamento para SLOT 2 (OpenWrt Puro)...")
+        log_event("SWITCH_BOOT", "Chaveamento via argumento para Slot 2", "INFO")
         out = run_cmd(tn, "/usr/sbin/boot-openwrt")
         print(out)
+        log_event("SWITCH_BOOT", "Slot 2 ativado e reboot enviado", "OK")
     elif target_slot in ["acer", "1"]:
         print("\n[*] Aplicando chaveamento para SLOT 1 (Acer Original)...")
+        log_event("SWITCH_BOOT", "Chaveamento via argumento para Slot 1", "INFO")
         out = run_cmd(tn, "/usr/sbin/boot-acer")
         print(out)
+        log_event("SWITCH_BOOT", "Slot 1 ativado e reboot enviado", "OK")
     else:
         while True:
-            print("\nEscolha uma opcao de alternancia de boot:")
-            print("  [1] Reiniciar no SLOT 1 (Firmware OEM Acer Original de Fabrica)")
-            print("  [2] Reiniciar no SLOT 2 (OpenWrt Puro / LuCI)")
+            print("\n" + "=" * 65)
+            print(f"  SLOT ATUAL : {cur_label}")
+            print(f"  DESTINO    : {target_label}")
+            print("=" * 65)
+            print(f"  [1] Alternar para o {target_label} e reiniciar (Recomendado)")
+            print(f"  [2] Forcar reinicializacao no mesmo {cur_label}")
             print("  [0] Voltar ao menu principal sem alterar nada")
-            opt = input("\nOpcao [0/1/2]: ").strip()
+            opt = input(f"\nEscolha uma opcao [1/2/0] (Padrao: 1): ").strip()
             if not opt:
-                print("\n[!] Nenhuma opcao informada. Digite 1, 2 ou 0 para prosseguir.")
-                continue
+                opt = "1"
 
             if opt == "1":
-                conf = input("\n[?] Confirma reiniciar o roteador no SLOT 1 (Acer de Fabrica)? [S/N]: ").strip().lower()
-                if conf in ["s", "sim", "y", "yes"]:
-                    print("\n[*] Aplicando chaveamento para SLOT 1 (Acer Original)...")
-                    out = run_cmd(tn, "/usr/sbin/boot-acer")
-                    print(out)
-                    break
-                else:
-                    print("[*] Operacao cancelada pelo usuario.")
-                    break
-            elif opt == "2":
-                conf = input("\n[?] Confirma reiniciar o roteador no SLOT 2 (OpenWrt Puro)? [S/N]: ").strip().lower()
-                if conf in ["s", "sim", "y", "yes"]:
-                    print("\n[*] Aplicando chaveamento para SLOT 2 (OpenWrt Puro)...")
+                print(f"\n[*] Aplicando chaveamento para {target_label}...")
+                log_event("SWITCH_BOOT", f"Alternando do Slot {cur_num} para o Slot {target_num}", "INFO")
+                if target_num == "2":
                     out = run_cmd(tn, "/usr/sbin/boot-openwrt")
-                    print(out)
-                    break
                 else:
-                    print("[*] Operacao cancelada pelo usuario.")
-                    break
+                    out = run_cmd(tn, "/usr/sbin/boot-acer")
+                print(out)
+                log_event("SWITCH_BOOT", f"Chaveamento para Slot {target_num} executado com sucesso", "OK")
+                break
+            elif opt == "2":
+                print(f"\n[*] Reiniciando no mesmo Slot {cur_num}...")
+                log_event("SWITCH_BOOT", f"Reinicio forcado no mesmo Slot {cur_num}", "INFO")
+                out = run_cmd(tn, "reboot")
+                print(out)
+                break
             elif opt == "0":
                 print("\n[*] Nenhuma alteracao efetuada. Retornando ao menu...")
+                log_event("SWITCH_BOOT", "Cancelado pelo usuario sem alteracao", "INFO")
                 break
             else:
-                print(f"\n[!] Opcao '{opt}' invalida. Digite 1, 2 ou 0 para prosseguir.")
+                print(f"\n[!] Opcao '{opt}' invalida. Digite 1, 2 ou 0.")
 
     tn.close()
 
 if __name__ == "__main__":
     main()
+

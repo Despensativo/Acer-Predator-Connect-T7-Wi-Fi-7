@@ -30,6 +30,8 @@ TRACKED_FILES = [
     {"path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/wifi_fw.bin", "category": "rom"},
     {"path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/rootfs.squashfs", "category": "rom"},
     {"path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img", "category": "stock_rom"},
+    {"path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin", "category": "boot"},
+    {"path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot2_openwrt.bin", "category": "boot"},
     {"path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/COMO_USAR_MODO_RECOVERY_INSTRUCTIONS.txt", "category": "doc"},
     {"path": "iniciar.ps1", "category": "launcher"},
     {"path": "EXECUTAR_T7.bat", "category": "launcher"}

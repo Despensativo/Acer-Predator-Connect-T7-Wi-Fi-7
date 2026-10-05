@@ -4,9 +4,28 @@
 ================================================================================
 
 [PORTUGUES - BRASIL]
-Este procedimento restaura o roteador para o firmware original de fabrica da Acer
-direto pelo bootloader de emergencia (hardware), mesmo se o sistema operacional
-estiver corrompido, em bootloop ou travado.
+
+--------------------------------------------------------------------------------
+⚠️ ATENCAO: VOCE JA TENTOU DAR BOOT NO SLOT 1 ANTES DE REINSTALAR TUDO?
+--------------------------------------------------------------------------------
+O Acer Predator Connect T7 possui arquitetura de DUAL-BOOT em hardware.
+Se o seu roteador nao esta iniciando porque algo deu errado no Slot 2 (OpenWrt),
+lembre-se que o seu SLOT 1 (Firmware Original de Fabrica da Acer) permanece
+100% INTACTO e funcional na memoria interna!
+
+Na maioria absoluta das vezes, NAO e necessario reinstalar a ROM completa pelo
+modo recovery de emergencia:
+1. Se o roteador ainda responde no terminal (Telnet ou SSH):
+   Abra a nossa ferramenta no computador e escolha a Opcao [1]
+   ('Alternar Dual-Boot') para chavear e reiniciar de volta no Slot 1 em 5 segundos!
+2. Ou via terminal root, basta digitar o comando:
+   boot-acer
+
+Caso o U-Boot precise ser forçado para outro slot, estao disponiveis nesta pasta:
+  - bootconfig_slot1_acer_oem.bin (512 KB - Chaveia ponteiro para Slot 1 Acer OEM)
+  - bootconfig_slot2_openwrt.bin  (512 KB - Chaveia ponteiro para Slot 2 OpenWrt)
+
+Se o aparelho realmente estiver travado em bootloop e você precisar reinstalar:
 
 ARQUIVO DA ROM OFICIAL NESTA PASTA:
   ==> nand-4k-ipq5332-single_101000027.img (55.3 MB - Versao Oficial v1.01.000027)
@@ -40,9 +59,27 @@ PASSO 3: ENVIAR O FIRMWARE ORIGINAL PELO NAVEGADOR
 ================================================================================
 
 [ENGLISH]
-This procedure restores the router to the official Acer factory firmware directly
-via the hardware emergency bootloader (U-Boot), even if the system is corrupted,
-in a bootloop, or unresponsive.
+
+--------------------------------------------------------------------------------
+⚠️ ATTENTION: HAVE YOU TRIED BOOTING INTO SLOT 1 BEFORE REINSTALLING?
+--------------------------------------------------------------------------------
+The Acer Predator Connect T7 features hardware DUAL-BOOT architecture.
+If your router is failing to boot due to an issue with Slot 2 (OpenWrt),
+remember that your SLOT 1 (Official Acer Factory Firmware) remains
+100% INTACT and functional in internal memory!
+
+In most cases, it is NOT necessary to reinstall the entire firmware via recovery:
+1. If the router still responds to terminal (Telnet or SSH):
+   Open our suite on your PC and select Option [1] ('Switch Dual-Boot')
+   to boot back into Slot 1 in 5 seconds!
+2. Or in the root terminal, simply run:
+   boot-acer
+
+If U-Boot needs to be directed to a specific slot, both binaries are in this folder:
+  - bootconfig_slot1_acer_oem.bin (512 KB - Directs bootloader to Slot 1 Acer OEM)
+  - bootconfig_slot2_openwrt.bin  (512 KB - Directs bootloader to Slot 2 OpenWrt)
+
+If the device is truly bricked and requires a complete factory reflash:
 
 OFFICIAL ROM FILE IN THIS FOLDER:
   ==> nand-4k-ipq5332-single_101000027.img (55.3 MB - Official Acer v1.01.000027)

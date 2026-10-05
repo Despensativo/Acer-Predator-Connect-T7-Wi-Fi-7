@@ -1,14 +1,14 @@
 {
   "suite_version": "1.0.1",
-  "updated_at": "2026-10-05T20:56:56Z",
+  "updated_at": "2026-10-05T21:05:32Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
-      "size": 32648,
-      "sha256": "FF74215A8FD3D7066A36326D34D4E169D25D54C81E82A28AE3DC1F61E088EC3B",
-      "updated_at": "2026-10-05T20:56:08Z"
+      "size": 33539,
+      "sha256": "F4428698667B87C395CAA025B5B104C0DA1F59BA5E7092A86DDA580405BD0223",
+      "updated_at": "2026-10-05T21:05:28Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",
@@ -41,9 +41,9 @@
     {
       "path": "Scripts_Automacao/switch_boot_slot.py",
       "category": "script",
-      "size": 7248,
-      "sha256": "337EE8D10C114730DAE8F57B8FFB0868FFE3FA00BEA3ABB813A368EABBB72144",
-      "updated_at": "2026-10-05T18:58:26Z"
+      "size": 8015,
+      "sha256": "37137D9FF866EE4269B4C8DD9BFF61153A16EAA6334BC74C4B0E4703E1FF9E8F",
+      "updated_at": "2026-10-05T21:04:14Z"
     },
     {
       "path": "Scripts_Automacao/diagnostico_x7.py",
@@ -116,11 +116,25 @@
       "updated_at": "2026-10-02T18:47:52Z"
     },
     {
+      "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin",
+      "category": "boot",
+      "size": 524288,
+      "sha256": "BCB6B37E13B0231CE735F31705ECD97DDE563A35C2605C0DE467A77C35D56EBE",
+      "updated_at": "2026-10-02T13:56:34Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot2_openwrt.bin",
+      "category": "boot",
+      "size": 524288,
+      "sha256": "E2F66A844A76C6E1BF5E80C855905A09B4EC259A9A5FA00FE628B87DB59DB163",
+      "updated_at": "2026-10-02T14:06:40Z"
+    },
+    {
       "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/COMO_USAR_MODO_RECOVERY_INSTRUCTIONS.txt",
       "category": "doc",
-      "size": 3854,
-      "sha256": "69032A4B13872178ABC27A618F759C9A44A4E820CA57D6FC01FA4A797906F6DD",
-      "updated_at": "2026-10-05T20:25:44Z"
+      "size": 5808,
+      "sha256": "AD6C253708309B4391576C87BEDDF4FA54910AE44F07D70C5A2BE1DB7634AECC",
+      "updated_at": "2026-10-05T21:04:48Z"
     },
     {
       "path": "iniciar.ps1",

@@ -517,8 +517,15 @@ def show_emergency_recovery():
     print("  MODO DE RECUPERACAO DE EMERGENCIA (U-BOOT WEB RECOVERY / UNBRICK)" if CURRENT_LANG == "pt" else "  EMERGENCY RECOVERY MODE (U-BOOT WEB RECOVERY / UNBRICK)")
     print("=" * 75)
     if CURRENT_LANG == "pt":
-        print("""  Este procedimento restaura o roteador de fabrica DIRETO pelo bootloader
-  de emergencia da Qualcomm/Acer, mesmo se o sistema operacional estiver travado!
+        print("""  -------------------------------------------------------------------------
+  ⚠️ ATENCAO: VOCE JA TENTOU DAR BOOT NO SLOT 1 ANTES DE REINSTALAR TUDO?
+  -------------------------------------------------------------------------
+  O Predator T7 possui DUAL-BOOT em hardware. Se o Slot 2 (OpenWrt) falhou
+  ou travou, seu SLOT 1 (Firmware Original Acer) permanece 100% INTACTO!
+  Se você ainda tem acesso ao menu, use a Opcao [1] para voltar ao Slot 1.
+
+  Este procedimento abaixo restaura o roteador de fabrica DIRETO pelo bootloader
+  de emergencia da Qualcomm/Acer caso o aparelho esteja totalmente travado:
 
   [PASSO 1] CONFIGURAR CABO E IP NO COMPUTADOR:
     1. Conecte um cabo de rede do PC diretamente na porta LAN 1 do Predator T7.
@@ -538,8 +545,15 @@ def show_emergency_recovery():
     2. A tela oficial de recuperacao do U-Boot sera exibida.
     3. Clique em 'Browse' / 'Escolher Arquivo' e envie a ROM oficial completa:""")
     else:
-        print("""  This procedure restores the factory firmware DIRECTLY via the Qualcomm/Acer
-  emergency hardware bootloader, even if the OS is in bootloop or bricked!
+        print("""  -------------------------------------------------------------------------
+  ⚠️ ATTENTION: HAVE YOU TRIED BOOTING INTO SLOT 1 BEFORE REINSTALLING?
+  -------------------------------------------------------------------------
+  The Predator T7 has hardware DUAL-BOOT. If Slot 2 (OpenWrt) failed or
+  locked, your SLOT 1 (Factory Acer OEM) remains 100% INTACT!
+  If you still have menu access, use Option [1] to switch back to Slot 1.
+
+  The procedure below restores factory firmware DIRECTLY via the Qualcomm/Acer
+  emergency hardware bootloader if the unit is completely unresponsive:
 
   [STEP 1] CONFIGURE CABLE & PC NETWORK IP:
     1. Connect an Ethernet cable from PC to LAN 1 port on Predator T7.

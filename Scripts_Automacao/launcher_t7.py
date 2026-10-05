@@ -79,6 +79,7 @@ TEXTS = {
         "menu_0": "[0] Exit",
         "prompt_choice": "Choose an option (0-7): ",
         "press_enter": "\nPress ENTER to return to menu...",
+        "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [5] (Hardening)!\033[0m",
         "goodbye": "\nExiting management suite. Goodbye!"
     },
     "pt": {
@@ -122,8 +123,9 @@ TEXTS = {
         "menu_0": "[0] Sair",
         "prompt_choice": "Escolha uma opcao (0-7): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
+        "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [5] (Hardening)!\033[0m",
         "goodbye": "\nEncerrando central. Ate logo!"
-    }
+    },
 }
 
 CURRENT_LANG = "en"
@@ -355,6 +357,9 @@ def main_menu():
         print(f"     {t('title')}")
         print(f"     Status: {status_line}")
         print("=" * 75)
+        if info["telnet_ok"]:
+            print(f"  {t('telnet_active_warning')}")
+            print("-" * 75)
         print(f"  {t('menu_1')}")
         print(f"  {t('menu_2')}")
         print(f"  {t('menu_3')}")
@@ -370,7 +375,7 @@ def main_menu():
             print(t("goodbye"))
             break
 
-        if choice in ["2", "3", "4", "5", "7"] and not info["telnet_ok"]:
+        if choice in ["2", "3", "4", "7"] and not info["telnet_ok"]:
             print("\n" + "=" * 75)
             print(t("terminal_required").format(rip=rip))
             print("=" * 75)

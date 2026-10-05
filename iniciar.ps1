@@ -82,7 +82,7 @@ $T = @{
         "cfg_opt1_desc"      = "    - Copies unlock file directly to your Desktop`n    - Unlocks Telnet (no pass) and SSH ('root' / 'root')`n    - Wi-Fi: Predator_T7 / Password: predator123"
         "cfg_opt2"           = "[2] Unlock YOUR OWN Current Backup (Keeps your current Wi-Fi and Passwords)"
         "cfg_opt2_desc"      = "    - Download your current config.cfg from Acer Web GUI`n    - Injects root while keeping all your Wi-Fi SSIDs and settings"
-        "cfg_prompt"         = "Choose option [1/2] (Default: 1)"
+        "cfg_prompt"         = "Choose option [1/2]: "
         "wifi_info_header"   = "DEFAULT WI-FI CREDENTIALS AFTER UNLOCK"
         "wifi_info_desc"     = "When your router reboots, reconnect to your Wi-Fi using:`n    - Networks: Predator_T7_2.4GHz / Predator_T7_5GHz / Predator_T7_6GHz`n    - Password: predator123`n    - Web / Root Password: root"
         "copying_cfg"        = "Preparing unlock config for your Desktop..."
@@ -110,6 +110,7 @@ $T = @{
         "confirm_restore_done" = "Did you click 'Restore' in Acer web panel and router began rebooting? [Y/N]: "
         "wait_restore_first"   = "Please complete the restore in the browser first, then confirm [Y] to proceed."
         "triage_required"      = "Please answer with [Y] for YES or [N] for NO to proceed."
+        "cfg_choice_required"  = "Please type option 1 or 2 to proceed."
     }
     "pt" = @{
         "title"              = "ACER PREDATOR CONNECT T7 & X7 - ASSISTENTE INTERATIVO"
@@ -130,7 +131,7 @@ $T = @{
         "cfg_opt1_desc"      = "    - Copia o arquivo pronto direto para sua Area de Trabalho`n    - Ativa Telnet sem senha e SSH com usuario 'root' / senha 'root'`n    - Wi-Fi: Predator_T7 / Senha: predator123"
         "cfg_opt2"           = "[2] Desbloquear o SEU PROPRIO backup atual (Mantem seu Wi-Fi e Senhas)"
         "cfg_opt2_desc"      = "    - Voce baixa o config.cfg pelo painel da Acer`n    - O script injeta o root mantendo todas as suas redes e senhas de Wi-Fi"
-        "cfg_prompt"         = "Escolha a opcao [1/2] (Padrao: 1)"
+        "cfg_prompt"         = "Escolha a opcao [1/2]: "
         "wifi_info_header"   = "CREDENCIAIS DO WI-FI APOS O DESBLOQUEIO"
         "wifi_info_desc"     = "Quando o roteador reiniciar, reconecte no seu Wi-Fi com:`n    - Redes:    Predator_T7_2.4GHz / Predator_T7_5GHz / Predator_T7_6GHz`n    - Senha:    predator123`n    - Senha do Painel (Root): root"
         "copying_cfg"        = "Preparando arquivo de desbloqueio para sua Area de Trabalho..."
@@ -158,6 +159,7 @@ $T = @{
         "confirm_restore_done" = "Voce ja clicou em 'Restaurar' no painel da Acer e o roteador comecou a reiniciar? [S/N]: "
         "wait_restore_first"   = "Por favor, conclua o envio do backup no painel primeiro e responda [S] para prosseguir."
         "triage_required"      = "Por favor, responda com [S] para SIM ou [N] para NAO para prosseguir."
+        "cfg_choice_required"  = "Por favor, digite 1 ou 2 para prosseguir."
     }
 }
 
@@ -364,8 +366,13 @@ if ($NeedsUnlock) {
     Write-Host "  $($M["cfg_opt2"])" -ForegroundColor White
     Write-Host "$($M["cfg_opt2_desc"])" -ForegroundColor Gray
     Write-Host ""
-    $CfgChoice = Read-Host "  $($M["cfg_prompt"])"
-    if (-not $CfgChoice) { $CfgChoice = "1" }
+    $CfgChoice = ""
+    while ($CfgChoice -notin @("1", "2")) {
+        $CfgChoice = (Read-Host "  $($M["cfg_prompt"])").Trim()
+        if ($CfgChoice -notin @("1", "2")) {
+            Write-Warn $M["cfg_choice_required"]
+        }
+    }
 
     $Desktop = [Environment]::GetFolderPath("Desktop")
     $OutputCfg = "$Desktop\config_desbloqueio_t7.cfg"

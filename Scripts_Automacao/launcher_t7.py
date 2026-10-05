@@ -516,16 +516,34 @@ def show_emergency_recovery():
     print("\n" + "=" * 75)
     print("  MODO DE RECUPERACAO DE EMERGENCIA (U-BOOT WEB RECOVERY / UNBRICK)" if CURRENT_LANG == "pt" else "  EMERGENCY RECOVERY MODE (U-BOOT WEB RECOVERY / UNBRICK)")
     print("=" * 75)
+
+    bootconfig_candidates = [
+        os.path.join(REPO_DIR, "01_FIRMWARES_E_IMAGENS", "Stock_OEM_Recovery", "bootconfig_slot1_acer_oem.bin"),
+        os.path.join(r"C:\Users\User\Desktop\Acer-Predator-Connect-T7", "01_FIRMWARES_E_IMAGENS", "Stock_OEM_Recovery", "bootconfig_slot1_acer_oem.bin"),
+    ]
+    bootconfig_path = None
+    for bc in bootconfig_candidates:
+        if os.path.isfile(bc):
+            bootconfig_path = os.path.abspath(bc)
+            break
+
+    stock_candidates = [
+        os.path.join(REPO_DIR, "01_FIRMWARES_E_IMAGENS", "Stock_OEM_Recovery", "nand-4k-ipq5332-single_101000027.img"),
+        os.path.join(REPO_DIR, "02_BACKUPS_E_DUMPS", "MTD_Full_Dumps", "Acer_Predator_Connect_T7", "nand-4k-ipq5332-single_101000027.img"),
+        os.path.join(r"C:\Users\User\Desktop\Acer-Predator-Connect-T7", "01_FIRMWARES_E_IMAGENS", "Stock_OEM_Recovery", "nand-4k-ipq5332-single_101000027.img"),
+    ]
+    stock_path = None
+    for sc in stock_candidates:
+        if os.path.isfile(sc):
+            stock_path = os.path.abspath(sc)
+            break
+
     if CURRENT_LANG == "pt":
         print("""  -------------------------------------------------------------------------
-  ⚠️ ATENCAO: VOCE JA TENTOU DAR BOOT NO SLOT 1 ANTES DE REINSTALAR TUDO?
+  ⚠️ PROCEDIMENTO DE RECUPERACAO FISICA (U-BOOT RECOVERY / 192.168.1.1)
   -------------------------------------------------------------------------
-  O Predator T7 possui DUAL-BOOT em hardware. Se o Slot 2 (OpenWrt) falhou
-  ou travou, seu SLOT 1 (Firmware Original Acer) permanece 100% INTACTO!
-  Se você ainda tem acesso ao menu, use a Opcao [1] para voltar ao Slot 1.
-
-  Este procedimento abaixo restaura o roteador de fabrica DIRETO pelo bootloader
-  de emergencia da Qualcomm/Acer caso o aparelho esteja totalmente travado:
+  Se o aparelho travou em bootloop, nao inicia o sistema e nao responde
+  ao terminal/IP, siga estes passos para acionar o bootloader de emergencia:
 
   [PASSO 1] CONFIGURAR CABO E IP NO COMPUTADOR:
     1. Conecte um cabo de rede do PC diretamente na porta LAN 1 do Predator T7.
@@ -534,26 +552,52 @@ def show_emergency_recovery():
        - Mascara     : 255.255.255.0
        - Gateway     : 192.168.1.1
 
-  [PASSO 2] ACIONAR O BOOTLOADER DE EMERGENCIA NO ROTEADOR:
-    1. Desconecte a fonte de energia do roteador.
+  [PASSO 2] ACIONAR O BOOTLOADER DE EMERGENCIA NO ROTEADOR (HARDWARE):
+    1. Desconecte a fonte de energia (cabo de forca) do roteador.
     2. Mantenha pressionado o botao WPS no topo/traseira do roteador.
-    3. Conecte a fonte de energia mantendo o botao WPS PRESSIONADO POR 5 SEGUNDOS.
-    4. Solte o botao WPS. Os LEDs ficam estáticos indicando modo recovery.
+    3. Conecte a fonte mantendo o botao WPS PRESSIONADO POR 5 SEGUNDOS.
+    4. Solte o botao WPS. Os LEDs ficarao estaticos indicando Modo Recovery.
 
-  [PASSO 3] ENVIAR O FIRMWARE ORIGINAL PELO NAVEGADOR:
-    1. Abra o navegador em: http://192.168.1.1
-    2. A tela oficial de recuperacao do U-Boot sera exibida.
-    3. Clique em 'Browse' / 'Escolher Arquivo' e envie a ROM oficial completa:""")
+  [PASSO 3] ESCOLHER O ARQUIVO DE RECUPERACAO EM: http://192.168.1.1
+    Abra o navegador em http://192.168.1.1 e selecione o arquivo:
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OPCAO A (TENTATIVA 1 - SUPER RAPIDA / 2 SEGUNDOS - RECOMENDADA):
+  FORCAR O BOOT DE VOLTA PARA O SLOT 1 (ORIGINAL ACER INTACTO)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    Envie primeiro apenas o arquivo de ponteiro de boot (512 KB):""")
+        if bootconfig_path:
+            print(f"    ==> {bootconfig_path}")
+        else:
+            print("    ==> Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin")
+        print("""    • O envio dura 2 segundos e forca o U-Boot a carregar o Slot 1 da Acer.
+    • Se o roteador subir no IP 192.168.76.1: RECUPERADO!
+      A partir dai, use a Opcao [3] da central para reinstalar o Slot 2 limpo.
+    • Se nao subir (Slot 1 corrompido): Siga para a OPCAO B abaixo.
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OPCAO B (TENTATIVA 2 - ULTIMO RECURSO / RESTAURACAO DE FABRICA):
+  REGRAVAR A ROM OFICIAL NA MEMORIA FLASH NAND
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    Coloque em Recovery novamente (WPS 5s) e envie a ROM completa oficial:""")
+        if stock_path:
+            size_mb = os.path.getsize(stock_path) / (1024 * 1024)
+            print(f"    ==> {stock_path} ({size_mb:.1f} MB)")
+        else:
+            print("    ==> Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img")
+        print("""    • ⚠️ LEMBRETE: O U-Boot grava SOMENTE 1 particao (Slot 1 principal)!
+      O roteador subira original no Slot 1. Depois de subir, voce obtem root
+      (Opcao [2]) e podera regravar a particao 2 (Slot 2) pela Opcao [3]!
+    • Aguarde de 2 a 3 minutos sem desligar a energia.
+
+  [PASSO 4] FINALIZACAO:
+    Volte a placa de rede do Windows para 'Obter IP Automaticamente' (DHCP).""")
     else:
         print("""  -------------------------------------------------------------------------
-  ⚠️ ATTENTION: HAVE YOU TRIED BOOTING INTO SLOT 1 BEFORE REINSTALLING?
+  ⚠️ HARDWARE RECOVERY PROCEDURE (U-BOOT RECOVERY / 192.168.1.1)
   -------------------------------------------------------------------------
-  The Predator T7 has hardware DUAL-BOOT. If Slot 2 (OpenWrt) failed or
-  locked, your SLOT 1 (Factory Acer OEM) remains 100% INTACT!
-  If you still have menu access, use Option [1] to switch back to Slot 1.
-
-  The procedure below restores factory firmware DIRECTLY via the Qualcomm/Acer
-  emergency hardware bootloader if the unit is completely unresponsive:
+  If the unit is stuck in bootloop, will not boot OS and does not respond
+  to terminal/IP, follow these steps to trigger emergency hardware recovery:
 
   [STEP 1] CONFIGURE CABLE & PC NETWORK IP:
     1. Connect an Ethernet cable from PC to LAN 1 port on Predator T7.
@@ -568,39 +612,40 @@ def show_emergency_recovery():
     3. Plug in the power cable KEEPING THE WPS BUTTON PRESSED FOR 5 SECONDS.
     4. Release the WPS button. LEDs will remain static indicating recovery mode.
 
-  [STEP 3] FLASH ORIGINAL FACTORY FIRMWARE IN BROWSER:
-    1. In your browser, open: http://192.168.1.1
-    2. The Qualcomm U-Boot Web Recovery page will appear.
-    3. Click 'Browse' and select the official full ROM image:""")
+  [STEP 3] SELECT RECOVERY FILE IN BROWSER: http://192.168.1.1
+    Open browser at http://192.168.1.1 and select the recovery file:
 
-    stock_candidates = [
-        os.path.join(REPO_DIR, "01_FIRMWARES_E_IMAGENS", "Stock_OEM_Recovery", "nand-4k-ipq5332-single_101000027.img"),
-        os.path.join(REPO_DIR, "02_BACKUPS_E_DUMPS", "MTD_Full_Dumps", "Acer_Predator_Connect_T7", "nand-4k-ipq5332-single_101000027.img"),
-        os.path.join(r"C:\Users\User\Desktop\Acer-Predator-Connect-T7", "01_FIRMWARES_E_IMAGENS", "Stock_OEM_Recovery", "nand-4k-ipq5332-single_101000027.img"),
-    ]
-    stock_path = None
-    for sc in stock_candidates:
-        if os.path.isfile(sc):
-            stock_path = os.path.abspath(sc)
-            break
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OPTION A (ATTEMPT 1 - SUPER FAST / 2 SECONDS - RECOMMENDED):
+  FORCE BOOT BACK INTO SLOT 1 (INTACT FACTORY ACER OEM)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    First upload only the boot pointer binary (512 KB):""")
+        if bootconfig_path:
+            print(f"    ==> {bootconfig_path}")
+        else:
+            print("    ==> Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin")
+        print("""    • Takes only 2 seconds and points U-Boot back to intact Slot 1.
+    • If router boots to 192.168.76.1: RESCUED!
+      From Slot 1, use Option [3] to reflash clean Slot 2 anytime.
+    • If it does not boot: Proceed to OPTION B below.
 
-    if stock_path:
-        size_mb = os.path.getsize(stock_path) / (1024 * 1024)
-        print(f"\n     ==> {stock_path}")
-        print(f"     [OK] Arquivo verificado ({size_mb:.1f} MB - Release v1.01.000027 Oficial Acer)" if CURRENT_LANG == "pt" else f"     [OK] Verified file ({size_mb:.1f} MB - Official Acer v1.01.000027 Release)")
-    else:
-        print("\n     [-] Arquivo de recuperacao nao encontrado na pasta local." if CURRENT_LANG == "pt" else "\n     [-] Recovery image not found in local directory.")
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OPTION B (ATTEMPT 2 - LAST RESORT / COMPLETE FACTORY RESTORE):
+  REFLASH FULL OFFICIAL ROM TO NAND FLASH
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    Trigger Recovery mode again (WPS 5s) and upload the full official ROM:""")
+        if stock_path:
+            size_mb = os.path.getsize(stock_path) / (1024 * 1024)
+            print(f"    ==> {stock_path} ({size_mb:.1f} MB)")
+        else:
+            print("    ==> Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img")
+        print("""    • ⚠️ NOTE: U-Boot recovery flashes ONLY 1 partition (primary Slot 1)!
+      Router boots factory clean into Slot 1. Then gain root (Option [2])
+      and you can reflash partition 2 (Slot 2) cleanly via Option [3]!
+    • Wait 2 to 3 minutes without unplugging power.
 
-    if CURRENT_LANG == "pt":
-        print("""
-    4. Clique no botao 'Upload' / 'Update' e aguarde (~2 a 3 minutos).
-    5. O roteador reiniciara 100% de fabrica no IP original 192.168.76.1!
-    6. Lembre-se de voltar a sua placa de rede para IP Automatico (DHCP).""")
-    else:
-        print("""
-    4. Click 'Upload' / 'Update' and wait (~2 to 3 minutes).
-    5. Router will reboot 100% factory original to IP 192.168.76.1!
-    6. Remember to switch your network adapter back to Automatic (DHCP).""")
+  [STEP 4] FINALIZATION:
+    Restore your Windows network adapter back to Automatic (DHCP).""")
 
     print("=" * 75)
     safe_input(t("press_enter"))

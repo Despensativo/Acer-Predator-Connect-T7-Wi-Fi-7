@@ -160,6 +160,13 @@ def exibir_explicacao_detalhada():
     • INTEGRIDADE: O script verifica se eles ja estao presentes no roteador.
       Como o codigo e 100% identico ao gravado na instalacao, nao ha risco
       de conflito, sobrescrita indevida ou arquivos antigos.
+
+13. Padronizacao de Identificadores Wi-Fi no LuCI (wifinet#):
+    • O QUE E: O sistema original da Acer gravou as redes Wi-Fi como secoes anonimas
+      (sem nome no arquivo). O LuCI exige identificadores unicos (wifinet0, wifinet1...).
+    • IMPACTO: Elimina definitivamente o aviso 'Wireless configuration migration' ao
+      abrir o menu Network -> Wireless, permitindo que a interface web do OpenWrt
+      carregue imediatamente a visao geral com todos os controles de antenas e radios.
 """)
     print("=" * 80)
 
@@ -175,6 +182,7 @@ def menu_selecao_modo(target_ip):
         print("      • Desativa 12 daemons inuteis de modem 5G e telemetrias herdadas do X7")
         print("      • Remove interfaces fantasmas (WAN5GMODEM, Guest, IoT) sem tocar na WAN fisica")
         print("      • Coloca o LuCI oficial na Porta 80 e padroniza senhas para 'root0100'")
+        print("      • Prepara identificadores Wi-Fi para o LuCI (desarma tela de migracao)")
         print("      • Ativa UPnP Gamer automatico (NAT Aberto para PC, PS5, Xbox, Switch)")
         print("      • Conntrack 65k, TCP Fast Open (tfo=3) e filas de rede para 2.5 Gbps")
         print("      • Turbo Cache DNSmasq na RAM (10.000 entradas para respostas em 0 ms)")
@@ -185,6 +193,7 @@ def menu_selecao_modo(target_ip):
         print("      • Desativa FOTA e silent-reboot (protege o Slot 2 contra sobrescrita)")
         print("      • Ativa o LuCI (uhttpd) diretamente na Porta 80 (desativa painel Acer)")
         print("      • Padroniza as credenciais de root e Admin para 'root0100'")
+        print("      • Prepara identificadores Wi-Fi para o LuCI (desarma tela de migracao)")
         print("      • Garante e valida atalhos rapidos 'boot-acer' e 'boot-openwrt' no terminal")
         print("      (Nao altera parametros de Kernel, DNS, Wi-Fi, UPnP nem remove daemons)\n")
         print("  [3] Explicar detalhadamente o que cada uma das otimizacoes faz")
@@ -252,6 +261,19 @@ chmod +x /usr/sbin/boot-openwrt
     run_cmd(tn, cmd_boot_acer)
     run_cmd(tn, cmd_boot_openwrt)
     print("    [OK] Atalhos 'boot-acer' e 'boot-openwrt' instalados com sucesso no terminal.")
+
+def migrar_interfaces_wifi_luci(tn):
+    print("\n[*] Padronizando identificadores Wi-Fi para o LuCI (desarmando tela de migracao)...")
+    print("    -> [O QUE FAZ]: Nomeia as secoes wifi-iface como 'wifinet0', 'wifinet1'... para que o LuCI abra o menu de Wi-Fi direto.")
+    cmd_migrate = (
+        "awk 'BEGIN { c=0 } "
+        "/^config wifi-iface$/ { printf(\"config wifi-iface \\x27wifinet%d\\x27\\n\", c++); next } "
+        "{ print }' /etc/config/wireless > /tmp/wireless.migrated && "
+        "mv /tmp/wireless.migrated /etc/config/wireless && "
+        "uci commit wireless"
+    )
+    run_cmd(tn, cmd_migrate)
+    print("    [OK] Identificadores de Wi-Fi padronizados com sucesso (menu Wireless pronto para o LuCI).")
 
 def aplicar_otimizacao_completa(tn, target_ip):
     # 1. Debloat de FOTA e Cron
@@ -384,7 +406,8 @@ def aplicar_otimizacao_completa(tn, target_ip):
     run_cmd(tn, "uci set wireless.wifi1.htmode='HT80'")
     run_cmd(tn, "uci set wireless.wifi1.channel='auto'")
     run_cmd(tn, "uci commit wireless")
-    print("    [OK] Roaming 802.11k/v e DTIM=2 ativados nas bandas Wi-Fi.")
+    migrar_interfaces_wifi_luci(tn)
+    print("    [OK] Roaming 802.11k/v, DTIM=2 e identificadores LuCI ativados nas bandas Wi-Fi.")
 
     # 10. IPv6 Universal Hibrido (odhcpd hybrid)
     print("\n[*] [10/10] Configurando IPv6 Universal Hibrido (odhcpd hybrid)...")
@@ -402,7 +425,7 @@ def aplicar_otimizacao_completa(tn, target_ip):
 
 def aplicar_otimizacao_basica(tn, target_ip):
     # 1. Debloat de FOTA e Cron
-    print("\n[*] [1/3] Desativando FOTA (atualizacao automatica) e silent-reboot...")
+    print("\n[*] [1/4] Desativando FOTA (atualizacao automatica) e silent-reboot...")
     print("    -> [O QUE FAZ]: Bloqueia downloads e reboots silenciosos da nuvem Acer para proteger o Slot 2.")
     run_cmd(tn, "sed -i '/silent-reboot/d' /etc/crontabs/Admin /etc/crontabs/root 2>/dev/null")
     run_cmd(tn, "sed -i '/download_img/d' /etc/crontabs/Admin /etc/crontabs/root 2>/dev/null")
@@ -411,7 +434,7 @@ def aplicar_otimizacao_basica(tn, target_ip):
     print("    [OK] FOTA desarmado: Protecao de particao ativada.")
 
     # 2. Configurar LuCI (uhttpd) como padrao na porta 80
-    print("\n[*] [2/3] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")
+    print("\n[*] [2/4] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")
     print("    -> [O QUE FAZ]: Desativa o painel original Acer (lighttpd) e ativa o LuCI oficial na porta 80 e 443.")
     run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null")
     run_cmd(tn, "sed -i 's/#config_load uhttpd/config_load uhttpd/' /etc/init.d/uhttpd")
@@ -430,7 +453,7 @@ def aplicar_otimizacao_basica(tn, target_ip):
     print("    [OK] LuCI ativo na porta 80 com permissao total para Admin e root.")
 
     # 3. Padronizar senhas de root e Admin para root0100
-    print("\n[*] [3/3] Padronizando senhas de root e Admin para 'root0100'...")
+    print("\n[*] [3/4] Padronizando senhas de root e Admin para 'root0100'...")
     print("    -> [O QUE FAZ]: Unifica as credenciais para evitar bloqueios no terminal, SSH e no LuCI.")
     hash_root = "$1$ARKroot1$inwXu9.r12/oWLrMAV9eX."
     run_cmd(tn, f"sed -i 's|^root:[^:]*:|root:{hash_root}:|' /etc/shadow")
@@ -440,6 +463,10 @@ def aplicar_otimizacao_basica(tn, target_ip):
     run_cmd(tn, "echo 'admin:24d23582a1b1c978e3c7a26ee034799b' > /etc/lighttpd/lighttpd.user")
     run_cmd(tn, "echo 'Admin:root0100_ftm' > /etc/config/userinfo")
     print("    [OK] Senhas de root e Admin padronizadas para 'root0100'.")
+
+    # 4. Padronizar identificadores Wi-Fi para o LuCI
+    print("\n[*] [4/4] Padronizando identificadores Wi-Fi para o LuCI...")
+    migrar_interfaces_wifi_luci(tn)
 
 def finalizar_e_sincronizar(tn, modo):
     instalar_atalhos_boot(tn)

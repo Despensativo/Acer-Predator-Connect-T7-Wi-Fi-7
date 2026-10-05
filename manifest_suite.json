@@ -1,14 +1,14 @@
 {
   "suite_version": "1.0.1",
-  "updated_at": "2026-10-05T22:52:05Z",
+  "updated_at": "2026-10-05T23:11:07Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
-      "size": 33345,
-      "sha256": "043B95D08952CBD5E5867F9EC6757B8BC01573996F095273648B1F4D740E6D6C",
-      "updated_at": "2026-10-05T21:49:58Z"
+      "size": 37116,
+      "sha256": "7051900F72BD61A7257E86CE041AF2B3A62465964C3E8E95E7BC53B58DA0A2BF",
+      "updated_at": "2026-10-05T23:07:56Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",
@@ -27,9 +27,9 @@
     {
       "path": "Scripts_Automacao/otimizar_e_ativar_luci_slot2.py",
       "category": "script",
-      "size": 30326,
-      "sha256": "5AB959FC654256CEA6BB6552DDBC15A8F0795832EECAFB05D96A559A72DE7A8C",
-      "updated_at": "2026-10-05T22:51:50Z"
+      "size": 31968,
+      "sha256": "5536C3A59187D4430CA58D88DE2A9057EDABD030C4DEB9FC9E8572212C81D804",
+      "updated_at": "2026-10-05T23:10:56Z"
     },
     {
       "path": "Scripts_Automacao/gravar_v27_slot2.py",
@@ -146,9 +146,9 @@
     {
       "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/COMO_USAR_MODO_RECOVERY_INSTRUCTIONS.txt",
       "category": "doc",
-      "size": 5808,
-      "sha256": "AD6C253708309B4391576C87BEDDF4FA54910AE44F07D70C5A2BE1DB7634AECC",
-      "updated_at": "2026-10-05T21:04:48Z"
+      "size": 9737,
+      "sha256": "FC9288DB00047604A094BE295AF4943D599DEA6A4D5BC041CE6D91EC862638FE",
+      "updated_at": "2026-10-05T23:07:18Z"
     },
     {
       "path": "iniciar.ps1",

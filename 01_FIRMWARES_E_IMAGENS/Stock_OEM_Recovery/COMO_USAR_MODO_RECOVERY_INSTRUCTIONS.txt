@@ -6,83 +6,83 @@
 [PORTUGUES - BRASIL]
 
 --------------------------------------------------------------------------------
-⚠️ ATENCAO: VOCE JA TENTOU DAR BOOT NO SLOT 1 ANTES DE REINSTALAR TUDO?
+⚠️ ATENCAO: PROCEDIMENTO DE RECUPERACAO POR HARDWARE (U-BOOT RECOVERY / 192.168.1.1)
 --------------------------------------------------------------------------------
-O Acer Predator Connect T7 possui arquitetura de DUAL-BOOT em hardware.
-Se o seu roteador nao esta iniciando porque algo deu errado no Slot 2 (OpenWrt),
-lembre-se que o seu SLOT 1 (Firmware Original de Fabrica da Acer) permanece
-100% INTACTO e funcional na memoria interna!
+Se o seu roteador travou em bootloop, nao liga o sistema operacional e nao
+responde mais no terminal (Telnet/SSH) ou no IP 192.168.76.1, o unico caminho de
+recuperacao fisica e atraves do bootloader de emergencia do hardware (WPS 5s):
 
-Na maioria absoluta das vezes, NAO e necessario reinstalar a ROM completa pelo
-modo recovery de emergencia:
-1. Se o roteador ainda responde no terminal (Telnet ou SSH):
-   Abra a nossa ferramenta no computador e escolha a Opcao [1]
-   ('Alternar Dual-Boot') para chavear e reiniciar de volta no Slot 1 em 5 segundos!
-2. Ou via terminal root, basta digitar o comando:
-   boot-acer
-
-Caso o U-Boot precise ser forçado para outro slot, estao disponiveis nesta pasta:
-  - bootconfig_slot1_acer_oem.bin (512 KB - Chaveia ponteiro para Slot 1 Acer OEM)
-  - bootconfig_slot2_openwrt.bin  (512 KB - Chaveia ponteiro para Slot 2 OpenWrt)
-
-Se o aparelho realmente estiver travado em bootloop e você precisar reinstalar:
-
-ARQUIVO DA ROM OFICIAL NESTA PASTA:
-  ==> nand-4k-ipq5332-single_101000027.img (55.3 MB - Versao Oficial v1.01.000027)
-
-PASSO 1: CONFIGURAR CABO DE REDE E IP NO WINDOWS
+PASSO 1: CONFIGURAR CABO DE REDE E IP FIXO NO WINDOWS
   1. Conecte um cabo de rede do seu PC diretamente na porta LAN 1 do Predator T7.
   2. No Windows, configure a sua placa de rede com IP ESTATICO manual:
      - Endereco IPv4 : 192.168.1.2
      - Mascara       : 255.255.255.0
      - Gateway       : 192.168.1.1
-     (Dica no Windows: Configuracoes -> Rede e Internet -> Ethernet -> Atribuicao de IP: Manual)
+     (Windows: Configuracoes -> Rede e Internet -> Ethernet -> Atribuicao de IP: Manual)
 
 PASSO 2: ACIONAR O MODO RECOVERY NO ROTEADOR (HARDWARE)
   1. Desconecte a fonte de energia (cabo de forca) do roteador.
-  2. Mantenha pressionado o botao WPS no roteador.
-  3. Conecte a fonte de energia MANTENDO o botao WPS PRESSIONADO POR 5 SEGUNDOS.
+  2. Mantenha pressionado o botao WPS no topo/traseira do roteador.
+  3. Conecte a fonte mantendo o botao WPS PRESSIONADO POR 5 SEGUNDOS.
   4. Solte o botao WPS.
-     --> ATENCAO: Os LEDs ficam ESTATICOS indicando que entrou no Modo Recovery!
+     --> ATENCAO: Os LEDs ficarao ESTATICOS indicando que entrou no Modo Recovery!
 
-PASSO 3: ENVIAR O FIRMWARE ORIGINAL PELO NAVEGADOR
-  1. Abra o seu navegador web (Chrome, Edge ou Firefox) e acesse:
-     http://192.168.1.1
-  2. A pagina de recuperacao web do U-Boot sera exibida.
-  3. Clique em 'Escolher Arquivo' / 'Browse' e selecione o arquivo desta pasta:
-     nand-4k-ipq5332-single_101000027.img
-  4. Clique no botao 'Upload' / 'Update' para iniciar a gravacao.
-  5. AGUARDE de 2 a 3 minutos sem desligar a energia.
-  6. O roteador reiniciara sozinho e ligara 100% de fabrica no IP original: 192.168.76.1
-  7. Lembre-se de voltar a sua placa de rede do Windows para 'Automatico' (DHCP).
+PASSO 3: ENVIAR O ARQUIVO DE RECUPERACAO EM: http://192.168.1.1
+  Abra o seu navegador web (Chrome, Edge ou Firefox) em: http://192.168.1.1
+  A tela oficial de recuperacao do U-Boot sera exibida com o botao 'Browse' / 'Upload'.
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OPCAO A (TENTATIVA 1 - SUPER RAPIDA / 2 SEGUNDOS - RECOMENDADA):
+  FORCAR O BOOT DE VOLTA PARA O SLOT 1 (ORIGINAL ACER INTACTO)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Na tela do navegador (http://192.168.1.1), envie primeiro apenas o arquivo de ponteiro:
+  📁 Localizado na sua Area de Trabalho (Desktop):
+     Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin (512 KB)
+
+  • O QUE FAZ: O envio dura apenas 2 segundos! Ele nao apaga o sistema; apenas
+    muda o ponteiro do U-Boot para carregar o SLOT 1 (sistema original de fabrica da Acer),
+    que continua 100% intacto no hardware do roteador.
+  • TESTE: O roteador vai reiniciar. Aguarde 60 a 90 segundos e veja se ele liga
+    normalmente no IP original 192.168.76.1.
+  • RESULTADO:
+    -> SE INICIAR: Perfeito, roteador recuperado sem reinstalar nada! A partir do Slot 1,
+       se você quiser consertar o Slot 2, basta abrir nossa central e usar a Opcao [3]
+       para reinstalar o Slot 2 limpo com root de forma 100% automatica!
+    -> SE NAO INICIAR: Significa que o Slot 1 tambem foi corrompido. Siga para a OPCAO B.
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OPCAO B (TENTATIVA 2 - ULTIMO RECURSO / RESTAURACAO DE FABRICA):
+  REGRAVAR A ROM OFICIAL NA MEMORIA FLASH NAND
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Se a Opcao A nao subiu, coloque o roteador novamente no Modo Recovery (WPS 5s)
+  e em http://192.168.1.1 envie a imagem oficial completa:
+  📁 Localizado na sua Area de Trabalho (Desktop):
+     Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img (55.3 MB)
+
+  • ⚠️ LEMBRETE CRUCIAL SOBRE AS PARTICOES:
+    O modo de recuperacao do U-Boot grava SOMENTE 1 particao (o Slot 1 principal)
+    e NAO as duas particoes simultaneamente!
+    Portanto:
+    1. O U-Boot vai regravar e restaurar o Slot 1 e reiniciar o aparelho.
+    2. O roteador vai subir 100% original de fabrica no IP: 192.168.76.1.
+    3. Depois que subir, você obtem acesso root (pela Opcao [2] ou restaurando o
+       backup 'config_v27_ssh_unlocked.cfg') e ai sim podera regravar a particao 2
+       (Slot 2) limpa usando a Opcao [3] da nossa central!
+  • AGUARDE: O envio e gravacao da ROM completa levam de 2 a 3 minutos. NAO desligue a energia!
+
+PASSO 4: FINALIZACAO
+  Apos o roteador iniciar, volte a placa de rede do Windows para 'Obter IP Automaticamente' (DHCP).
 
 ================================================================================
 
 [ENGLISH]
 
 --------------------------------------------------------------------------------
-⚠️ ATTENTION: HAVE YOU TRIED BOOTING INTO SLOT 1 BEFORE REINSTALLING?
+⚠️ ATTENTION: HARDWARE RECOVERY PROCEDURE (U-BOOT WEB RECOVERY / 192.168.1.1)
 --------------------------------------------------------------------------------
-The Acer Predator Connect T7 features hardware DUAL-BOOT architecture.
-If your router is failing to boot due to an issue with Slot 2 (OpenWrt),
-remember that your SLOT 1 (Official Acer Factory Firmware) remains
-100% INTACT and functional in internal memory!
-
-In most cases, it is NOT necessary to reinstall the entire firmware via recovery:
-1. If the router still responds to terminal (Telnet or SSH):
-   Open our suite on your PC and select Option [1] ('Switch Dual-Boot')
-   to boot back into Slot 1 in 5 seconds!
-2. Or in the root terminal, simply run:
-   boot-acer
-
-If U-Boot needs to be directed to a specific slot, both binaries are in this folder:
-  - bootconfig_slot1_acer_oem.bin (512 KB - Directs bootloader to Slot 1 Acer OEM)
-  - bootconfig_slot2_openwrt.bin  (512 KB - Directs bootloader to Slot 2 OpenWrt)
-
-If the device is truly bricked and requires a complete factory reflash:
-
-OFFICIAL ROM FILE IN THIS FOLDER:
-  ==> nand-4k-ipq5332-single_101000027.img (55.3 MB - Official Acer v1.01.000027)
+If your router is stuck in a bootloop, does not boot the OS, and no longer
+responds on terminal (Telnet/SSH) or IP 192.168.76.1, the only physical recovery
+path is via the Qualcomm/Acer hardware recovery bootloader (WPS 5s):
 
 STEP 1: CONFIGURE ETHERNET CABLE & WINDOWS STATIC IP
   1. Connect an Ethernet cable from your PC directly to the LAN 1 port of the Predator T7.
@@ -99,15 +99,49 @@ STEP 2: TRIGGER HARDWARE RECOVERY MODE ON ROUTER
   4. Release the WPS button.
      --> NOTICE: The LEDs will remain STATIC indicating Recovery Mode is active!
 
-STEP 3: FLASH OFFICIAL FIRMWARE IN YOUR WEB BROWSER
-  1. Open your web browser (Chrome, Edge, or Firefox) and navigate to:
-     http://192.168.1.1
-  2. The Qualcomm U-Boot Web Recovery page will be displayed.
-  3. Click 'Browse' / 'Choose File' and select the file from this folder:
-     nand-4k-ipq5332-single_101000027.img
-  4. Click 'Upload' / 'Update' to begin flashing.
-  5. WAIT 2 to 3 minutes without unplugging power.
-  6. The router will automatically reboot 100% factory clean to IP: 192.168.76.1
-  7. Remember to change your Windows network adapter back to 'Automatic' (DHCP).
+STEP 3: FLASH RECOVERY FILE AT: http://192.168.1.1
+  Open your web browser (Chrome, Edge, or Firefox) and navigate to: http://192.168.1.1
+  The Qualcomm U-Boot Web Recovery page will be displayed with the 'Browse' / 'Upload' button.
 
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OPTION A (ATTEMPT 1 - SUPER FAST / 2 SECONDS - RECOMMENDED):
+  FORCE BOOT BACK INTO SLOT 1 (INTACT FACTORY ACER OEM)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  On the browser page (http://192.168.1.1), first upload only the boot pointer file:
+  📁 Located on your Desktop:
+     Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin (512 KB)
+
+  • WHAT IT DOES: Flashing takes only 2 seconds! It does not erase firmware; it
+    simply updates the U-Boot pointer to boot SLOT 1 (official factory Acer OEM),
+    which remains 100% intact in router hardware.
+  • TEST: The router will reboot. Wait 60 to 90 seconds and verify if it boots
+    normally on original IP 192.168.76.1.
+  • RESULT:
+    -> IF IT BOOTS: Router successfully rescued without reinstalling! Once in Slot 1,
+       if you want to fix Slot 2, simply open our tool and use Option [3] to
+       reinstall clean Slot 2 with root automatically!
+    -> IF IT DOES NOT BOOT: Slot 1 is also corrupted. Proceed to OPTION B below.
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OPTION B (ATTEMPT 2 - LAST RESORT / COMPLETE FACTORY RESTORE):
+  REFLASH FULL OFFICIAL ROM TO NAND FLASH
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  If Option A did not boot, place the router back into Recovery Mode (WPS 5s)
+  and at http://192.168.1.1 upload the complete official image:
+  📁 Located on your Desktop:
+     Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img (55.3 MB)
+
+  • ⚠️ CRUCIAL NOTE REGARDING PARTITIONS:
+    U-Boot Web Recovery flashes ONLY 1 partition (primary Slot 1) and NOT both
+    partitions simultaneously!
+    Therefore:
+    1. U-Boot will reflash and restore Slot 1 and reboot the router.
+    2. The router will boot 100% factory original to IP: 192.168.76.1.
+    3. Once booted, gain root access (via Option [2] or restoring the backup
+       'config_v27_ssh_unlocked.cfg') and then you can reflash partition 2
+       (Slot 2) cleanly using Option [3] of our suite!
+  • WAIT: Uploading and flashing takes 2 to 3 minutes. DO NOT disconnect power!
+
+STEP 4: FINALIZATION
+  After router boots, restore your Windows network adapter to 'Automatic' (DHCP).
 ================================================================================

@@ -107,6 +107,9 @@ $T = @{
         "ip_confirm_prompt"  = "Press ENTER to confirm [{0}] or type your router IP: "
         "ip_not_found"       = "Could not automatically find Predator router on standard IPs."
         "ip_manual_prompt"   = "Type your Predator router IP [Default: 192.168.76.1]: "
+        "confirm_restore_done" = "Did you click 'Restore' in Acer web panel and router began rebooting? [Y/N]: "
+        "wait_restore_first"   = "Please complete the restore in the browser first, then confirm [Y] to proceed."
+        "triage_required"      = "Please answer with [Y] for YES or [N] for NO to proceed."
     }
     "pt" = @{
         "title"              = "ACER PREDATOR CONNECT T7 & X7 - ASSISTENTE INTERATIVO"
@@ -152,6 +155,9 @@ $T = @{
         "ip_confirm_prompt"  = "Pressione ENTER para confirmar [{0}] ou digite o IP correto: "
         "ip_not_found"       = "Nao foi possivel detectar automaticamente o roteador nos IPs padrao."
         "ip_manual_prompt"   = "Digite o IP do seu roteador Predator [Padrao: 192.168.76.1]: "
+        "confirm_restore_done" = "Voce ja clicou em 'Restaurar' no painel da Acer e o roteador comecou a reiniciar? [S/N]: "
+        "wait_restore_first"   = "Por favor, conclua o envio do backup no painel primeiro e responda [S] para prosseguir."
+        "triage_required"      = "Por favor, responda com [S] para SIM ou [N] para NAO para prosseguir."
     }
 }
 
@@ -333,13 +339,19 @@ if ($Lang -eq "en") {
     $DefaultTriage = if ($TelnetOk) { "Y" } else { "N" }
 }
 
-$TriageChoice = Read-Host "  $($M["triage_prompt"] -f $DefaultTriage)"
-if (-not $TriageChoice) { $TriageChoice = $DefaultTriage }
-
-$NeedsUnlock = $false
-if ($TriageChoice -like "n*" -or $TriageChoice -like "N*") {
-    $NeedsUnlock = $true
+$TriageChoice = ""
+while (-not $TriageChoice) {
+    $raw = Read-Host "  $($M["triage_prompt"] -f $DefaultTriage)"
+    if ($raw -like "s*" -or $raw -like "sim" -or $raw -like "y*" -or $raw -like "yes") {
+        $TriageChoice = "S"
+    } elseif ($raw -like "n*" -or $raw -like "nao" -or $raw -like "no") {
+        $TriageChoice = "N"
+    } else {
+        Write-Warn $M["triage_required"]
+    }
 }
+
+$NeedsUnlock = ($TriageChoice -eq "N")
 
 # 5. Fluxo de Desbloqueio se NAO tiver root
 if ($NeedsUnlock) {
@@ -409,7 +421,15 @@ if ($NeedsUnlock) {
     Write-Host "     ==> $OutputCfg" -ForegroundColor White
     Write-Host "  $($M["step4"])" -ForegroundColor Yellow
     Write-Host ""
-    Read-Host "  $($M["press_enter_rst"])"
+    $RstConfirmed = $false
+    while (-not $RstConfirmed) {
+        $Ans = Read-Host "  $($M["confirm_restore_done"])"
+        if ($Ans -like "s*" -or $Ans -like "sim" -or $Ans -like "y*" -or $Ans -like "yes") {
+            $RstConfirmed = $true
+        } else {
+            Write-Warn $M["wait_restore_first"]
+        }
+    }
 
     # Polling ativo de reinicializacao
     Write-Header $M["waiting_reboot"]

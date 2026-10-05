@@ -153,21 +153,41 @@ def main():
         out = run_cmd(tn, "/usr/sbin/boot-acer")
         print(out)
     else:
-        print("\nEscolha uma opcao de alternancia de boot:")
-        print("  [1] Reiniciar no SLOT 1 (Firmware OEM Acer Original de Fabrica)")
-        print("  [2] Reiniciar no SLOT 2 (OpenWrt Puro / LuCI)")
-        print("  [0] Voltar ao menu principal sem alterar nada")
-        opt = input("\nOpcao [0/1/2]: ").strip()
-        if opt == "1":
-            print("\n[*] Aplicando chaveamento para SLOT 1 (Acer Original)...")
-            out = run_cmd(tn, "/usr/sbin/boot-acer")
-            print(out)
-        elif opt == "2":
-            print("\n[*] Aplicando chaveamento para SLOT 2 (OpenWrt Puro)...")
-            out = run_cmd(tn, "/usr/sbin/boot-openwrt")
-            print(out)
-        else:
-            print("Nenhuma alteracao efetuada.")
+        while True:
+            print("\nEscolha uma opcao de alternancia de boot:")
+            print("  [1] Reiniciar no SLOT 1 (Firmware OEM Acer Original de Fabrica)")
+            print("  [2] Reiniciar no SLOT 2 (OpenWrt Puro / LuCI)")
+            print("  [0] Voltar ao menu principal sem alterar nada")
+            opt = input("\nOpcao [0/1/2]: ").strip()
+            if not opt:
+                print("\n[!] Nenhuma opcao informada. Digite 1, 2 ou 0 para prosseguir.")
+                continue
+
+            if opt == "1":
+                conf = input("\n[?] Confirma reiniciar o roteador no SLOT 1 (Acer de Fabrica)? [S/N]: ").strip().lower()
+                if conf in ["s", "sim", "y", "yes"]:
+                    print("\n[*] Aplicando chaveamento para SLOT 1 (Acer Original)...")
+                    out = run_cmd(tn, "/usr/sbin/boot-acer")
+                    print(out)
+                    break
+                else:
+                    print("[*] Operacao cancelada pelo usuario.")
+                    break
+            elif opt == "2":
+                conf = input("\n[?] Confirma reiniciar o roteador no SLOT 2 (OpenWrt Puro)? [S/N]: ").strip().lower()
+                if conf in ["s", "sim", "y", "yes"]:
+                    print("\n[*] Aplicando chaveamento para SLOT 2 (OpenWrt Puro)...")
+                    out = run_cmd(tn, "/usr/sbin/boot-openwrt")
+                    print(out)
+                    break
+                else:
+                    print("[*] Operacao cancelada pelo usuario.")
+                    break
+            elif opt == "0":
+                print("\n[*] Nenhuma alteracao efetuada. Retornando ao menu...")
+                break
+            else:
+                print(f"\n[!] Opcao '{opt}' invalida. Digite 1, 2 ou 0 para prosseguir.")
 
     tn.close()
 

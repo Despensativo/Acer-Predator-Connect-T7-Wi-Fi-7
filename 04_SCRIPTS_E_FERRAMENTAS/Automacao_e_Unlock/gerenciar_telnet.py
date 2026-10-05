@@ -131,19 +131,31 @@ def main():
             print(f"      (Para reativar via SSH: ssh root@{router_ip} '/usr/sbin/telnetd -l /bin/ash')")
         print("  [2] Re-testar e atualizar status das portas")
         print("  [0] Sair / Voltar ao menu principal")
+
         opt = input("\nOpcao [0/1/2]: ").strip()
+        if not opt:
+            print("\n[!] Nenhuma opcao informada. Digite 1, 2 ou 0 para prosseguir.")
+            continue
+
         if opt == "1":
             if is_active:
-                desativar_telnet(router_ip)
+                conf = input(f"\n[?] Confirma fechar a porta 23 (Telnet) e manter apenas SSH em {router_ip}? [S/N]: ").strip().lower()
+                if conf in ["s", "sim", "y", "yes"]:
+                    desativar_telnet(router_ip)
+                else:
+                    print("[*] Operacao cancelada pelo usuario.")
             else:
                 print(f"\n[OK] O servico Telnet ja esta desativado no roteador ({router_ip}). Nenhuma acao necessaria.")
-            input("\nPressione ENTER para continuar...")
+            input("\nPressione ENTER para voltar ao menu...")
         elif opt == "2":
-            print(f"\n[*] Re-testando conexao com {router_ip}...")
+            print(f"\n[*] Re-testando portas em {router_ip}...")
             time.sleep(0.5)
             continue
-        else:
+        elif opt == "0":
+            print("\n[*] Retornando ao menu principal...")
             break
+        else:
+            print(f"\n[!] Opcao '{opt}' invalida. Digite 1, 2 ou 0 para prosseguir.")
 
 if __name__ == "__main__":
     main()

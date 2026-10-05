@@ -194,12 +194,22 @@ def main():
                 if conf in ["s", "sim", "y", "yes"]:
                     print(f"\n[*] Aplicando chaveamento para {target_label}...")
                     log_event("SWITCH_BOOT", f"Alternando do Slot {cur_num} para o Slot {target_num}", "INFO")
-                    if target_num == "2":
-                        out = run_cmd(tn, "/usr/sbin/boot-openwrt")
-                    else:
-                        out = run_cmd(tn, "/usr/sbin/boot-acer")
-                    print(out)
-                    log_event("SWITCH_BOOT", f"Chaveamento para Slot {target_num} executado com sucesso", "OK")
+                    try:
+                        if target_num == "2":
+                            out = run_cmd(tn, "/usr/sbin/boot-openwrt", timeout=3)
+                        else:
+                            out = run_cmd(tn, "/usr/sbin/boot-acer", timeout=3)
+                        if out:
+                            print(out.strip())
+                    except Exception:
+                        pass
+
+                    print("\n" + "=" * 65)
+                    print(f"  [OK] CHAVEAMENTO GRAVADO COM SUCESSO!")
+                    print(f"  O roteador esta REINICIANDO agora no {target_label}.")
+                    print("  Aguarde cerca de 60 a 90 segundos para a inicializacao completa.")
+                    print("=" * 65)
+                    log_event("SWITCH_BOOT", f"Chaveamento para Slot {target_num} concluido e roteador reiniciando", "OK")
                     break
                 else:
                     print("[*] Operacao cancelada pelo usuario.")

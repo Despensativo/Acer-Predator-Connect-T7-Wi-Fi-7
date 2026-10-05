@@ -35,7 +35,20 @@ def find_repo_root():
     return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 REPO_DIR = find_repo_root()
-V27_DIR = os.path.join(REPO_DIR, "01_FIRMWARES_E_IMAGENS", "Official_v27_Componentes")
+
+def find_v27_dir():
+    candidates = [
+        os.path.join(REPO_DIR, "01_FIRMWARES_E_IMAGENS", "Official_v27_Componentes"),
+        r"C:\Users\User\Acer-Predator-Connect-T7\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes",
+        r"H:\FEITOS COM IA\Acer-Predator-Connect-T7\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "01_FIRMWARES_E_IMAGENS", "Official_v27_Componentes")
+    ]
+    for c in candidates:
+        if os.path.isdir(c) and os.path.isfile(os.path.join(c, "kernel.bin")):
+            return os.path.abspath(c)
+    return candidates[0]
+
+V27_DIR = find_v27_dir()
 
 TEXTS = {
     "en": {
@@ -44,9 +57,10 @@ TEXTS = {
         "os": "Operating System",
         "python": "Python Version",
         "rom_files": "v27 ROM Files",
-        "rom_ok": "[OK] 3/3 files verified",
-        "rom_fail": "[-] FILE VALIDATION FAILED",
-        "file_missing": "[-] Missing file",
+        "rom_ok": "[OK] 3/3 files verified (Ready for Slot 2 flash)",
+        "rom_fail": "[-] ROM files missing locally (Option [2] only)",
+        "rom_notice_missing": "v27 ROM files not found in folder. (Required ONLY for Option [2] - Flash Slot 2. Other options are unaffected).",
+        "file_missing": "Missing file",
         "file_corrupt": "[!] Corrupted file or size/MD5 mismatch",
         "tftp_port": "PC TFTP Port (UDP 69)",
         "tftp_free": "[OK] Available",
@@ -88,9 +102,10 @@ TEXTS = {
         "os": "Sistema Operacional",
         "python": "Versao do Python",
         "rom_files": "Arquivos v27 (ROM)",
-        "rom_ok": "[OK] 3/3 arquivos validados",
-        "rom_fail": "[-] FALHA NOS ARQUIVOS",
-        "file_missing": "[-] Arquivo ausente",
+        "rom_ok": "[OK] 3/3 arquivos validados (Pronto para gravar Slot 2)",
+        "rom_fail": "[-] ROM v27 ausente (Apenas Opcao 2 afetada)",
+        "rom_notice_missing": "Arquivos da ROM nao encontrados nesta pasta (Necessarios APENAS para a Opcao [2] - Gravar Slot 2. Demais opcoes funcionam normalmente).",
+        "file_missing": "Arquivo ausente",
         "file_corrupt": "[!] Arquivo corrompido ou divergente",
         "tftp_port": "Porta TFTP PC (UDP 69)",
         "tftp_free": "[OK] Livre",
@@ -231,6 +246,9 @@ def preflight_check(quiet=False, explicit_ip=None):
                 if not quiet:
                     print(f"  [!] {t('file_corrupt')}: {fname}")
 
+    if not info["files_ok"] and not quiet:
+        print(f"      ({t('rom_notice_missing')})")
+
     rip = info["router_ip"]
     info["http_ok"] = check_port(rip, 80, 1.0)
     info["telnet_ok"] = check_port(rip, 23, 1.0)
@@ -345,17 +363,20 @@ def main_menu():
     while True:
         info = preflight_check(quiet=True, explicit_ip=args.ip)
         rip = info["router_ip"]
-        status_line = f"{t('status_router')}: {rip} | "
-        if info["telnet_ok"]:
-            status_line += f"{info['model']} | {info['active_slot_label']} | Boot: {info['boot_default_label']}"
-        elif info["http_ok"]:
-            status_line += t("status_web_only")
-        else:
-            status_line += t("status_offline")
+        m_label = info['model'] if (info["telnet_ok"] or info["http_ok"]) and info["model"] != "N/A" else ""
+        dev_info = f" ({m_label})" if m_label else ""
 
         print("\n" + "=" * 75)
-        print(f"     {t('title')}")
-        print(f"     Status: {status_line}")
+        print(f"  {t('title')}")
+        print("-" * 75)
+        print(f"  [+] {t('status_router')}: {rip}{dev_info}")
+        if info["telnet_ok"]:
+            print(f"  [+] {t('active_slot')}: {info['active_slot_label']}")
+            print(f"  [+] {t('default_boot')}: {info['boot_default_label']}")
+        elif info["http_ok"]:
+            print(f"  [+] Status Terminal: {t('status_web_only')}")
+        else:
+            print(f"  [!] Conexao: {t('status_offline')}")
         print("=" * 75)
         if info["telnet_ok"]:
             print(f"  {t('telnet_active_warning')}")
@@ -386,6 +407,13 @@ def main_menu():
             preflight_check(quiet=False, explicit_ip=args.ip)
             safe_input(t("press_enter"))
         elif choice == "2":
+            if not info["files_ok"]:
+                print("\n" + "=" * 75)
+                print(f"  [!] {t('rom_notice_missing')}")
+                print(f"      Pasta: {V27_DIR}")
+                print("=" * 75)
+                safe_input(t("press_enter"))
+                continue
             script = get_script_path("gravar_v27_slot2.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))

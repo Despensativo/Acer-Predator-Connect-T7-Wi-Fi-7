@@ -25,6 +25,7 @@ Ele mantem o sistema oficial da Acer intacto, ativando SSH, Telnet e atalhos.
 • TERMINAL SSH (Dropbear — Porta 22):
   - Usuario              : root (ou Admin)
   - Senha                : root0100
+  - Dica                 : Se for solicitada senha no terminal, a senha padrao e: root0100 ou se voce ja trocou informe a senha que voce escolheu.
   - Comando no Windows   : 
     ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1
 

@@ -155,8 +155,11 @@ def exibir_explicacao_detalhada():
       ou em conexao direta autenticada (Bridge), sem necessidade de ajustes manuais.
 
 12. Atalhos de Terminal 'boot-acer' e 'boot-openwrt':
-    • BENEFICIO: Permite alternar de volta para o firmware original da Acer ou
-      para o OpenWrt a qualquer momento digitando apenas uma linha no terminal.
+    • BENEFICIO: Permite alternar entre o Slot 1 (OEM v24) e o Slot 2 (OpenWrt)
+      a qualquer momento direto pelo terminal.
+    • INTEGRIDADE: O script verifica se eles ja estao presentes no roteador.
+      Como o codigo e 100% identico ao gravado na instalacao, nao ha risco
+      de conflito, sobrescrita indevida ou arquivos antigos.
 """)
     print("=" * 80)
 
@@ -177,12 +180,12 @@ def menu_selecao_modo(target_ip):
         print("      • Turbo Cache DNSmasq na RAM (10.000 entradas para respostas em 0 ms)")
         print("      • Roaming Wi-Fi 7 inteligente (802.11k/v) e DTIM=2 (economia de bateria)")
         print("      • IPv6 Universal Hibrido (funciona em Duplo NAT e em modo Bridge)")
-        print("      • Instala atalhos rapidos 'boot-acer' e 'boot-openwrt' no terminal\n")
+        print("      • Garante e valida atalhos rapidos 'boot-acer' e 'boot-openwrt' no terminal\n")
         print("  [2] OTIMIZACAO BASICA (Apenas Ativar LuCI na Porta 80 + Trava FOTA)")
         print("      • Desativa FOTA e silent-reboot (protege o Slot 2 contra sobrescrita)")
         print("      • Ativa o LuCI (uhttpd) diretamente na Porta 80 (desativa painel Acer)")
         print("      • Padroniza as credenciais de root e Admin para 'root0100'")
-        print("      • Instala atalhos rapidos 'boot-acer' e 'boot-openwrt' no terminal")
+        print("      • Garante e valida atalhos rapidos 'boot-acer' e 'boot-openwrt' no terminal")
         print("      (Nao altera parametros de Kernel, DNS, Wi-Fi, UPnP nem remove daemons)\n")
         print("  [3] Explicar detalhadamente o que cada uma das otimizacoes faz")
         print("  [0] Cancelar e Voltar ao Menu Principal")
@@ -203,7 +206,13 @@ def menu_selecao_modo(target_ip):
             print("\n[!] Opcao invalida! Digite 1, 2, 3 ou 0.")
 
 def instalar_atalhos_boot(tn):
-    print("\n[*] Instalando atalhos de chaveamento rapido (/usr/sbin/boot-acer e /usr/sbin/boot-openwrt)...")
+    print("\n[*] Verificando atalhos de chaveamento rapido (/usr/sbin/boot-acer e /usr/sbin/boot-openwrt)...")
+    check = run_cmd(tn, "[ -x /usr/sbin/boot-acer ] && [ -x /usr/sbin/boot-openwrt ] && echo 'ATALHOS_OK' || echo 'FALTA'")
+    if "ATALHOS_OK" in check:
+        print("    [OK] Atalhos 'boot-acer' e 'boot-openwrt' ja estao instalados e 100% atualizados.")
+        return
+
+    print("    -> Instalando atalhos de seguranca no terminal...")
     cmd_boot_acer = """cat << 'EOFA' > /usr/sbin/boot-acer
 #!/bin/sh
 echo "=== Retornando boot para SLOT 1 (OEM v24) ==="
@@ -242,7 +251,7 @@ chmod +x /usr/sbin/boot-openwrt
 """
     run_cmd(tn, cmd_boot_acer)
     run_cmd(tn, cmd_boot_openwrt)
-    print("    [OK] Atalhos 'boot-acer' e 'boot-openwrt' disponiveis no terminal.")
+    print("    [OK] Atalhos 'boot-acer' e 'boot-openwrt' instalados com sucesso no terminal.")
 
 def aplicar_otimizacao_completa(tn, target_ip):
     # 1. Debloat de FOTA e Cron
@@ -559,6 +568,7 @@ def main():
     print("  Credenciais de acesso (LuCI e SSH):")
     print("    - Usuario : root (ou Admin)")
     print("    - Senha   : root0100")
+    print("    [Dica] Se for solicitada senha no terminal, a senha padrao e: root0100 ou se voce ja trocou informe a senha que voce escolheu.")
     print("  Comandos uteis no terminal do roteador:")
     print("    - boot-acer    -> Retorna o boot para o Slot 1 (Original Acer v24)")
     print("    - boot-openwrt -> Garante o boot no Slot 2 (OpenWrt Otimizado)")

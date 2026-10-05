@@ -248,7 +248,7 @@ def reativar_telnet_ssh(ip):
         remote_cmd = "grep -q telnetd /etc/rc.local || sed -i '/exit 0/i /usr/sbin/telnetd -l /bin/ash &' /etc/rc.local; sync; /usr/sbin/telnetd -l /bin/ash"
         print(f"\n    [*] Executando ativacao permanente no boot via SSH...")
 
-    print(f"    {C_CYAN}[Dica] Se for solicitada senha no terminal, a senha padrao e: root0100{C_RESET}")
+    print(f"    {C_CYAN}[Dica] Se for solicitada senha no terminal, a senha padrao e: root0100 ou se voce ja trocou informe a senha que voce escolheu.{C_RESET}")
     ssh_cmd = [
         "ssh",
         "-o", "StrictHostKeyChecking=no",
@@ -386,7 +386,7 @@ def importar_chave_ssh(ip):
             return
     elif test_port(ip, 22):
         print(f"\n[*] Telnet fechado. Injetando chave via conexao SSH na porta 22...")
-        print(f"    {C_CYAN}[Dica] Se o SSH pedir senha para autorizar o envio, digite: root0100{C_RESET}")
+        print(f"    {C_CYAN}[Dica] Se o SSH pedir senha para autorizar o envio, a senha padrao e: root0100 ou se voce ja trocou informe a senha que voce escolheu.{C_RESET}")
         remote_script = (
             f"mkdir -p /etc/dropbear /root/.ssh && chmod 700 /etc/dropbear /root/.ssh && "
             f"(grep -q -F '{sanitized_key}' /etc/dropbear/authorized_keys 2>/dev/null || echo '{sanitized_key}' >> /etc/dropbear/authorized_keys) && "

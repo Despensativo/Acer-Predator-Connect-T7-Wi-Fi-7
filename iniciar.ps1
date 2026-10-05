@@ -112,6 +112,15 @@ $T = @{
         "ip_confirm_prompt"  = "Press ENTER to confirm [{0}] or type your router IP: "
         "ip_not_found"       = "Could not automatically find Predator router on standard IPs."
         "ip_manual_prompt"   = "Type your Predator router IP [Default: 192.168.76.1]: "
+        "auto_diag_header"     = "AUTOMATIC ROUTER STATE DIAGNOSTIC"
+        "auto_root_detected"   = "Detected: Router already has ACTIVE ROOT ACCESS (Telnet/SSH active)!`n  -> Next step: Proceeding straight to the MANAGEMENT SUITE."
+        "auto_locked_detected" = "Detected: Router is still FACTORY LOCKED (Telnet/SSH ports closed).`n  -> Next step: Proceeding to STEP-BY-STEP ROOT UNLOCK."
+        "auto_confirm_prompt"  = "Press ENTER to proceed automatically, or type [M] for manual choice / change IP: "
+        "manual_ip_ask"        = "Do you want to change the router IP? Type new IP or press ENTER to keep [{0}]: "
+        "manual_choice_title"  = "MANUAL FLOW SELECTION"
+        "manual_opt1"          = "[1] My router already has Root / Telnet / SSH -> Launch Management Suite"
+        "manual_opt2"          = "[2] My router is factory locked -> Start Step-by-Step Unlock (.cfg)"
+        "manual_choice_prompt" = "Choose how to proceed [1/2]: "
         "confirm_restore_done" = "Did you click 'Restore' in Acer web panel and router began rebooting? [Y/N]: "
         "wait_restore_first"   = "Please complete the restore in the browser first, then confirm [Y] to proceed."
         "triage_required"      = "Please answer with [Y] for YES or [N] for NO to proceed."
@@ -180,10 +189,19 @@ $T = @{
         "ip_confirm_prompt"  = "Pressione ENTER para confirmar [{0}] ou digite o IP correto: "
         "ip_not_found"       = "Nao foi possivel detectar automaticamente o roteador nos IPs padrao."
         "ip_manual_prompt"   = "Digite o IP do seu roteador Predator [Padrao: 192.168.76.1]: "
+        "auto_diag_header"     = "DIAGNOSTICO AUTOMATICO DE ESTADO DO ROTEADOR"
+        "auto_root_detected"   = "Diagnostico: Roteador com ACESSO ROOT ativo detectado (Telnet/SSH ativo)!`n  -> Fluxo automatico: Abrir direto a CENTRAL DE GERENCIAMENTO."
+        "auto_locked_detected" = "Diagnostico: Roteador com FIRMWARE TRAVADO DE FABRICA (portas 22 e 23 fechadas).`n  -> Fluxo automatico: Iniciar DESBLOQUEIO DE ROOT PASSO A PASSO."
+        "auto_confirm_prompt"  = "Pressione ENTER para prosseguir automaticamente, ou digite [M] (ou novo IP) para escolha manual: "
+        "manual_ip_ask"        = "Deseja alterar o IP do roteador? Digite o novo IP ou pressione ENTER para manter [{0}]: "
+        "manual_choice_title"  = "ESCOLHA MANUAL DE FLUXO"
+        "manual_opt1"          = "[1] Meu roteador ja tem Root / Telnet / SSH ativo -> Abrir Central de Gerenciamento"
+        "manual_opt2"          = "[2] Meu roteador esta travado de fabrica -> Iniciar Desbloqueio Passo a Passo (.cfg)"
+        "manual_choice_prompt" = "Escolha como deseja prosseguir [1/2]: "
         "confirm_restore_done" = "Voce ja clicou em 'Restaurar' no painel da Acer e o roteador comecou a reiniciar? [S/N]: "
         "wait_restore_first"   = "Por favor, conclua o envio do backup no painel primeiro e responda [S] para prosseguir."
         "triage_required"      = "Por favor, responda com [S] para SIM ou [N] para NAO para prosseguir."
-        "cfg_choice_required"      = "Por favor, digite 1 ou 2 para prosseguir."
+        "cfg_choice_required"  = "Por favor, digite 1 ou 2 para prosseguir."
         "deps_title"               = "SINCRONIZACAO INTELIGENTE E VERIFICACAO DE ATUALIZACOES"
         "deps_checking"            = "Verificando arquivos locais e checando atualizacoes no GitHub..."
         "deps_manifest_checking"   = "Conectando ao GitHub para verificar versoes mais recentes e checksums..."
@@ -502,47 +520,70 @@ if (-not $RouterIP) {
     $HttpOk   = Test-Port $RouterIP 80 500
     $TelnetOk = Test-Port $RouterIP 23 500
     $SshOk    = Test-Port $RouterIP 22 500
+}
+
+# Mostra o status do roteador e das portas detectadas
+Write-Success ($M["gateway_found"] -f $RouterIP)
+Write-Host ("      " + ($M["port_web"] -f ($(if ($HttpOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($HttpOk) {"Green"} else {"Gray"})
+Write-Host ("      " + ($M["port_telnet"] -f ($(if ($TelnetOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($TelnetOk) {"Green"} else {"Gray"})
+Write-Host ("      " + ($M["port_ssh"] -f ($(if ($SshOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($SshOk) {"Green"} else {"Gray"})
+Write-Host ""
+
+# 4. Diagnostico Automatico de Estado (Root vs Travado)
+$HasRoot = ($TelnetOk -or $SshOk)
+
+Write-Header $M["auto_diag_header"]
+if ($HasRoot) {
+    Write-Host "  $($M["auto_root_detected"])" -ForegroundColor Green
 } else {
-    # Mostra o IP detectado e permite confirmar ou informar outro se houver mais de um roteador
-    Write-Success ($M["gateway_found"] -f $RouterIP)
+    Write-Host "  $($M["auto_locked_detected"])" -ForegroundColor Yellow
+}
+Write-Host ""
+
+# Permite confirmacao automatica (ENTER) ou escolha manual / alterar IP caso o usuario queira
+$UserAction = (Read-Host "  $($M["auto_confirm_prompt"])").Trim()
+
+if ($UserAction -eq "") {
+    # Prosseguir automaticamente com base no diagnostico das portas
+    $NeedsUnlock = (-not $HasRoot)
+} elseif ($UserAction -eq "1") {
+    $NeedsUnlock = $false
+} elseif ($UserAction -eq "2") {
+    $NeedsUnlock = $true
+} else {
+    # Usuario solicitou escolha manual ou informou um IP diferente
+    if ($UserAction -match '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$') {
+        $RouterIP = $UserAction
+    } else {
+        $NewIP = (Read-Host "  $($M["manual_ip_ask"] -f $RouterIP)").Trim()
+        if ($NewIP -and $NewIP -match '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$') {
+            $RouterIP = $NewIP
+        }
+    }
+
+    Write-Info "Re-testando portas em $RouterIP..."
+    $HttpOk   = Test-Port $RouterIP 80 500
+    $TelnetOk = Test-Port $RouterIP 23 500
+    $SshOk    = Test-Port $RouterIP 22 500
     Write-Host ("      " + ($M["port_web"] -f ($(if ($HttpOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($HttpOk) {"Green"} else {"Gray"})
     Write-Host ("      " + ($M["port_telnet"] -f ($(if ($TelnetOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($TelnetOk) {"Green"} else {"Gray"})
     Write-Host ("      " + ($M["port_ssh"] -f ($(if ($SshOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($SshOk) {"Green"} else {"Gray"})
     Write-Host ""
-    $UserOverrideIP = Read-Host "  $($M["ip_confirm_prompt"] -f $RouterIP)"
-    if ($UserOverrideIP -and $UserOverrideIP.Trim() -ne "") {
-        $RouterIP = $UserOverrideIP.Trim()
-        $HttpOk   = Test-Port $RouterIP 80 500
-        $TelnetOk = Test-Port $RouterIP 23 500
-        $SshOk    = Test-Port $RouterIP 22 500
-        Write-Info "Re-testando $RouterIP..."
-        Write-Host ("      " + ($M["port_web"] -f ($(if ($HttpOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($HttpOk) {"Green"} else {"Gray"})
-        Write-Host ("      " + ($M["port_telnet"] -f ($(if ($TelnetOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($TelnetOk) {"Green"} else {"Gray"})
-        Write-Host ("      " + ($M["port_ssh"] -f ($(if ($SshOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($SshOk) {"Green"} else {"Gray"})
+
+    Write-Header $M["manual_choice_title"]
+    Write-Host "  $($M["manual_opt1"])" -ForegroundColor White
+    Write-Host "  $($M["manual_opt2"])" -ForegroundColor White
+    Write-Host ""
+
+    $ManualChoice = ""
+    while ($ManualChoice -notin @("1", "2")) {
+        $ManualChoice = (Read-Host "  $($M["manual_choice_prompt"])").Trim()
+        if ($ManualChoice -notin @("1", "2")) {
+            Write-Warn $M["cfg_choice_required"]
+        }
     }
+    $NeedsUnlock = ($ManualChoice -eq "2")
 }
-
-# 4. Pergunta de Triagem: Voce ja tem acesso root?
-Write-Header $M["triage_title"]
-Write-Host "  $($M["triage_q"])" -ForegroundColor Yellow
-Write-Host ""
-Write-Host "  $($M["triage_yes"])" -ForegroundColor White
-Write-Host "  $($M["triage_no"])" -ForegroundColor White
-Write-Host ""
-
-$TriageChoice = ""
-while (-not $TriageChoice) {
-    $raw = (Read-Host "  $($M["triage_prompt"])").Trim().ToUpper()
-    if ($raw -eq "S" -or $raw -eq "SIM" -or $raw -eq "Y" -or $raw -eq "YES") {
-        $TriageChoice = "S"
-    } elseif ($raw -eq "N" -or $raw -eq "NAO" -or $raw -eq "NÃO" -or $raw -eq "NO") {
-        $TriageChoice = "N"
-    } else {
-        Write-Warn $M["triage_required"]
-    }
-}
-
-$NeedsUnlock = ($TriageChoice -eq "N")
 
 # 5. Fluxo de Desbloqueio se NAO tiver root
 if ($NeedsUnlock) {

@@ -1,6 +1,6 @@
 {
   "suite_version": "1.0.1",
-  "updated_at": "2026-10-05T23:11:07Z",
+  "updated_at": "2026-10-05T23:21:53Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
@@ -153,9 +153,9 @@
     {
       "path": "iniciar.ps1",
       "category": "launcher",
-      "size": 33384,
-      "sha256": "ABB8D8B7A53CCA5239B9BD756F148D40D05F9255225F95BAF0C771CF5EB4A53C",
-      "updated_at": "2026-10-05T21:15:46Z"
+      "size": 36033,
+      "sha256": "A6D26098AB0794D0A93C95E69B3201E00F9E2A8F0E5F75C99F8DCA2406F7A85E",
+      "updated_at": "2026-10-05T23:21:30Z"
     },
     {
       "path": "EXECUTAR_T7.bat",

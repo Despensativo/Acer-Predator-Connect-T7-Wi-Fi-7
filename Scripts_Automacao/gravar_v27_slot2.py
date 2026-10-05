@@ -379,6 +379,7 @@ def main():
         check_mnt = run_cmd(tn, "ls /tmp/slot2_mnt 2>/dev/null")
         if "upper" in check_mnt or "etc" in check_mnt:
             injection_cmds = [
+                "rm -rf /tmp/slot2_mnt/upper/*",
                 "mkdir -p /tmp/slot2_mnt/upper/etc/config",
                 "mkdir -p /tmp/slot2_mnt/upper/etc/dropbear",
                 "mkdir -p /tmp/slot2_mnt/upper/etc/init.d",

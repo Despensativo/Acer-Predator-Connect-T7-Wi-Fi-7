@@ -21,6 +21,8 @@ TRACKED_FILES = [
     {"path": "Scripts_Automacao/gravar_v27_slot2.py", "category": "script"},
     {"path": "Scripts_Automacao/switch_boot_slot.py", "category": "script"},
     {"path": "Scripts_Automacao/diagnostico_x7.py", "category": "script"},
+    {"path": "Scripts_Automacao/desbloquear_slot2_from_slot1.py", "category": "script"},
+    {"path": "Scripts_Automacao/logger_t7.py", "category": "script"},
     {"path": "Scripts_Automacao/unlock_only_ssh.py", "category": "script"},
     {"path": "Scripts_Automacao/aplicar_configuracao_pessoal_ap_t7.py", "category": "script"},
     {"path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg", "category": "cfg"},

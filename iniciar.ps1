@@ -415,6 +415,7 @@ function Ensure-All-Dependencies {
             "launcher_t7.py", "telnet_compat.py", "gerenciar_telnet.py",
             "otimizar_e_ativar_luci_slot2.py", "gravar_v27_slot2.py",
             "switch_boot_slot.py", "diagnostico_x7.py", "unlock_only_ssh.py",
+            "desbloquear_slot2_from_slot1.py", "logger_t7.py",
             "aplicar_configuracao_pessoal_ap_t7.py", "gerar_manifesto.py"
         )
         foreach ($s in $scriptFiles) {

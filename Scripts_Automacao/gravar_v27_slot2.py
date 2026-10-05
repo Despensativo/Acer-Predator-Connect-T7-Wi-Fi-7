@@ -32,6 +32,14 @@ except ImportError:
     except ImportError:
         import telnetlib
         Telnet = telnetlib.Telnet
+try:
+    from logger_t7 import log_event
+except ImportError:
+    try:
+        from Scripts_Automacao.logger_t7 import log_event
+    except ImportError:
+        def log_event(action, message, status="INFO", details=None):
+            pass
 
 def find_repo_root():
     cur = os.path.dirname(os.path.abspath(__file__))
@@ -281,9 +289,36 @@ def main():
     if cur_slot != "1":
         print("[-] ERRO CRITICO: O roteador NAO esta rodando no Slot 1!")
         print("    Para seguranca do procedimento, o Slot 1 deve estar ativo.")
+        log_event("GRAVACAO_SLOT2", f"Abortado: Roteador nao esta no Slot 1 (primaryboot={cur_slot})", "ERRO")
         tn.close()
         sys.exit(1)
     print("    [OK] Seguranca confirmada: Slot 1 OEM ativo. Slot 2 livre para gravacao.")
+
+    # Submenu de Escolha de Modo de Instalacao
+    print("\n" + "=" * 72)
+    print("  MODO DE INSTALACAO NO SLOT 2:")
+    print("=" * 72)
+    print("  [1] Instalacao com ROOT Desbloqueado (Recomendado)")
+    print("      - Grava Kernel, Wi-Fi FW e RootFS v27")
+    print("      - Injeta automaticamente usuario 'root', SSH Dropbear e Telnet")
+    print("      - O Slot 2 ja inicia pronto com terminal aberto sem precisar de .cfg!")
+    print("")
+    print("  [2] Instalacao Pura de Fabrica (100% Stock OEM Travado)")
+    print("      - Grava Kernel, Wi-Fi FW e RootFS v27")
+    print("      - Limpa todas as configuracoes (Overlay zerado de fabrica)")
+    print("      - O Slot 2 inicia exatamente como veio de fabrica")
+    print("=" * 72)
+    inst_choice = input("  Escolha uma opcao [1 ou 2] (Padrao: 1): ").strip()
+    if inst_choice not in ["1", "2"]:
+        inst_choice = "1"
+
+    with_root = (inst_choice == "1")
+    if with_root:
+        print("  [+] Modo selecionado: Instalacao com ROOT Desbloqueado.")
+        log_event("GRAVACAO_SLOT2", "Modo selecionado: Com ROOT Desbloqueado", "INFO")
+    else:
+        print("  [+] Modo selecionado: Instalacao Pura de Fabrica (Stock OEM Travado).")
+        log_event("GRAVACAO_SLOT2", "Modo selecionado: Stock OEM Travado", "INFO")
 
     # Instala atalhos de rollback
     install_rollback_shortcuts(tn)
@@ -310,11 +345,13 @@ def main():
 
     if k_md5 not in md5_remote or w_md5 not in md5_remote or r_md5 not in md5_remote:
         print("[-] ERRO FATAL: Os hashes MD5 recebidos no roteador divergiram!")
+        log_event("GRAVACAO_SLOT2", "Erro Fatal: divergencia de MD5 na RAM do roteador", "ERRO")
         run_cmd(tn, "rm -f /tmp/v27_kernel.bin /tmp/v27_wifi.bin /tmp/v27_rootfs.bin")
         tn.close()
         httpd.shutdown()
         sys.exit(1)
     print("    [OK] Todos os 3 hashes MD5 estao 100% perfeitos.")
+    log_event("GRAVACAO_SLOT2", "Hashes MD5 verificados com sucesso no roteador", "OK")
 
     # 8. Anexar UBI no mtd20 e gravar os 3 volumes
     print("\n[*] [3/4] Gravando na particao mtd20 (Slot 2)...")
@@ -335,13 +372,45 @@ def main():
     out_r = run_cmd(tn, "ubiupdatevol /dev/ubi1_2 /tmp/v27_rootfs.bin", timeout=120)
     print(f"       {out_r.strip()}")
 
-    print("    -> Formatando/limpando overlay antigo no volume ubi1_3...")
-    run_cmd(tn, "ubiupdatevol /dev/ubi1_3 -t", timeout=30)
+    if with_root:
+        print("    -> Injetando credenciais e acesso Root no volume de dados (ubi1_3)...")
+        run_cmd(tn, "mkdir -p /tmp/slot2_mnt")
+        run_cmd(tn, "mount -t ubifs /dev/ubi1_3 /tmp/slot2_mnt 2>/dev/null")
+        check_mnt = run_cmd(tn, "ls /tmp/slot2_mnt 2>/dev/null")
+        if "upper" in check_mnt or "etc" in check_mnt:
+            injection_cmds = [
+                "mkdir -p /tmp/slot2_mnt/upper/etc/config",
+                "mkdir -p /tmp/slot2_mnt/upper/etc/dropbear",
+                "mkdir -p /tmp/slot2_mnt/upper/etc/init.d",
+                "cp -f /etc/shadow /tmp/slot2_mnt/upper/etc/shadow",
+                "cp -f /etc/config/dropbear /tmp/slot2_mnt/upper/etc/config/dropbear 2>/dev/null",
+                "[ -f /etc/dropbear/authorized_keys ] && cp -f /etc/dropbear/authorized_keys /tmp/slot2_mnt/upper/etc/dropbear/authorized_keys",
+                "cp -f /etc/init.d/telnet /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
+                "chmod +x /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
+                "sync"
+            ]
+            for c in injection_cmds:
+                run_cmd(tn, c)
+            run_cmd(tn, "umount /tmp/slot2_mnt 2>/dev/null")
+            print("       [OK] Root, SSH e Telnet injetados com sucesso no Slot 2!")
+            log_event("GRAVACAO_SLOT2", "Root injetado com sucesso no Slot 2", "OK")
+        else:
+            print("       [*] Volume de dados limpo via ubiupdatevol...")
+            run_cmd(tn, "ubiupdatevol /dev/ubi1_3 -t", timeout=30)
+            print("       [!] Volume ainda sem sistema de arquivos UBIFS inicializado.")
+            print("           Apos o primeiro boot no Slot 2, use a Opcao 2 do menu para liberar o Root!")
+            log_event("GRAVACAO_SLOT2", "Overlay zerado via -t (requer inicializacao no 1o boot)", "AVISO")
+        run_cmd(tn, "rm -rf /tmp/slot2_mnt")
+    else:
+        print("    -> Formatando/limpando overlay no volume ubi1_3 (100% Stock OEM)...")
+        run_cmd(tn, "ubiupdatevol /dev/ubi1_3 -t", timeout=30)
+        log_event("GRAVACAO_SLOT2", "Instalacao Stock OEM (overlay limpo via -t)", "OK")
 
     # Limpeza e sync
     run_cmd(tn, "rm -f /tmp/v27_kernel.bin /tmp/v27_wifi.bin /tmp/v27_rootfs.bin")
     run_cmd(tn, "sync")
     print("    [OK] Volumes do Slot 2 gravados e sincronizados com sucesso!")
+    log_event("GRAVACAO_SLOT2", "Volumes gravados e sincronizados no Slot 2", "OK")
 
     # 9. Chavear bootconfig para Slot 2 e reiniciar
     if not args.no_reboot:
@@ -349,23 +418,26 @@ def main():
         out_boot = run_cmd(tn, "/usr/sbin/boot-openwrt", timeout=15)
         print(f"       {out_boot.strip()}")
         print("    [OK] O roteador esta reiniciando no Slot 2 rodando a versao 1.01.000027!")
+        log_event("GRAVACAO_SLOT2", "Slot 2 ativado (primaryboot=0) e roteador reiniciado", "OK")
         print("\n" + "=" * 72)
         print("  PROXIMOS PASSOS APOS O BOOT:")
         print("  1. Aguarde cerca de 90 segundos.")
         print(f"  2. Acesse http://{router_ip} no navegador.")
-        print("  3. Restaure o arquivo 'config_v27_ssh_unlocked.cfg' para reativar o Root/SSH.")
-        print("  4. ⚠️ CREDENCIAIS UNIFICADAS:")
-        print("     - Usuario: 'root' (ou 'Admin')")
-        print("     - Senha  : 'root'")
-        print("     - Ao trocar a senha no terminal, altere de ambos: 'passwd root' e 'passwd Admin'.")
-        print("       NUNCA apague nem renomeie esses dois usuarios.")
-        print("  5. Se quiser voltar ao Slot 1 a qualquer momento, execute:")
+        if with_root:
+            print("  3. [OK] O Slot 2 ja acorda com ROOT, SSH e Telnet DESBLOQUEADOS!")
+            print("     - Usuario: 'root' (ou 'Admin')")
+            print("     - Senha  : 'root'")
+        else:
+            print("  3. [!] O Slot 2 acordou 100% Stock OEM bloqueado.")
+            print("     Restaure 'config_v27_ssh_unlocked.cfg' pelo painel se desejar abrir o terminal.")
+        print("  4. Se quiser voltar ao Slot 1 a qualquer momento, execute:")
         print("     /usr/sbin/boot-acer")
         print("=" * 72)
     else:
         print("\n[*] Flag --no-reboot detectada. Gravacao concluida sem reiniciar.")
         print("    Para chavear manualmente quando quiser, execute:")
         print("    python switch_boot_slot.py 2")
+        log_event("GRAVACAO_SLOT2", "Gravacao concluida com flag --no-reboot", "INFO")
 
     tn.close()
     httpd.shutdown()

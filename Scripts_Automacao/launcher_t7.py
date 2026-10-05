@@ -28,6 +28,18 @@ except ImportError:
         import telnetlib
         Telnet = telnetlib.Telnet
 
+try:
+    from logger_t7 import log_event, log_init_session
+except ImportError:
+    try:
+        from Scripts_Automacao.logger_t7 import log_event, log_init_session
+    except ImportError:
+        def log_event(action, message, status="INFO", details=None):
+            pass
+        def log_init_session(tool_name="Predator T7 Management Suite"):
+            pass
+
+
 def find_repo_root():
     cur = os.path.dirname(os.path.abspath(__file__))
     while cur and cur != os.path.dirname(cur):
@@ -85,15 +97,15 @@ TEXTS = {
         "status_router": "Router",
         "status_web_only": "Web Active (Terminal Locked)",
         "status_offline": "Unreachable / Disconnected",
-        "menu_1": "[1] Run Full Pre-Flight Check (Environment Validation)",
-        "menu_2": "[2] Flash Firmware v27 to Slot 2 (Clean OpenWrt) [T7 Exclusive]",
-        "menu_3": "[3] Optimize & Activate LuCI on Port 80 (Slot 2)",
-        "menu_4": "[4] Manage Dual-Boot (Switch Slot 1 / Slot 2)",
+        "menu_1": "[1] Switch Dual-Boot (Toggle Slot 1 / Slot 2)",
+        "menu_2": "[2] Unlock Root on Slot 2 and Boot into It",
+        "menu_3": "[3] Flash Stock Firmware v27 to Slot 2 (With/Without Root) [T7 Exclusive]",
+        "menu_4": "[4] Optimize & Activate LuCI on Port 80 (Slot 2)",
         "menu_5": "[5] Manage Telnet (Hardening / Disable or Enable)",
-        "menu_6": "[6] Open Web GUI in Browser (http://{rip})",
+        "menu_6": "[6] Run Full Environment Diagnostic (Pre-Flight Check)",
         "menu_7": "[7] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
-        "menu_8": "[8] Check & Sync Updates from GitHub (Smart Checksum)",
-        "menu_9": "[9] Emergency Recovery Mode (U-Boot Web / Unbrick)",
+        "menu_8": "[8] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
+        "menu_9": "[9] Check & Sync Updates from GitHub (Smart Checksum)",
         "menu_0": "[0] Exit",
         "prompt_choice": "Choose an option (0-9): ",
         "press_enter": "\nPress ENTER to return to menu...",
@@ -112,8 +124,8 @@ TEXTS = {
         "python": "Versao do Python",
         "rom_files": "Arquivos v27 (ROM)",
         "rom_ok": "[OK] 3/3 arquivos validados (Pronto para gravar Slot 2)",
-        "rom_fail": "[-] ROM v27 ausente (Apenas Opcao 2 afetada)",
-        "rom_notice_missing": "Arquivos da ROM nao encontrados nesta pasta (Necessarios APENAS para a Opcao [2] - Gravar Slot 2. Demais opcoes funcionam normalmente).",
+        "rom_fail": "[-] ROM v27 ausente (Apenas Opcao 3 afetada)",
+        "rom_notice_missing": "Arquivos da ROM nao encontrados nesta pasta (Necessarios APENAS para a Opcao [3] - Gravar Slot 2. Demais opcoes funcionam normalmente).",
         "file_missing": "Arquivo ausente",
         "file_corrupt": "[!] Arquivo corrompido ou divergente",
         "tftp_port": "Porta TFTP PC (UDP 69)",
@@ -137,15 +149,15 @@ TEXTS = {
         "status_router": "Roteador",
         "status_web_only": "Web Ativa (Terminal Bloqueado)",
         "status_offline": "Inacessivel / Desconectado",
-        "menu_1": "[1] Executar Diagnóstico Completo (Pre-Flight Check)",
-        "menu_2": "[2] Gravar Firmware v27 no Slot 2 (OpenWrt Puro) [Exclusivo T7]",
-        "menu_3": "[3] Otimizar e Ativar LuCI na Porta 80 (Slot 2)",
-        "menu_4": "[4] Gerenciar Dual-Boot (Alternar Slot 1 / Slot 2)",
+        "menu_1": "[1] Alternar Dual-Boot (Chavear entre Slot 1 e Slot 2)",
+        "menu_2": "[2] Desbloquear Root no Slot 2 e Iniciar por ele",
+        "menu_3": "[3] Gravar Firmware Stock v27 no Slot 2 (Com/Sem Root) [Exclusivo T7]",
+        "menu_4": "[4] Otimizar e Ativar LuCI na Porta 80 (Slot 2)",
         "menu_5": "[5] Gerenciar Telnet (Hardening / Desativar ou Reativar)",
-        "menu_6": "[6] Abrir Painel no Navegador (http://{rip})",
-        "menu_7": "[7] Area de Pesquisa e Diagnostico do Modelo X7 (Somente Leitura)",
-        "menu_8": "[8] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
-        "menu_9": "[9] Modo de Recuperacao de Emergencia (U-Boot Web / Desbrickar)",
+        "menu_6": "[6] Executar Diagnostico Completo (Pre-Flight Check)",
+        "menu_7": "[7] Area de Pesquisa do Modelo X7 (Somente Leitura)",
+        "menu_8": "[8] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
+        "menu_9": "[9] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
         "menu_0": "[0] Sair",
         "prompt_choice": "Escolha uma opcao (0-9): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
@@ -382,6 +394,10 @@ def check_and_sync_updates():
 
     raw_base = "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main"
     manifest_url = f"{raw_base}/manifest_suite.json"
+    mpath = os.path.join(REPO_DIR, "manifest_suite.json")
+
+    manifest = None
+    is_offline = False
 
     try:
         import urllib.request
@@ -389,76 +405,109 @@ def check_and_sync_updates():
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = resp.read().decode("utf-8")
             manifest = json.loads(data)
-
-        mpath = os.path.join(REPO_DIR, "manifest_suite.json")
         with open(mpath, "w", encoding="utf-8") as f:
             f.write(data)
+    except Exception as e:
+        is_offline = True
+        if os.path.isfile(mpath):
+            try:
+                with open(mpath, "r", encoding="utf-8") as f:
+                    manifest = json.load(f)
+                print(f"  [!] Sem conexao com a internet ({e}).")
+                print("      Modo Offline: Validando integridade com base no manifesto local em cache.")
+                log_event("SYNC_MANIFEST", "Modo offline: validando com cache local", "AVISO")
+            except Exception:
+                manifest = None
+        else:
+            print(f"  [-] Erro ao verificar atualizacoes no GitHub: {e}")
+            print("      Nao ha conexao com a internet e nenhum manifesto local foi encontrado.")
+            log_event("SYNC_MANIFEST", f"Falha de rede sem cache: {e}", "ERRO")
+            safe_input(t("press_enter"))
+            return
 
-        updated_count = 0
-        uptodate_count = 0
-        new_count = 0
+    updated_count = 0
+    uptodate_count = 0
+    new_count = 0
+    errors_count = 0
 
-        for f in manifest.get("files", []):
-            rel_path = f["path"]
-            expected_hash = f["sha256"]
-            category = f.get("category", "")
-            expected_size = f.get("size", 0)
+    for f in manifest.get("files", []):
+        rel_path = f["path"]
+        expected_hash = f["sha256"]
+        category = f.get("category", "")
+        expected_size = f.get("size", 0)
 
-            local_abs = os.path.join(REPO_DIR, rel_path.replace("/", os.sep))
-            os.makedirs(os.path.dirname(local_abs), exist_ok=True)
+        local_abs = os.path.join(REPO_DIR, rel_path.replace("/", os.sep))
+        os.makedirs(os.path.dirname(local_abs), exist_ok=True)
 
-            needs_download = False
-            is_update = False
+        needs_download = False
+        is_update = False
 
-            if category == "rom":
-                if os.path.isfile(local_abs) and os.path.getsize(local_abs) == expected_size:
-                    uptodate_count += 1
-                    continue
-                needs_download = True
-                new_count += 1
-            elif not os.path.isfile(local_abs):
-                needs_download = True
-                new_count += 1
+        if category in ["rom", "stock_rom"]:
+            if os.path.isfile(local_abs) and os.path.getsize(local_abs) == expected_size:
+                uptodate_count += 1
+                continue
+            needs_download = True
+            new_count += 1
+        elif not os.path.isfile(local_abs):
+            needs_download = True
+            new_count += 1
+        else:
+            h = hashlib.sha256()
+            with open(local_abs, "rb") as fl:
+                while chunk := fl.read(65536):
+                    h.update(chunk)
+            local_hash = h.hexdigest().upper()
+
+            if local_hash == expected_hash:
+                uptodate_count += 1
             else:
-                h = hashlib.sha256()
-                with open(local_abs, "rb") as fl:
-                    while chunk := fl.read(65536):
-                        h.update(chunk)
-                local_hash = h.hexdigest().upper()
-
-                if local_hash == expected_hash:
-                    uptodate_count += 1
-                else:
-                    needs_download = True
-                    is_update = True
-                    updated_count += 1
+                needs_download = True
+                is_update = True
+                updated_count += 1
+                if not is_offline:
                     print(f"  [*] {rel_path}: Nova versao detectada no GitHub! Atualizando...")
                     try:
                         shutil.copy2(local_abs, local_abs + ".bak")
                     except Exception:
                         pass
-
-            if needs_download:
-                file_url = f"{raw_base}/{rel_path}"
-                print(f"  [*] Baixando {rel_path}...")
-                with urllib.request.urlopen(urllib.request.Request(file_url, headers={"User-Agent": "Mozilla/5.0"}), timeout=20) as r:
-                    content = r.read()
-                    with open(local_abs, "wb") as out:
-                        out.write(content)
-                if is_update:
-                    print(f"  [OK] {rel_path} atualizado com sucesso! (Backup salvo em .bak)")
                 else:
-                    print(f"  [OK] {rel_path} baixado com sucesso!")
+                    print(f"  [!] {rel_path}: Checksum divergente do manifesto local.")
 
-        print("")
-        if updated_count == 0 and new_count == 0:
+        if needs_download:
+            if is_offline:
+                errors_count += 1
+                print(f"  [-] {rel_path}: Ausente ou modificado (Download indisponivel offline).")
+            else:
+                try:
+                    file_url = f"{raw_base}/{rel_path}"
+                    print(f"  [*] Baixando {rel_path}...")
+                    with urllib.request.urlopen(urllib.request.Request(file_url, headers={"User-Agent": "Mozilla/5.0"}), timeout=20) as r:
+                        content = r.read()
+                        with open(local_abs, "wb") as out:
+                            out.write(content)
+                    if is_update:
+                        print(f"  [OK] {rel_path} atualizado com sucesso! (Backup salvo em .bak)")
+                    else:
+                        print(f"  [OK] {rel_path} baixado com sucesso!")
+                except Exception as dl_err:
+                    print(f"  [-] Falha ao baixar {rel_path}: {dl_err}")
+                    errors_count += 1
+
+    print("")
+    if is_offline:
+        if errors_count == 0:
+            print("  [OK] Todos os arquivos locais estao 100% íntegros e validados em Modo Offline!")
+            log_event("SYNC_MANIFEST", f"Validacao offline OK ({uptodate_count} arquivos)", "OK")
+        else:
+            print(f"  [!] Verificacao offline: {uptodate_count} arquivos íntegros, {errors_count} divergentes.")
+            log_event("SYNC_MANIFEST", f"Validacao offline com {errors_count} divergencias", "AVISO")
+    else:
+        if updated_count == 0 and new_count == 0 and errors_count == 0:
             print(f"  {t('sync_all_ok')}")
+            log_event("SYNC_MANIFEST", f"Sincronizacao GitHub OK ({uptodate_count} arquivos)", "OK")
         else:
             print(f"  {t('sync_updated').format(updated_count + new_count)}")
-
-    except Exception as e:
-        print(f"  [-] Erro ao verificar atualizacoes: {e}")
-        print("      Verifique sua conexao com a internet.")
+            log_event("SYNC_MANIFEST", f"Atualizados {updated_count + new_count} arquivos", "OK")
 
     print("=" * 75)
     safe_input(t("press_enter"))
@@ -554,6 +603,8 @@ def main_menu():
     else:
         CURRENT_LANG = "en"
 
+    log_init_session("Central de Gerenciamento Predator T7")
+
     while True:
         info = preflight_check(quiet=True, explicit_ip=args.ip)
         rip = info["router_ip"]
@@ -580,7 +631,7 @@ def main_menu():
         print(f"  {t('menu_3')}")
         print(f"  {t('menu_4')}")
         print(f"  {t('menu_5')}")
-        print(f"  {t('menu_6').format(rip=rip)}")
+        print(f"  {t('menu_6')}")
         print(f"  {t('menu_7')}")
         print(f"  {t('menu_8')}")
         print(f"  {t('menu_9')}")
@@ -589,52 +640,65 @@ def main_menu():
 
         choice = safe_input(t("prompt_choice"))
         if choice is None or choice == "0":
+            log_event("LAUNCHER", "Usuario encerrou a aplicacao", "INFO")
             print(t("goodbye"))
             break
 
-        if choice in ["2", "3", "4", "7"] and not info["telnet_ok"]:
+        if choice in ["1", "2", "3", "4", "5", "7"] and not info["telnet_ok"]:
             print("\n" + "=" * 75)
             print(t("terminal_required").format(rip=rip))
             print("=" * 75)
+            log_event("LAUNCHER", f"Tentativa de executar opcao [{choice}] sem Telnet", "AVISO")
             safe_input(t("press_enter"))
             continue
 
         if choice == "1":
-            preflight_check(quiet=False, explicit_ip=args.ip)
+            log_event("MENU", "Opcao [1] Alternar Dual-Boot selecionada", "INFO")
+            script = get_script_path("switch_boot_slot.py")
+            subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "2":
+            log_event("MENU", "Opcao [2] Desbloquear Root no Slot 2 selecionada", "INFO")
+            script = get_script_path("desbloquear_slot2_from_slot1.py")
+            subprocess.call([sys.executable, script, rip])
+        elif choice == "3":
+            log_event("MENU", "Opcao [3] Gravar Firmware v27 no Slot 2 selecionada", "INFO")
             if not info["files_ok"]:
                 print("\n" + "=" * 75)
                 print(f"  [!] {t('rom_notice_missing')}")
                 print(f"      Pasta: {V27_DIR}")
                 print("=" * 75)
+                log_event("MENU", "Arquivos de ROM v27 ausentes para gravacao do Slot 2", "ERRO")
                 safe_input(t("press_enter"))
                 continue
             script = get_script_path("gravar_v27_slot2.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "3":
+        elif choice == "4":
+            log_event("MENU", "Opcao [4] Otimizar e Ativar LuCI na Porta 80 selecionada", "INFO")
             script = get_script_path("otimizar_e_ativar_luci_slot2.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "4":
-            script = get_script_path("switch_boot_slot.py")
-            subprocess.call([sys.executable, script, rip])
-            safe_input(t("press_enter"))
         elif choice == "5":
+            log_event("MENU", "Opcao [5] Gerenciar Telnet selecionada", "INFO")
             script = get_script_path("gerenciar_telnet.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "6":
-            webbrowser.open(f"http://{rip}")
+            log_event("MENU", "Opcao [6] Executar Diagnostico Completo selecionada", "INFO")
+            preflight_check(quiet=False, explicit_ip=args.ip)
+            safe_input(t("press_enter"))
         elif choice == "7":
+            log_event("MENU", "Opcao [7] Area de Pesquisa X7 selecionada", "INFO")
             script = get_script_path("diagnostico_x7.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "8":
-            check_and_sync_updates()
-        elif choice == "9":
+            log_event("MENU", "Opcao [8] Modo de Recuperacao de Emergencia selecionada", "INFO")
             show_emergency_recovery()
+        elif choice == "9":
+            log_event("MENU", "Opcao [9] Sincronizar e Atualizar Ferramenta selecionada", "INFO")
+            check_and_sync_updates()
 
 if __name__ == "__main__":
     main_menu()

@@ -104,6 +104,9 @@ $T = @{
         "checking_python"    = "Checking Python 3 environment..."
         "python_ok"          = "Python 3 detected: {0}"
         "python_missing"     = "Python 3 not found. Installing Python 3.14 via WinGet..."
+        "ip_confirm_prompt"  = "Press ENTER to confirm [{0}] or type your router IP: "
+        "ip_not_found"       = "Could not automatically find Predator router on standard IPs."
+        "ip_manual_prompt"   = "Type your Predator router IP [Default: 192.168.76.1]: "
     }
     "pt" = @{
         "title"              = "ACER PREDATOR CONNECT T7 & X7 - ASSISTENTE INTERATIVO"
@@ -146,6 +149,9 @@ $T = @{
         "checking_python"    = "Verificando ambiente Python 3..."
         "python_ok"          = "Python 3 detectado: {0}"
         "python_missing"     = "Python 3 nao encontrado. Instalando Python 3.14 via WinGet..."
+        "ip_confirm_prompt"  = "Pressione ENTER para confirmar [{0}] ou digite o IP correto: "
+        "ip_not_found"       = "Nao foi possivel detectar automaticamente o roteador nos IPs padrao."
+        "ip_manual_prompt"   = "Digite o IP do seu roteador Predator [Padrao: 192.168.76.1]: "
     }
 }
 
@@ -174,41 +180,89 @@ Clear-Host
 Write-Header $M["title"]
 Write-Info $M["detecting"]
 
-$Candidates = @("192.168.76.1", "192.168.73.2", "192.168.1.1")
+$Candidates = @()
+
+# 3.1. Coletar Default Gateway das placas de rede ativas (ignora VPN, ZeroTier, WSL, etc)
 try {
-    $gw = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue | Select-Object -First 1).NextHop
-    if ($gw -and $gw -notin $Candidates) {
-        $Candidates = @($gw) + $Candidates
+    $Adapters = Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq "Up" -and $_.InterfaceDescription -notmatch "(Virtual|VPN|ZeroTier|Npcap|Hyper-V|WSL)" }
+    foreach ($ad in $Adapters) {
+        $ipConf = Get-NetIPConfiguration -InterfaceIndex $ad.InterfaceIndex -ErrorAction SilentlyContinue
+        if ($ipConf.IPv4DefaultGateway) {
+            foreach ($gw in $ipConf.IPv4DefaultGateway) {
+                if ($gw.NextHop -and $gw.NextHop -notin $Candidates) {
+                    $Candidates += $gw.NextHop
+                }
+            }
+        }
     }
 } catch {}
 
-$RouterIP = "192.168.76.1"
+# 3.2. Adicionar IPs conhecidos da linha Acer Predator
+foreach ($stdIp in @("192.168.76.1", "192.168.73.2", "192.168.1.1")) {
+    if ($stdIp -notin $Candidates) {
+        $Candidates += $stdIp
+    }
+}
+
+$RouterIP = ""
 $HttpOk = $false
 $TelnetOk = $false
 $SshOk = $false
 
+# Prioridade 1: Roteador que ja responde com Telnet na porta 23 (Root ativo)
 foreach ($ip in $Candidates) {
     if (Test-Port $ip 23 400) {
         $RouterIP = $ip
         $TelnetOk = $true
+        $HttpOk = Test-Port $ip 80 400
+        $SshOk = Test-Port $ip 22 400
         break
     }
-    if (Test-Port $ip 80 400) {
-        $RouterIP = $ip
-        $HttpOk = $true
+}
+
+# Prioridade 2: Se nenhum tem Telnet, buscar quem responde na porta 80 (Web GUI)
+if (-not $RouterIP) {
+    foreach ($ip in $Candidates) {
+        if (Test-Port $ip 80 400) {
+            $RouterIP = $ip
+            $HttpOk = $true
+            $SshOk = Test-Port $ip 22 400
+            break
+        }
     }
 }
 
-if (-not $TelnetOk) {
+# 3.3. Tratamento de Fallback: Se nenhum IP respondeu nas portas esperadas
+if (-not $RouterIP) {
+    Write-Warn $M["ip_not_found"]
+    $CustomIP = Read-Host "  $($M["ip_manual_prompt"])"
+    if ($CustomIP -and $CustomIP.Trim() -ne "") {
+        $RouterIP = $CustomIP.Trim()
+    } else {
+        $RouterIP = "192.168.76.1"
+    }
+    $HttpOk   = Test-Port $RouterIP 80 500
     $TelnetOk = Test-Port $RouterIP 23 500
+    $SshOk    = Test-Port $RouterIP 22 500
+} else {
+    # Mostra o IP detectado e permite confirmar ou informar outro se houver mais de um roteador
+    Write-Success ($M["gateway_found"] -f $RouterIP)
+    Write-Host ("      " + ($M["port_web"] -f ($(if ($HttpOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($HttpOk) {"Green"} else {"Gray"})
+    Write-Host ("      " + ($M["port_telnet"] -f ($(if ($TelnetOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($TelnetOk) {"Green"} else {"Gray"})
+    Write-Host ("      " + ($M["port_ssh"] -f ($(if ($SshOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($SshOk) {"Green"} else {"Gray"})
+    Write-Host ""
+    $UserOverrideIP = Read-Host "  $($M["ip_confirm_prompt"] -f $RouterIP)"
+    if ($UserOverrideIP -and $UserOverrideIP.Trim() -ne "") {
+        $RouterIP = $UserOverrideIP.Trim()
+        $HttpOk   = Test-Port $RouterIP 80 500
+        $TelnetOk = Test-Port $RouterIP 23 500
+        $SshOk    = Test-Port $RouterIP 22 500
+        Write-Info "Re-testando $RouterIP..."
+        Write-Host ("      " + ($M["port_web"] -f ($(if ($HttpOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($HttpOk) {"Green"} else {"Gray"})
+        Write-Host ("      " + ($M["port_telnet"] -f ($(if ($TelnetOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($TelnetOk) {"Green"} else {"Gray"})
+        Write-Host ("      " + ($M["port_ssh"] -f ($(if ($SshOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($SshOk) {"Green"} else {"Gray"})
+    }
 }
-$HttpOk = Test-Port $RouterIP 80 500
-$SshOk  = Test-Port $RouterIP 22 500
-
-Write-Success ($M["gateway_found"] -f $RouterIP)
-Write-Host ("      " + ($M["port_web"] -f ($(if ($HttpOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($HttpOk) {"Green"} else {"Gray"})
-Write-Host ("      " + ($M["port_telnet"] -f ($(if ($TelnetOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($TelnetOk) {"Green"} else {"Gray"})
-Write-Host ("      " + ($M["port_ssh"] -f ($(if ($SshOk) {"[YES/SIM]"} else {"[NO/NAO]"})))) -ForegroundColor $(if ($SshOk) {"Green"} else {"Gray"})
 
 function Ensure-Python {
     Write-Info $M["checking_python"]

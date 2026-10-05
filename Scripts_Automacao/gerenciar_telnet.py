@@ -84,6 +84,33 @@ def safe_input(prompt=""):
     except (EOFError, KeyboardInterrupt):
         return None
 
+def test_ssh_access(ip):
+    """
+    Testa se o PC consegue se comunicar via SSH com o roteador.
+    Retorna:
+      'key_ok'  : Login sem senha por chave pública funcionando 100%
+      'pass_req': SSH respondendo na porta 22 (requer senha 'root')
+      'fail'    : Porta 22 fechada ou sem resposta
+    """
+    if not test_port(ip, 22):
+        return "fail"
+    try:
+        test_cmd = [
+            "ssh",
+            "-o", "BatchMode=yes",
+            "-o", "ConnectTimeout=3",
+            "-o", "StrictHostKeyChecking=no",
+            "-o", "UserKnownHostsFile=/dev/null",
+            f"root@{ip}",
+            "echo SSH_ACCESS_VERIFIED"
+        ]
+        res = subprocess.run(test_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+        if "SSH_ACCESS_VERIFIED" in res.stdout:
+            return "key_ok"
+    except Exception:
+        pass
+    return "pass_req"
+
 def status_remoto(ip):
     active_telnet = test_port(ip, 23, timeout=1.2)
     active_ssh    = test_port(ip, 22, timeout=1.2)
@@ -110,6 +137,43 @@ def status_remoto(ip):
     return {"telnet": active_telnet, "ssh": active_ssh, "http": active_http}
 
 def desativar_telnet(ip):
+    print(f"\n[*] [Pre-Check de Seguranca] Verificando acesso SSH em {ip} antes de fechar o Telnet...")
+
+    # 1. Checagem essencial de porta 22
+    if not test_port(ip, 22):
+        print(f"\n{C_RED}{C_BOLD}[!] BLOQUEIO DE SEGURANCA CRITICO:{C_RESET}")
+        print(f"{C_RED}    A porta SSH (22) NAO ESTA RESPONDENDO em {ip}!{C_RESET}")
+        print(f"{C_RED}    Se desativar o Telnet agora, voce perdera TODO o acesso root ao roteador!{C_RESET}")
+        print(f"{C_RED}    Operacao CANCELADA para proteger o seu equipamento.{C_RESET}")
+        return
+
+    # 2. Testar se o SSH ja tem autenticacao por chave ou senha
+    ssh_status = test_ssh_access(ip)
+    if ssh_status == "key_ok":
+        print(f"    {C_GREEN}[OK] Acesso SSH por Chave Publica CONFIRMADO (Login 100% sem senha ativo)!{C_RESET}")
+    elif ssh_status == "pass_req":
+        print(f"    {C_CYAN}[OK] Servidor Dropbear SSH ativo na porta 22 (Acesso por senha 'root').{C_RESET}")
+        print(f"\n{C_YELLOW}[Dica de Praticidade] Voce ainda nao importou sua chave SSH para login sem senha.{C_RESET}")
+        print(f"{C_YELLOW}Deseja importar sua chave SSH agora (Opcao 3) antes de desativar o Telnet? [S/N]{C_RESET}")
+        quer_importar = ""
+        while quer_importar not in ["s", "n"]:
+            quer_importar = safe_input("Importar chave agora? [S/N]: ").lower()
+            if quer_importar not in ["s", "n"]:
+                print(f"{C_YELLOW}[!] Digite S para importar ou N para prosseguir apenas com senha.{C_RESET}")
+        if quer_importar == "s":
+            importar_chave_ssh(ip)
+
+    # 3. Confirmacao final obrigatoria do usuario
+    conf = ""
+    while conf not in ["s", "n"]:
+        conf = safe_input(f"\n[?] Confirma fechar a porta 23 (Telnet) e manter apenas SSH em {ip}? [S/N]: ").lower()
+        if conf not in ["s", "n"]:
+            print(f"{C_YELLOW}[!] Por favor, digite S para SIM ou N para NAO.{C_RESET}")
+
+    if conf == "n":
+        print("[*] Operacao cancelada pelo usuario.")
+        return
+
     print(f"\n[*] Conectando em {ip}:23 para desativar Telnet...")
     if not test_port(ip, 23):
         print(f"{C_YELLOW}[-] A porta Telnet (23) ja esta fechada ou inacessivel!{C_RESET}")
@@ -133,6 +197,7 @@ def desativar_telnet(ip):
     if not test_port(ip, 23):
         print(f"\n{C_GREEN}[OK] Telnet DESATIVADO com sucesso!{C_RESET}")
         print(f"     A porta 23 foi fechada. Seu roteador agora responde exclusivamente via SSH (porta 22).")
+        print(f"     Para conectar via terminal: {C_CYAN}ssh root@{ip}{C_RESET}")
     else:
         print(f"\n{C_YELLOW}[!] Aviso: A porta 23 ainda parece responder. Verifique se o processo foi reiniciado pelo watchdog.{C_RESET}")
 
@@ -190,50 +255,59 @@ def reativar_telnet_ssh(ip):
     except Exception as e:
         print(f"{C_RED}[-] Erro ao invocar cliente SSH do sistema: {e}{C_RESET}")
 
+def configurar_ssh_config_local(pub_path):
+    """
+    Garante que o arquivo ~/.ssh/config do Windows possua as diretivas
+    necessarias para negociar ssh-rsa com o Dropbear v2019.78 de forma transparente.
+    """
+    ssh_dir = os.path.expanduser("~/.ssh")
+    os.makedirs(ssh_dir, exist_ok=True)
+    cfg_file = os.path.join(ssh_dir, "config")
+    priv_path = pub_path[:-4] if pub_path.endswith(".pub") else pub_path
+
+    block = (
+        "\nHost 192.168.73.* 192.168.76.* 192.168.1.*\n"
+        "    HostkeyAlgorithms +ssh-rsa\n"
+        "    PubkeyAcceptedAlgorithms +ssh-rsa\n"
+        "    PubkeyAcceptedKeyTypes +ssh-rsa\n"
+        "    StrictHostKeyChecking no\n"
+        "    UserKnownHostsFile /dev/null\n"
+        f"    IdentityFile ~/.ssh/{os.path.basename(priv_path)}\n"
+    )
+
+    content = ""
+    if os.path.isfile(cfg_file):
+        with open(cfg_file, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+
+    if "HostkeyAlgorithms +ssh-rsa" not in content or os.path.basename(priv_path) not in content:
+        with open(cfg_file, "a", encoding="utf-8") as f:
+            f.write(block)
+
 def encontrar_ou_gerar_chave_ssh():
+    """
+    Localiza ou gera uma chave RSA compativel com o Dropbear v2019.78 do roteador.
+    (Dropbear v2019.78 sem modulo ed25519 requer chave tipo RSA).
+    """
     ssh_dir = os.path.expanduser("~/.ssh")
     os.makedirs(ssh_dir, exist_ok=True)
 
     candidatas = [
-        os.path.join(ssh_dir, "id_ed25519.pub"),
-        os.path.join(ssh_dir, "id_rsa.pub"),
-        os.path.join(ssh_dir, "id_ecdsa.pub")
+        os.path.join(ssh_dir, "predator_t7_rsa.pub"),
+        os.path.join(ssh_dir, "id_rsa.pub")
     ]
-    outras = glob.glob(os.path.join(ssh_dir, "*.pub"))
-    for o in outras:
-        if o not in candidatas:
-            candidatas.append(o)
-
     existentes = [p for p in candidatas if os.path.isfile(p)]
 
     if existentes:
-        print(f"\n[*] Chaves publicas encontradas no seu PC:")
-        for idx, k in enumerate(existentes, 1):
-            print(f"    [{idx}] {k}")
-        print(f"    [N] Gerar uma nova chave Ed25519 dedicada para o roteador")
+        chosen_pub = existentes[0]
+        with open(chosen_pub, "r", encoding="utf-8", errors="ignore") as f:
+            return f.read().strip(), chosen_pub
 
-        while True:
-            sel = safe_input(f"    Selecione a chave a ser usada [1-{len(existentes)} ou N]: ")
-            if not sel:
-                print(f"    {C_YELLOW}[!] Por favor, selecione uma opcao.{C_RESET}")
-                continue
-            if sel.lower() == "n":
-                break
-            if sel.isdigit() and 1 <= int(sel) <= len(existentes):
-                chosen_pub = existentes[int(sel) - 1]
-                with open(chosen_pub, "r", encoding="utf-8", errors="ignore") as f:
-                    return f.read().strip(), chosen_pub
-            print(f"    {C_YELLOW}[!] Opcao invalida. Digite um numero de 1 a {len(existentes)} ou N.{C_RESET}")
-
-    # Gerar nova chave Ed25519
-    new_key = os.path.join(ssh_dir, "id_ed25519")
-    if os.path.isfile(new_key):
-        new_key = os.path.join(ssh_dir, "predator_t7_ed25519")
-
-    print(f"\n[*] Gerando nova chave Ed25519 de alta seguranca em: {new_key}...")
-    keygen_cmd = ["ssh-keygen", "-t", "ed25519", "-N", "", "-f", new_key, "-C", f"predator-t7-admin@{platform.node()}"]
+    # Gerar nova chave RSA 2048 sem senha
+    new_key = os.path.join(ssh_dir, "predator_t7_rsa")
+    print(f"\n[*] Gerando nova chave RSA compativel em: {new_key}...")
     try:
-        subprocess.run(keygen_cmd, check=True)
+        subprocess.run(["ssh-keygen", "-t", "rsa", "-b", "2048", "-N", "", "-f", new_key, "-q"], check=True)
     except Exception as e:
         print(f"{C_RED}[-] Falha ao gerar chave com ssh-keygen: {e}{C_RESET}")
         return None, None
@@ -249,7 +323,7 @@ def importar_chave_ssh(ip):
     print("  IMPORTAR CHAVE PUBLICA SSH PARA O ROTEADOR (LOGIN SEM SENHA)")
     print("=" * 65)
     print("  Como funciona:")
-    print("  - O Dropbear (servidor SSH do OpenWrt) valida chaves em /etc/dropbear/authorized_keys.")
+    print("  - O Dropbear valida chaves em /etc/dropbear/authorized_keys e /root/.ssh/authorized_keys.")
     print("  - Quando a sua chave publica estiver gravada la, o seu PC conecta")
     print("    instantaneamente via terminal SSH sem pedir senha.")
     print("  - Se a porta 23 (Telnet) estiver ativa agora, a injecao e 100% automatica!")
@@ -259,12 +333,15 @@ def importar_chave_ssh(ip):
         print(f"{C_RED}[-] Nenhuma chave publica disponivel para importacao.{C_RESET}")
         return
 
+    # Configurar ~/.ssh/config no Windows para compatibilidade total
+    configurar_ssh_config_local(pub_path)
+
     print(f"\n[+] Chave selecionada: {C_CYAN}{pub_path}{C_RESET}")
     print(f"    Previa da chave: {pub_content[:60]}... {pub_content.split()[-1] if len(pub_content.split()) > 2 else ''}")
 
     conf = ""
     while conf not in ["s", "n"]:
-        conf = safe_input(f"\n[?] Confirma injetar esta chave publica em /etc/dropbear/authorized_keys no roteador ({ip})? [S/N]: ").lower()
+        conf = safe_input(f"\n[?] Confirma injetar esta chave publica no roteador ({ip})? [S/N]: ").lower()
         if conf not in ["s", "n"]:
             print(f"{C_YELLOW}[!] Por favor, digite S para confirmar ou N para cancelar.{C_RESET}")
 
@@ -272,36 +349,34 @@ def importar_chave_ssh(ip):
         print("[*] Operacao cancelada pelo usuario.")
         return
 
+    sanitized_key = pub_content.replace("'", "'\\''")
+
     # Injetar via Telnet (se disponivel - 0 prompts de senha)
     if test_port(ip, 23):
         print(f"\n[*] Injetando chave via Telnet na porta 23 (Conexao root direta)...")
         try:
             tn = Telnet(ip, 23, timeout=5)
             tn.read_until("/ # ", timeout=3)
-            run_telnet_cmd(tn, "mkdir -p /etc/dropbear && chmod 700 /etc/dropbear")
-            # Adicionar chave evitando duplicatas
-            sanitized_key = pub_content.replace("'", "'\\''")
+            run_telnet_cmd(tn, "mkdir -p /etc/dropbear /root/.ssh && chmod 700 /etc/dropbear /root/.ssh")
             cmd_inject = (
-                f"grep -q -F '{sanitized_key}' /etc/dropbear/authorized_keys 2>/dev/null || "
-                f"echo '{sanitized_key}' >> /etc/dropbear/authorized_keys"
+                f"(grep -q -F '{sanitized_key}' /etc/dropbear/authorized_keys 2>/dev/null || echo '{sanitized_key}' >> /etc/dropbear/authorized_keys); "
+                f"(grep -q -F '{sanitized_key}' /root/.ssh/authorized_keys 2>/dev/null || echo '{sanitized_key}' >> /root/.ssh/authorized_keys); "
+                f"chmod 600 /etc/dropbear/authorized_keys /root/.ssh/authorized_keys; sync"
             )
             run_telnet_cmd(tn, cmd_inject)
-            run_telnet_cmd(tn, "chmod 600 /etc/dropbear/authorized_keys")
-            run_telnet_cmd(tn, "sync")
             tn.close()
-            print(f"{C_GREEN}[OK] Chave gravada com sucesso em /etc/dropbear/authorized_keys!{C_RESET}")
+            print(f"{C_GREEN}[OK] Chave gravada com sucesso em /etc/dropbear/authorized_keys e /root/.ssh/authorized_keys!{C_RESET}")
         except Exception as e:
             print(f"{C_RED}[-] Falha na gravacao via Telnet: {e}{C_RESET}")
             return
     elif test_port(ip, 22):
         print(f"\n[*] Telnet fechado. Injetando chave via conexao SSH na porta 22...")
         print(f"    {C_CYAN}[Dica] Se o SSH pedir senha para autorizar o envio, digite: root{C_RESET}")
-        sanitized_key = pub_content.replace("'", "'\\''")
         remote_script = (
-            f"mkdir -p /etc/dropbear && chmod 700 /etc/dropbear && "
-            f"(grep -q -F '{sanitized_key}' /etc/dropbear/authorized_keys 2>/dev/null || "
-            f"echo '{sanitized_key}' >> /etc/dropbear/authorized_keys) && "
-            f"chmod 600 /etc/dropbear/authorized_keys && sync"
+            f"mkdir -p /etc/dropbear /root/.ssh && chmod 700 /etc/dropbear /root/.ssh && "
+            f"(grep -q -F '{sanitized_key}' /etc/dropbear/authorized_keys 2>/dev/null || echo '{sanitized_key}' >> /etc/dropbear/authorized_keys) && "
+            f"(grep -q -F '{sanitized_key}' /root/.ssh/authorized_keys 2>/dev/null || echo '{sanitized_key}' >> /root/.ssh/authorized_keys) && "
+            f"chmod 600 /etc/dropbear/authorized_keys /root/.ssh/authorized_keys && sync"
         )
         ssh_cmd = [
             "ssh",
@@ -322,24 +397,12 @@ def importar_chave_ssh(ip):
 
     # Testar login SSH com chave
     print(f"\n[*] Testando login SSH autenticado por chave (sem requisicao de senha)...")
-    test_ssh_cmd = [
-        "ssh",
-        "-o", "BatchMode=yes",
-        "-o", "ConnectTimeout=4",
-        "-o", "StrictHostKeyChecking=no",
-        "-o", "UserKnownHostsFile=/dev/null",
-        f"root@{ip}",
-        "echo AUTH_KEY_SUCCESS"
-    ]
-    try:
-        proc = subprocess.run(test_ssh_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=8)
-        if "AUTH_KEY_SUCCESS" in proc.stdout:
-            print(f"{C_GREEN}{C_BOLD}[SUCESSO ABSOLUTO] Login por chave SSH confirmado!{C_RESET}")
-            print(f"                  Voce agora acessa o terminal digitando: ssh root@{ip} (sem senha)!")
-        else:
-            print(f"{C_YELLOW}[!] A chave foi gravada. Teste o acesso manual digitando: ssh root@{ip}{C_RESET}")
-    except Exception:
-        print(f"{C_YELLOW}[!] A chave foi gravada no roteador. Teste manualmente com: ssh root@{ip}{C_RESET}")
+    res = test_ssh_access(ip)
+    if res == "key_ok":
+        print(f"{C_GREEN}{C_BOLD}[SUCESSO ABSOLUTO] Login por chave SSH confirmado e validado!{C_RESET}")
+        print(f"                  Voce agora acessa o terminal digitando: {C_CYAN}ssh root@{ip}{C_RESET} (sem senha)!")
+    else:
+        print(f"{C_YELLOW}[!] A chave foi gravada. Teste o acesso manual digitando: ssh root@{ip}{C_RESET}")
 
 def main():
     explicit_ip = None
@@ -388,15 +451,7 @@ def main():
 
         if opt == "1":
             if is_active:
-                conf = ""
-                while conf not in ["s", "n"]:
-                    conf = safe_input(f"\n[?] Confirma fechar a porta 23 (Telnet) e manter apenas SSH em {router_ip}? [S/N]: ").lower()
-                    if conf not in ["s", "n"]:
-                        print(f"{C_YELLOW}[!] Por favor, digite S para SIM ou N para NAO.{C_RESET}")
-                if conf == "s":
-                    desativar_telnet(router_ip)
-                else:
-                    print("[*] Operacao cancelada pelo usuario.")
+                desativar_telnet(router_ip)
             else:
                 print(f"\n{C_GREEN}[OK] O servico Telnet ja esta desativado no roteador ({router_ip}). Nenhuma acao necessaria.{C_RESET}")
             safe_input("\nPressione ENTER para voltar ao menu...")

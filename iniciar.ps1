@@ -74,7 +74,7 @@ $T = @{
         "triage_q"           = "Do you already have root / SSH access unlocked on this router?"
         "triage_yes"         = "[Y] YES - I already restored .cfg and Telnet/SSH is active"
         "triage_no"          = "[N] NO  - My router is still factory locked (I need to unlock)"
-        "triage_prompt"      = "Your choice [Y/N] (Default: {0})"
+        "triage_prompt"      = "Choose option [Y/N]: "
         "unlock_header"      = "STEP-BY-STEP ROOT UNLOCK (SAFE & FAST)"
         "unlock_desc"        = "The unlock is 100% safe and DOES NOT flash NAND memory.`n  It only enables SSH/Telnet inside a config backup (.cfg) that you restore via Acer Web GUI."
         "choose_cfg"         = "How would you like to prepare your unlock file?"
@@ -123,7 +123,7 @@ $T = @{
         "triage_q"           = "Voce ja possui acesso ROOT / SSH liberado no roteador?"
         "triage_yes"         = "[S] SIM - Ja restaurei o .cfg e o Telnet/SSH esta ativo"
         "triage_no"          = "[N] NAO - Meu roteador ainda esta com o firmware original travado de fabrica"
-        "triage_prompt"      = "Escolha [S/N] (Padrao: {0})"
+        "triage_prompt"      = "Escolha a opcao [S/N]: "
         "unlock_header"      = "DESBLOQUEIO DE ACESSO ROOT PASSO A PASSO (SEGURO E RAPIDO)"
         "unlock_desc"        = "O desbloqueio e 100% seguro e NAO grava particoes da flash.`n  Ele apenas ativa o terminal SSH/Telnet em um backup (.cfg) restaurado pelo painel da Acer."
         "choose_cfg"         = "Como voce prefere gerar o seu arquivo de desbloqueio?"
@@ -336,17 +336,12 @@ Write-Host "  $($M["triage_yes"])" -ForegroundColor White
 Write-Host "  $($M["triage_no"])" -ForegroundColor White
 Write-Host ""
 
-$DefaultTriage = if ($TelnetOk) { "S" } else { "N" }
-if ($Lang -eq "en") {
-    $DefaultTriage = if ($TelnetOk) { "Y" } else { "N" }
-}
-
 $TriageChoice = ""
 while (-not $TriageChoice) {
-    $raw = Read-Host "  $($M["triage_prompt"] -f $DefaultTriage)"
-    if ($raw -like "s*" -or $raw -like "sim" -or $raw -like "y*" -or $raw -like "yes") {
+    $raw = (Read-Host "  $($M["triage_prompt"])").Trim().ToUpper()
+    if ($raw -eq "S" -or $raw -eq "SIM" -or $raw -eq "Y" -or $raw -eq "YES") {
         $TriageChoice = "S"
-    } elseif ($raw -like "n*" -or $raw -like "nao" -or $raw -like "no") {
+    } elseif ($raw -eq "N" -or $raw -eq "NAO" -or $raw -eq "NÃO" -or $raw -eq "NO") {
         $TriageChoice = "N"
     } else {
         Write-Warn $M["triage_required"]

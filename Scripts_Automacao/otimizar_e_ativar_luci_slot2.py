@@ -2,51 +2,11 @@
 """
 otimizar_e_ativar_luci_slot2.py
 Suite Completa de Otimizacao, Debloat e Ajustes de Performance Gamer
-Acer Predator Connect T7 (Qualcomm IPQ5332 / Wi-Fi 7) - Firmware Oficial v1.01.000027
+Acer Predator Connect T7 (Qualcomm IPQ5332 / Wi-Fi 7) - Firmware v1.01.000027
 
-Acoes Realizadas:
-1. DEBLOAT DE TELEMETRIA E SEGURANCA:
-   - Desativa FOTA (atualizacao silenciosa que sobrescreve particoes) e silent-reboot no cron.
-   - Desativa daemons de modem celular 5G inexistentes (modem_readd, modem-monitor, at_ril, ril).
-   - Desativa telemetrias pesadas (monitord, sodd, cwmp, mqtt_client, breakpad) economizando CPU e RAM.
-   - Desativa servicos de Samba/Ksmbd nao utilizados para economizar 20MB de RAM.
-   - Limpa logs de lixo no /tmp.
-
-2. ATIVACAO DO LUCI COMO INTERFACE PADRAO (PORTA 80):
-   - Desativa o lighttpd (painel Acer).
-   - Descomenta o servico /etc/init.d/uhttpd sabotado pela Acer.
-   - Configura o LuCI (uhttpd) para escutar diretamente na porta 80 e 443.
-   - Libera autenticacao do usuario Admin e root no rpcd com permissao total.
-   - Corrige permissoes em /www (chmod 755).
-
-3. PERFORMANCE DE REDE E KERNEL (CONDUCAO DE DADOS A 2.5 Gbps):
-   - Conntrack ampliado para 65.536 conexoes com timeout de 2h para conexoes estabelecidas.
-   - TCP Fast Open ativado para cliente e servidor (tfo=3) para navegacao web acelerada.
-   - Fila de rede expandida (netdev_max_backlog=2048) para conexoes 2.5 Gbps sem drops.
-
-4. TURBO CACHE DNS (DNSMASQ):
-   - Cache expandido para 10.000 dominios na RAM.
-   - TTL minimo de 300 segundos (5 minutos) para respostas locais instantaneas (0 ms).
-
-5. UPNP GAMER AUTOMATICO (MINIUPNPD):
-   - miniupnpd ativado com NAT-PMP e IGDv1 para NAT Tipo 1 / Aberto no PS5, Xbox e PC.
-
-6. TURBO CACHE DNS (DNSMASQ):
-   - Cache expandido para 10.000 dominios na RAM.
-   - TTL minimo de 300 segundos (5 minutos) para respostas locais instantaneas (0 ms).
-
-7. ROAMING WI-FI 7 SEAMLESS (802.11k e 802.11v) + DTIM=2:
-   - Ativa BSS Transition Management e RRM em 2.4, 5 e 6 GHz para transicao suave em Apple e Android.
-   - Ajusta DTIM Period para 2 para economia de bateria em celulares e notebooks.
-   - Preserva WPA2-PSK AES no 2.4 GHz (compatibilidade total IoT) e WPA3-SAE no 6 GHz (320 MHz).
-
-8. IPV6 UNIVERSAL HIBRIDO (ODHCPD HYBRID):
-   - Modo 'hybrid' em LAN e WAN6: Atua como Relay em Duplo NAT e como Servidor nativo com PD em Bridge.
-   - Zero configuracao manual necessaria se a topologia da rede mudar no futuro.
-
-9. PERSISTENCIA NO OVERLAY:
-   - Atualiza /etc/rc.local para subir LuCI, SSH, Telnet e boot-acer no boot.
-   - Executa sync na memoria Flash NAND.
+Perfis Suportados:
+- COMPLETA : Debloat FOTA/telemetria/modem 5G + LuCI Porta 80 + UPnP + Conntrack 65k + DNS 10k + Wi-Fi 7 + IPv6
+- BASICA   : Apenas LuCI na Porta 80 + Trava de Seguranca FOTA + Senha root0100
 """
 
 import sys
@@ -77,7 +37,13 @@ except ImportError:
         def log_dump(title, content):
             pass
 
-def test_telnet(ip, timeout=1):
+def safe_input(prompt):
+    try:
+        return input(prompt).strip()
+    except (EOFError, KeyboardInterrupt):
+        return ""
+
+def test_telnet(ip, timeout=1.5):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(timeout)
@@ -123,34 +89,174 @@ def run_cmd(tn, cmd, timeout=10):
     log_cmd(cmd, out)
     return out
 
-def main():
-    explicit_ip = sys.argv[1] if len(sys.argv) > 1 else None
-    target_ip = detect_router_ip(explicit_ip)
+def exibir_explicacao_detalhada():
+    print("\n" + "=" * 80)
+    print("  GUIA DETALHADO DAS OTIMIZACOES DISPONIVEIS NO SLOT 2")
+    print("=" * 80)
+    print("""
+1. Desativar FOTA (atualizacao automatica) e silent-reboot:
+   • O QUE E: O firmware original da Acer possui rotinas no cron para buscar
+     atualizacoes silenciosas na nuvem de madrugada e reiniciar o roteador.
+   • POR QUE DESATIVAR: Se a Acer disparar uma atualizacao automatica, ela pode
+     sobrescrever o Slot 2, trancar a porta Telnet e remover o acesso root.
+   • IMPACTO: Bloqueia 100% de downloads e reboots silenciosos indesejados.
 
-    print("=" * 75)
-    print("  SUITE DE OTIMIZACAO, DEBLOAT E PERFORMANCE GAMER (PORTA 80 LUCI)")
-    print(f"  Acer Predator Connect T7 (Qualcomm IPQ5332) - Alvo: {target_ip}")
-    print("=" * 75)
+2. Desativar Daemons de Modem Celular 5G (Heranca do X7):
+   • O QUE E: O firmware do Predator T7 foi construído sobre a mesma base de
+     codigo do Predator X7 (que possui modem 5G embutido com chip SIM).
+   • POR QUE DESATIVAR: O T7 e um roteador puramente cabeado e Wi-Fi (sem chip SIM).
+     Processos como modem_readd, ril e at_ril ficam tentando se comunicar com
+     um hardware inexistente em loop continuo, desperdicando CPU e memória.
+   • IMPACTO: CPU mais fria, fim de erros ciclicos no log e liberacao de RAM.
 
-    print(f"\n[*] Conectando via Telnet em {target_ip}:23...")
-    try:
-        tn = Telnet(target_ip, 23, timeout=5)
-        tn.read_until(b"/ # ", timeout=3)
-    except Exception as e:
-        print(f"[-] Erro ao conectar via Telnet: {e}")
-        sys.exit(1)
-    print("    [OK] Conectado como root.")
+3. Desativar Telemetria Pesada e Servicos Nao Utilizados:
+   • O QUE E: Daemons como monitord, sodd, cwmp (TR-069) e breakpad monitoram
+     o uso e enviam dados de telemetria. Servicos de Samba sobem por padrao.
+   • IMPACTO: Economiza mais de 25 MB de memoria RAM e reduz latencia do sistema.
 
+4. Limpeza de Interfaces Fantasmas (Guest, IoT, WAN5GMODEM celular do X7):
+   • O QUE E: Remove pontes e declaracoes de rede orfas que foram herdadas do
+     modelo X7 e causavam avisos vermelhos na tela de Interfaces do LuCI.
+   • NOTA DE SEGURANCA: A sua porta fisica WAN Ethernet 2.5 Gbps (eth0)
+     permanece 100% INTACTA e ATIVA! Jamais e removida ou modificada.
+   • IMPACTO: LuCI limpo e estavel, sem erros de interfaces inexistentes.
+
+5. Configurar LuCI (uhttpd) como Servidor Web Principal (Porta 80):
+   • O QUE E: A Acer bloqueia o LuCI e coloca seu painel restrito (lighttpd).
+   • IMPACTO: Desativa o lighttpd e sobe a interface web oficial OpenWrt (LuCI)
+     direto nas portas 80 (HTTP) e 443 (HTTPS), liberando o menu completo.
+
+6. Padronizacao de Senhas para 'root0100':
+   • O QUE E: Unifica as credenciais de root e Admin no sistema e no LuCI.
+   • POR QUE 'root0100': O painel web da Acer e o LuCI exigem minimo de 8 caracteres.
+     A senha 'root0100' atende todas as regras de seguranca sem gerar conflitos.
+
+7. Ativar UPnP Gamer Automatico (miniupnpd):
+   • BENEFICIO: Abre portas de comunicacao sob demanda para PC Gamer e consoles
+     (PlayStation 5, Xbox Series, Nintendo Switch), garantindo NAT Aberto / Tipo 1
+     sem necessidade de redirecionamento manual de portas.
+
+8. Conntrack 65k, TCP Fast Open e Filas de Rede para 2.5 Gbps:
+   • BENEFICIO: Aumenta o limite de conexoes simultaneas de 16k para 65.536
+     (suporta milhares de conexoes de torrent e streaming sem travar).
+     Ativa TCP Fast Open (tfo=3) para carregamento instantaneo de paginas web.
+
+9. Turbo Cache DNSmasq (10.000 entradas na RAM):
+   • BENEFICIO: Respostas de sites acessados anteriormente ficam guardadas na
+     memoria RAM com TTL minimo de 5 minutos, respondendo consultas em 0 ms.
+
+10. Roaming Seamless Wi-Fi 7 (802.11k/v e DTIM=2):
+    • BENEFICIO: Ativa BSS Transition Management e RRM em 2.4, 5 e 6 GHz para
+      transicao suave ao se movimentar pela casa. Ativa DTIM=2 para economizar
+      consumo de bateria em celulares e notebooks.
+
+11. IPv6 Universal Hibrido (odhcpd):
+    • BENEFICIO: Funciona perfeitamente em Duplo NAT (atras de modem de operadora)
+      ou em conexao direta autenticada (Bridge), sem necessidade de ajustes manuais.
+
+12. Atalhos de Terminal 'boot-acer' e 'boot-openwrt':
+    • BENEFICIO: Permite alternar de volta para o firmware original da Acer ou
+      para o OpenWrt a qualquer momento digitando apenas uma linha no terminal.
+""")
+    print("=" * 80)
+
+def menu_selecao_modo(target_ip):
+    while True:
+        print("\n" + "=" * 80)
+        print("  CENTRAL DE GERENCIAMENTO PREDATOR T7 — OTIMIZACAO DO SLOT 2 (LUCI)")
+        print(f"  Roteador Alvo : {target_ip} (Porta 23 Telnet)")
+        print("=" * 80)
+        print("\nSelecione o perfil de otimizacao desejado para o Slot 2:\n")
+        print("  [1] OTIMIZACAO COMPLETA (Recomendada — Maximo Desempenho, Debloat & LuCI)")
+        print("      • Desativa FOTA (atualizacao silenciosa da Acer) e silent-reboot")
+        print("      • Desativa 12 daemons inuteis de modem 5G e telemetrias herdadas do X7")
+        print("      • Remove interfaces fantasmas (WAN5GMODEM, Guest, IoT) sem tocar na WAN fisica")
+        print("      • Coloca o LuCI oficial na Porta 80 e padroniza senhas para 'root0100'")
+        print("      • Ativa UPnP Gamer automatico (NAT Aberto para PC, PS5, Xbox, Switch)")
+        print("      • Conntrack 65k, TCP Fast Open (tfo=3) e filas de rede para 2.5 Gbps")
+        print("      • Turbo Cache DNSmasq na RAM (10.000 entradas para respostas em 0 ms)")
+        print("      • Roaming Wi-Fi 7 inteligente (802.11k/v) e DTIM=2 (economia de bateria)")
+        print("      • IPv6 Universal Hibrido (funciona em Duplo NAT e em modo Bridge)")
+        print("      • Instala atalhos rapidos 'boot-acer' e 'boot-openwrt' no terminal\n")
+        print("  [2] OTIMIZACAO BASICA (Apenas Ativar LuCI na Porta 80 + Trava FOTA)")
+        print("      • Desativa FOTA e silent-reboot (protege o Slot 2 contra sobrescrita)")
+        print("      • Ativa o LuCI (uhttpd) diretamente na Porta 80 (desativa painel Acer)")
+        print("      • Padroniza as credenciais de root e Admin para 'root0100'")
+        print("      • Instala atalhos rapidos 'boot-acer' e 'boot-openwrt' no terminal")
+        print("      (Nao altera parametros de Kernel, DNS, Wi-Fi, UPnP nem remove daemons)\n")
+        print("  [3] Explicar detalhadamente o que cada uma das otimizacoes faz")
+        print("  [0] Cancelar e Voltar ao Menu Principal")
+        print("-" * 80)
+
+        opcao = safe_input("Digite sua opcao (0-3): ")
+        if opcao == "3":
+            exibir_explicacao_detalhada()
+            safe_input("Pressione ENTER para retornar ao menu de selecao...")
+            continue
+        elif opcao == "1":
+            return "completa"
+        elif opcao == "2":
+            return "basica"
+        elif opcao == "0":
+            return None
+        else:
+            print("\n[!] Opcao invalida! Digite 1, 2, 3 ou 0.")
+
+def instalar_atalhos_boot(tn):
+    print("\n[*] Instalando atalhos de chaveamento rapido (/usr/sbin/boot-acer e /usr/sbin/boot-openwrt)...")
+    cmd_boot_acer = """cat << 'EOFA' > /usr/sbin/boot-acer
+#!/bin/sh
+echo "=== Retornando boot para SLOT 1 (OEM v24) ==="
+echo 1 > /proc/boot_info/bootconfig0/rootfs/primaryboot
+echo 1 > /proc/boot_info/bootconfig1/rootfs/primaryboot
+cat /proc/boot_info/bootconfig0/getbinary_bootconfig > /tmp/bc0.bin
+cat /proc/boot_info/bootconfig1/getbinary_bootconfig > /tmp/bc1.bin
+mtd unlock /dev/mtd3 2>/dev/null
+mtd unlock /dev/mtd4 2>/dev/null
+mtd -e /dev/mtd3 write /tmp/bc0.bin /dev/mtd3
+mtd -e /dev/mtd4 write /tmp/bc1.bin /dev/mtd4
+rm -f /tmp/bc0.bin /tmp/bc1.bin
+sync
+echo "[OK] Slot 1 configurado com sucesso! Reiniciando..."
+reboot
+EOFA
+chmod +x /usr/sbin/boot-acer
+"""
+    cmd_boot_openwrt = """cat << 'EOFB' > /usr/sbin/boot-openwrt
+#!/bin/sh
+echo "=== Chaveando boot para SLOT 2 (OpenWrt Puro) ==="
+echo 0 > /proc/boot_info/bootconfig0/rootfs/primaryboot
+echo 0 > /proc/boot_info/bootconfig1/rootfs/primaryboot
+cat /proc/boot_info/bootconfig0/getbinary_bootconfig > /tmp/bc0.bin
+cat /proc/boot_info/bootconfig1/getbinary_bootconfig > /tmp/bc1.bin
+mtd unlock /dev/mtd3 2>/dev/null
+mtd unlock /dev/mtd4 2>/dev/null
+mtd -e /dev/mtd3 write /tmp/bc0.bin /dev/mtd3
+mtd -e /dev/mtd4 write /tmp/bc1.bin /dev/mtd4
+rm -f /tmp/bc0.bin /tmp/bc1.bin
+sync
+echo "[OK] Slot 2 configurado com sucesso! Reiniciando..."
+reboot
+EOFB
+chmod +x /usr/sbin/boot-openwrt
+"""
+    run_cmd(tn, cmd_boot_acer)
+    run_cmd(tn, cmd_boot_openwrt)
+    print("    [OK] Atalhos 'boot-acer' e 'boot-openwrt' disponiveis no terminal.")
+
+def aplicar_otimizacao_completa(tn, target_ip):
     # 1. Debloat de FOTA e Cron
-    print("\n[*] [1/7] Desativando FOTA (atualizacao automatica) e silent-reboot...")
+    print("\n[*] [1/10] Desativando FOTA (atualizacao automatica) e silent-reboot...")
+    print("    -> [O QUE FAZ]: Bloqueia downloads e reboots silenciosos da Acer pela nuvem para proteger o Slot 2.")
     run_cmd(tn, "sed -i '/silent-reboot/d' /etc/crontabs/Admin /etc/crontabs/root 2>/dev/null")
     run_cmd(tn, "sed -i '/download_img/d' /etc/crontabs/Admin /etc/crontabs/root 2>/dev/null")
     run_cmd(tn, "sed -i '/update_img/d' /etc/crontabs/Admin /etc/crontabs/root 2>/dev/null")
     run_cmd(tn, "chmod -x /lib/functions/silent-reboot.sh /lib/functions/download_img.sh /lib/functions/update_img.sh /usr/sbin/fota 2>/dev/null")
-    print("    [OK] FOTA desarmado.")
+    print("    [OK] FOTA desarmado: Atualizacoes silenciosas bloqueadas permanentemente.")
 
-    # 2. Desativar Daemons de Modem Celular, Telemetria e Samba Nao Utilizado
-    print("\n[*] [2/9] Desativando servicos de modem celular, telemetrias e Samba...")
+    # 2. Desativar Daemons de Modem Celular 5G e Telemetrias do X7
+    print("\n[*] [2/10] Desativando servicos de modem celular 5G e telemetrias herdadas do X7...")
+    print("    -> [O QUE FAZ]: O T7 nao tem modem 5G fisico com chip SIM; paramos 12 daemons inuteis para economizar RAM e CPU.")
     daemons = [
         "modem-monitor", "modem_read_init", "modem_datausage", "at_ril", "ril",
         "monitord", "sodd", "cwmp", "mqtt_client", "breakpad", "samba4", "ksmbd"
@@ -158,21 +264,17 @@ def main():
     for d in daemons:
         run_cmd(tn, f"/etc/init.d/{d} stop 2>/dev/null; /etc/init.d/{d} disable 2>/dev/null")
     run_cmd(tn, "killall -9 monitord sodd cwmp mqtt_client breakpad modem_readd modem_datausage at_ril ril smbd nmbd 2>/dev/null")
-    print(f"    [OK] {len(daemons)} daemons desativados e memoria RAM liberada.")
+    print(f"    [OK] {len(daemons)} daemons inuteis desativados e memoria RAM liberada.")
 
     # 3. Limpeza de Interfaces Fantasmas (Guest, IoT, WAN5GMODEM do X7) e Fix do Hostname
-    print("\n[*] [3/9] Limpando interfaces de rede fantasmas (Guest, IoT, WAN5GMODEM celular herdado do X7)...")
+    print("\n[*] [3/10] Limpando interfaces de rede fantasmas (Guest, IoT, WAN5GMODEM celular herdado do X7)...")
+    print("    -> [O QUE FAZ]: Remove configuracoes de interfaces orfas do X7 que geravam caixas vermelhas no LuCI.")
     print("    -> [NOTA DE SEGURANCA]: Sua porta fisica WAN Ethernet 2.5 Gbps (eth0) permanece 100% INTACTA e ATIVA!")
-    # Fix do Hostname sem espaco (evita erro de validacao vermelha no LuCI)
     run_cmd(tn, "uci set system.@system[0].hostname='Predator-Connect-T7'")
     run_cmd(tn, "uci commit system")
     run_cmd(tn, "/etc/init.d/system reload")
-
-    # Limpeza de interfaces no network (wan1 = modem 5G do X7 que nao existe no T7)
     run_cmd(tn, "uci -q delete network.guest; uci -q delete network.iot; uci -q delete network.wan1; uci -q delete network.xlatd; uci commit network")
-    # Limpeza de DHCP pools
     run_cmd(tn, "uci -q delete dhcp.guest; uci -q delete dhcp.iot; uci commit dhcp")
-    # Limpeza de regras de firewall
     fw_rules = [
         "guest", "iot", "guest_fwd", "iot_fwd", "guest_dhcp", "iot_dhcp",
         "guest_dns", "iot_dns", "guest_ltogaccess", "iot_ltoiaccess",
@@ -182,12 +284,12 @@ def main():
         run_cmd(tn, f"uci -q delete firewall.{r}")
     run_cmd(tn, "uci -q del_list firewall.wan.network='wan1'; uci commit firewall")
     run_cmd(tn, "/etc/init.d/network reload; /etc/init.d/firewall restart")
-    print("    [OK] Interfaces fantasmas (Modem Celular 5G / Guest / IoT) removidas.")
-    print("    [OK] Hostname corrigido para RFC 1123 (Predator-Connect-T7).")
+    print("    [OK] Interfaces fantasmas removidas e Hostname corrigido para RFC 1123.")
     print("    [OK] Conexao WAN de internet cabeada 100% preservada.")
 
     # 4. Configurar LuCI (uhttpd) como padrao na porta 80
-    print("\n[*] [4/9] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")
+    print("\n[*] [4/10] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")
+    print("    -> [O QUE FAZ]: Desativa o painel original Acer (lighttpd) e ativa o LuCI oficial na porta 80 e 443.")
     run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null")
     run_cmd(tn, "sed -i 's/#config_load uhttpd/config_load uhttpd/' /etc/init.d/uhttpd")
     run_cmd(tn, "sed -i 's/#config_foreach start_instance uhttpd/config_foreach start_instance uhttpd/' /etc/init.d/uhttpd")
@@ -202,10 +304,11 @@ def main():
     run_cmd(tn, "/etc/init.d/rpcd restart")
     run_cmd(tn, "/etc/init.d/uhttpd enable")
     run_cmd(tn, "/etc/init.d/uhttpd restart")
-    print("    [OK] LuCI ativo na porta 80 com permissao total.")
+    print("    [OK] LuCI ativo na porta 80 com permissao total para Admin e root.")
 
-    # Padronizar senhas de root e Admin
-    print("\n[*] Padronizando senhas de root e Admin para 'root0100'...")
+    # 5. Padronizar senhas de root e Admin para root0100
+    print("\n[*] [5/10] Padronizando senhas de root e Admin para 'root0100'...")
+    print("    -> [O QUE FAZ]: Unifica as credenciais para evitar bloqueios de autenticacao no terminal e web.")
     hash_root = "$1$ARKroot1$inwXu9.r12/oWLrMAV9eX."
     run_cmd(tn, f"sed -i 's|^root:[^:]*:|root:{hash_root}:|' /etc/shadow")
     run_cmd(tn, f"sed -i 's|^Admin:[^:]*:|Admin:{hash_root}:|' /etc/shadow")
@@ -215,8 +318,9 @@ def main():
     run_cmd(tn, "echo 'Admin:root0100_ftm' > /etc/config/userinfo")
     print("    [OK] Senhas de root e Admin padronizadas para 'root0100'.")
 
-    # 5. UPnP Gamer Automatico (miniupnpd)
-    print("\n[*] [5/9] Ativando UPnP Gamer Automatico (NAT Aberto para PC e Consoles)...")
+    # 6. UPnP Gamer Automatico (miniupnpd)
+    print("\n[*] [6/10] Ativando UPnP Gamer Automatico (NAT Aberto para PC e Consoles)...")
+    print("    -> [O QUE FAZ]: Habilita redirecionamento automatico de portas para jogos online no PC, PS5, Xbox e Switch.")
     run_cmd(tn, "uci set upnpd.config.enabled='1'")
     run_cmd(tn, "uci set upnpd.config.enable_natpmp='1'")
     run_cmd(tn, "uci set upnpd.config.enable_upnp='1'")
@@ -226,8 +330,9 @@ def main():
     run_cmd(tn, "/etc/init.d/miniupnpd restart")
     print("    [OK] miniupnpd ativo e integrado ao LuCI.")
 
-    # 6. Kernel & Conntrack 65k & TCP Fast Open
-    print("\n[*] [6/9] Aplicando Conntrack 65k, TCP Fast Open e Filas 2.5 Gbps...")
+    # 7. Kernel & Conntrack 65k & TCP Fast Open & Filas 2.5 Gbps
+    print("\n[*] [7/10] Otimizando Kernel, Conntrack 65k, TCP Fast Open e Filas 2.5 Gbps...")
+    print("    -> [O QUE FAZ]: Expande tabela de conexoes para 65.536 registros e acelera o trafego web com TCP Fast Open.")
     sysctl_cmds = [
         "echo 'net.netfilter.nf_conntrack_max = 65536' >> /etc/sysctl.d/99-performance.conf",
         "echo 'net.netfilter.nf_conntrack_tcp_timeout_established = 7440' >> /etc/sysctl.d/99-performance.conf",
@@ -244,16 +349,18 @@ def main():
         run_cmd(tn, c)
     print("    [OK] Parametros de Kernel, Conntrack e Bypass de Bridge L2 aplicados.")
 
-    # 7. Turbo Cache DNSmasq (10k entradas)
-    print("\n[*] [7/9] Configurando Turbo Cache DNSmasq (10.000 entradas)...")
+    # 8. Turbo Cache DNSmasq (10k entradas)
+    print("\n[*] [8/10] Configurando Turbo Cache DNSmasq (10.000 entradas na RAM)...")
+    print("    -> [O QUE FAZ]: Responde consultas de nomes de dominios visitados em 0 ms atraves de cache local.")
     run_cmd(tn, "uci set dhcp.@dnsmasq[0].cachesize='10000'")
     run_cmd(tn, "uci set dhcp.@dnsmasq[0].min_cache_ttl='300'")
     run_cmd(tn, "uci commit dhcp")
     run_cmd(tn, "/etc/init.d/dnsmasq restart")
-    print("    [OK] DNSmasq otimizado para resposta de 0 ms.")
+    print("    [OK] DNSmasq otimizado para navegacao instantanea.")
 
-    # 8. Otimizacoes Avancadas Wi-Fi 7 (802.11k/v, DTIM=2, Compatibilidade Universal)
-    print("\n[*] [8/9] Aplicando ajustes finos de Wi-Fi 7 e Roaming 802.11k/v...")
+    # 9. Otimizacoes Wi-Fi 7 (802.11k/v, DTIM=2)
+    print("\n[*] [9/10] Ajustando Roaming Seamless Wi-Fi 7 (802.11k/v e DTIM=2)...")
+    print("    -> [O QUE FAZ]: Permite que celulares e notebooks transitem entre 2.4/5/6 GHz suavemente e economizem bateria.")
     wifi_cmd = (
         "for i in $(seq 0 15); do "
         "uci -q get wireless.@wifi-iface[$i] >/dev/null && ("
@@ -268,10 +375,11 @@ def main():
     run_cmd(tn, "uci set wireless.wifi1.htmode='HT80'")
     run_cmd(tn, "uci set wireless.wifi1.channel='auto'")
     run_cmd(tn, "uci commit wireless")
-    print("    [OK] Roaming 802.11k/v (BSS Transition + RRM) e DTIM=2 ativados nas 3 bandas.")
+    print("    [OK] Roaming 802.11k/v e DTIM=2 ativados nas bandas Wi-Fi.")
 
-    # 9. IPv6 Universal Hibrido (Funciona em Duplo NAT e como Roteador Mestre)
-    print("\n[*] [9/9] Configurando IPv6 Universal Hibrido (odhcpd hybrid)...")
+    # 10. IPv6 Universal Hibrido (odhcpd hybrid)
+    print("\n[*] [10/10] Configurando IPv6 Universal Hibrido (odhcpd hybrid)...")
+    print("    -> [O QUE FAZ]: Garante funcionamento de IPv6 tanto em Duplo NAT (atras de modem) quanto em conexao direta Bridge.")
     run_cmd(tn, "uci set dhcp.lan.dhcpv6='hybrid'")
     run_cmd(tn, "uci set dhcp.lan.ra='hybrid'")
     run_cmd(tn, "uci set dhcp.lan.ndp='hybrid'")
@@ -281,17 +389,132 @@ def main():
     run_cmd(tn, "uci set dhcp.wan6.master='1'")
     run_cmd(tn, "uci commit dhcp")
     run_cmd(tn, "/etc/init.d/odhcpd restart")
-    print("    [OK] IPv6 Hibrido ativo: Relay automatico em Duplo NAT e Servidor nativo com PD em Bridge.")
+    print("    [OK] IPv6 Hibrido configurado com sucesso.")
 
-    # Atualiza rc.local
-    run_cmd(tn, "sed -i 's|^modem_readd &|# modem_readd desativado|' /etc/rc.local")
+def aplicar_otimizacao_basica(tn, target_ip):
+    # 1. Debloat de FOTA e Cron
+    print("\n[*] [1/3] Desativando FOTA (atualizacao automatica) e silent-reboot...")
+    print("    -> [O QUE FAZ]: Bloqueia downloads e reboots silenciosos da nuvem Acer para proteger o Slot 2.")
+    run_cmd(tn, "sed -i '/silent-reboot/d' /etc/crontabs/Admin /etc/crontabs/root 2>/dev/null")
+    run_cmd(tn, "sed -i '/download_img/d' /etc/crontabs/Admin /etc/crontabs/root 2>/dev/null")
+    run_cmd(tn, "sed -i '/update_img/d' /etc/crontabs/Admin /etc/crontabs/root 2>/dev/null")
+    run_cmd(tn, "chmod -x /lib/functions/silent-reboot.sh /lib/functions/download_img.sh /lib/functions/update_img.sh /usr/sbin/fota 2>/dev/null")
+    print("    [OK] FOTA desarmado: Protecao de particao ativada.")
+
+    # 2. Configurar LuCI (uhttpd) como padrao na porta 80
+    print("\n[*] [2/3] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")
+    print("    -> [O QUE FAZ]: Desativa o painel original Acer (lighttpd) e ativa o LuCI oficial na porta 80 e 443.")
+    run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null")
+    run_cmd(tn, "sed -i 's/#config_load uhttpd/config_load uhttpd/' /etc/init.d/uhttpd")
+    run_cmd(tn, "sed -i 's/#config_foreach start_instance uhttpd/config_foreach start_instance uhttpd/' /etc/init.d/uhttpd")
+    run_cmd(tn, "chmod -R 755 /www")
+    run_cmd(tn, "uci -q delete uhttpd.main.listen_http")
+    run_cmd(tn, "uci add_list uhttpd.main.listen_http='0.0.0.0:80'")
+    run_cmd(tn, "uci add_list uhttpd.main.listen_http='[::]:80'")
+    run_cmd(tn, "uci set uhttpd.main.rfc1918_filter='0'")
+    run_cmd(tn, "uci set uhttpd.main.redirect_https='0'")
+    run_cmd(tn, "uci commit uhttpd")
+    run_cmd(tn, "uci -q get rpcd.@login[1] || (uci add rpcd login && uci set rpcd.@login[-1].username='Admin' && uci set rpcd.@login[-1].password='$p$Admin' && uci add_list rpcd.@login[-1].read='*' && uci add_list rpcd.@login[-1].write='*' && uci commit rpcd)")
+    run_cmd(tn, "/etc/init.d/rpcd restart")
+    run_cmd(tn, "/etc/init.d/uhttpd enable")
+    run_cmd(tn, "/etc/init.d/uhttpd restart")
+    print("    [OK] LuCI ativo na porta 80 com permissao total para Admin e root.")
+
+    # 3. Padronizar senhas de root e Admin para root0100
+    print("\n[*] [3/3] Padronizando senhas de root e Admin para 'root0100'...")
+    print("    -> [O QUE FAZ]: Unifica as credenciais para evitar bloqueios no terminal, SSH e no LuCI.")
+    hash_root = "$1$ARKroot1$inwXu9.r12/oWLrMAV9eX."
+    run_cmd(tn, f"sed -i 's|^root:[^:]*:|root:{hash_root}:|' /etc/shadow")
+    run_cmd(tn, f"sed -i 's|^Admin:[^:]*:|Admin:{hash_root}:|' /etc/shadow")
+    run_cmd(tn, "echo 'Admin:root0100' > /etc/config/web_info")
+    run_cmd(tn, "echo 'admin:24d23582a1b1c978e3c7a26ee034799b' > /etc/config/lighttpd.user")
+    run_cmd(tn, "echo 'admin:24d23582a1b1c978e3c7a26ee034799b' > /etc/lighttpd/lighttpd.user")
+    run_cmd(tn, "echo 'Admin:root0100_ftm' > /etc/config/userinfo")
+    print("    [OK] Senhas de root e Admin padronizadas para 'root0100'.")
+
+def finalizar_e_sincronizar(tn, modo):
+    instalar_atalhos_boot(tn)
+
+    print("\n[*] Configurando persistencia no boot (/etc/rc.local)...")
+    if modo == "completa":
+        run_cmd(tn, "sed -i 's|^modem_readd &|# modem_readd desativado|' /etc/rc.local")
+        run_cmd(tn, "sed -i 's|/etc/init.d/lighttpd/lighttpd.init start|# lighttpd desativado|' /etc/rc.local")
     run_cmd(tn, "sed -i 's|/etc/init.d/uhttpd stop|/etc/init.d/uhttpd start|' /etc/rc.local")
-    run_cmd(tn, "sed -i 's|/etc/init.d/lighttpd/lighttpd.init start|# lighttpd desativado|' /etc/rc.local")
 
-    # Limpeza e sync
+    print("\n[*] Limpando arquivos temporarios e gravando alteracoes na Flash NAND...")
     run_cmd(tn, "rm -f /tmp/monitord.log* /tmp/sodd.log* /tmp/modem_readd.log* /tmp/sock_msg.log* /tmp/fota_* /tmp/lighttpd.log*")
     run_cmd(tn, "sync")
-    print("    [OK] Flash NAND sincronizada com todas as otimizacoes salvas.")
+    print("    [OK] Memoria Flash NAND sincronizada com todas as otimizacoes persistidas.")
+
+def main():
+    explicit_ip = None
+    modo = None
+    auto_yes = False
+
+    for arg in sys.argv[1:]:
+        if arg in ["--completa", "-c"]:
+            modo = "completa"
+        elif arg in ["--basica", "-b"]:
+            modo = "basica"
+        elif arg in ["--yes", "-y"]:
+            auto_yes = True
+        elif not arg.startswith("-") and not explicit_ip:
+            explicit_ip = arg
+
+    target_ip = detect_router_ip(explicit_ip)
+
+    # Validacao rapida de Telnet antes de exibir o menu
+    if not test_telnet(target_ip, 2):
+        print("\n" + "=" * 80)
+        print(f"[-] ERRO: Nao foi possivel conectar via Telnet em {target_ip}:23!")
+        print("    Certifique-se de que o roteador esta ligado no Slot 2 e com Telnet ativo.")
+        print("    Dica: Se estiver no Slot 1 bloqueado, utilize a Opcao [2] do Launcher para desbloquear.")
+        print("=" * 80)
+        log_event("OTIMIZACAO_SLOT2", f"Falha de conexao Telnet em {target_ip}:23", "FALHA")
+        sys.exit(1)
+
+    # Se o modo nao foi passado via linha de comando, exibe o submenu interativo
+    if not modo:
+        modo = menu_selecao_modo(target_ip)
+        if not modo:
+            print("\n[OK] Operacao cancelada. Retornando ao menu principal.")
+            log_event("OTIMIZACAO_SLOT2", "Cancelado pelo usuario no menu de selecao", "INFO")
+            return
+
+    nome_modo = "OTIMIZACAO COMPLETA (Gamer, Debloat & LuCI)" if modo == "completa" else "OTIMIZACAO BASICA (LuCI Porta 80 + Trava FOTA)"
+
+    # Confirmacao explicita antes de aplicar
+    if not auto_yes:
+        print("\n" + "-" * 80)
+        print("  [CONFIRMACAO DE EXECUCAO]")
+        print(f"  Perfil Selecionado : {nome_modo}")
+        print(f"  Roteador Alvo      : {target_ip} (Slot 2)")
+        print("-" * 80)
+        conf = safe_input("Deseja realmente aplicar essas configuracoes no Slot 2 agora? [S/N]: ").strip().lower()
+        if conf not in ["s", "sim", "y", "yes"]:
+            print("\n[AVISO] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita no roteador.")
+            log_event("OTIMIZACAO_SLOT2", f"Cancelado na confirmacao para {target_ip} ({modo})", "INFO")
+            return
+
+    log_event("OTIMIZACAO_SLOT2", f"Iniciando {nome_modo} em {target_ip}", "INFO")
+
+    print(f"\n[*] Conectando via Telnet em {target_ip}:23...")
+    try:
+        tn = Telnet(target_ip, 23, timeout=5)
+        tn.read_until(b"/ # ", timeout=3)
+    except Exception as e:
+        print(f"[-] Erro ao conectar via Telnet: {e}")
+        log_event("OTIMIZACAO_SLOT2", f"Erro de conexao Telnet: {e}", "ERRO")
+        sys.exit(1)
+    print("    [OK] Conectado como root.")
+
+    # Execucao do perfil escolhido
+    if modo == "completa":
+        aplicar_otimizacao_completa(tn, target_ip)
+    else:
+        aplicar_otimizacao_basica(tn, target_ip)
+
+    finalizar_e_sincronizar(tn, modo)
 
     # Status de portas e processos
     print("\n[*] Portas ativas no roteador:")
@@ -315,11 +538,11 @@ def main():
     tn.close()
 
     # Validacao HTTP
-    print(f"\n[*] Testando acesso HTTP ao LuCI a partir do PC (http://{target_ip})...")
+    print(f"\n[*] Testando acesso HTTP ao LuCI a partir do computador (http://{target_ip})...")
     try:
         req = urllib.request.Request(f"http://{target_ip}/cgi-bin/luci/", headers={"User-Agent": "Mozilla/5.0"})
         resp = urllib.request.urlopen(req, timeout=5)
-        print(f"    [OK] Resposta HTTP recebida: Status {resp.getcode()}")
+        print(f"    [OK] Resposta HTTP recebida com sucesso: Status {resp.getcode()}")
     except urllib.error.HTTPError as e:
         if "X-LuCI-Login-Required" in e.headers or e.code in [403, 302, 200]:
             print(f"    [OK] LuCI respondendo com sucesso! (HTTP {e.code} / Login Prompt)")
@@ -328,13 +551,18 @@ def main():
     except Exception as e:
         print(f"    [!] Aviso ao testar HTTP: {e}")
 
-    print("\n" + "=" * 75)
-    print("  SUITE DE OTIMIZACAO CONCLUIDA COM SUCESSO!")
+    log_event("OTIMIZACAO_SLOT2", f"{nome_modo} concluida com sucesso em {target_ip}", "OK")
+
+    print("\n" + "=" * 80)
+    print(f"  {nome_modo.upper()} CONCLUIDA COM SUCESSO!")
     print(f"  Interface LuCI ativa em: http://{target_ip}")
     print("  Credenciais de acesso (LuCI e SSH):")
-    print("    - Usuario: root (ou Admin)")
-    print("    - Senha:   root0100")
-    print("=" * 75)
+    print("    - Usuario : root (ou Admin)")
+    print("    - Senha   : root0100")
+    print("  Comandos uteis no terminal do roteador:")
+    print("    - boot-acer    -> Retorna o boot para o Slot 1 (Original Acer v24)")
+    print("    - boot-openwrt -> Garante o boot no Slot 2 (OpenWrt Otimizado)")
+    print("=" * 80)
 
 if __name__ == "__main__":
     main()

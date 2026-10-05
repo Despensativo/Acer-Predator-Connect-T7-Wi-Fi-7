@@ -1,0 +1,112 @@
+{
+  "suite_version": "1.0.1",
+  "updated_at": "2026-10-05T20:08:06Z",
+  "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
+  "files": [
+    {
+      "path": "Scripts_Automacao/launcher_t7.py",
+      "category": "script",
+      "size": 24881,
+      "sha256": "198F436B4BF56D116E8D84BE179716D6D0F5DC21D0465A2C04FF437AE08CF2E3",
+      "updated_at": "2026-10-05T20:05:52Z"
+    },
+    {
+      "path": "Scripts_Automacao/telnet_compat.py",
+      "category": "script",
+      "size": 3072,
+      "sha256": "CC8D0692D3424AA0E86EB3010305E7B87E5430763E086198FE978E4FE2FA489A",
+      "updated_at": "2026-10-05T18:48:00Z"
+    },
+    {
+      "path": "Scripts_Automacao/gerenciar_telnet.py",
+      "category": "script",
+      "size": 19775,
+      "sha256": "6D4FE9D93793724CBEEE4A84A5427EFB54E31F79A194A040ED16D6EEEB73B5E4",
+      "updated_at": "2026-10-05T19:28:16Z"
+    },
+    {
+      "path": "Scripts_Automacao/otimizar_e_ativar_luci_slot2.py",
+      "category": "script",
+      "size": 15496,
+      "sha256": "8FB50D207D93A72A80B7D0F5661FF29D5CA9A170B5D13CFAC12BC1DB98556DC1",
+      "updated_at": "2026-10-05T18:50:26Z"
+    },
+    {
+      "path": "Scripts_Automacao/gravar_v27_slot2.py",
+      "category": "script",
+      "size": 15679,
+      "sha256": "54A1625350734763FBD3729BB3EFFFB373F7EA217D009AEBF59917906712D99B",
+      "updated_at": "2026-10-05T19:47:32Z"
+    },
+    {
+      "path": "Scripts_Automacao/switch_boot_slot.py",
+      "category": "script",
+      "size": 7248,
+      "sha256": "337EE8D10C114730DAE8F57B8FFB0868FFE3FA00BEA3ABB813A368EABBB72144",
+      "updated_at": "2026-10-05T18:58:26Z"
+    },
+    {
+      "path": "Scripts_Automacao/diagnostico_x7.py",
+      "category": "script",
+      "size": 4303,
+      "sha256": "40231BA93CF24EA16E471F0F3422AD3D6BB0CED8C2E994C2725BF5BDAECA95A0",
+      "updated_at": "2026-10-05T17:06:00Z"
+    },
+    {
+      "path": "Scripts_Automacao/unlock_only_ssh.py",
+      "category": "script",
+      "size": 9339,
+      "sha256": "7F097BFF46B3D9776D1688EB445E74E46A08DEAEA8B582B500EA98B75913266A",
+      "updated_at": "2026-10-05T18:16:46Z"
+    },
+    {
+      "path": "Scripts_Automacao/aplicar_configuracao_pessoal_ap_t7.py",
+      "category": "script",
+      "size": 14106,
+      "sha256": "48E6480503116A1D8E84387DB882B570F9FF48E95E3B1918CDF729B96085120F",
+      "updated_at": "2026-10-05T18:51:22Z"
+    },
+    {
+      "path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg",
+      "category": "cfg",
+      "size": 50464,
+      "sha256": "905AA894261B3808B0651DE466EB4619996C25184A97363308A12CA9E59186DB",
+      "updated_at": "2026-10-05T18:33:12Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/kernel.bin",
+      "category": "rom",
+      "size": 4237480,
+      "sha256": "818C3A986277E56BC224470342D20F010696C7F28A457145301C6AFD864736AB",
+      "updated_at": "2026-10-03T16:35:18Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/wifi_fw.bin",
+      "category": "rom",
+      "size": 8554496,
+      "sha256": "5C05C0E0747C8F678178FCDF3631D272FC784C82D270E7EE60BE72E8CEB1F9DE",
+      "updated_at": "2026-10-03T16:35:18Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/rootfs.squashfs",
+      "category": "rom",
+      "size": 39616512,
+      "sha256": "FB4C1611319749F17C0BCFB6AC6265697550EB39365AA52A9FD143AA02741348",
+      "updated_at": "2026-10-03T16:35:18Z"
+    },
+    {
+      "path": "iniciar.ps1",
+      "category": "launcher",
+      "size": 33223,
+      "sha256": "14761630B88E6EA3D443BEE6240BAC1D9D459F553D1F3EEA6D4E4F2FA881165D",
+      "updated_at": "2026-10-05T20:03:22Z"
+    },
+    {
+      "path": "EXECUTAR_T7.bat",
+      "category": "launcher",
+      "size": 263,
+      "sha256": "27C03696CDE84FF3EC49EF224837D1E61A48EBDEA5D55E77A2434FC7148E114C",
+      "updated_at": "2026-10-05T18:08:34Z"
+    }
+  ]
+}

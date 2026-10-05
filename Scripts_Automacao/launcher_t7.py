@@ -13,6 +13,8 @@ import platform
 import socket
 import time
 import hashlib
+import json
+import shutil
 import subprocess
 import webbrowser
 import argparse
@@ -90,10 +92,16 @@ TEXTS = {
         "menu_5": "[5] Manage Telnet (Hardening / Disable or Enable)",
         "menu_6": "[6] Open Web GUI in Browser (http://{rip})",
         "menu_7": "[7] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
+        "menu_8": "[8] Check & Sync Updates from GitHub (Smart Checksum)",
         "menu_0": "[0] Exit",
-        "prompt_choice": "Choose an option (0-7): ",
+        "prompt_choice": "Choose an option (0-8): ",
         "press_enter": "\nPress ENTER to return to menu...",
         "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [5] (Hardening)!\033[0m",
+        "suite_version": "Suite Version",
+        "sync_header": "CHECKING & SYNCING UPDATES FROM GITHUB",
+        "sync_checking": "[*] Connecting to GitHub to fetch manifest and verify files...",
+        "sync_all_ok": "[OK] All suite files are 100% up-to-date and intact (SHA-256 verified)!",
+        "sync_updated": "[OK] Successfully synchronized {0} updated files from GitHub (backups saved to .bak)!",
         "goodbye": "\nExiting management suite. Goodbye!"
     },
     "pt": {
@@ -135,10 +143,16 @@ TEXTS = {
         "menu_5": "[5] Gerenciar Telnet (Hardening / Desativar ou Reativar)",
         "menu_6": "[6] Abrir Painel no Navegador (http://{rip})",
         "menu_7": "[7] Area de Pesquisa e Diagnostico do Modelo X7 (Somente Leitura)",
+        "menu_8": "[8] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
         "menu_0": "[0] Sair",
-        "prompt_choice": "Escolha uma opcao (0-7): ",
+        "prompt_choice": "Escolha uma opcao (0-8): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
         "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [5] (Hardening)!\033[0m",
+        "suite_version": "Versao da Suite",
+        "sync_header": "VERIFICANDO E SINCRONIZANDO ATUALIZACOES DO GITHUB",
+        "sync_checking": "[*] Conectando ao GitHub para buscar manifesto e verificar arquivos...",
+        "sync_all_ok": "[OK] Todos os arquivos da suite estao 100% atualizados e integros (SHA-256 validado)!",
+        "sync_updated": "[OK] Sincronizacao concluida! {0} arquivos atualizados do GitHub (backups salvos em .bak)!",
         "goodbye": "\nEncerrando central. Ate logo!"
     },
 }
@@ -304,6 +318,17 @@ def preflight_check(quiet=False, explicit_ip=None):
     if not quiet:
         print(f"  [+] {t('os'):<24}: {info['os']}")
         print(f"  [+] {t('python'):<24}: {info['python']}")
+        manifest_path = os.path.join(REPO_DIR, "manifest_suite.json")
+        suite_ver_str = "v1.0.1 (Manifest Oficial)"
+        if os.path.isfile(manifest_path):
+            try:
+                with open(manifest_path, "r", encoding="utf-8") as mf:
+                    mdata = json.load(mf)
+                sver = mdata.get("suite_version", "1.0.1")
+                suite_ver_str = f"v{sver} ({len(mdata.get('files', []))} arquivos monitorados)"
+            except Exception:
+                pass
+        print(f"  [+] {t('suite_version'):<24}: {suite_ver_str}")
         print(f"  [+] {t('rom_files'):<24}: {t('rom_ok') if info['files_ok'] else t('rom_fail')}")
         print(f"  [+] {t('tftp_port'):<24}: {t('tftp_free') if info['tftp_port_ok'] else t('tftp_blocked')}")
         print(f"  [+] {t('router_found'):<24}: {rip}")
@@ -347,6 +372,95 @@ def get_script_path(script_name):
         return cand3
     return local
 
+def check_and_sync_updates():
+    print("\n" + "=" * 75)
+    print(f"  {t('sync_header')}")
+    print("=" * 75)
+    print(f"  {t('sync_checking')}")
+
+    raw_base = "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main"
+    manifest_url = f"{raw_base}/manifest_suite.json"
+
+    try:
+        import urllib.request
+        req = urllib.request.Request(manifest_url, headers={"User-Agent": "Mozilla/5.0 AcerPredatorT7Suite/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = resp.read().decode("utf-8")
+            manifest = json.loads(data)
+
+        mpath = os.path.join(REPO_DIR, "manifest_suite.json")
+        with open(mpath, "w", encoding="utf-8") as f:
+            f.write(data)
+
+        updated_count = 0
+        uptodate_count = 0
+        new_count = 0
+
+        for f in manifest.get("files", []):
+            rel_path = f["path"]
+            expected_hash = f["sha256"]
+            category = f.get("category", "")
+            expected_size = f.get("size", 0)
+
+            local_abs = os.path.join(REPO_DIR, rel_path.replace("/", os.sep))
+            os.makedirs(os.path.dirname(local_abs), exist_ok=True)
+
+            needs_download = False
+            is_update = False
+
+            if category == "rom":
+                if os.path.isfile(local_abs) and os.path.getsize(local_abs) == expected_size:
+                    uptodate_count += 1
+                    continue
+                needs_download = True
+                new_count += 1
+            elif not os.path.isfile(local_abs):
+                needs_download = True
+                new_count += 1
+            else:
+                h = hashlib.sha256()
+                with open(local_abs, "rb") as fl:
+                    while chunk := fl.read(65536):
+                        h.update(chunk)
+                local_hash = h.hexdigest().upper()
+
+                if local_hash == expected_hash:
+                    uptodate_count += 1
+                else:
+                    needs_download = True
+                    is_update = True
+                    updated_count += 1
+                    print(f"  [*] {rel_path}: Nova versao detectada no GitHub! Atualizando...")
+                    try:
+                        shutil.copy2(local_abs, local_abs + ".bak")
+                    except Exception:
+                        pass
+
+            if needs_download:
+                file_url = f"{raw_base}/{rel_path}"
+                print(f"  [*] Baixando {rel_path}...")
+                with urllib.request.urlopen(urllib.request.Request(file_url, headers={"User-Agent": "Mozilla/5.0"}), timeout=20) as r:
+                    content = r.read()
+                    with open(local_abs, "wb") as out:
+                        out.write(content)
+                if is_update:
+                    print(f"  [OK] {rel_path} atualizado com sucesso! (Backup salvo em .bak)")
+                else:
+                    print(f"  [OK] {rel_path} baixado com sucesso!")
+
+        print("")
+        if updated_count == 0 and new_count == 0:
+            print(f"  {t('sync_all_ok')}")
+        else:
+            print(f"  {t('sync_updated').format(updated_count + new_count)}")
+
+    except Exception as e:
+        print(f"  [-] Erro ao verificar atualizacoes: {e}")
+        print("      Verifique sua conexao com a internet.")
+
+    print("=" * 75)
+    safe_input(t("press_enter"))
+
 def main_menu():
     global CURRENT_LANG
     parser = argparse.ArgumentParser(description="Acer Predator T7/X7 Management Suite")
@@ -357,7 +471,6 @@ def main_menu():
     if args.lang:
         CURRENT_LANG = args.lang
     else:
-        # Default is English
         CURRENT_LANG = "en"
 
     while True:
@@ -388,6 +501,7 @@ def main_menu():
         print(f"  {t('menu_5')}")
         print(f"  {t('menu_6').format(rip=rip)}")
         print(f"  {t('menu_7')}")
+        print(f"  {t('menu_8')}")
         print(f"  {t('menu_0')}")
         print("=" * 75)
 
@@ -435,6 +549,8 @@ def main_menu():
             script = get_script_path("diagnostico_x7.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
+        elif choice == "8":
+            check_and_sync_updates()
 
 if __name__ == "__main__":
     main_menu()

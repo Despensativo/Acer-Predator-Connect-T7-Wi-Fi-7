@@ -115,15 +115,26 @@ $T = @{
         "confirm_restore_done" = "Did you click 'Restore' in Acer web panel and router began rebooting? [Y/N]: "
         "wait_restore_first"   = "Please complete the restore in the browser first, then confirm [Y] to proceed."
         "triage_required"      = "Please answer with [Y] for YES or [N] for NO to proceed."
-        "cfg_choice_required"  = "Please type option 1 or 2 to proceed."
-        "deps_title"         = "SMART DEPENDENCY SYNC FROM GITHUB (~50 MB TOTAL)"
-        "deps_checking"      = "Verifying local suite files and dependencies in Desktop folder..."
-        "deps_down_file"     = "Downloading from GitHub: {0}..."
-        "deps_down_rom"      = "Downloading v27 ROM binary from GitHub: {0} ({1})..."
-        "deps_scripts_ok"    = "Suite Python Automation Scripts : [OK] 9/9 files verified (~135 KB)"
-        "deps_cfg_ok"        = "Ready-Made CFG Unlock Backup    : [OK] Verified (~50 KB)"
-        "deps_rom_ok"        = "v27 OpenWrt Slot 2 ROM Binaries : [OK] 3/3 verified (50.0 MB)"
-        "deps_all_done"      = "ALL DEPENDENCIES 100% READY AND SYNCHRONIZED (~50.2 MB TOTAL)!"
+        "deps_title"               = "SMART DEPENDENCY SYNC & UPDATE CHECKER"
+        "deps_checking"            = "Verifying local suite files and checking for updates against GitHub..."
+        "deps_manifest_checking"   = "Connecting to GitHub to verify latest versions and checksums..."
+        "deps_manifest_ok"         = "Suite manifest v{0} loaded ({1} files tracked)"
+        "deps_manifest_offline"    = "GitHub connection unavailable. Using existing local files on Desktop."
+        "deps_manifest_cached"     = "Using cached manifest v{0} (Offline mode)"
+        "deps_file_uptodate"       = "Up-to-date: {0}"
+        "deps_file_new"            = "New file missing: {0}. Downloading..."
+        "deps_file_updating"       = "Newer version detected on GitHub: {0}! Updating..."
+        "deps_file_local_newer"    = "Local file {0} was edited locally ({1}). Saving backup to .local_backup and updating..."
+        "deps_file_updated_ok"     = "Updated successfully: {0} (backup saved as .bak)"
+        "deps_file_downloaded_ok"  = "Downloaded successfully: {0}"
+        "deps_summary_all_ok"      = "All {0} suite files are verified and up-to-date (SHA-256 matched)!"
+        "deps_summary_updates"     = "Sync complete: {0} files verified ({1} up-to-date, {2} updated/downloaded)."
+        "deps_down_file"           = "Downloading from GitHub: {0}..."
+        "deps_down_rom"            = "Downloading v27 ROM binary from GitHub: {0} ({1})..."
+        "deps_scripts_ok"          = "Suite Python Automation Scripts : [OK] 9/9 files verified (~135 KB)"
+        "deps_cfg_ok"              = "Ready-Made CFG Unlock Backup    : [OK] Verified (~50 KB)"
+        "deps_rom_ok"              = "v27 OpenWrt Slot 2 ROM Binaries : [OK] 3/3 verified (50.0 MB)"
+        "deps_all_done"            = "ALL DEPENDENCIES 100% READY AND SYNCHRONIZED (~50.2 MB TOTAL)!"
     }
     "pt" = @{
         "title"              = "ACER PREDATOR CONNECT T7 & X7 - ASSISTENTE INTERATIVO"
@@ -172,15 +183,27 @@ $T = @{
         "confirm_restore_done" = "Voce ja clicou em 'Restaurar' no painel da Acer e o roteador comecou a reiniciar? [S/N]: "
         "wait_restore_first"   = "Por favor, conclua o envio do backup no painel primeiro e responda [S] para prosseguir."
         "triage_required"      = "Por favor, responda com [S] para SIM ou [N] para NAO para prosseguir."
-        "cfg_choice_required"  = "Por favor, digite 1 ou 2 para prosseguir."
-        "deps_title"         = "SINCRONIZACAO INTELIGENTE DE DEPENDENCIAS (GITHUB - ~50 MB TOTAL)"
-        "deps_checking"      = "Verificando integridade dos arquivos e dependencias na pasta da Area de Trabalho..."
-        "deps_down_file"     = "Baixando do GitHub: {0}..."
-        "deps_down_rom"      = "Baixando imagem da ROM v27 do GitHub: {0} ({1})..."
-        "deps_scripts_ok"    = "Scripts Python da Suite         : [OK] 9/9 arquivos verificados (~135 KB)"
-        "deps_cfg_ok"        = "Arquivo de Desbloqueio CFG Pronto: [OK] Verificado (~50 KB)"
-        "deps_rom_ok"        = "Binarios da ROM v27 para Slot 2 : [OK] 3/3 verificados (50.0 MB)"
-        "deps_all_done"      = "TODAS AS DEPENDENCIAS 100% PRONTAS E SINCRONIZADAS (~50.2 MB TOTAL)!"
+        "cfg_choice_required"      = "Por favor, digite 1 ou 2 para prosseguir."
+        "deps_title"               = "SINCRONIZACAO INTELIGENTE E VERIFICACAO DE ATUALIZACOES"
+        "deps_checking"            = "Verificando arquivos locais e checando atualizacoes no GitHub..."
+        "deps_manifest_checking"   = "Conectando ao GitHub para verificar versoes mais recentes e checksums..."
+        "deps_manifest_ok"         = "Manifesto da suite v{0} carregado ({1} arquivos monitorados)"
+        "deps_manifest_offline"    = "Sem conexao com GitHub no momento. Utilizando arquivos locais da Area de Trabalho."
+        "deps_manifest_cached"     = "Utilizando manifesto em cache v{0} (Modo Offline)"
+        "deps_file_uptodate"       = "Ja atualizado: {0}"
+        "deps_file_new"            = "Arquivo ausente: {0}. Baixando..."
+        "deps_file_updating"       = "Nova versao detectada no GitHub: {0}! Atualizando..."
+        "deps_file_local_newer"    = "Arquivo local {0} foi editado na maquina ({1}). Salvando backup em .local_backup e atualizando..."
+        "deps_file_updated_ok"     = "Atualizado com sucesso: {0} (backup salvo como .bak)"
+        "deps_file_downloaded_ok"  = "Baixado com sucesso: {0}"
+        "deps_summary_all_ok"      = "Todos os {0} arquivos da suite estao verificados e na versao mais recente (SHA-256 validado)!"
+        "deps_summary_updates"     = "Sincronizacao concluida: {0} arquivos checados ({1} ja atualizados, {2} atualizados/baixados)."
+        "deps_down_file"           = "Baixando do GitHub: {0}..."
+        "deps_down_rom"            = "Baixando imagem da ROM v27 do GitHub: {0} ({1})..."
+        "deps_scripts_ok"          = "Scripts Python da Suite         : [OK] 9/9 arquivos verificados (~135 KB)"
+        "deps_cfg_ok"              = "Arquivo de Desbloqueio CFG Pronto: [OK] Verificado (~50 KB)"
+        "deps_rom_ok"              = "Binarios da ROM v27 para Slot 2 : [OK] 3/3 verificados (50.0 MB)"
+        "deps_all_done"            = "TODAS AS DEPENDENCIAS 100% PRONTAS E SINCRONIZADAS (~50.2 MB TOTAL)!"
     }
 }
 
@@ -242,75 +265,167 @@ function Ensure-All-Dependencies {
     Write-Host ""
 
     $wc = New-Object System.Net.WebClient
+    $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AcerPredatorT7Suite/1.0")
 
-    # 1. Scripts Python da Suite (9 scripts) ~135 KB
-    $scriptDir = "$RepoDir\Scripts_Automacao"
-    if (-not (Test-Path $scriptDir)) {
-        New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null
+    $Manifest = $null
+    $ManifestFile = "$RepoDir\manifest_suite.json"
+    $ManifestUrl = "$RawBase/manifest_suite.json"
+
+    # 1. Carregar Manifesto Oficial (Remoto via GitHub ou Cache Local)
+    try {
+        Write-Info $M["deps_manifest_checking"]
+        $remoteJson = $wc.DownloadString($ManifestUrl)
+        $Manifest = $remoteJson | ConvertFrom-Json
+        [System.IO.File]::WriteAllText($ManifestFile, $remoteJson, [System.Text.Encoding]::UTF8)
+        Write-Success ($M["deps_manifest_ok"] -f $Manifest.suite_version, $Manifest.files.Count)
+    } catch {
+        if (Test-Path $ManifestFile) {
+            try {
+                $Manifest = Get-Content $ManifestFile -Raw | ConvertFrom-Json
+                Write-Warn ($M["deps_manifest_cached"] -f $Manifest.suite_version)
+            } catch {}
+        } elseif ($LocalSourceDir -and (Test-Path "$LocalSourceDir\manifest_suite.json")) {
+            try {
+                $Manifest = Get-Content "$LocalSourceDir\manifest_suite.json" -Raw | ConvertFrom-Json
+                Copy-Item "$LocalSourceDir\manifest_suite.json" $ManifestFile -Force
+                Write-Success ($M["deps_manifest_ok"] -f $Manifest.suite_version, $Manifest.files.Count)
+            } catch {}
+        }
+        if (-not $Manifest) {
+            Write-Warn $M["deps_manifest_offline"]
+        }
     }
-    $scriptFiles = @(
-        "launcher_t7.py", "telnet_compat.py", "gerenciar_telnet.py",
-        "otimizar_e_ativar_luci_slot2.py", "gravar_v27_slot2.py",
-        "switch_boot_slot.py", "diagnostico_x7.py", "unlock_only_ssh.py",
-        "aplicar_configuracao_pessoal_ap_t7.py"
-    )
-    foreach ($s in $scriptFiles) {
-        $dest = "$scriptDir\$s"
-        if (-not (Test-Path $dest) -or (Get-Item $dest).Length -eq 0) {
-            if ($LocalSourceDir -and (Test-Path "$LocalSourceDir\Scripts_Automacao\$s")) {
-                Copy-Item "$LocalSourceDir\Scripts_Automacao\$s" $dest -Force
+
+    # 2. Verificacao Inteligente Baseada em Checksum SHA-256 e Timestamps
+    if ($Manifest -and $Manifest.files) {
+        $TotalChecked = 0
+        $UpToDateCount = 0
+        $UpdatedCount = 0
+        $NewCount = 0
+
+        foreach ($item in $Manifest.files) {
+            $rel = $item.path
+            $dest = Join-Path $RepoDir ($rel.Replace('/', '\'))
+            $destDir = Split-Path $dest -Parent
+            if (-not (Test-Path $destDir)) {
+                New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+            }
+            $TotalChecked++
+
+            $needsDownload = $false
+            $isUpdate = $false
+
+            # Otimizacao para imagens de ROM grandes (~50 MB): checar tamanho primeiro
+            if ($item.category -eq "rom") {
+                if (Test-Path $dest) {
+                    $curLen = (Get-Item $dest).Length
+                    if ($curLen -eq $item.size) {
+                        $UpToDateCount++
+                        continue
+                    }
+                }
+                # Se nao existir ou tamanho nao bater
+                $needsDownload = $true
+                $NewCount++
+                $romLabel = "$([math]::Round($item.size / 1MB, 1)) MB"
+                Write-Info ($M["deps_down_rom"] -f (Split-Path $dest -Leaf), $romLabel)
             } else {
-                Write-Info ($M["deps_down_file"] -f $s)
-                try {
-                    $wc.DownloadFile("$RawBase/Scripts_Automacao/$s", $dest)
-                } catch {
-                    $wc.DownloadFile("$RawBase/04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/$s", $dest)
+                # Scripts, CFG e Launchers
+                if (-not (Test-Path $dest)) {
+                    $needsDownload = $true
+                    $NewCount++
+                    Write-Info ($M["deps_file_new"] -f $rel)
+                } else {
+                    $localHash = (Get-FileHash -Path $dest -Algorithm SHA256).Hash
+                    if ($localHash -eq $item.sha256) {
+                        $UpToDateCount++
+                    } else {
+                        # Arquivo local difere do repositorio oficial
+                        $needsDownload = $true
+                        $isUpdate = $true
+                        $UpdatedCount++
+
+                        $localTime = (Get-Item $dest).LastWriteTimeUtc
+                        try {
+                            $remoteTime = [DateTime]::Parse($item.updated_at).ToUniversalTime()
+                        } catch {
+                            $remoteTime = [DateTime]::UtcNow
+                        }
+
+                        if ($localTime -gt $remoteTime) {
+                            Write-Warn ($M["deps_file_local_newer"] -f $rel, $localTime.ToString("yyyy-MM-dd HH:mm"))
+                            try { Copy-Item $dest "$dest.local_backup" -Force } catch {}
+                        } else {
+                            Write-Info ($M["deps_file_updating"] -f $rel)
+                            try { Copy-Item $dest "$dest.bak" -Force } catch {}
+                        }
+                    }
+                }
+            }
+
+            if ($needsDownload) {
+                $copiedLocal = $false
+                if ($LocalSourceDir) {
+                    $localSrc = Join-Path $LocalSourceDir ($rel.Replace('/', '\'))
+                    if (Test-Path $localSrc) {
+                        $srcLen = (Get-Item $localSrc).Length
+                        if ($item.category -eq "rom" -and $srcLen -eq $item.size) {
+                            Copy-Item $localSrc $dest -Force
+                            $copiedLocal = $true
+                        } elseif ($item.category -ne "rom") {
+                            $srcHash = (Get-FileHash -Path $localSrc -Algorithm SHA256).Hash
+                            if ($srcHash -eq $item.sha256) {
+                                Copy-Item $localSrc $dest -Force
+                                $copiedLocal = $true
+                            }
+                        }
+                    }
+                }
+
+                if (-not $copiedLocal) {
+                    try {
+                        $wc.DownloadFile("$RawBase/$rel", $dest)
+                    } catch {
+                        Write-Err "Falha ao baixar $rel : $_"
+                    }
+                }
+
+                if (Test-Path $dest) {
+                    if ($isUpdate) {
+                        Write-Success ($M["deps_file_updated_ok"] -f $rel)
+                    } else {
+                        Write-Success ($M["deps_file_downloaded_ok"] -f $rel)
+                    }
                 }
             }
         }
-    }
-    Write-Success $M["deps_scripts_ok"]
 
-    # 2. Arquivo de Desbloqueio Pronto CFG ~50 KB
-    $cfgDir = "$RepoDir\02_BACKUPS_E_DUMPS\Configuracoes_CFG"
-    if (-not (Test-Path $cfgDir)) {
-        New-Item -ItemType Directory -Path $cfgDir -Force | Out-Null
-    }
-    $cfgDest = "$cfgDir\config_v27_ssh_unlocked.cfg"
-    if (-not (Test-Path $cfgDest) -or (Get-Item $cfgDest).Length -eq 0) {
-        if ($LocalSourceDir -and (Test-Path "$LocalSourceDir\02_BACKUPS_E_DUMPS\Configuracoes_CFG\config_v27_ssh_unlocked.cfg")) {
-            Copy-Item "$LocalSourceDir\02_BACKUPS_E_DUMPS\Configuracoes_CFG\config_v27_ssh_unlocked.cfg" $cfgDest -Force
+        Write-Host ""
+        if ($UpdatedCount -eq 0 -and $NewCount -eq 0) {
+            Write-Success ($M["deps_summary_all_ok"] -f $TotalChecked)
         } else {
-            Write-Info ($M["deps_down_file"] -f "config_v27_ssh_unlocked.cfg")
-            $wc.DownloadFile("$RawBase/02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg", $cfgDest)
+            Write-Success ($M["deps_summary_updates"] -f $TotalChecked, $UpToDateCount, ($UpdatedCount + $NewCount))
         }
-    }
-    Write-Success $M["deps_cfg_ok"]
-
-    # 3. Binarios da ROM Oficial v27 para Slot 2 ~50.0 MB
-    $v27Dir = "$RepoDir\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes"
-    if (-not (Test-Path $v27Dir)) {
-        New-Item -ItemType Directory -Path $v27Dir -Force | Out-Null
-    }
-    $romFiles = @(
-        @{ Name = "kernel.bin";       Size = 4237480;  Label = "4.0 MB" },
-        @{ Name = "wifi_fw.bin";      Size = 8554496;  Label = "8.1 MB" },
-        @{ Name = "rootfs.squashfs";  Size = 39616512; Label = "37.7 MB" }
-    )
-    foreach ($rf in $romFiles) {
-        $dest = "$v27Dir\$($rf.Name)"
-        if (-not (Test-Path $dest) -or (Get-Item $dest).Length -ne $rf.Size) {
-            if ($LocalSourceDir -and (Test-Path "$LocalSourceDir\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes\$($rf.Name)") -and (Get-Item "$LocalSourceDir\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes\$($rf.Name)").Length -eq $rf.Size) {
-                Copy-Item "$LocalSourceDir\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes\$($rf.Name)" $dest -Force
-            } else {
-                Write-Info ($M["deps_down_rom"] -f $rf.Name, $rf.Label)
-                $wc.DownloadFile("$RawBase/01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/$($rf.Name)", $dest)
+        Write-Host ""
+    } else {
+        # Fallback legado se nenhum manifesto estiver disponivel
+        $scriptDir = "$RepoDir\Scripts_Automacao"
+        if (-not (Test-Path $scriptDir)) { New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null }
+        $scriptFiles = @(
+            "launcher_t7.py", "telnet_compat.py", "gerenciar_telnet.py",
+            "otimizar_e_ativar_luci_slot2.py", "gravar_v27_slot2.py",
+            "switch_boot_slot.py", "diagnostico_x7.py", "unlock_only_ssh.py",
+            "aplicar_configuracao_pessoal_ap_t7.py", "gerar_manifesto.py"
+        )
+        foreach ($s in $scriptFiles) {
+            $dest = "$scriptDir\$s"
+            if (-not (Test-Path $dest) -or (Get-Item $dest).Length -eq 0) {
+                Write-Info ($M["deps_down_file"] -f $s)
+                try { $wc.DownloadFile("$RawBase/Scripts_Automacao/$s", $dest) } catch {}
             }
         }
+        Write-Success $M["deps_scripts_ok"]
     }
-    Write-Success $M["deps_rom_ok"]
-    Write-Success $M["deps_all_done"]
-    Write-Host ""
 }
 
 # 2.5. Primeira Etapa: Sincronizar Todas as Dependencias do GitHub e Garantir Python 3

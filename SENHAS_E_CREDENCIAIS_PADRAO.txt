@@ -1,84 +1,75 @@
 ================================================================================
   ACER PREDATOR CONNECT T7 & X7 — GUIA DE CREDENCIAIS E SENHAS
 ================================================================================
-Este arquivo descreve detalhadamente as credenciais de acesso (Web, SSH, Telnet)
-e as senhas de Wi-Fi restauradas a partir dos arquivos da pasta:
-📁 02_BACKUPS_E_DUMPS/Configuracoes_CFG/
+Este arquivo descreve as credenciais de acesso (Web, SSH, Telnet)
+e as senhas de Wi-Fi configuradas para o roteador.
 ================================================================================
 
 --------------------------------------------------------------------------------
-1. ARQUIVO OFICIAL RECOMENDADO: config_v27_ssh_unlocked.cfg
+1. ARQUIVO OFICIAL DE DESBLOQUEIO: config_v27_ssh_unlocked.cfg
 --------------------------------------------------------------------------------
 Este e o arquivo padrao de desbloqueio do Predator T7 na versao v1.01.000027.
 Ele mantem o sistema oficial da Acer intacto, ativando SSH, Telnet e atalhos.
-
-• REDE & IP:
-  - IP Local do Roteador : http://192.168.76.1 (ou https://192.168.76.1)
-  - Mascara de Sub-rede  : 255.255.255.0
 
 • PAINEL WEB DA ACER (Interface Grafica Original):
   - Endereco de Acesso   : http://192.168.76.1
   - Usuario de Login     : admin (ou Admin)
   - Senha do Painel      : root0100
-  * Nota: Cumpre 100% da regra de seguranca de 8 digitos exigida pela Acer.
+  * Cumpre a regra obrigatoria de seguranca de 8 digitos exigida pela Acer.
+
+• PAINEL OPENWRT LuCI (Quando ativado no Slot 2 na Porta 80):
+  - Endereco de Acesso   : http://192.168.76.1
+  - Usuario              : root
+  - Senha                : root0100
 
 • TERMINAL SSH (Dropbear — Porta 22):
   - Usuario              : root (ou Admin)
   - Senha                : root0100
-  - Comando no Windows   : ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1
+  - Comando no Windows   : 
+    ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1
+
+  * Por que aparece a mensagem "Warning: Permanently added '192.168.76.1' (RSA) to the list of known hosts"?
+    Esse aviso e 100% normal e seguro. E o OpenSSH do Windows informando que 
+    registrou a chave publica do roteador no seu PC (no arquivo known_hosts)
+    para garantir que nenhuma outra maquina tente clonar esse IP no futuro.
+    Se quiser conectar direto silenciando esse aviso, use:
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1
 
 • TERMINAL TELNET (Porta 23 — Acesso Direto de Emergencia):
   - Conecta DIRETO sem pedir senha (shell ash de superusuario)
-  - Comando no Windows   : telnet 192.168.76.1 23
-  * Dica: Em caso de esquecimento de senha, conecte via Telnet e digite 'passwd'.
+  - Comando no Windows   : 
+    telnet 192.168.76.1 23
 
-• PAINEL OPENWRT LuCI (Quando ativado no Slot 2 na Porta 80):
-  - Endereco de Acesso   : http://192.168.76.1 (ou IP configurado)
-  - Usuario              : root
-  - Senha                : root0100
+  * O Windows nao reconhece o comando 'telnet'?
+    No Windows 10 e 11, o cliente Telnet vem desativado por padrao.
+    Para ativar em 5 segundos, abra o PowerShell como Administrador e execute:
+    Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient
+    (ou pelo Prompt de Comando: dism /online /Enable-Feature /FeatureName:TelnetClient)
 
 • REDES WI-FI 7 (Tri-Band 2.4 GHz, 5 GHz, 6 GHz e MLO):
   - Nome da Rede (SSID)  : PREDATOR T7
   - Nomes das Bandas     : PREDATOR T7_2.4GHz / PREDATOR T7_5GHz / PREDATOR T7_6GHz
   - Rede MLO (Multi-Link): PREDATOR T7_MLO
   - Senha do Wi-Fi       : 123456789
-  - Seguranca / Cripto   : WPA2-PSK AES / WPA3-SAE
+  - Seguranca / Cripto   : WPA2-PSK AES e WPA3-SAE (Universal)
+  * A senha '123456789' possui 9 caracteres e funciona perfeitamente em 
+    TODOS os modos de criptografia (WPA2, WPA3 e MLO) nas 3 frequencias!
 
 --------------------------------------------------------------------------------
-2. BACKUPS ESPECIFICOS DE PONTO DE ACESSO (MODO AP / DUAL-ROUTER)
-   (config_ap_debloated_luci.cfg / config_ap_ssh_unlocked.cfg)
---------------------------------------------------------------------------------
-Estes arquivos foram preparados para uso como AP secundario de alta velocidade:
-
-• REDE & IP:
-  - IP Local Fixo        : 192.168.73.2
-  - Gateway / DNS        : 192.168.73.1 (Roteador Principal)
-  - DHCP Interno         : Desativado (evita conflito de IP na sua casa)
-
-• CREDENCIAIS WEB & SSH:
-  - Usuario              : root (ou Admin)
-  - Senha                : root0100 (ou admin0100)
-  - Acesso LuCI          : http://192.168.73.2
-
-• REDES WI-FI:
-  - Nome da Rede (SSID)  : Predator_T7 (ou CASA_ARK)
-  - Senha do Wi-Fi       : predator123
-
---------------------------------------------------------------------------------
-3. BACKUP PURO DE FABRICA (config_v27_stock_original.cfg)
+2. BACKUP PURO DE FABRICA (config_v27_stock_original.cfg)
 --------------------------------------------------------------------------------
 Utilizado para restaurar o roteador ao estado 100% original e bloqueado:
 
-• REDE & IP:
-  - IP Local             : 192.168.76.1
-• PAINEL WEB:
+• PAINEL WEB DA ACER:
+  - Endereco             : http://192.168.76.1
   - Usuario              : admin
-  - Senha                : Admin0100 (ou a senha padrao da etiqueta embaixo do roteador)
+  - Senha                : Admin0100 (ou a senha impressa na etiqueta embaixo do roteador)
+
 • TERMINAL:
   - SSH e Telnet estao FECHADOS (Bloqueados de fabrica).
 
 --------------------------------------------------------------------------------
-4. COMANDOS RAPIDOS DISPONIVEIS NO TERMINAL DO ROTEADOR
+3. COMANDOS RAPIDOS DISPONIVEIS NO TERMINAL DO ROTEADOR
 --------------------------------------------------------------------------------
 Apos o desbloqueio, voce pode alternar entre os slots direto pelo terminal:
   - boot-openwrt  ➔ Chaveia o U-Boot para o Slot 2 e reinicia

@@ -482,7 +482,7 @@ def show_emergency_recovery():
     1. Desconecte a fonte de energia do roteador.
     2. Mantenha pressionado o botao WPS no topo/traseira do roteador.
     3. Conecte a fonte de energia mantendo o botao WPS PRESSIONADO POR 5 SEGUNDOS.
-    4. Solte o botao WPS. Os LEDs piscaram indicando modo recovery.
+    4. Solte o botao WPS. Os LEDs ficam estáticos indicando modo recovery.
 
   [PASSO 3] ENVIAR O FIRMWARE ORIGINAL PELO NAVEGADOR:
     1. Abra o navegador em: http://192.168.1.1
@@ -503,7 +503,7 @@ def show_emergency_recovery():
     1. Unplug router power cable.
     2. Hold down the WPS button on the router.
     3. Plug in the power cable KEEPING THE WPS BUTTON PRESSED FOR 5 SECONDS.
-    4. Release the WPS button. LEDs will blink indicating recovery mode.
+    4. Release the WPS button. LEDs will remain static indicating recovery mode.
 
   [STEP 3] FLASH ORIGINAL FACTORY FIRMWARE IN BROWSER:
     1. In your browser, open: http://192.168.1.1

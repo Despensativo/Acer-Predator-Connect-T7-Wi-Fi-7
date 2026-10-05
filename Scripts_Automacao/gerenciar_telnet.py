@@ -32,6 +32,19 @@ except ImportError:
         import telnetlib
         Telnet = telnetlib.Telnet
 
+try:
+    from logger_t7 import log_event, log_cmd, log_dump
+except ImportError:
+    try:
+        from Scripts_Automacao.logger_t7 import log_event, log_cmd, log_dump
+    except ImportError:
+        def log_event(action, message, status="INFO", details=None):
+            pass
+        def log_cmd(cmd, output, status="CMD"):
+            pass
+        def log_dump(title, content):
+            pass
+
 # Paleta de Cores ANSI
 C_RESET  = "\033[0m"
 C_BOLD   = "\033[1m"
@@ -76,7 +89,9 @@ def detect_router_ip(explicit_ip=None):
 def run_telnet_cmd(tn, cmd, timeout=5):
     tn.write(cmd + "\n")
     time.sleep(0.3)
-    return tn.read_until("/ # ", timeout=timeout).decode(errors="replace")
+    out = tn.read_until("/ # ", timeout=timeout).decode(errors="replace")
+    log_cmd(cmd, out)
+    return out
 
 def safe_input(prompt=""):
     try:

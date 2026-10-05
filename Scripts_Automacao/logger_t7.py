@@ -50,6 +50,45 @@ def log_event(action, message, status="INFO", details=None):
         except Exception:
             pass
 
+def log_cmd(cmd, output, status="CMD"):
+    """
+    Grava no log o comando exato enviado ao roteador e o retorno completo do terminal (stdout/stderr).
+    """
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = f"[{now}] [{status:<5}] >>> {cmd.strip()}\n"
+    clean_out = output.strip()
+    if clean_out:
+        for line in clean_out.splitlines():
+            l = line.strip()
+            # Ignora eco redundante do proprio comando e prompts vazios do BusyBox
+            if l and l != cmd.strip() and l != "/ #" and not l.endswith("/ #"):
+                entry += f"    | {line}\n"
+    for lp in get_log_paths():
+        try:
+            os.makedirs(os.path.dirname(lp), exist_ok=True)
+            with open(lp, "a", encoding="utf-8") as f:
+                f.write(entry)
+        except Exception:
+            pass
+
+def log_dump(title, content):
+    """
+    Grava blocos completos de logs internos do roteador (dmesg, logread, tabelas de particao).
+    """
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sep = "-" * 80 + "\n"
+    entry = f"[{now}] [DUMP ] === {title} ===\n" + sep
+    for line in str(content).splitlines():
+        entry += f"    {line}\n"
+    entry += sep
+    for lp in get_log_paths():
+        try:
+            os.makedirs(os.path.dirname(lp), exist_ok=True)
+            with open(lp, "a", encoding="utf-8") as f:
+                f.write(entry)
+        except Exception:
+            pass
+
 def log_init_session(tool_name="Predator T7 Management Suite"):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sep = "=" * 80 + "\n"

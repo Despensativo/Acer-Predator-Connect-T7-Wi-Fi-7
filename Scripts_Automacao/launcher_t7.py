@@ -327,6 +327,8 @@ def preflight_check(quiet=False, explicit_ip=None):
         info["active_slot_label"] = t("unknown_locked")
         info["boot_default_label"] = t("unknown_locked")
 
+    log_event("PREFLIGHT", f"IP: {rip} | Telnet: {info['telnet_ok']} | SSH: {info['ssh_ok']} | HTTP: {info['http_ok']} | Slot: {info.get('active_slot_label', 'N/A')} | Modelo: {info.get('model', 'N/A')}", "INFO")
+
     if not quiet:
         print(f"  [+] {t('os'):<24}: {info['os']}")
         print(f"  [+] {t('python'):<24}: {info['python']}")

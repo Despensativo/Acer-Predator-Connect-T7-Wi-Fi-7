@@ -64,6 +64,19 @@ except ImportError:
         import telnetlib
         Telnet = telnetlib.Telnet
 
+try:
+    from logger_t7 import log_event, log_cmd, log_dump
+except ImportError:
+    try:
+        from Scripts_Automacao.logger_t7 import log_event, log_cmd, log_dump
+    except ImportError:
+        def log_event(action, message, status="INFO", details=None):
+            pass
+        def log_cmd(cmd, output, status="CMD"):
+            pass
+        def log_dump(title, content):
+            pass
+
 def test_telnet(ip, timeout=1):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -107,6 +120,7 @@ def run_cmd(tn, cmd, timeout=10):
     tn.write(cmd.strip().encode("ascii") + b"\n")
     time.sleep(0.3)
     out = tn.read_until(b"/ # ", timeout=timeout).decode("utf-8", errors="replace")
+    log_cmd(cmd, out)
     return out
 
 def main():

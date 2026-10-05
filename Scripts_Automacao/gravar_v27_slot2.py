@@ -392,18 +392,25 @@ def main():
                 "mkdir -p /tmp/slot2_mnt/upper/etc/config",
                 "mkdir -p /tmp/slot2_mnt/upper/etc/dropbear",
                 "mkdir -p /tmp/slot2_mnt/upper/etc/init.d",
-                "cp -f /etc/shadow /tmp/slot2_mnt/upper/etc/shadow",
+                "mkdir -p /tmp/slot2_mnt/upper/etc/crontabs",
+                "mkdir -p /tmp/slot2_mnt/upper/usr/sbin",
+                "cp -f /etc/passwd /tmp/slot2_mnt/upper/etc/passwd 2>/dev/null",
+                "cp -f /etc/shadow /tmp/slot2_mnt/upper/etc/shadow 2>/dev/null",
+                "cp -f /etc/rc.local /tmp/slot2_mnt/upper/etc/rc.local 2>/dev/null",
                 "cp -f /etc/config/dropbear /tmp/slot2_mnt/upper/etc/config/dropbear 2>/dev/null",
-                "[ -f /etc/dropbear/authorized_keys ] && cp -f /etc/dropbear/authorized_keys /tmp/slot2_mnt/upper/etc/dropbear/authorized_keys",
+                "[ -f /etc/dropbear/authorized_keys ] && cp -f /etc/dropbear/authorized_keys /tmp/slot2_mnt/upper/etc/dropbear/authorized_keys 2>/dev/null",
+                "cp -f /etc/crontabs/* /tmp/slot2_mnt/upper/etc/crontabs/ 2>/dev/null",
                 "cp -f /etc/init.d/telnet /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
                 "chmod +x /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
+                "[ -f /usr/sbin/boot-acer ] && cp -f /usr/sbin/boot-acer /tmp/slot2_mnt/upper/usr/sbin/boot-acer && chmod +x /tmp/slot2_mnt/upper/usr/sbin/boot-acer",
+                "[ -f /usr/sbin/boot-openwrt ] && cp -f /usr/sbin/boot-openwrt /tmp/slot2_mnt/upper/usr/sbin/boot-openwrt && chmod +x /tmp/slot2_mnt/upper/usr/sbin/boot-openwrt",
                 "sync"
             ]
             for c in injection_cmds:
                 run_cmd(tn, c)
             run_cmd(tn, "umount /tmp/slot2_mnt 2>/dev/null")
-            print("       [OK] Root, SSH e Telnet injetados com sucesso no Slot 2!")
-            log_event("GRAVACAO_SLOT2", "Root injetado com sucesso no Slot 2", "OK")
+            print("       [OK] Root, SSH, Telnet e rc.local injetados com sucesso no Slot 2!")
+            log_event("GRAVACAO_SLOT2", "Root, SSH, Telnet e rc.local injetados com sucesso no Slot 2", "OK")
         else:
             print("       [*] Volume de dados limpo via ubiupdatevol...")
             run_cmd(tn, "ubiupdatevol /dev/ubi1_3 -t", timeout=30)

@@ -316,7 +316,7 @@ function Ensure-All-Dependencies {
             $isUpdate = $false
 
             # Otimizacao para imagens de ROM grandes (~50 MB): checar tamanho primeiro
-            if ($item.category -eq "rom") {
+            if ($item.category -in @("rom", "stock_rom")) {
                 if (Test-Path $dest) {
                     $curLen = (Get-Item $dest).Length
                     if ($curLen -eq $item.size) {
@@ -369,10 +369,10 @@ function Ensure-All-Dependencies {
                     $localSrc = Join-Path $LocalSourceDir ($rel.Replace('/', '\'))
                     if (Test-Path $localSrc) {
                         $srcLen = (Get-Item $localSrc).Length
-                        if ($item.category -eq "rom" -and $srcLen -eq $item.size) {
+                        if ($item.category -in @("rom", "stock_rom") -and $srcLen -eq $item.size) {
                             Copy-Item $localSrc $dest -Force
                             $copiedLocal = $true
-                        } elseif ($item.category -ne "rom") {
+                        } elseif ($item.category -notin @("rom", "stock_rom")) {
                             $srcHash = (Get-FileHash -Path $localSrc -Algorithm SHA256).Hash
                             if ($srcHash -eq $item.sha256) {
                                 Copy-Item $localSrc $dest -Force

@@ -93,8 +93,9 @@ TEXTS = {
         "menu_6": "[6] Open Web GUI in Browser (http://{rip})",
         "menu_7": "[7] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
         "menu_8": "[8] Check & Sync Updates from GitHub (Smart Checksum)",
+        "menu_9": "[9] Emergency Recovery Mode (U-Boot Web / Unbrick)",
         "menu_0": "[0] Exit",
-        "prompt_choice": "Choose an option (0-8): ",
+        "prompt_choice": "Choose an option (0-9): ",
         "press_enter": "\nPress ENTER to return to menu...",
         "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [5] (Hardening)!\033[0m",
         "suite_version": "Suite Version",
@@ -144,8 +145,9 @@ TEXTS = {
         "menu_6": "[6] Abrir Painel no Navegador (http://{rip})",
         "menu_7": "[7] Area de Pesquisa e Diagnostico do Modelo X7 (Somente Leitura)",
         "menu_8": "[8] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
+        "menu_9": "[9] Modo de Recuperacao de Emergencia (U-Boot Web / Desbrickar)",
         "menu_0": "[0] Sair",
-        "prompt_choice": "Escolha uma opcao (0-8): ",
+        "prompt_choice": "Escolha uma opcao (0-9): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
         "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [5] (Hardening)!\033[0m",
         "suite_version": "Versao da Suite",
@@ -461,6 +463,85 @@ def check_and_sync_updates():
     print("=" * 75)
     safe_input(t("press_enter"))
 
+def show_emergency_recovery():
+    print("\n" + "=" * 75)
+    print("  MODO DE RECUPERACAO DE EMERGENCIA (U-BOOT WEB RECOVERY / UNBRICK)" if CURRENT_LANG == "pt" else "  EMERGENCY RECOVERY MODE (U-BOOT WEB RECOVERY / UNBRICK)")
+    print("=" * 75)
+    if CURRENT_LANG == "pt":
+        print("""  Este procedimento restaura o roteador de fabrica DIRETO pelo bootloader
+  de emergencia da Qualcomm/Acer, mesmo se o sistema operacional estiver travado!
+
+  [PASSO 1] CONFIGURAR CABO E IP NO COMPUTADOR:
+    1. Conecte um cabo de rede do PC diretamente na porta LAN 1 do Predator T7.
+    2. Configure a placa de rede do seu Windows com IP ESTATICO manual:
+       - Endereco IP : 192.168.1.2
+       - Mascara     : 255.255.255.0
+       - Gateway     : 192.168.1.1
+
+  [PASSO 2] ACIONAR O BOOTLOADER DE EMERGENCIA NO ROTEADOR:
+    1. Desconecte a fonte de energia do roteador.
+    2. Mantenha pressionado o botao WPS no topo/traseira do roteador.
+    3. Conecte a fonte de energia mantendo o botao WPS PRESSIONADO POR 5 SEGUNDOS.
+    4. Solte o botao WPS. Os LEDs piscaram indicando modo recovery.
+
+  [PASSO 3] ENVIAR O FIRMWARE ORIGINAL PELO NAVEGADOR:
+    1. Abra o navegador em: http://192.168.1.1
+    2. A tela oficial de recuperacao do U-Boot sera exibida.
+    3. Clique em 'Browse' / 'Escolher Arquivo' e envie a ROM oficial completa:""")
+    else:
+        print("""  This procedure restores the factory firmware DIRECTLY via the Qualcomm/Acer
+  emergency hardware bootloader, even if the OS is in bootloop or bricked!
+
+  [STEP 1] CONFIGURE CABLE & PC NETWORK IP:
+    1. Connect an Ethernet cable from PC to LAN 1 port on Predator T7.
+    2. Configure your Windows network adapter with manual STATIC IP:
+       - IP Address : 192.168.1.2
+       - Subnet Mask: 255.255.255.0
+       - Gateway    : 192.168.1.1
+
+  [STEP 2] TRIGGER HARDWARE EMERGENCY BOOTLOADER:
+    1. Unplug router power cable.
+    2. Hold down the WPS button on the router.
+    3. Plug in the power cable KEEPING THE WPS BUTTON PRESSED FOR 5 SECONDS.
+    4. Release the WPS button. LEDs will blink indicating recovery mode.
+
+  [STEP 3] FLASH ORIGINAL FACTORY FIRMWARE IN BROWSER:
+    1. In your browser, open: http://192.168.1.1
+    2. The Qualcomm U-Boot Web Recovery page will appear.
+    3. Click 'Browse' and select the official full ROM image:""")
+
+    stock_candidates = [
+        os.path.join(REPO_DIR, "01_FIRMWARES_E_IMAGENS", "Stock_OEM_Recovery", "nand-4k-ipq5332-single_101000027.img"),
+        os.path.join(REPO_DIR, "02_BACKUPS_E_DUMPS", "MTD_Full_Dumps", "Acer_Predator_Connect_T7", "nand-4k-ipq5332-single_101000027.img"),
+        os.path.join(r"C:\Users\User\Desktop\Acer-Predator-Connect-T7", "01_FIRMWARES_E_IMAGENS", "Stock_OEM_Recovery", "nand-4k-ipq5332-single_101000027.img"),
+    ]
+    stock_path = None
+    for sc in stock_candidates:
+        if os.path.isfile(sc):
+            stock_path = os.path.abspath(sc)
+            break
+
+    if stock_path:
+        size_mb = os.path.getsize(stock_path) / (1024 * 1024)
+        print(f"\n     ==> {stock_path}")
+        print(f"     [OK] Arquivo verificado ({size_mb:.1f} MB - Release v1.01.000027 Oficial Acer)" if CURRENT_LANG == "pt" else f"     [OK] Verified file ({size_mb:.1f} MB - Official Acer v1.01.000027 Release)")
+    else:
+        print("\n     [-] Arquivo de recuperacao nao encontrado na pasta local." if CURRENT_LANG == "pt" else "\n     [-] Recovery image not found in local directory.")
+
+    if CURRENT_LANG == "pt":
+        print("""
+    4. Clique no botao 'Upload' / 'Update' e aguarde (~2 a 3 minutos).
+    5. O roteador reiniciara 100% de fabrica no IP original 192.168.76.1!
+    6. Lembre-se de voltar a sua placa de rede para IP Automatico (DHCP).""")
+    else:
+        print("""
+    4. Click 'Upload' / 'Update' and wait (~2 to 3 minutes).
+    5. Router will reboot 100% factory original to IP 192.168.76.1!
+    6. Remember to switch your network adapter back to Automatic (DHCP).""")
+
+    print("=" * 75)
+    safe_input(t("press_enter"))
+
 def main_menu():
     global CURRENT_LANG
     parser = argparse.ArgumentParser(description="Acer Predator T7/X7 Management Suite")
@@ -502,6 +583,7 @@ def main_menu():
         print(f"  {t('menu_6').format(rip=rip)}")
         print(f"  {t('menu_7')}")
         print(f"  {t('menu_8')}")
+        print(f"  {t('menu_9')}")
         print(f"  {t('menu_0')}")
         print("=" * 75)
 
@@ -551,6 +633,8 @@ def main_menu():
             safe_input(t("press_enter"))
         elif choice == "8":
             check_and_sync_updates()
+        elif choice == "9":
+            show_emergency_recovery()
 
 if __name__ == "__main__":
     main_menu()

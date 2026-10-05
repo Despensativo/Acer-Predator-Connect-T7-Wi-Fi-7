@@ -9,6 +9,9 @@ import os
 import time
 import socket
 
+# Garante prioridade para modulos locais (telnet_compat, logger_t7)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 try:
     from telnet_compat import Telnet
 except ImportError:
@@ -177,29 +180,42 @@ def main():
             print(f"  SLOT ATUAL : {cur_label}")
             print(f"  DESTINO    : {target_label}")
             print("=" * 65)
-            print(f"  [1] Alternar para o {target_label} e reiniciar (Recomendado)")
+            print(f"  [1] Alternar para o {target_label} e reiniciar")
             print(f"  [2] Forcar reinicializacao no mesmo {cur_label}")
             print("  [0] Voltar ao menu principal sem alterar nada")
-            opt = input(f"\nEscolha uma opcao [1/2/0] (Padrao: 1): ").strip()
+            opt = input(f"\nDigite o numero da opcao desejada [1, 2 ou 0]: ").strip()
+
             if not opt:
-                opt = "1"
+                print("\n[!] Nenhuma opcao digitada! Digite obrigatoriamente 1, 2 ou 0.")
+                continue
 
             if opt == "1":
-                print(f"\n[*] Aplicando chaveamento para {target_label}...")
-                log_event("SWITCH_BOOT", f"Alternando do Slot {cur_num} para o Slot {target_num}", "INFO")
-                if target_num == "2":
-                    out = run_cmd(tn, "/usr/sbin/boot-openwrt")
+                conf = input(f"\n[?] Tem certeza que deseja alternar para o {target_label} e reiniciar o roteador agora? [S/N]: ").strip().lower()
+                if conf in ["s", "sim", "y", "yes"]:
+                    print(f"\n[*] Aplicando chaveamento para {target_label}...")
+                    log_event("SWITCH_BOOT", f"Alternando do Slot {cur_num} para o Slot {target_num}", "INFO")
+                    if target_num == "2":
+                        out = run_cmd(tn, "/usr/sbin/boot-openwrt")
+                    else:
+                        out = run_cmd(tn, "/usr/sbin/boot-acer")
+                    print(out)
+                    log_event("SWITCH_BOOT", f"Chaveamento para Slot {target_num} executado com sucesso", "OK")
+                    break
                 else:
-                    out = run_cmd(tn, "/usr/sbin/boot-acer")
-                print(out)
-                log_event("SWITCH_BOOT", f"Chaveamento para Slot {target_num} executado com sucesso", "OK")
-                break
+                    print("[*] Operacao cancelada pelo usuario.")
+                    log_event("SWITCH_BOOT", "Cancelado na confirmacao pelo usuario", "AVISO")
+                    break
             elif opt == "2":
-                print(f"\n[*] Reiniciando no mesmo Slot {cur_num}...")
-                log_event("SWITCH_BOOT", f"Reinicio forcado no mesmo Slot {cur_num}", "INFO")
-                out = run_cmd(tn, "reboot")
-                print(out)
-                break
+                conf = input(f"\n[?] Confirma forcar o reinicio no mesmo {cur_label}? [S/N]: ").strip().lower()
+                if conf in ["s", "sim", "y", "yes"]:
+                    print(f"\n[*] Reiniciando no mesmo Slot {cur_num}...")
+                    log_event("SWITCH_BOOT", f"Reinicio forcado no mesmo Slot {cur_num}", "INFO")
+                    out = run_cmd(tn, "reboot")
+                    print(out)
+                    break
+                else:
+                    print("[*] Operacao cancelada pelo usuario.")
+                    break
             elif opt == "0":
                 print("\n[*] Nenhuma alteracao efetuada. Retornando ao menu...")
                 log_event("SWITCH_BOOT", "Cancelado pelo usuario sem alteracao", "INFO")

@@ -1,14 +1,14 @@
 {
   "suite_version": "1.0.1",
-  "updated_at": "2026-10-05T21:05:32Z",
+  "updated_at": "2026-10-05T21:15:50Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
-      "size": 33539,
-      "sha256": "F4428698667B87C395CAA025B5B104C0DA1F59BA5E7092A86DDA580405BD0223",
-      "updated_at": "2026-10-05T21:05:28Z"
+      "size": 33131,
+      "sha256": "6865232426D7CF184D5C762261DEB1F5BF1B65A7759D6BC0B4644E860EA13979",
+      "updated_at": "2026-10-05T21:14:50Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",
@@ -41,9 +41,9 @@
     {
       "path": "Scripts_Automacao/switch_boot_slot.py",
       "category": "script",
-      "size": 8015,
-      "sha256": "37137D9FF866EE4269B4C8DD9BFF61153A16EAA6334BC74C4B0E4703E1FF9E8F",
-      "updated_at": "2026-10-05T21:04:14Z"
+      "size": 8975,
+      "sha256": "2EFCE602B50AB0EFE46283339B33166DD328C411F32860657BEA54D6D253BB84",
+      "updated_at": "2026-10-05T21:13:18Z"
     },
     {
       "path": "Scripts_Automacao/diagnostico_x7.py",
@@ -65,6 +65,20 @@
       "size": 2248,
       "sha256": "59104194C30C43C0B5A35DB2972BF0FE92D1DC9152E5E0F386B0BE2E5B8A102A",
       "updated_at": "2026-10-05T20:48:16Z"
+    },
+    {
+      "path": "Scripts_Automacao/boot-acer.sh",
+      "category": "sh",
+      "size": 572,
+      "sha256": "B7CD39B4BD471B5BFE39196112E1EBD64038EE639059E2DA06F0207805730728",
+      "updated_at": "2026-10-05T21:14:58Z"
+    },
+    {
+      "path": "Scripts_Automacao/boot-openwrt.sh",
+      "category": "sh",
+      "size": 576,
+      "sha256": "65B87C56E8E187AB833901A4B4AB266295D7827027C1F5442C8F50158685D1EB",
+      "updated_at": "2026-10-05T21:15:08Z"
     },
     {
       "path": "Scripts_Automacao/unlock_only_ssh.py",
@@ -139,9 +153,9 @@
     {
       "path": "iniciar.ps1",
       "category": "launcher",
-      "size": 33337,
-      "sha256": "857B2E4320040A255B150BA9F386C5C89E69EDC0F7A280403C02D910A69BD42A",
-      "updated_at": "2026-10-05T20:56:48Z"
+      "size": 33384,
+      "sha256": "ABB8D8B7A53CCA5239B9BD756F148D40D05F9255225F95BAF0C771CF5EB4A53C",
+      "updated_at": "2026-10-05T21:15:46Z"
     },
     {
       "path": "EXECUTAR_T7.bat",

@@ -416,6 +416,7 @@ function Ensure-All-Dependencies {
             "otimizar_e_ativar_luci_slot2.py", "gravar_v27_slot2.py",
             "switch_boot_slot.py", "diagnostico_x7.py", "unlock_only_ssh.py",
             "desbloquear_slot2_from_slot1.py", "logger_t7.py",
+            "boot-acer.sh", "boot-openwrt.sh",
             "aplicar_configuracao_pessoal_ap_t7.py", "gerar_manifesto.py"
         )
         foreach ($s in $scriptFiles) {

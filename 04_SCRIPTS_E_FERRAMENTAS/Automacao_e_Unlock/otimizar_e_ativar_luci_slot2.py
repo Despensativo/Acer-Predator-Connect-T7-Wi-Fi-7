@@ -53,8 +53,45 @@ import telnetlib
 import urllib.request
 import time
 import sys
+import socket
 
-ROUTER_IP = "192.168.76.1"
+def test_telnet(ip, timeout=1):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((ip, 23))
+        s.close()
+        return True
+    except Exception:
+        return False
+
+def detect_router_ip(explicit_ip=None):
+    if explicit_ip:
+        return explicit_ip
+
+    print("[*] Detectando endereco IP do roteador...")
+    # 1. Tentar gateway local
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 53))
+        my_ip = s.getsockname()[0]
+        s.close()
+        parts = my_ip.split(".")
+        guess = f"{parts[0]}.{parts[1]}.{parts[2]}.1"
+        if test_telnet(guess, 1):
+            print(f"    [+] Roteador detectado via gateway local: {guess}")
+            return guess
+    except Exception:
+        pass
+
+    # 2. Sondagem nos IPs conhecidos (76.1 = padrao Acer, 73.2 = AP, 1.1 = OpenWrt)
+    for candidate in ["192.168.76.1", "192.168.73.2", "192.168.1.1"]:
+        if test_telnet(candidate, 1):
+            print(f"    [+] Roteador respondendo em Telnet (porta 23): {candidate}")
+            return candidate
+
+    print("    [!] Nao foi possivel detectar automaticamente. Usando padrao: 192.168.76.1")
+    return "192.168.76.1"
 
 def run_cmd(tn, cmd, timeout=10):
     tn.read_very_eager()
@@ -64,7 +101,8 @@ def run_cmd(tn, cmd, timeout=10):
     return out
 
 def main():
-    target_ip = sys.argv[1] if len(sys.argv) > 1 else ROUTER_IP
+    explicit_ip = sys.argv[1] if len(sys.argv) > 1 else None
+    target_ip = detect_router_ip(explicit_ip)
 
     print("=" * 75)
     print("  SUITE DE OTIMIZACAO, DEBLOAT E PERFORMANCE GAMER (PORTA 80 LUCI)")
@@ -139,6 +177,13 @@ def main():
     run_cmd(tn, "/etc/init.d/uhttpd enable")
     run_cmd(tn, "/etc/init.d/uhttpd restart")
     print("    [OK] LuCI ativo na porta 80 com permissao total.")
+
+    # Padronizar senhas de root e Admin
+    print("\n[*] Padronizando senhas de root e Admin para 'root'...")
+    hash_root = "$1$ARKroot1$RxlP7OYmB1xLe1obY775A/"
+    run_cmd(tn, f"sed -i 's|^root:[^:]*:|root:{hash_root}:|' /etc/shadow")
+    run_cmd(tn, f"sed -i 's|^Admin:[^:]*:|Admin:{hash_root}:|' /etc/shadow")
+    print("    [OK] Senhas de root e Admin padronizadas para 'root'.")
 
     # 5. UPnP Gamer Automatico (miniupnpd)
     print("\n[*] [5/9] Ativando UPnP Gamer Automatico (NAT Aberto para PC e Consoles)...")
@@ -256,9 +301,9 @@ def main():
     print("\n" + "=" * 75)
     print("  SUITE DE OTIMIZACAO CONCLUIDA COM SUCESSO!")
     print(f"  Interface LuCI ativa em: http://{target_ip}")
-    print("  Credenciais de acesso:")
-    print("    - Usuario: root ou Admin")
-    print("    - Senha:   admin0100")
+    print("  Credenciais de acesso (LuCI e SSH):")
+    print("    - Usuario: root (ou Admin)")
+    print("    - Senha:   root")
     print("=" * 75)
 
 if __name__ == "__main__":

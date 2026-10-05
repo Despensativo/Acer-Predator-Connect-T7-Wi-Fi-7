@@ -9,45 +9,130 @@ Garantias de Seguranca:
 - O Slot 1 JAMAIS e tocado; apenas mtd20 (Slot 2) e mtd3/mtd4 (ponteiro de boot) sao alterados.
 - Transfere via HTTP local e valida MD5 dos 3 componentes antes de gravar.
 - Instala os atalhos de seguranca 'boot-acer' e 'boot-openwrt' para rollback imediato.
+- Localizacao 100% dinamica e portavel em qualquer PC (sem caminhos fixos de usuario).
+- Auto-deteccao inteligente do IP do roteador e do IP da placa de rede local.
 """
 
 import http.server
 import socketserver
 import threading
-import telnetlib
 import socket
 import time
 import os
 import hashlib
 import sys
+import tempfile
+import argparse
 
-ROUTER_IP = "192.168.73.2"
-PC_IP = "192.168.73.90"
-HTTP_PORT = 8089
+try:
+    from telnet_compat import Telnet
+except ImportError:
+    try:
+        from Scripts_Automacao.telnet_compat import Telnet
+    except ImportError:
+        import telnetlib
+        Telnet = telnetlib.Telnet
 
-# Diretorio onde estao os arquivos extraidos da v27
-V27_DIR = r"C:\Users\User\AppData\Local\Temp\audit_work\v27"
+def find_repo_root():
+    cur = os.path.dirname(os.path.abspath(__file__))
+    while cur and cur != os.path.dirname(cur):
+        if os.path.exists(os.path.join(cur, "01_FIRMWARES_E_IMAGENS")):
+            return cur
+        cur = os.path.dirname(cur)
+    return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+REPO_DIR = find_repo_root()
+
+# Diretorio canônico no repositório com os componentes extraídos da v27
+REPO_V27_DIR = os.path.join(REPO_DIR, "01_FIRMWARES_E_IMAGENS", "Official_v27_Componentes")
+
 KERNEL_FILE = "kernel.bin"
 WIFI_FW_FILE = "wifi_fw.bin"
 ROOTFS_FILE = "rootfs.squashfs"
 
-KERNEL_PATH = os.path.join(V27_DIR, KERNEL_FILE)
-WIFI_FW_PATH = os.path.join(V27_DIR, WIFI_FW_FILE)
-ROOTFS_PATH = os.path.join(V27_DIR, ROOTFS_FILE)
+DEFAULT_HTTP_PORT = 8089
 
 def get_md5(fpath):
     with open(fpath, "rb") as f:
         return hashlib.md5(f.read()).hexdigest()
 
-def start_http_server():
+def test_telnet(ip, timeout=1):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((ip, 23))
+        s.close()
+        return True
+    except Exception:
+        return False
+
+def detect_router_ip(explicit_ip=None):
+    if explicit_ip:
+        return explicit_ip
+
+    print("[*] Detectando endereco IP do roteador...")
+    # 1. Tentar adivinhar pela sub-rede do computador
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 53))
+        my_ip = s.getsockname()[0]
+        s.close()
+        parts = my_ip.split(".")
+        guess = f"{parts[0]}.{parts[1]}.{parts[2]}.1"
+        if test_telnet(guess, 1):
+            print(f"    [+] Roteador detectado via gateway local: {guess}")
+            return guess
+    except Exception:
+        pass
+
+    # 2. Sondagem rapida nos IPs conhecidos
+    for candidate in ["192.168.76.1", "192.168.73.2", "192.168.1.1"]:
+        if test_telnet(candidate, 1):
+            print(f"    [+] Roteador respondendo em Telnet na porta 23: {candidate}")
+            return candidate
+
+    print("    [!] Nao foi possivel detectar automaticamente. Usando padrao: 192.168.76.1")
+    return "192.168.76.1"
+
+def detect_pc_ip(router_ip):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect((router_ip, 80))
+        pc_ip = s.getsockname()[0]
+        s.close()
+        return pc_ip
+    except Exception:
+        return "192.168.76.100"
+
+def locate_v27_directory(explicit_dir=None):
+    candidates = []
+    if explicit_dir:
+        candidates.append(explicit_dir)
+    candidates.extend([
+        REPO_V27_DIR,
+        os.path.join(tempfile.gettempdir(), "audit_work", "v27"),
+        r"C:\Users\User\AppData\Local\Temp\audit_work\v27"
+    ])
+
+    for c in candidates:
+        if os.path.isdir(c):
+            k = os.path.join(c, KERNEL_FILE)
+            w = os.path.join(c, WIFI_FW_FILE)
+            r = os.path.join(c, ROOTFS_FILE)
+            if os.path.exists(k) and os.path.exists(w) and os.path.exists(r):
+                return c
+
+    return None
+
+def start_http_server(directory, port):
     class QuietHandler(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=V27_DIR, **kwargs)
+            super().__init__(*args, directory=directory, **kwargs)
         def log_message(self, format, *args):
             pass
 
     socketserver.TCPServer.allow_reuse_address = True
-    server = socketserver.TCPServer(("0.0.0.0", HTTP_PORT), QuietHandler)
+    server = socketserver.TCPServer(("0.0.0.0", port), QuietHandler)
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
     return server
@@ -60,47 +145,132 @@ def run_cmd(tn, cmd, timeout=60):
     return out
 
 def install_rollback_shortcuts(tn):
-    print("[*] Garantindo atalhos de seguranca no roteador (/usr/sbin/)...")
-    run_cmd(tn, "chmod +x /usr/sbin/boot-acer /usr/sbin/boot-openwrt 2>/dev/null || true")
-    print("    [OK] 'boot-acer' e 'boot-openwrt' prontos e executaveis.")
+    print("[*] Instalando scripts de chaveamento e rollback (/usr/sbin/boot-acer e /usr/sbin/boot-openwrt)...")
+    cmd_boot_acer = """cat << 'EOFB' > /usr/sbin/boot-acer
+#!/bin/sh
+echo "=== Retornando boot para SLOT 1 (OEM v24) ==="
+echo 1 > /proc/boot_info/bootconfig0/rootfs/primaryboot
+echo 1 > /proc/boot_info/bootconfig1/rootfs/primaryboot
+cat /proc/boot_info/bootconfig0/getbinary_bootconfig > /tmp/bc0.bin
+cat /proc/boot_info/bootconfig1/getbinary_bootconfig > /tmp/bc1.bin
+mtd unlock /dev/mtd3 2>/dev/null
+mtd unlock /dev/mtd4 2>/dev/null
+mtd -e /dev/mtd3 write /tmp/bc0.bin /dev/mtd3
+mtd -e /dev/mtd4 write /tmp/bc1.bin /dev/mtd4
+rm -f /tmp/bc0.bin /tmp/bc1.bin
+sync
+echo "[OK] Slot 1 configurado com sucesso! Reiniciando..."
+reboot
+EOFB
+chmod +x /usr/sbin/boot-acer
+"""
+    cmd_boot_openwrt = """cat << 'EOFB' > /usr/sbin/boot-openwrt
+#!/bin/sh
+echo "=== Chaveando boot para SLOT 2 ==="
+echo 0 > /proc/boot_info/bootconfig0/rootfs/primaryboot
+echo 0 > /proc/boot_info/bootconfig1/rootfs/primaryboot
+cat /proc/boot_info/bootconfig0/getbinary_bootconfig > /tmp/bc0.bin
+cat /proc/boot_info/bootconfig1/getbinary_bootconfig > /tmp/bc1.bin
+mtd unlock /dev/mtd3 2>/dev/null
+mtd unlock /dev/mtd4 2>/dev/null
+mtd -e /dev/mtd3 write /tmp/bc0.bin /dev/mtd3
+mtd -e /dev/mtd4 write /tmp/bc1.bin /dev/mtd4
+rm -f /tmp/bc0.bin /tmp/bc1.bin
+sync
+echo "[OK] Slot 2 configurado com sucesso! Reiniciando..."
+reboot
+EOFB
+chmod +x /usr/sbin/boot-openwrt
+"""
+    run_cmd(tn, cmd_boot_acer)
+    run_cmd(tn, cmd_boot_openwrt)
+    print("    [OK] 'boot-acer' e 'boot-openwrt' prontos e executaveis no roteador.")
 
 def main():
+    parser = argparse.ArgumentParser(description="Instalador do Firmware v27 no Slot 2 do Acer Predator T7")
+    parser.add_argument("--router-ip", "-r", help="IP do roteador (padrao: autodetectado)")
+    parser.add_argument("--pc-ip", "-p", help="IP local deste computador (padrao: autodetectado)")
+    parser.add_argument("--v27-dir", "-d", help="Diretorio com kernel.bin, wifi_fw.bin e rootfs.squashfs")
+    parser.add_argument("--http-port", type=int, default=DEFAULT_HTTP_PORT, help="Porta para servidor HTTP temporario")
+    parser.add_argument("--no-reboot", action="store_true", help="Grava sem reiniciar automaticamente no final")
+    args, unknown = parser.parse_known_args()
+
+    # Se o usuario passou o IP diretamente sem flag: python gravar_v27_slot2.py 192.168.76.1
+    if unknown and not args.router_ip:
+        args.router_ip = unknown[0]
+
     print("=" * 72)
     print("  INSTALADOR SEGURO DO FIRMWARE ACER v1.01.000027 NO SLOT 2 (mtd20)")
     print("  Acer Predator Connect T7 (Qualcomm IPQ5332)")
     print("  Protecao Ativa: Slot 1 (mtd21) 100% Intacto e Imutavel")
     print("=" * 72)
 
-    # 1. Validar presenca e calcular MD5 local dos componentes da v27
-    for path, name in [(KERNEL_PATH, "Kernel FIT"), (WIFI_FW_PATH, "Wi-Fi FW"), (ROOTFS_PATH, "RootFS SquashFS")]:
-        if not os.path.exists(path):
-            print(f"[-] ERRO: Arquivo {name} nao encontrado em {path}!")
-            sys.exit(1)
+    # 1. Localizar componentes da v27 de forma dinamica e portavel
+    v27_dir = locate_v27_directory(args.v27_dir)
+    if not v27_dir:
+        print(f"[-] ERRO: Componentes da v27 (kernel.bin, wifi_fw.bin, rootfs.squashfs) nao encontrados!")
+        print(f"    Pasta procurada: {REPO_V27_DIR}")
+        print("    Certifique-se de que a pasta existe no repositorio ou passe via --v27-dir.")
+        sys.exit(1)
 
-    k_md5 = get_md5(KERNEL_PATH)
-    w_md5 = get_md5(WIFI_FW_PATH)
-    r_md5 = get_md5(ROOTFS_PATH)
+    kernel_path = os.path.join(v27_dir, KERNEL_FILE)
+    wifi_fw_path = os.path.join(v27_dir, WIFI_FW_FILE)
+    rootfs_path = os.path.join(v27_dir, ROOTFS_FILE)
 
-    k_sz = os.path.getsize(KERNEL_PATH)
-    w_sz = os.path.getsize(WIFI_FW_PATH)
-    r_sz = os.path.getsize(ROOTFS_PATH)
+    k_md5 = get_md5(kernel_path)
+    w_md5 = get_md5(wifi_fw_path)
+    r_md5 = get_md5(rootfs_path)
 
-    print(f"[*] Componentes da v27 identificados:")
+    k_sz = os.path.getsize(kernel_path)
+    w_sz = os.path.getsize(wifi_fw_path)
+    r_sz = os.path.getsize(rootfs_path)
+
+    print(f"\n[*] Diretorio de componentes identificado: {v27_dir}")
     print(f"    - Kernel FIT   : {k_sz:,} bytes ({k_sz/(1024*1024):.2f} MB) | MD5: {k_md5}")
     print(f"    - Wi-Fi FW     : {w_sz:,} bytes ({w_sz/(1024*1024):.2f} MB) | MD5: {w_md5}")
     print(f"    - RootFS       : {r_sz:,} bytes ({r_sz/(1024*1024):.2f} MB) | MD5: {r_md5}")
 
-    # 2. Conectar via Telnet
-    print(f"\n[*] Conectando ao roteador em {ROUTER_IP}:23...")
-    try:
-        tn = telnetlib.Telnet(ROUTER_IP, 23, timeout=5)
-        tn.read_until(b"/ # ", timeout=3)
-    except Exception as e:
-        print(f"[-] Erro ao conectar no Telnet: {e}")
-        sys.exit(1)
-    print("    [OK] Conexao Telnet estabelecida como root.")
+    # 2. Deteccao de IP
+    router_ip = detect_router_ip(args.router_ip)
+    pc_ip = args.pc_ip if args.pc_ip else detect_pc_ip(router_ip)
+    http_port = args.http_port
 
-    # 3. Validar se o Slot 1 esta ativo (Travamento de Seguranca)
+    print(f"\n[*] Parametros de rede definidos:")
+    print(f"    - IP do Roteador   : {router_ip}")
+    print(f"    - IP do Computador : {pc_ip}")
+    print(f"    - Porta HTTP Local : {http_port}")
+
+    # 3. Conectar via Telnet
+    print(f"\n[*] Conectando ao roteador em {router_ip}:23...")
+    try:
+        tn = Telnet(router_ip, 23, timeout=5)
+        tn.read_until("/ # ", timeout=3)
+    except Exception as e:
+        print(f"[-] Erro ao conectar no Telnet em {router_ip}: {e}")
+        print("    Certifique-se de que o roteador esta ligado e com Telnet destravado.")
+        sys.exit(1)
+    print("    [OK] Conexao Telnet estabelecida com sucesso.")
+
+    # 4. Validar o Modelo de Hardware (Trava Anti-Brick T7 vs X7)
+    model_str = run_cmd(tn, "cat /tmp/sysinfo/model 2>/dev/null").strip()
+    version_str = run_cmd(tn, "cat /etc/version 2>/dev/null").strip()
+    print(f"[*] Modelo detectado: {model_str or 'N/A'}")
+    print(f"[*] Versao detectada: {version_str or 'N/A'}")
+
+    if "X7" in model_str.upper() or version_str.upper().startswith("X7"):
+        print("\n" + "=" * 75)
+        print("[-] BLOQUEIO DE SEGURANÇA: HARDWARE X7 DETECTADO!")
+        print(f"    Dispositivo: Acer Predator Connect X7 (5G CPE)")
+        print(f"    Versão     : {version_str}")
+        print("\n    ESTE PACOTE DE GRAVAÇÃO É EXCLUSIVO PARA O ACER PREDATOR CONNECT T7!")
+        print("    O X7 possui modem celular 5G e partições de flash incompatíveis.")
+        print("    Gravar a ROM do T7 no X7 causará BRICK no roteador.")
+        print("    A gravação foi cancelada automaticamente para proteger seu equipamento.")
+        print("=" * 75)
+        tn.close()
+        sys.exit(1)
+
+    # 5. Validar se o Slot 1 esta ativo (Trava de Seguranca)
     slot_info = run_cmd(tn, "cat /proc/boot_info/bootconfig0/rootfs/primaryboot")
     cur_slot = [l.strip() for l in slot_info.split("\n") if l.strip() and not l.startswith("cat ") and not l.startswith("/ #")][-1]
     print(f"[*] Slot ativo detectado: primaryboot = {cur_slot}")
@@ -115,22 +285,22 @@ def main():
     # Instala atalhos de rollback
     install_rollback_shortcuts(tn)
 
-    # 4. Iniciar Servidor HTTP no PC
-    print(f"\n[*] Iniciando servidor HTTP local no PC ({PC_IP}:{HTTP_PORT})...")
-    httpd = start_http_server()
+    # 5. Iniciar Servidor HTTP no PC
+    print(f"\n[*] Iniciando servidor HTTP local no PC ({pc_ip}:{http_port})...")
+    httpd = start_http_server(v27_dir, http_port)
 
-    # 5. Baixar imagens na RAM (/tmp) do roteador
+    # 6. Baixar imagens na RAM (/tmp) do roteador
     print("\n[*] [1/4] Baixando arquivos na memoria RAM do roteador (/tmp)...")
     run_cmd(tn, "rm -f /tmp/v27_kernel.bin /tmp/v27_wifi.bin /tmp/v27_rootfs.bin")
 
     print("    -> Baixando Kernel...")
-    run_cmd(tn, f"curl -fsSL http://{PC_IP}:{HTTP_PORT}/{KERNEL_FILE} -o /tmp/v27_kernel.bin", timeout=60)
+    run_cmd(tn, f"curl -fsSL http://{pc_ip}:{http_port}/{KERNEL_FILE} -o /tmp/v27_kernel.bin", timeout=60)
     print("    -> Baixando Wi-Fi FW...")
-    run_cmd(tn, f"curl -fsSL http://{PC_IP}:{HTTP_PORT}/{WIFI_FW_FILE} -o /tmp/v27_wifi.bin", timeout=60)
+    run_cmd(tn, f"curl -fsSL http://{pc_ip}:{http_port}/{WIFI_FW_FILE} -o /tmp/v27_wifi.bin", timeout=60)
     print("    -> Baixando RootFS...")
-    run_cmd(tn, f"curl -fsSL http://{PC_IP}:{HTTP_PORT}/{ROOTFS_FILE} -o /tmp/v27_rootfs.bin", timeout=120)
+    run_cmd(tn, f"curl -fsSL http://{pc_ip}:{http_port}/{ROOTFS_FILE} -o /tmp/v27_rootfs.bin", timeout=120)
 
-    # 6. Validar integridade MD5 no roteador
+    # 7. Validar integridade MD5 no roteador
     print("\n[*] [2/4] Verificando integridade MD5 na memoria RAM do roteador...")
     md5_remote = run_cmd(tn, "md5sum /tmp/v27_kernel.bin /tmp/v27_wifi.bin /tmp/v27_rootfs.bin")
     print(f"    Hashes remotos conferidos:\n{md5_remote.strip()}")
@@ -143,7 +313,7 @@ def main():
         sys.exit(1)
     print("    [OK] Todos os 3 hashes MD5 estao 100% perfeitos.")
 
-    # 7. Anexar UBI no mtd20 e gravar os 3 volumes
+    # 8. Anexar UBI no mtd20 e gravar os 3 volumes
     print("\n[*] [3/4] Gravando na particao mtd20 (Slot 2)...")
     run_cmd(tn, "ubiattach /dev/ubi_ctrl -m 20 2>/dev/null || true")
 
@@ -170,12 +340,8 @@ def main():
     run_cmd(tn, "sync")
     print("    [OK] Volumes do Slot 2 gravados e sincronizados com sucesso!")
 
-    # 8. Chavear bootconfig para Slot 2 e reiniciar
-    apply_switch = True
-    if len(sys.argv) > 1 and sys.argv[1] == "--no-reboot":
-        apply_switch = False
-
-    if apply_switch:
+    # 9. Chavear bootconfig para Slot 2 e reiniciar
+    if not args.no_reboot:
         print("\n[*] [4/4] Chaveando BOOTCONFIG para Slot 2 (primaryboot = 0) e reiniciando...")
         out_boot = run_cmd(tn, "/usr/sbin/boot-openwrt", timeout=15)
         print(f"       {out_boot.strip()}")
@@ -183,9 +349,15 @@ def main():
         print("\n" + "=" * 72)
         print("  PROXIMOS PASSOS APOS O BOOT:")
         print("  1. Aguarde cerca de 90 segundos.")
-        print(f"  2. Acesse http://{ROUTER_IP} ou http://192.168.1.1 no navegador.")
-        print("  3. Restaure o arquivo 'config_ssh_unlocked.cfg' para reativar o Root/SSH.")
-        print("  4. Se quiser voltar ao Slot 1, rode: python switch_boot_slot.py 1")
+        print(f"  2. Acesse http://{router_ip} no navegador.")
+        print("  3. Restaure o arquivo 'config_v27_ssh_unlocked.cfg' para reativar o Root/SSH.")
+        print("  4. ⚠️ CREDENCIAIS UNIFICADAS:")
+        print("     - Usuario: 'root' (ou 'Admin')")
+        print("     - Senha  : 'root'")
+        print("     - Ao trocar a senha no terminal, altere de ambos: 'passwd root' e 'passwd Admin'.")
+        print("       NUNCA apague nem renomeie esses dois usuarios.")
+        print("  5. Se quiser voltar ao Slot 1 a qualquer momento, execute:")
+        print("     /usr/sbin/boot-acer")
         print("=" * 72)
     else:
         print("\n[*] Flag --no-reboot detectada. Gravacao concluida sem reiniciar.")

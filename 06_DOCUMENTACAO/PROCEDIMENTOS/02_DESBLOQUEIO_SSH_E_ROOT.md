@@ -59,26 +59,28 @@ Restaurar a conta de superusuário `root` (id `0:0`):
 
 ## 4. Conexão ao Terminal e Credenciais de Acesso
 
-### 🔐 Qual senha vai ficar no roteador?
-1. **Se você usou o seu próprio backup (`config.cfg`):**
-   - **SSH (Porta 22) e LuCI Web:** A senha das contas `Admin` e `root` é **EXATAMENTE A MESMA SENHA** que você já usava para entrar na página web da Acer! O script não altera a sua senha.
-   - **Telnet (Porta 23):** Conexão direta ao shell `ash` com privilégios de `root` **sem pedir senha** (útil se você esquecer sua senha ou precisar de acesso de emergência).
-   - **Redes Wi-Fi:** Suas redes Wi-Fi (SSIDs, frequências e senhas) continuam **100% inalteradas**.
+### 🔑 Credenciais Padrão Unificadas:
+* **Usuário:** `root` (ou `Admin`)
+* **Senha:** `root`
+* **LuCI Web (Porta 80):** `http://192.168.76.1` (ou `192.168.73.2`) | Usuário: `root` | Senha: `root`
+* **SSH (Porta 22):**
+  ```powershell
+  ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1
+  # (Senha: root)
+  ```
+* **Telnet de Emergência (Porta 23):** Conexão direta ao shell `ash` com privilégios de `root` **sem pedir senha**:
+  ```powershell
+  telnet 192.168.76.1 23
+  ```
 
-2. **Se você restaurou um arquivo de template ou exemplo pronto do repositório:**
-   - A senha padrão de fábrica das contas `Admin` e `root` é **`admin0100`**.
-
-```powershell
-# Conectar via Telnet (acesso direto root sem senha):
-telnet 192.168.76.1 23
-# (ou 192.168.73.2 se configurado como AP)
-
-# Conectar via SSH (com suporte a RSA legado):
-ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.76.1
-# ou
-ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1
-# (Senha: a mesma senha que voce usa na pagina da Acer, ou admin0100)
-```
+> [!CAUTION]
+> ### 🛡️ Regra de Ouro ao Alterar Senhas
+> 1. **NUNCA apague ou renomeie as contas `root` ou `Admin`.** Ambos compartilham UID 0. Tarefas agendadas do cron (`/etc/crontabs/Admin`) e scripts nativos da Acer dependem de `Admin`, enquanto o OpenWrt/LuCI espera `root`.
+> 2. **Se você for alterar a senha pelo terminal, atualize SEMPRE OS DOIS usuários para mantê-los sincronizados:**
+>    ```sh
+>    passwd root
+>    passwd Admin
+>    ```
 
 ---
 

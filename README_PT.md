@@ -31,15 +31,22 @@
 ---
 
 > [!IMPORTANT]
-> ### ⚠️ Endereços IP, Credenciais e Regras de Senha:
+> ### ⚠️ Endereços IP, Credenciais e a Regra de Ouro de Senhas:
 > * **IP Padrão de Fábrica (Stock Default):** **`192.168.76.1`** (Modo Roteador tradicional com DHCP ativo na faixa `192.168.76.x`).
 > * **IP em Modo AP de Alta Performance:** **`192.168.73.2`** (Opera como Switch L2 / AP na rede do roteador principal `192.168.73.1`, com DHCP desativado).
-> * **🔐 Qual senha vai ficar após o desbloqueio?**
->   - **Se você usou seu próprio backup (`unlock_only_ssh.py`):** A senha do `Admin` e do `root` é **EXATAMENTE A MESMA** que você já usava para entrar na página da Acer! Suas redes Wi-Fi continuam 100% iguais.
->   - **Se você restaurou um backup de exemplo ou imagem do repositório:** A senha padrão de fábrica é **`admin0100`**.
->   - **Acesso de Emergência (Zero Risco de Trancar Fora):** O **Telnet na porta 23** (`telnet 192.168.76.1 23`) conecta direto ao shell `ash` como root **sem pedir senha**. Se esquecer sua senha, basta conectar via Telnet e digitar `passwd root`.
-> * **Interface LuCI Web (Porta 80):** `http://192.168.76.1` (ou `73.2`) | Usuário: `root` ou `Admin`.
-> * **Acesso SSH (Porta 22):** `ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.76.1` (ou `root@...`).
+> * **🔑 Credenciais Padrão Unificadas:**
+>   - **Usuário:** **`root`** (ou **`Admin`**)
+>   - **Senha:** **`root`**
+>   - **Interface LuCI Web (Porta 80):** `http://192.168.76.1` (ou `73.2`) | Usuário: `root` | Senha: `root`
+>   - **Acesso SSH (Porta 22):** `ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1` (Senha: `root`)
+>   - **Acesso de Emergência (Zero Risco de Trancar Fora):** O **Telnet na porta 23** (`telnet 192.168.76.1 23`) conecta direto ao shell `ash` como root **sem pedir senha**.
+> * **🛡️ Regra de Ouro ao Alterar Senhas:**
+>   - **JAMAIS apague ou renomeie os usuários `root` ou `Admin`.** Ambos compartilham UID 0. Tarefas agendadas do cron e daemons da Acer dependem de `Admin`, enquanto o OpenWrt/LuCI espera `root`.
+>   - **Se você for alterar a senha pelo terminal, atualize SEMPRE OS DOIS usuários para mantê-los sincronizados:**
+>     ```sh
+>     passwd root
+>     passwd Admin
+>     ```
 
 ---
 
@@ -133,98 +140,72 @@ Para transformar o roteador em um ponto de acesso sem gargalos de rede:
 
 ---
 
-## 4. 💾 Central de Backup e Restauração em 1 Clique
+## 4. 🚀 Assistente Interativo Universal & One-Liner PowerShell (Windows, macOS e Linux)
 
-Disponibilizamos um painel interativo no Windows para que você nunca perca suas configurações:
+Para garantir que qualquer pessoa consiga operar o roteador sem erros — mesmo em um computador recém-formatado —, disponibilizamos um assistente inteligente com **triagem guiada de root, gerador automático de `.cfg` e Pre-Flight Check**:
 
-👉 **Execute no Windows:** `RESTAURAR_OU_BACKUP_T7.bat`
-
-```text
-===========================================================================
-      CENTRAL DE BACKUP E RESTAURAÇÃO - ACER PREDATOR CONNECT T7
-            Firmware v27 (Slot 2) - Wi-Fi 7 + LuCI Porta 80
-===========================================================================
-
-  [1] RESTAURAR VIA SCRIPT INTELIGENTE (Recomendado)
-      - Reaplica Wi-Fi 7 (CASA_ARK_7G / 320MHz), 5GHz, Modo AP (192.168.73.2)
-      - Desativa DHCP e integra portas em Switch L2 em 5 segundos
-
-  [2] RESTAURAR CLONE COMPLETO DO OVERLAY (.tar.gz)
-      - Restaura 100% da memoria Flash NAND (senhas, LuCI, sysctl, scripts)
-      - Ideal se o roteador foi resetado pelo botao fisico Reset
-
-  [3] GERAR NOVO BACKUP DO ROTEADOR PARA O COMPUTADOR
-      - Baixa automaticamente o snapshot do Overlay e Sysupgrade atualizados
-
-  [4] ABRIR PAINEL LUCI NO NAVEGADOR (http://192.168.73.2)
-
-  [5] ABRIR TERMINAL TELNET NO ROTEADOR (root / admin0100)
-
-  [0] SAIR
-===========================================================================
+### ⚡ Método Mais Rápido (1 Linha no Windows — Sem Baixar Nada Manualmente):
+Abra o **PowerShell** no Windows e cole o comando oficial:
+```powershell
+irm https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.ps1 | iex
 ```
 
-Os backups gerados ficam salvos localmente na pasta:
-📂 **[`02_BACKUPS_E_DUMPS/Backups_Configuracao_Pessoal/`](02_BACKUPS_E_DUMPS/Backups_Configuracao_Pessoal/)**
+### Outras Formas de Executar (Se já clonou ou baixou o repositório):
+* **No Windows:** Dê duplo clique em **`EXECUTAR_T7.bat`** (ou execute `.\iniciar.ps1` no PowerShell).  
+  *(Totalmente compatível com "Executar como Administrador" sem perder os caminhos).*
+* **No macOS e Linux:** Abra o terminal na pasta e execute:
+  ```bash
+  sh executar_t7.sh
+  ```
 
 ---
 
-## 5. 📁 Estrutura Atualizada do Repositório
+### 🧭 Como Funciona a Triagem do Assistente:
 
-```text
-Acer-Predator-Connect-T7/
-├── INDEX.md                                     # [GROUND TRUTH] Mapa executivo e especificações críticas
-├── CHANGELOG_BUILDS.md                          # Matriz consolidada de versões e status de testes
-├── README.md                                    # Apresentação do projeto e guia mestre
-├── RESTAURAR_OU_BACKUP_T7.bat                   # Central interativa de backup e restauração (Windows)
-│
-├── 01_FIRMWARES_E_IMAGENS/                      # Imagens de firmware e RootFS
-│   ├── OpenWrt_Imagens/                         # Imagens FIT (.itb), sysupgrade e initramfs
-│   └── Custom_SquashFS/                         # Imagens extraídas e modificadas de RootFS
-│
-├── 02_BACKUPS_E_DUMPS/                          # Imagens da Flash e snapshots de configuração
-│   ├── Backups_Configuracao_Pessoal/            # Backups Overlay .tar.gz e runners .bat rápidos
-│   ├── MTD_Full_Dumps/                          # Dumps 1:1 de fábrica (ART, APPSBL, Kernel, SBL)
-│   └── Configuracoes_CFG/                       # Backups .cfg da interface OEM
-│
-├── 03_ENGENHARIA_REVERSA/                       # Análise técnica aprofundada
-│   ├── DeviceTree_DTS/                          # DTS e DTB descompilados da placa
-│   ├── Modulos_Kernel_QSDK/                     # Drivers de aceleração PPE, NSS, ECM (Linux 5.4)
-│   ├── Modem_5G_Fibocom_X7/                     # Engenharia reversa dos binários celulares e RIL
-│   ├── Homologacao_FCC/                         # Relatórios FCC e fotos forenses do circuito PCB
-│   └── Desmontagem_U-Boot/                      # Scripts de análise estática do bootloader
-│
-├── 04_SCRIPTS_E_FERRAMENTAS/                    # Ferramental de Automação
-│   ├── Automacao_e_Unlock/                      # Scripts mestre de otimização, debloat, AP e rollback
-│   │   ├── otimizar_e_ativar_luci_slot2.py      # Suite global de debloat, LuCI porta 80 e kernel
-│   │   ├── aplicar_configuracao_pessoal_ap_t7.py# Injetor declarativo do modo AP Wi-Fi 7
-│   │   ├── restaurar_backup_pessoal.py          # Restaurador de snapshot do overlay em 10s
-│   │   ├── gerar_backup_pessoal.py              # Extrator de backup automático para o PC
-│   │   ├── executar_chaveamento_slot1_recovery.py# Forçador de boot de volta para o Slot 1
-│   │   └── gravar_v27_slot2.py                  # Gravador de firmware limpo no Slot 2
-│   ├── Diagnostico_de_Rede/                     # Scanners ARP, ouvintes DHCP e monitores de ping
-│   └── Servidor_TFTP/                           # Utilitários TFTP para Windows
-│
-├── 05_COMPILADORES/                             # Ferramentas de compilação
-│   └── SquashFS_QSDK_T7/                        # mksquashfs e unsquashfs (256k XZ)
-│
-├── 06_DOCUMENTACAO/                             # Documentação técnica em camadas
-│   ├── PROCEDIMENTOS/                           # Guias operacionais passo a passo (00 a 08)
-│   └── NOTAS_HARDWARE/                          # Análises de particionamento, FOTA e TrustZone
-│
-└── assets/                                      # Banners e diagramas do projeto
-```
+1. **Seleção de Idioma:** Escolha Inglês (padrão ao apertar ENTER) ou Português (Brasil).
+2. **Sonda Automática:** O script localiza o IP do roteador e inspeciona se as portas Web (80), Telnet (23) e SSH (22) estão abertas.
+3. **Pergunta de Triagem Inicial:**
+   > *"Você já possui acesso ROOT / SSH liberado no roteador?"*
+   * **Se responder NÃO (Roteador travado de fábrica):**
+     - O assistente gera o arquivo **`config_desbloqueio_t7.cfg`** direto na sua **Área de Trabalho**.
+     - Abre seu navegador automaticamente na tela de restauração do painel da Acer.
+     - Explica onde clicar para enviar o backup e ativar o root em 1 minuto.
+     - Monitora ativamente a reinicialização e confirma quando a porta Telnet abrir com sucesso!
+   * **Se responder SIM (Já desbloqueado):**
+     - Confere o ambiente Python 3.14 (se faltar, instala silenciosamente via WinGet em 1 clique).
+     - Abre a **Central de Gerenciamento** com Pre-Flight Check, gravação do Slot 2, ativação do LuCI, Dual-Boot e Hardening.
 
 ---
 
-## 6. 🔗 Irmão Gêmeo: Compatibilidade com o Acer Predator Connect X7 5G CPE
+## 5. 🔒 Hardening Pós-Instalação: Como Desativar o Telnet
 
-O roteador **Acer Predator Connect X7 5G CPE** compartilha **99% do mesmo hardware e código-fonte base** com o **Predator Connect T7** (SoC Qualcomm IPQ5332, kernel 5.4.213, mesmo particionamento MTD e rádios Wi-Fi 7 BE11000). A única diferença física é que o X7 possui um modem Fibocom FM160 (Snapdragon X62 5G) instalado em um slot M.2 interno.
+O **Telnet (porta 23)** vem ativado no desbloqueio para garantir que qualquer computador (mesmo sem chaves SSH cadastradas) consiga se comunicar com o roteador sem erros de autenticação ou certificados. Ele opera **estritamente na rede local (LAN)** e é 100% bloqueado na WAN pelo firewall.
 
-Os scripts de desbloqueio root ([`unlock_only_ssh.py`](04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/unlock_only_ssh.py)) funcionam 1:1 no X7 sem modificação.
+Se após concluir sua instalação e testar o LuCI você desejar desativar o Telnet para manter apenas conexões SSH criptografadas:
+* **No terminal do roteador:** digite apenas:
+  ```sh
+  desativar-telnet
+  ```
+  *(Para reativar no futuro caso precise rodar automações, basta digitar: `ativar-telnet`)*.
+* **Pelo computador:** execute a opção [5] no launcher ou rode:
+  ```bash
+  python Scripts_Automacao/gerenciar_telnet.py desativar
+  ```
 
-Para detalhes completos dos binários, pinagem GPIO e engenharia reversa do modem 5G, consulte:
-👉 **[Documentação da Engenharia Reversa do Modem 5G Fibocom FM160](03_ENGENHARIA_REVERSA/Modem_5G_Fibocom_X7/README.md)**
+---
+
+## 6. 🔗 Protocolo de Pesquisa e Termos de Teste: Acer Predator Connect X7 (5G CPE)
+
+O **Acer Predator Connect X7** possui arquitetura muito similar ao T7, porém conta com um modem celular 5G (Qualcomm Snapdragon X62) em slot interno e firmware oficial `v50`.
+
+> [!WARNING]
+> **TRAVA ANTI-BRICK ATIVA:** As imagens da versão 27 (`v27`) contidas neste repositório são **EXCLUSIVAS do Predator Connect T7**. A gravação direta dessas imagens no X7 causará **BRICK**. Por essa razão, a gravação no X7 está bloqueada no código.
+
+### Como Colaborar com os Testes do X7:
+1. **Diagnóstico Seguro:** Execute a opção `[7] Area de Pesquisa e Diagnostico do Modelo X7` no launcher (`python Scripts_Automacao/diagnostico_x7.py`) para gerar um relatório somente-leitura do seu aparelho.
+2. **Envio do Backup (.cfg):** O usuário com X7 precisará compartilhar seu arquivo de backup `.cfg` original para auditoria dos serviços do modem.
+3. **Disposição para Testes em Bancada:** Testes em hardware híbrido exigem acompanhamento cauteloso.
+4. **Alta Recuperabilidade:** Assim como no T7, o X7 utiliza particionamento redundante Dual-Boot A/B. **Desde que a Partição 1 (Slot 1 original) NÃO seja sobrescrita ou forçada após obter o root, a chance de recuperação e chaveamento seguro de volta para o sistema original é altíssima!**
 
 ---
 

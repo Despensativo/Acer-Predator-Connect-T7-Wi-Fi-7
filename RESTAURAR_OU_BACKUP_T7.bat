@@ -23,7 +23,7 @@ echo       - Baixa automaticamente o snapshot do Overlay e Sysupgrade atualizado
 echo.
 echo   [4] ABRIR PAINEL LUCI NO NAVEGADOR (http://192.168.73.2)
 echo.
-echo   [5] ABRIR TERMINAL TELNET NO ROTEADOR (root / admin0100)
+echo   [5] ABRIR TERMINAL TELNET NO ROTEADOR (root / root)
 echo.
 echo   [0] SAIR
 echo.

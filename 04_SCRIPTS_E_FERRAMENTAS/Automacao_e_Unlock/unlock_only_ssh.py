@@ -14,7 +14,7 @@ import io
 import sys
 import os
 
-def unlock_cfg(input_path, output_path):
+def unlock_cfg(input_path, output_path, custom_ssid=None, custom_key=None):
     if not os.path.exists(input_path):
         print(f"[!] Erro: Arquivo {input_path} nao encontrado!")
         sys.exit(1)
@@ -99,7 +99,9 @@ fi
         members_data["etc/crontabs/root"] = admin_cron_new.encode("utf-8")
         print("   [+] etc/crontabs/Admin atualizado com watchdog de 60 segundos")
 
-    # 4. Ajustar etc/passwd e etc/shadow (criar usuario 'root' com a mesma senha do 'Admin')
+    # 4. Ajustar etc/passwd e etc/shadow (Definir usuario 'root' e 'Admin' com senha padrao 'root')
+    DEFAULT_ROOT_HASH = "$1$ARKroot1$RxlP7OYmB1xLe1obY775A/"  # Senha: root
+
     passwd_text = members_data["etc/passwd"].decode("utf-8", errors="ignore")
     if "root:x:0:0" not in passwd_text:
         passwd_text = "root:x:0:0:root:/root:/bin/ash\n" + passwd_text
@@ -107,16 +109,42 @@ fi
         print("   [+] Usuario 'root' adicionado no etc/passwd")
 
     shadow_text = members_data["etc/shadow"].decode("utf-8", errors="ignore")
-    admin_line = ""
+    new_shadow_lines = []
+    has_root = False
+    has_admin = False
+
     for l in shadow_text.splitlines():
-        if l.startswith("Admin:"):
-            admin_line = l
-            break
-    if admin_line and not any(l.startswith("root:") for l in shadow_text.splitlines()):
-        root_line = "root:" + admin_line.split(":", 1)[1]
-        shadow_text = root_line + "\n" + shadow_text
-        members_data["etc/shadow"] = shadow_text.encode("utf-8")
-        print("   [+] Senha do 'root' espelhada da senha do 'Admin' no etc/shadow")
+        if l.startswith("root:"):
+            new_shadow_lines.append(f"root:{DEFAULT_ROOT_HASH}:20729:0:99999:7:::")
+            has_root = True
+        elif l.startswith("Admin:"):
+            new_shadow_lines.append(f"Admin:{DEFAULT_ROOT_HASH}:20729:0:99999:7:::")
+            has_admin = True
+        else:
+            new_shadow_lines.append(l)
+
+    if not has_root:
+        new_shadow_lines.insert(0, f"root:{DEFAULT_ROOT_HASH}:20729:0:99999:7:::")
+    if not has_admin:
+        new_shadow_lines.insert(1, f"Admin:{DEFAULT_ROOT_HASH}:20729:0:99999:7:::")
+
+    members_data["etc/shadow"] = ("\n".join(new_shadow_lines) + "\n").encode("utf-8")
+    print("   [+] Senha padronizada com sucesso: Usuario 'root' | Senha 'root'")
+
+    # 4.5. Opcional: Personalizar Wi-Fi (SSID e Senha)
+    if (custom_ssid or custom_key) and "etc/config/wireless" in members_data:
+        import re
+        w_text = members_data["etc/config/wireless"].decode("utf-8", errors="ignore")
+        if custom_key:
+            w_text = re.sub(r"(option\s+key\s+)'[^']*'", rf"\1'{custom_key}'", w_text)
+            w_text = re.sub(r"(option\s+sae_password\s+)'[^']*'", rf"\1'{custom_key}'", w_text)
+            print(f"   [+] Senha do Wi-Fi definida para: '{custom_key}'")
+        if custom_ssid:
+            for old_pfx in ["Predator_T7", "T7_0W0J", "CASA_ARK"]:
+                if old_pfx in w_text:
+                    w_text = w_text.replace(old_pfx, custom_ssid)
+            print(f"   [+] Nome do Wi-Fi (SSID) definido com prefixo: '{custom_ssid}'")
+        members_data["etc/config/wireless"] = w_text.encode("utf-8")
 
     # 5. Empacotar novo .cfg com permissoes Unix exatas
     out_tar_bytes = io.BytesIO()
@@ -151,18 +179,30 @@ fi
     print("  1. No painel web da Acer, va em: System -> Backup and restore -> Restore")
     print(f"     e selecione o arquivo: {os.path.basename(output_path)}")
     print("  2. Aguarde o roteador reiniciar (cerca de 2 minutos).")
-    print("  3. QUAL SENHA VAI FICAR?")
-    print("     - SSH (Porta 22) e LuCI Web:")
-    print("       Usuario: 'Admin' ou 'root'")
-    print("       Senha: A MESMA SENHA QUE VOCE JA USAVA para entrar no painel da Acer!")
+    print("  3. CREDENCIAIS DE ACESSO DEFINIDAS:")
+    print("     - SSH (Porta 22) e LuCI Web (Porta 80):")
+    print("       Usuario: 'root' (ou 'Admin')")
+    print("       Senha:   'root'")
+    print("       Comando: ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1")
     print("     - Telnet (Porta 23 - Shell Direto de Emergencia):")
     print("       Conecta DIRETO sem pedir senha (telnet 192.168.76.1 23)")
-    print("  4. E O WI-FI?")
-    print("     - SUAS REDES E SENHAS DE WI-FI CONTINUAM EXATAMENTE AS MESMAS!")
-    print("       Este script nao altera seus SSIDs nem suas chaves de seguranca.")
+    if custom_key or custom_ssid:
+        print("  4. REDES WI-FI CONFIGURADAS:")
+        print(f"     - Nome (SSID): {custom_ssid if custom_ssid else 'Predator_T7'}")
+        print(f"     - Senha:       {custom_key if custom_key else 'predator123'}")
+    else:
+        print("  4. E O WI-FI?")
+        print("     - Redes padrao Predator_T7 ativas com senha 'predator123'.")
     print("=" * 72)
 
 if __name__ == "__main__":
-    in_file = sys.argv[1] if len(sys.argv) > 1 else "config.cfg"
-    out_file = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(in_file), "config_ssh_unlocked.cfg")
-    unlock_cfg(in_file, out_file)
+    import argparse
+    parser = argparse.ArgumentParser(description="Desbloqueador de SSH/Telnet para Acer Predator Connect T7")
+    parser.add_argument("input", nargs="?", default="config.cfg", help="Caminho do arquivo .cfg de entrada")
+    parser.add_argument("output", nargs="?", default=None, help="Caminho do arquivo .cfg de saida")
+    parser.add_argument("--ssid", "-s", default=None, help="Personalizar nome da rede Wi-Fi (SSID)")
+    parser.add_argument("--password", "-p", default=None, help="Personalizar senha do Wi-Fi (minimo 8 caracteres)")
+    args = parser.parse_args()
+
+    out_file = args.output if args.output else os.path.join(os.path.dirname(args.input), "config_ssh_unlocked.cfg")
+    unlock_cfg(args.input, out_file, custom_ssid=args.ssid, custom_key=args.password)

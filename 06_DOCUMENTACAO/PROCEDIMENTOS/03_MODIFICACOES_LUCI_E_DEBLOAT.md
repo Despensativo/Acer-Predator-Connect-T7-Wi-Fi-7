@@ -33,12 +33,16 @@ uci commit rpcd
 ```
 
 ### B. Sincronizar Senhas em `/etc/shadow`:
-Defina a mesma hash de senha para `root` e `Admin`:
+Defina a mesma hash de senha para `root` e `Admin` (Senha padrão: `root`):
 ```sh
-# Define a senha admin0100 para ambos os usuários:
-sed -i "s|^root:.*|root:\$1\$kMEMhTxY\$sPDoqUPT7zj5ats82mEdO0:20725:0:99999:7:::|" /etc/shadow
-sed -i "s|^Admin:.*|Admin:\$1\$kMEMhTxY\$sPDoqUPT7zj5ats82mEdO0:20725:0:99999:7:::|" /etc/shadow
+# Define a senha 'root' para ambos os usuários:
+sed -i "s|^root:.*|root:\$1\$ARKroot1\$RxlP7OYmB1xLe1obY775A/:20729:0:99999:7:::|" /etc/shadow
+sed -i "s|^Admin:.*|Admin:\$1\$ARKroot1\$RxlP7OYmB1xLe1obY775A/:20729:0:99999:7:::|" /etc/shadow
+sync
 ```
+
+> [!CAUTION]
+> **Regra de Ouro:** NUNCA apague nem renomeie os usuários `root` ou `Admin`. Se for alterar a senha no terminal pelo comando `passwd`, altere sempre os dois (`passwd root` e `passwd Admin`) para mantê-los sincronizados.
 
 ---
 

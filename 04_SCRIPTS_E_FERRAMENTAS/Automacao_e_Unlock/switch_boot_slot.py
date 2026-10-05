@@ -7,8 +7,45 @@ Acer Predator Connect T7 (Qualcomm IPQ5332)
 import telnetlib
 import sys
 import time
+import socket
 
-ROUTER_IP = "192.168.73.2"
+def test_telnet(ip, timeout=1):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((ip, 23))
+        s.close()
+        return True
+    except Exception:
+        return False
+
+def detect_router_ip(explicit_ip=None):
+    if explicit_ip:
+        return explicit_ip
+
+    print("[*] Detectando endereco IP do roteador...")
+    # 1. Tentar gateway local
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 53))
+        my_ip = s.getsockname()[0]
+        s.close()
+        parts = my_ip.split(".")
+        guess = f"{parts[0]}.{parts[1]}.{parts[2]}.1"
+        if test_telnet(guess, 1):
+            print(f"    [+] Roteador detectado via gateway local: {guess}")
+            return guess
+    except Exception:
+        pass
+
+    # 2. Sondagem nos IPs conhecidos (76.1 = padrao Acer, 73.2 = AP, 1.1 = OpenWrt)
+    for candidate in ["192.168.76.1", "192.168.73.2", "192.168.1.1"]:
+        if test_telnet(candidate, 1):
+            print(f"    [+] Roteador respondendo em Telnet (porta 23): {candidate}")
+            return candidate
+
+    print("    [!] Nao foi possivel detectar automaticamente. Usando padrao: 192.168.76.1")
+    return "192.168.76.1"
 
 def run_cmd(tn, cmd, timeout=10):
     tn.write(cmd.encode("ascii") + b"\n")
@@ -65,14 +102,28 @@ chmod +x /usr/sbin/boot-acer
     run_cmd(tn, script_acer)
 
 def main():
-    target_slot = sys.argv[1] if len(sys.argv) > 1 else None
+    target_slot = None
+    explicit_ip = None
+
+    for arg in sys.argv[1:]:
+        if arg in ["1", "2", "acer", "openwrt"]:
+            target_slot = arg
+        elif "." in arg:
+            explicit_ip = arg
+
+    router_ip = detect_router_ip(explicit_ip)
 
     print("=" * 65)
     print("GERENCIADOR DE DUAL-BOOT - ACER PREDATOR CONNECT T7")
+    print(f"Alvo: {router_ip}:23")
     print("=" * 65)
 
-    tn = telnetlib.Telnet(ROUTER_IP, 23, timeout=5)
-    tn.read_until(b"/ # ", timeout=5)
+    try:
+        tn = telnetlib.Telnet(router_ip, 23, timeout=5)
+        tn.read_until(b"/ # ", timeout=5)
+    except Exception as e:
+        print(f"[-] Erro ao conectar via Telnet em {router_ip}:23: {e}")
+        sys.exit(1)
 
     cur = get_current_slot(tn)
     print(f"[*] Slot ativo atualmente configurado no BOOTCONFIG: {cur}")
@@ -82,11 +133,11 @@ def main():
     print("    - 'boot-openwrt' -> Inicia no OpenWrt puro (Slot 2)")
     print("    - 'boot-acer'    -> Inicia no sistema Acer original (Slot 1)")
 
-    if target_slot == "openwrt" or target_slot == "2":
+    if target_slot in ["openwrt", "2"]:
         print("\n[*] Aplicando chaveamento para SLOT 2 (OpenWrt Puro)...")
         out = run_cmd(tn, "/usr/sbin/boot-openwrt")
         print(out)
-    elif target_slot == "acer" or target_slot == "1":
+    elif target_slot in ["acer", "1"]:
         print("\n[*] Aplicando chaveamento para SLOT 1 (Acer Original)...")
         out = run_cmd(tn, "/usr/sbin/boot-acer")
         print(out)

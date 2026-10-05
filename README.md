@@ -31,15 +31,22 @@
 ---
 
 > [!IMPORTANT]
-> ### ⚠️ IP Addresses, Credentials & Password Rules:
+> ### ⚠️ IP Addresses, Credentials & The Golden Password Rule:
 > * **Factory Default IP (Stock):** **`192.168.76.1`** (Standard Router mode with DHCP server on `192.168.76.x`).
 > * **High-Performance AP Mode IP:** **`192.168.73.2`** (Acts as an L2 Switch / AP on upstream network `192.168.73.1`, DHCP disabled).
-> * **🔐 What password will be active after unlocking?**
->   - **If you used your own router backup (`unlock_only_ssh.py`):** The password for both `Admin` and `root` is **EXACTLY THE SAME PASSWORD** you already used to log into the Acer Web GUI! Your Wi-Fi networks and SSIDs remain 100% untouched.
->   - **If you restored a repo template or factory image:** The default password is **`admin0100`**.
->   - **Emergency Failsafe (Zero Lockout Risk):** **Telnet on port 23** (`telnet 192.168.76.1 23`) drops straight to a root `ash` shell **without requiring any password**. If you ever forget your password, connect via Telnet and run `passwd root`.
-> * **LuCI Web Interface (Port 80):** `http://192.168.76.1` (or `73.2`) | User: `root` or `Admin`.
-> * **SSH Access (Port 22):** `ssh -o HostKeyAlgorithms=+ssh-rsa Admin@192.168.76.1` (or `root@...`).
+> * **🔑 Unified Standard Credentials:**
+>   - **User:** **`root`** (or **`Admin`**)
+>   - **Password:** **`root`**
+>   - **LuCI Web (Port 80):** `http://192.168.76.1` (or `73.2`) | User: `root` | Password: `root`
+>   - **SSH (Port 22):** `ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1` (Password: `root`)
+>   - **Emergency Failsafe (Zero Lockout Risk):** **Telnet on port 23** (`telnet 192.168.76.1 23`) drops straight to a root `ash` shell **without requiring any password**.
+> * **🛡️ The Golden Rule for Changing Passwords:**
+>   - **NEVER delete or rename the `root` or `Admin` accounts.** Both share UID 0. OEM cron jobs and Acer background services depend on `Admin`, while OpenWrt/LuCI expects `root`.
+>   - **If you change your password in the terminal, update BOTH accounts to keep them synchronized:**
+>     ```sh
+>     passwd root
+>     passwd Admin
+>     ```
 
 ---
 
@@ -176,16 +183,72 @@ Acer-Predator-Connect-T7/
 └── assets/                                      # Banners and architecture diagrams
 ```
 
+## 4. 🚀 Interactive Universal Wizard & PowerShell One-Liner (Windows, macOS & Linux)
+
+To guarantee flawless execution on any target machine — even on a fresh Windows PC with zero developer tools —, we provide an interactive assistant featuring **guided root triage, automated `.cfg` generation, and Pre-Flight Checks**:
+
+### ⚡ Fastest Method (1-Line Windows PowerShell — Zero Manual Downloads):
+Open **PowerShell** on Windows and run the official one-liner:
+```powershell
+irm https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.ps1 | iex
+```
+
+### Other Ways to Run (If you already cloned or extracted the repository):
+* **On Windows:** Double-click **`EXECUTAR_T7.bat`** (or execute `.\iniciar.ps1` in PowerShell).  
+  *(Fully immune to path loss when running as Administrator).*
+* **On macOS & Linux:** Open a terminal in the folder and execute:
+  ```bash
+  sh executar_t7.sh
+  ```
+
 ---
 
-## 5. 🔗 Twin Device: Parity with the Acer Predator Connect X7 5G CPE
+### 🧭 How the Interactive Wizard Works:
 
-The **Acer Predator Connect X7 5G CPE** shares **99% identical hardware and codebase** with the **Predator Connect T7** (Qualcomm IPQ5332 SoC, Linux kernel 5.4.213, identical MTD layout, and BE11000 Wi-Fi 7 radios). The sole physical distinction is that the X7 mounts a Fibocom FM160 (Snapdragon X62 5G) module on its internal M.2 slot.
+1. **Language Selection:** Choose English (Default - Press ENTER) or Brazilian Portuguese.
+2. **Auto-Network Probe:** Detects router IP and inspects Web (80), Telnet (23), and SSH (22) status.
+3. **Interactive Root Triage Question:**
+   > *"Do you already have root / SSH access unlocked on this router?"*
+   * **If NO (Factory locked router):**
+     - Generates the unlock configuration file **`config_desbloqueio_t7.cfg`** directly on your **Desktop**.
+     - Automatically opens your browser to the Acer Web GUI backup restore page.
+     - Guides you through the 1-minute restore process to enable root.
+     - Actively monitors router reboot and confirms as soon as Telnet port 23 opens!
+   * **If YES (Already unlocked):**
+     - Verifies Python 3.14 (installs silently via WinGet in 1 click if missing).
+     - Opens the **Master Management Suite** with Pre-Flight checks, Slot 2 flashing, LuCI activation, Dual-Boot switching, and Hardening.
 
-The non-invasive root unlock script ([`unlock_only_ssh.py`](04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/unlock_only_ssh.py)) works 1:1 on the X7 without modifications.
+---
 
-For complete binary analysis, GPIO pinouts, and cellular reverse-engineering notes:  
-👉 **[Fibocom FM160 5G Modem Reverse Engineering Documentation](03_ENGENHARIA_REVERSA/Modem_5G_Fibocom_X7/README.md)**
+## 5. 🔒 Post-Installation Hardening: Disabling Telnet
+
+**Telnet (port 23)** is enabled during unlock to ensure that any PC can flash and recover the router without SSH host-key verification warnings. It is bound **strictly to the local LAN** and blocked 100% on the WAN by the firewall.
+
+Once your setup is finished and LuCI is operational, you can disable Telnet to keep SSH as the sole encrypted management interface:
+* **On the router terminal:** type:
+  ```sh
+  desativar-telnet
+  ```
+  *(To reactivate in the future for automation, run: `ativar-telnet`)*.
+* **From your computer:** select option `[5]` in the launcher or execute:
+  ```bash
+  python Scripts_Automacao/gerenciar_telnet.py desativar
+  ```
+
+---
+
+## 6. 🔗 Research Protocol & Collaboration Terms: Acer Predator Connect X7 (5G CPE)
+
+The **Acer Predator Connect X7 5G CPE** shares the same base Qualcomm IPQ5332 architecture as the T7, but adds a cellular 5G M.2 modem (Qualcomm Snapdragon X62) and official `v50` firmware.
+
+> [!WARNING]
+> **ANTI-BRICK GUARD ACTIVE:** The version 27 (`v27`) images included here are **STRICTLY EXCLUSIVE to the Predator Connect T7**. Flashing these images on an X7 will cause a **HARD BRICK**. Flashing on X7 hardware is automatically blocked.
+
+### How to Collaborate on X7 Support:
+1. **Safe Diagnostics:** Select option `[7] Area de Pesquisa e Diagnostico do Modelo X7` in the launcher (`python Scripts_Automacao/diagnostico_x7.py`) to generate a read-only hardware/MTD dump.
+2. **Share Your Backup (.cfg):** X7 owners must share their original factory `.cfg` backup for comparative reverse engineering of cellular services.
+3. **Test-Bench Readiness:** Testing new hybrid hardware requires careful step-by-step validation.
+4. **High Recoverability:** Like the T7, the X7 features redundant Dual-Boot A/B partitioning. **As long as Partition 1 (Slot 1 original) is NOT overwritten or force-flashed after gaining root, recovery chances back to OEM firmware are very high!**
 
 ---
 

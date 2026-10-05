@@ -1,6 +1,6 @@
 {
   "suite_version": "1.0.1",
-  "updated_at": "2026-10-05T22:27:51Z",
+  "updated_at": "2026-10-05T22:31:49Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
@@ -97,9 +97,9 @@
     {
       "path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg",
       "category": "cfg",
-      "size": 50427,
-      "sha256": "B2F0D320C38C8FAD2E33878A5C5A3B67AB7B1255A8C71F6C428C49C1E3521CA1",
-      "updated_at": "2026-10-05T22:21:58Z"
+      "size": 50441,
+      "sha256": "4ABC75939C0045294152842E74FF88855D05D2B2E6D53863F9B1EBEC88CA4E0A",
+      "updated_at": "2026-10-05T22:30:04Z"
     },
     {
       "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/kernel.bin",

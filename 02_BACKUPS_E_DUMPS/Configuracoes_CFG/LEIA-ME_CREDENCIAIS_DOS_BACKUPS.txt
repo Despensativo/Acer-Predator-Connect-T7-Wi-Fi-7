@@ -38,10 +38,10 @@ Ele mantem o sistema oficial da Acer intacto, ativando SSH, Telnet e atalhos.
   - Senha                : root0100
 
 • REDES WI-FI 7 (Tri-Band 2.4 GHz, 5 GHz, 6 GHz e MLO):
-  - Nome da Rede (SSID)  : T7_0W0J
-  - Nomes das Bandas     : T7_0W0J_2.4GHz / T7_0W0J_5GHz / T7_0W0J_6GHz
-  - Rede MLO (Multi-Link): T7_0W0J_MLO
-  - Senha do Wi-Fi       : f4ussvwT
+  - Nome da Rede (SSID)  : PREDATOR T7
+  - Nomes das Bandas     : PREDATOR T7_2.4GHz / PREDATOR T7_5GHz / PREDATOR T7_6GHz
+  - Rede MLO (Multi-Link): PREDATOR T7_MLO
+  - Senha do Wi-Fi       : 123456789
   - Seguranca / Cripto   : WPA2-PSK AES / WPA3-SAE
 
 --------------------------------------------------------------------------------

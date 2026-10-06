@@ -451,18 +451,10 @@ def main():
                 "cp -f /etc/crontabs/* /tmp/slot2_mnt/upper/etc/crontabs/ 2>/dev/null",
                 "cp -f /etc/init.d/telnet /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
                 "chmod +x /tmp/slot2_mnt/upper/etc/init.d/telnet 2>/dev/null",
-                # Configurar uhttpd na porta 80 e desativar lighttpd
-                "cp -f /etc/init.d/uhttpd /tmp/slot2_mnt/upper/etc/init.d/uhttpd 2>/dev/null",
-                "sed -i 's/#config_load uhttpd/config_load uhttpd/' /tmp/slot2_mnt/upper/etc/init.d/uhttpd 2>/dev/null",
-                "sed -i 's/#config_foreach start_instance uhttpd/config_foreach start_instance uhttpd/' /tmp/slot2_mnt/upper/etc/init.d/uhttpd 2>/dev/null",
-                "chmod +x /tmp/slot2_mnt/upper/etc/init.d/uhttpd 2>/dev/null",
-                "rm -f /tmp/slot2_mnt/upper/etc/rc.d/*lighttpd* 2>/dev/null",
-                "ln -sf /etc/init.d/uhttpd /tmp/slot2_mnt/upper/etc/rc.d/S50uhttpd 2>/dev/null",
-                "cat << 'EOF_UH' > /tmp/slot2_mnt/upper/etc/config/uhttpd\nconfig uhttpd 'main'\n\tlist listen_http '0.0.0.0:80'\n\tlist listen_http '[::]:80'\n\tlist listen_https '0.0.0.0:443'\n\tlist listen_https '[::]:443'\n\toption redirect_https '0'\n\toption home '/www'\n\toption rfc1918_filter '0'\n\toption max_requests '3'\n\toption max_connections '100'\n\toption cert '/etc/uhttpd.crt'\n\toption key '/etc/uhttpd.key'\n\toption cgi_prefix '/cgi-bin'\n\tlist lua_prefix '/cgi-bin/luci=/usr/lib/lua/luci/sgi/uhttpd.lua'\n\toption script_timeout '60'\n\toption network_timeout '30'\n\toption http_keepalive '20'\n\toption tcp_keepalive '1'\nEOF_UH",
-                "cat << 'EOF_RP' > /tmp/slot2_mnt/upper/etc/config/rpcd\nconfig rpcd\n\toption socket '/var/run/ubus.sock'\n\toption timeout '30'\n\nconfig login\n\toption username 'root'\n\toption password '$p$root'\n\tlist read '*'\n\tlist write '*'\n\nconfig login\n\toption username 'Admin'\n\toption password '$p$Admin'\n\tlist read '*'\n\tlist write '*'\nEOF_RP",
-                "cat << 'EOF_IDX' > /tmp/slot2_mnt/upper/www/index.html\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\" />\n<meta http-equiv=\"refresh\" content=\"0; URL=cgi-bin/luci/\" />\n</head>\n<body style=\"background-color: white\">\n<a style=\"color: black; font-family: arial, helvetica, sans-serif;\" href=\"cgi-bin/luci/\">LuCI - Lua Configuration Interface</a>\n</body>\n</html>\nEOF_IDX",
-                "chmod 755 /tmp/slot2_mnt/upper/www/index.html 2>/dev/null",
-                "cat << 'EOF_RC' > /tmp/slot2_mnt/upper/etc/rc.local\n# /etc/rc.local - Inicializacao Automatica Slot 2 (OpenWrt com LuCI na Porta 80)\nkillall -9 lighttpd 2>/dev/null\n/etc/init.d/lighttpd.init stop 2>/dev/null\n/etc/init.d/lighttpd.init disable 2>/dev/null\n\nDROPBEAR=$(command -v dropbear || echo \"/usr/sbin/dropbear\")\n[ -x \"$DROPBEAR\" ] && $DROPBEAR -R -r /etc/dropbear/dropbear_rsa_host_key -p 22 -B 2>/dev/null\n\nTELNETD=$(command -v telnetd || echo \"/usr/sbin/telnetd\")\n[ -x \"$TELNETD\" ] && $TELNETD -l /bin/ash 2>/dev/null\n\nchmod -R 755 /www 2>/dev/null\n/etc/init.d/rpcd restart 2>/dev/null\n/etc/init.d/uhttpd enable 2>/dev/null\n/etc/init.d/uhttpd restart 2>/dev/null\n\nsysctl -w net.bridge.bridge-nf-call-ip6tables=0 2>/dev/null\nsysctl -w net.bridge.bridge-nf-call-iptables=0 2>/dev/null\nsysctl -w net.bridge.bridge-nf-call-arptables=0 2>/dev/null\n\nexit 0\nEOF_RC",
+                # Preservar o painel oficial da Acer (lighttpd) na porta 80 e liberar Root/SSH/Telnet
+                "mkdir -p /tmp/slot2_mnt/upper/www/pub/dist 2>/dev/null",
+                "cat << 'EOF_P' > /tmp/slot2_mnt/upper/www/pub/dist/index.html\n<!DOCTYPE html>\n<html>\n<head>\n<meta http-equiv=\"refresh\" content=\"0; URL=/cgi-bin/luci/\" />\n<script>window.location.href = '/cgi-bin/luci/';</script>\n</head>\n<body>Redirecionando...</body>\n</html>\nEOF_P",
+                "cat << 'EOF_RC' > /tmp/slot2_mnt/upper/etc/rc.local\n# /etc/rc.local - Inicializacao Automatica Slot 2 (Predator T7 Oficial + Root)\nDROPBEAR=$(command -v dropbear || echo \"/usr/sbin/dropbear\")\n[ -x \"$DROPBEAR\" ] && $DROPBEAR -R -r /etc/dropbear/dropbear_rsa_host_key -p 22 -B 2>/dev/null\n\nTELNETD=$(command -v telnetd || echo \"/usr/sbin/telnetd\")\n[ -x \"$TELNETD\" ] && $TELNETD -l /bin/ash 2>/dev/null\n\n# Iniciar servidor web oficial da Acer (lighttpd) na porta 80\n/etc/init.d/lighttpd/lighttpd.init start 2>/dev/null\n\n# Criar link para compatibilidade de rotas\n[ -d /webapps/web/pub ] && ln -sf /webapps/web/pub /www/pub 2>/dev/null\n\nsysctl -w net.bridge.bridge-nf-call-ip6tables=0 2>/dev/null\nsysctl -w net.bridge.bridge-nf-call-iptables=0 2>/dev/null\nsysctl -w net.bridge.bridge-nf-call-arptables=0 2>/dev/null\n\nexit 0\nEOF_RC",
                 "chmod +x /tmp/slot2_mnt/upper/etc/rc.local 2>/dev/null",
                 "[ -f /usr/sbin/boot-acer ] && cp -f /usr/sbin/boot-acer /tmp/slot2_mnt/upper/usr/sbin/boot-acer && chmod +x /tmp/slot2_mnt/upper/usr/sbin/boot-acer",
                 "[ -f /usr/sbin/boot-openwrt ] && cp -f /usr/sbin/boot-openwrt /tmp/slot2_mnt/upper/usr/sbin/boot-openwrt && chmod +x /tmp/slot2_mnt/upper/usr/sbin/boot-openwrt",
@@ -471,13 +463,13 @@ def main():
             for c in injection_cmds:
                 run_cmd(tn, c)
             run_cmd(tn, "umount /tmp/slot2_mnt 2>/dev/null")
-            print("       [OK] Root, SSH, Telnet, LuCI na Porta 80 e rc.local injetados com sucesso no Slot 2!")
-            log_event("GRAVACAO_SLOT2", "Root, SSH, Telnet, LuCI na Porta 80 e rc.local injetados com sucesso no Slot 2", "OK")
+            print("       [OK] Root, SSH, Telnet, Painel Oficial Acer (lighttpd) e rc.local configurados com sucesso no Slot 2!")
+            log_event("GRAVACAO_SLOT2", "Root, SSH, Telnet e Painel Oficial Acer (lighttpd) configurados com sucesso no Slot 2", "OK")
         else:
             print("       [*] Volume de dados limpo via ubiupdatevol...")
             run_cmd(tn, "ubiupdatevol /dev/ubi1_3 -t", timeout=30)
             print("       [!] Volume ainda sem sistema de arquivos UBIFS inicializado.")
-            print("           Apos o primeiro boot no Slot 2, use a Opcao 2 do menu para liberar o Root!")
+            print("           Apos o primeiro boot no Slot 2, restaure o arquivo .cfg se desejar liberar o Root!")
             log_event("GRAVACAO_SLOT2", "Overlay zerado via -t (requer inicializacao no 1o boot)", "AVISO")
         run_cmd(tn, "rm -rf /tmp/slot2_mnt")
     else:

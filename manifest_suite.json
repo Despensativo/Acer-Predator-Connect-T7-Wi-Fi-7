@@ -1,14 +1,14 @@
 {
-  "suite_version": "1.0.7",
-  "updated_at": "2026-10-06T02:53:00Z",
+  "suite_version": "1.0.8",
+  "updated_at": "2026-10-06T03:03:30Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
       "size": 41300,
-      "sha256": "7F87F0F3FAD536B46C03B29AA82116FEFE7E6B198DD500A561604D14554C70BF",
-      "updated_at": "2026-10-06T02:53:00Z"
+      "sha256": "54BEDEB35AC96CC3F8944B07F96FA38C434134FFCDFC579F41291DB0F0CC3BF8",
+      "updated_at": "2026-10-06T03:01:48Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",
@@ -27,16 +27,16 @@
     {
       "path": "Scripts_Automacao/otimizar_e_ativar_luci_slot2.py",
       "category": "script",
-      "size": 32260,
-      "sha256": "60F5B50AF0AED5B8EBC93922608325D1D0A722128CD4639AB2D202A29CA7CBBA",
-      "updated_at": "2026-10-06T02:13:14Z"
+      "size": 32620,
+      "sha256": "49F3EA2DFD1B0C10959CAA46F02B336B64C5873B0A4D48551F3518B73AAF4978",
+      "updated_at": "2026-10-06T03:00:24Z"
     },
     {
       "path": "Scripts_Automacao/gravar_v27_slot2.py",
       "category": "script",
-      "size": 28878,
-      "sha256": "0E663DD9A53533C1C65C56387F5E6031732930FD07939B9E6CEBDBA971A3EFF3",
-      "updated_at": "2026-10-06T02:12:42Z"
+      "size": 26901,
+      "sha256": "A3961E0B8FAABBD6B305B8B578E264FE81583AEBCA6CB84132C01D68BE72C165",
+      "updated_at": "2026-10-06T03:01:52Z"
     },
     {
       "path": "Scripts_Automacao/switch_boot_slot.py",
@@ -162,7 +162,7 @@
       "category": "launcher",
       "size": 40761,
       "sha256": "5A6BD24117F409EA60A843339F1743273DB5CFEB9883B9FE2CC1513BED33C2FF",
-      "updated_at": "2026-10-06T02:41:00Z"
+      "updated_at": "2026-10-06T02:41:10Z"
     },
     {
       "path": "EXECUTAR_T7.bat",

@@ -105,8 +105,10 @@ TEXTS = {
         "menu_6": "[6] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
         "menu_7": "[7] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
         "menu_8": "[8] Check & Sync Updates from GitHub (Smart Checksum)",
+        "menu_9": "[9] Inform IP of another router (Reload Target)",
         "menu_0": "[0] Exit",
-        "prompt_choice": "Choose an option (0-8): ",
+        "prompt_choice": "Choose an option (0-9): ",
+        "prompt_new_ip": "Enter the new router IP (e.g. 192.168.1.1): ",
         "press_enter": "\nPress ENTER to return to menu...",
         "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [4] (Hardening)!\033[0m",
         "suite_version": "Suite Version",
@@ -157,8 +159,10 @@ TEXTS = {
         "menu_6": "[6] Area de Pesquisa do Modelo X7 (Somente Leitura)",
         "menu_7": "[7] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
         "menu_8": "[8] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
+        "menu_9": "[9] Informar IP de outro roteador (Recarregar Alvo)",
         "menu_0": "[0] Sair",
-        "prompt_choice": "Escolha uma opcao (0-8): ",
+        "prompt_choice": "Escolha uma opcao (0-9): ",
+        "prompt_new_ip": "Digite o IP do novo roteador (ex: 192.168.1.1): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
         "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [4] (Hardening)!\033[0m",
         "suite_version": "Versao da Suite",
@@ -735,6 +739,7 @@ def main_menu():
         print(f"  {t('menu_6')}")
         print(f"  {t('menu_7')}")
         print(f"  {t('menu_8')}")
+        print(f"  {t('menu_9')}")
         print(f"  {t('menu_0')}")
         print("=" * 75)
 
@@ -811,6 +816,12 @@ def main_menu():
         elif choice == "8":
             log_event("MENU", "Opcao [8] Sincronizar e Atualizar Ferramenta selecionada", "INFO")
             check_and_sync_updates()
+        elif choice == "9":
+            log_event("MENU", "Opcao [9] Mudar IP do roteador selecionada", "INFO")
+            new_ip = safe_input(t("prompt_new_ip")).strip()
+            if new_ip:
+                args.ip = new_ip
+                log_event("MENU", f"Novo IP definido pelo usuario: {new_ip}", "INFO")
 
 if __name__ == "__main__":
     main_menu()

@@ -51,6 +51,8 @@ O servidor fechado da Acer foi desativado para liberar a porta 80:
 killall -9 lighttpd 2>/dev/null
 /etc/init.d/lighttpd.init stop 2>/dev/null
 /etc/init.d/lighttpd.init disable 2>/dev/null
+chmod -x /usr/sbin/lighttpd 2>/dev/null
+chmod -x /etc/init.d/lighttpd.init 2>/dev/null
 ```
 
 ### B. Correção do Script `/etc/init.d/uhttpd` Sabotado

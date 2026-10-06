@@ -171,7 +171,7 @@ def main():
 
     # 4. Configurar LuCI (uhttpd) como padrao na porta 80
     print("\n[*] [4/9] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")
-    run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null")
+    run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null; chmod -x /usr/sbin/lighttpd /etc/init.d/lighttpd.init 2>/dev/null")
     run_cmd(tn, "sed -i 's/#config_load uhttpd/config_load uhttpd/' /etc/init.d/uhttpd")
     run_cmd(tn, "sed -i 's/#config_foreach start_instance uhttpd/config_foreach start_instance uhttpd/' /etc/init.d/uhttpd")
     run_cmd(tn, "chmod -R 755 /www")

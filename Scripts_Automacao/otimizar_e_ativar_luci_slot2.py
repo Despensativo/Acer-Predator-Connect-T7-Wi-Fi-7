@@ -315,7 +315,7 @@ def aplicar_otimizacao_completa(tn, target_ip):
     # 4. Configurar LuCI (uhttpd) como padrao na porta 80
     print("\n[*] [4/10] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")
     print("    -> [O QUE FAZ]: Desativa o painel original Acer (lighttpd) e ativa o LuCI oficial na porta 80 e 443.")
-    run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null")
+    run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null; chmod -x /usr/sbin/lighttpd /etc/init.d/lighttpd.init 2>/dev/null")
     run_cmd(tn, "sed -i 's/#config_load uhttpd/config_load uhttpd/' /etc/init.d/uhttpd")
     run_cmd(tn, "sed -i 's/#config_foreach start_instance uhttpd/config_foreach start_instance uhttpd/' /etc/init.d/uhttpd")
     run_cmd(tn, "chmod -R 755 /www")
@@ -431,7 +431,7 @@ def aplicar_otimizacao_basica(tn, target_ip):
     # 2. Configurar LuCI (uhttpd) como padrao na porta 80
     print("\n[*] [2/4] Configurando LuCI (uhttpd) como servidor web principal (Porta 80)...")
     print("    -> [O QUE FAZ]: Desativa o painel original Acer (lighttpd) e ativa o LuCI oficial na porta 80 e 443.")
-    run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null")
+    run_cmd(tn, "killall -9 lighttpd 2>/dev/null; /etc/init.d/lighttpd.init stop 2>/dev/null; /etc/init.d/lighttpd.init disable 2>/dev/null; chmod -x /usr/sbin/lighttpd /etc/init.d/lighttpd.init 2>/dev/null")
     run_cmd(tn, "sed -i 's/#config_load uhttpd/config_load uhttpd/' /etc/init.d/uhttpd")
     run_cmd(tn, "sed -i 's/#config_foreach start_instance uhttpd/config_foreach start_instance uhttpd/' /etc/init.d/uhttpd")
     run_cmd(tn, "chmod -R 755 /www")
@@ -470,7 +470,7 @@ def finalizar_e_sincronizar(tn, modo):
     print("\n[*] Configurando persistencia no boot (/etc/rc.local)...")
     if modo == "completa":
         run_cmd(tn, "sed -i 's|^modem_readd &|# modem_readd desativado|' /etc/rc.local")
-        run_cmd(tn, "sed -i 's|/etc/init.d/lighttpd/lighttpd.init start|# lighttpd desativado|' /etc/rc.local")
+    run_cmd(tn, "sed -i 's|/etc/init.d/lighttpd/lighttpd.init start|# lighttpd desativado|' /etc/rc.local")
     run_cmd(tn, "sed -i 's|/etc/init.d/uhttpd stop|/etc/init.d/uhttpd start|' /etc/rc.local")
 
     print("\n[*] Limpando arquivos temporarios e gravando alteracoes na Flash NAND...")

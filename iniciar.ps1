@@ -360,7 +360,7 @@ $T = @{
         "ip_not_found"       = "Nao foi possivel detectar automaticamente o roteador nos IPs padrao."
         "ip_manual_prompt"   = "Digite o IP do seu roteador Predator [Padrao: 192.168.76.1]: "
         "auto_diag_header"     = "DIAGNOSTICO AUTOMATICO DE ESTADO DO ROTEADOR"
-        "auto_root_detected"   = "Diagnostico: Roteador com ACESSO ROOT ativo detectado (Telnet/SSH ativo)!`n  [🔑] Senha padrao de root do toolkit: root0100 (8 caracteres minusculos).`n  -> Fluxo automatico: Abrir direto a CENTRAL DE GERENCIAMENTO."
+        "auto_root_detected"   = "Diagnostico: Roteador com ACESSO ROOT ativo detectado (Telnet/SSH ativo)!`n  [SENHA ROOT] Senha padrao de root do toolkit: root0100 (8 caracteres minusculos).`n  -> Fluxo automatico: Abrir direto a CENTRAL DE GERENCIAMENTO."
         "auto_locked_detected" = "Diagnostico: Roteador com FIRMWARE TRAVADO DE FABRICA (portas 22 e 23 fechadas).`n  -> Fluxo automatico: Iniciar DESBLOQUEIO DE ROOT PASSO A PASSO."
         "auto_confirm_prompt"  = "Pressione ENTER para prosseguir automaticamente, ou digite [M] (ou novo IP) para escolha manual: "
         "manual_ip_ask"        = "Deseja alterar o IP do roteador? Digite o novo IP ou pressione ENTER para manter [{0}]: "
@@ -469,7 +469,8 @@ function Ensure-Python {
     if (-not $PythonExe) {
         Write-Warn $M["python_missing"]
         try {
-            winget install Python.Python.3.14 --silent --override "/passive PrependPath=1"
+            # Executa com Out-Host para nao poluir o pipeline de retorno da funcao com stdout do winget
+            & winget install Python.Python.3.14 --silent --override "/passive PrependPath=1" | Out-Host
         } catch {
             Write-Warn "WinGet falhou. Tentando instalador alternativo..."
         }
@@ -477,6 +478,7 @@ function Ensure-Python {
 
         # Re-procurar na pasta padrao do usuario apos a instalacao
         $newFound = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python" -Filter "python.exe" -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+                     Where-Object { $_.FullName -notlike "*WindowsApps*" } |
                      Sort-Object FullName -Descending |
                      Select-Object -First 1
         if ($newFound) {
@@ -484,6 +486,11 @@ function Ensure-Python {
         } else {
             $PythonExe = "python"
         }
+    }
+
+    # Se por qualquer motivo $PythonExe for um array, extrair apenas o caminho real do arquivo
+    if ($PythonExe -is [array]) {
+        $PythonExe = ($PythonExe | Where-Object { $_ -and (Test-Path "$_") })[-1]
     }
 
     # 5. Adicionar a pasta do Python e Scripts permanentemente ao PATH do Windows e a sessao atual
@@ -509,13 +516,37 @@ function Ensure-Python {
         } catch {}
     }
 
-    $verOutput = (& $PythonExe --version 2>&1)
+    # Fallback final garantido
+    if (-not $PythonExe -or -not (Test-Path $PythonExe)) {
+        $fallbacks = @(
+            "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe",
+            "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
+            "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+            "C:\Program Files\Python314\python.exe",
+            "C:\Program Files\Python313\python.exe",
+            "C:\Program Files\Python312\python.exe",
+            "C:\Python314\python.exe",
+            "C:\Python312\python.exe"
+        )
+        foreach ($fb in $fallbacks) {
+            if (Test-Path $fb) {
+                $PythonExe = $fb
+                break
+            }
+        }
+    }
+
+    $verOutput = (& "$PythonExe" --version 2>&1)
     Write-Success ($M["python_ok"] -f $verOutput)
-    return $PythonExe
+    return [string]$PythonExe
 }
 
 # 2.5. Garantir Ambiente Python 3
 $PythonCmd = Ensure-Python
+if ($PythonCmd -is [array]) {
+    $PythonCmd = ($PythonCmd | Where-Object { $_ -and (Test-Path "$_") })[-1]
+}
+$PythonCmd = [string]$PythonCmd
 
 # 3. Detectar IP do Roteador
 Write-Header $M["title"]
@@ -791,12 +822,32 @@ if (-not (Test-Path $LauncherPy)) {
 }
 
 # 3. Garantir que o diretorio de execucao seja a pasta da suite (evita executar dentro de system32)
+if (-not (Test-Path $LauncherPy)) {
+    Write-Err "Arquivo inicializador launcher_t7.py nao encontrado: $LauncherPy"
+    Read-Host "Pressione ENTER para sair..."
+    return
+}
+
 $SuiteRootDir = Split-Path (Split-Path $LauncherPy -Parent) -Parent
 if (Test-Path $SuiteRootDir) {
     Push-Location $SuiteRootDir
 }
 try {
-    & $PythonCmd $LauncherPy --lang $Lang --ip $RouterIP
+    if ($PythonCmd -is [array]) {
+        $PythonCmd = ($PythonCmd | Where-Object { $_ -and (Test-Path "$_") })[-1]
+    }
+    $FinalPy = [string]$PythonCmd
+    if (-not (Test-Path $FinalPy)) {
+        $foundPy = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python", "C:\Program Files\Python*" -Filter "python.exe" -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+                   Where-Object { $_.FullName -notlike "*WindowsApps*" } |
+                   Select-Object -First 1
+        if ($foundPy) {
+            $FinalPy = $foundPy.FullName
+        } else {
+            $FinalPy = "python"
+        }
+    }
+    & "$FinalPy" "$LauncherPy" --lang $Lang --ip $RouterIP
 } finally {
     if (Test-Path $SuiteRootDir) {
         Pop-Location

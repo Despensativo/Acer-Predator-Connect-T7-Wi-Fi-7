@@ -211,6 +211,7 @@ def main():
     parser.add_argument("--no-reboot", action="store_true", help="Grava sem reiniciar automaticamente no final")
     parser.add_argument("--with-root", action="store_true", help="Grava v27 com ROOT desbloqueado diretamente sem prompt")
     parser.add_argument("--pure-stock", action="store_true", help="Grava v27 puro de fabrica sem root")
+    parser.add_argument("--dev-test", action="store_true", help="Developer Test: grava v27 puro stock sem alterar boot e sem reiniciar")
     parser.add_argument("--yes", "-y", action="store_true", help="Confirma automaticamente sem pedir confirmacao manual")
     args, unknown = parser.parse_known_args()
 
@@ -311,6 +312,8 @@ def main():
         inst_choice = "1"
     elif args.pure_stock:
         inst_choice = "2"
+    elif args.dev_test:
+        inst_choice = "3"
     else:
         while True:
             print("\n" + "=" * 72)
@@ -325,16 +328,27 @@ def main():
             print("      - Grava o sistema oficial v27 da Acer")
             print("      - Formata e zera o volume de dados (sem qualquer alteracao)")
             print("      - O Slot 2 acorda exatamente como veio de fabrica na caixa")
+            print("")
+            print("  [3] Developer Test: Firmware Oficial v27 Puro de Fabrica (100% Stock OEM)")
+            print("      - Grava o sistema oficial v27 Puro de Fabrica no Slot 2")
+            print("      - Sem mudar a ordem do boot e sem reiniciar (mantendo o boot na 1)")
+            print("      - Ideal para inspecao de volumes ou testes sem interromper a rede")
             print("=" * 72)
-            inst_choice = input("  Digite o numero da opcao desejada [1 ou 2]: ").strip()
-            if inst_choice in ["1", "2"]:
+            inst_choice = input("  Digite o numero da opcao desejada [1, 2 ou 3]: ").strip()
+            if inst_choice in ["1", "2", "3"]:
                 break
-            print("\n  [!] Entrada invalida! Digite obrigatoriamente o numero 1 ou 2.")
+            print("\n  [!] Entrada invalida! Digite obrigatoriamente o numero 1, 2 ou 3.")
 
     with_root = (inst_choice == "1")
+    if inst_choice == "3":
+        args.no_reboot = True
+
     if with_root:
         print("  [+] Modo confirmado: Oficial v27 com ROOT Desbloqueado.")
         log_event("GRAVACAO_SLOT2", "Modo selecionado: Oficial v27 com ROOT", "INFO")
+    elif inst_choice == "3":
+        print("  [+] Modo confirmado: [Developer Test] Oficial v27 Stock OEM (Sem mudar boot e Sem reiniciar).")
+        log_event("GRAVACAO_SLOT2", "Modo selecionado: Developer Test (Stock OEM sem reiniciar)", "INFO")
     else:
         print("  [+] Modo confirmado: Oficial v27 100% Stock OEM Travado de Fabrica.")
         log_event("GRAVACAO_SLOT2", "Modo selecionado: Oficial v27 Stock OEM Travado", "INFO")
@@ -488,10 +502,13 @@ def main():
         print("     /usr/sbin/boot-acer")
         print("=" * 72)
     else:
-        print("\n[*] Flag --no-reboot detectada. Gravacao concluida sem reiniciar.")
-        print("    Para chavear manualmente quando quiser, execute:")
+        print("\n[*] [Developer Test / --no-reboot] Gravacao concluida sem reiniciar.")
+        print("    [OK] O Firmware Oficial v27 foi gravado com sucesso no Slot 2.")
+        print("    [OK] A ordem de boot permanece inalterada no Slot 1 (primaryboot = 1).")
+        print("    [OK] O roteador NAO foi reiniciado e segue operando normalmente.")
+        print("    Para chavear para o Slot 2 quando desejar, execute:")
         print("    python switch_boot_slot.py 2")
-        log_event("GRAVACAO_SLOT2", "Gravacao concluida com flag --no-reboot", "INFO")
+        log_event("GRAVACAO_SLOT2", "Gravacao concluida sem reiniciar (boot no Slot 1 mantido)", "INFO")
 
     tn.close()
     httpd.shutdown()

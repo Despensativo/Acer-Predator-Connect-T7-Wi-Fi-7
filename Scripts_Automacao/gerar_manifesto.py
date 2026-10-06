@@ -11,7 +11,7 @@ import json
 import hashlib
 from datetime import datetime, timezone
 
-SUITE_VERSION = "1.0.2"
+SUITE_VERSION = "1.0.3"
 
 TRACKED_FILES = [
     {"path": "Scripts_Automacao/launcher_t7.py", "category": "script"},

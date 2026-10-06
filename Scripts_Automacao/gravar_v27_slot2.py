@@ -362,7 +362,9 @@ def main():
         log_event("GRAVACAO_SLOT2", "Modo selecionado: Oficial v27 Stock OEM Travado", "INFO")
 
     if not args.yes:
-        confirm = input("\n  Confirma o inicio da gravacao no Slot 2 (mtd20)? [S/N]: ").strip().upper()
+        confirm = input("\n  Confirma o inicio da gravacao no Slot 2 (mtd20)? [S/n] (Padrao: S): ").strip().upper()
+        if confirm == "":
+            confirm = "S"
         if confirm not in ["S", "SIM", "Y", "YES"]:
             print("\n  [!] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita.")
             log_event("GRAVACAO_SLOT2", "Cancelado pelo usuario antes de gravar", "AVISO")

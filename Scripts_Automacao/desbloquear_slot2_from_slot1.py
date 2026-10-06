@@ -78,9 +78,11 @@ def main():
     print("    * Reinicia o roteador ja acordando no Slot 2 desbloqueado!")
     print("=" * 75)
 
-    ans = input("  Deseja prosseguir com o desbloqueio do Slot 2 e reiniciar por ele? [S/N]: ").strip().upper()
+    ans = input("  Deseja prosseguir com o desbloqueio do Slot 2 e reiniciar por ele? [S/n] (Padrao: S): ").strip().upper()
+    if ans == "":
+        ans = "S"
     if ans not in ["S", "SIM", "Y", "YES"]:
-        print("\n  Operacao cancelada pelo usuario.")
+        print("\n  [!] Operacao cancelada pelo usuario.")
         log_event("DESBLOQUEIO_SLOT2", "Cancelado pelo usuario no prompt", "AVISO")
         return
 

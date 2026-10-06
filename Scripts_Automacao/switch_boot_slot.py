@@ -195,8 +195,8 @@ def main():
                 continue
 
             if opt == "1":
-                conf = input(f"\n[?] Tem certeza que deseja alternar para o {target_label} e reiniciar o roteador agora? [S/N]: ").strip().lower()
-                if conf in ["s", "sim", "y", "yes"]:
+                conf = input(f"\n[?] Tem certeza que deseja alternar para o {target_label} e reiniciar o roteador agora? [S/n] (Padrao: S): ").strip().lower()
+                if conf == "" or conf in ["s", "sim", "y", "yes"]:
                     print(f"\n[*] Aplicando chaveamento para {target_label}...")
                     log_event("SWITCH_BOOT", f"Alternando do Slot {cur_num} para o Slot {target_num}", "INFO")
                     try:
@@ -221,8 +221,8 @@ def main():
                     log_event("SWITCH_BOOT", "Cancelado na confirmacao pelo usuario", "AVISO")
                     break
             elif opt == "2":
-                conf = input(f"\n[?] Confirma forcar o reinicio no mesmo {cur_label}? [S/N]: ").strip().lower()
-                if conf in ["s", "sim", "y", "yes"]:
+                conf = input(f"\n[?] Confirma forcar o reinicio no mesmo {cur_label}? [S/n] (Padrao: S): ").strip().lower()
+                if conf == "" or conf in ["s", "sim", "y", "yes"]:
                     print(f"\n[*] Reiniciando no mesmo Slot {cur_num}...")
                     log_event("SWITCH_BOOT", f"Reinicio forcado no mesmo Slot {cur_num}", "INFO")
                     out = run_cmd(tn, "reboot")

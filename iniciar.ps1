@@ -47,9 +47,166 @@ if (-not (Test-Path $RepoDir)) {
     New-Item -ItemType Directory -Path $RepoDir -Force | Out-Null
 }
 
+# 1. Sincronizar e Atualizar Ferramenta (GitHub Checksum) no inicio (Antes do Idioma)
+function Sync-Suite-From-GitHub {
+    Write-Header "SINCRONIZANDO FERRAMENTAS DO GITHUB / SYNCING SUITE"
+    Write-Info "Verificando atualizacoes no GitHub / Checking latest updates from GitHub..."
+    Write-Host "  Pasta de Trabalho: $RepoDir" -ForegroundColor Gray
+    Write-Host ""
+
+    $ManifestFile = "$RepoDir\manifest_suite.json"
+    $ManifestUrl  = "$RawBase/manifest_suite.json"
+    $Manifest     = $null
+    $isOffline    = $false
+
+    # Carregar Manifesto Oficial (Remoto via GitHub com Timeout de 3s ou Cache Local)
+    try {
+        $resp = Invoke-WebRequest -Uri $ManifestUrl -TimeoutSec 3 -UseBasicParsing -Headers @{ "User-Agent" = "Mozilla/5.0" }
+        $remoteJson = $resp.Content
+        $Manifest = $remoteJson | ConvertFrom-Json
+        [System.IO.File]::WriteAllText($ManifestFile, $remoteJson, [System.Text.Encoding]::UTF8)
+        Write-Success "Manifesto v$($Manifest.suite_version) carregado do GitHub ($($Manifest.files.Count) arquivos monitorados)"
+    } catch {
+        $isOffline = $true
+        if (Test-Path $ManifestFile) {
+            try {
+                $Manifest = Get-Content $ManifestFile -Raw | ConvertFrom-Json
+                Write-Warn "Sem internet. Usando manifesto em cache v$($Manifest.suite_version) (Modo Offline)"
+            } catch {}
+        } elseif ($LocalSourceDir -and (Test-Path "$LocalSourceDir\manifest_suite.json")) {
+            try {
+                $Manifest = Get-Content "$LocalSourceDir\manifest_suite.json" -Raw | ConvertFrom-Json
+                Copy-Item "$LocalSourceDir\manifest_suite.json" $ManifestFile -Force
+                Write-Success "Manifesto local v$($Manifest.suite_version) carregado ($($Manifest.files.Count) arquivos)"
+            } catch {}
+        }
+
+        if (-not $Manifest) {
+            Write-Warn "Sem conexao com a internet (Modo Offline). Continuando normalmente..."
+        }
+    }
+
+    # Verificacao Inteligente Baseada em Checksum SHA-256 e Categorias
+    if ($Manifest -and $Manifest.files) {
+        $TotalChecked   = 0
+        $UpToDateCount  = 0
+        $UpdatedCount   = 0
+        $NewCount       = 0
+
+        $wc = New-Object System.Net.WebClient
+        $wc.Headers.Add("User-Agent", "Mozilla/5.0")
+
+        foreach ($item in $Manifest.files) {
+            $rel = $item.path
+            $dest = Join-Path $RepoDir ($rel.Replace('/', '\'))
+            $destDir = Split-Path $dest -Parent
+            if (-not (Test-Path $destDir)) {
+                New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+            }
+            $TotalChecked++
+
+            $needsDownload = $false
+            $isUpdate = $false
+
+            # Imagens de ROM grandes (~50 MB): checar tamanho primeiro
+            if ($item.category -in @("rom", "stock_rom")) {
+                if (Test-Path $dest) {
+                    $curLen = (Get-Item $dest).Length
+                    if ($curLen -eq $item.size) {
+                        $UpToDateCount++
+                        continue
+                    }
+                }
+                $needsDownload = $true
+                $NewCount++
+                if (-not $isOffline) {
+                    $romLabel = "$([math]::Round($item.size / 1MB, 1)) MB"
+                    Write-Info "Baixando ROM do GitHub: $(Split-Path $dest -Leaf) ($romLabel)..."
+                }
+            } else {
+                # Scripts, CFG e Launchers
+                if (-not (Test-Path $dest)) {
+                    $needsDownload = $true
+                    $NewCount++
+                    if (-not $isOffline) {
+                        Write-Info "Arquivo ausente: $rel. Baixando..."
+                    }
+                } else {
+                    $localHash = (Get-FileHash -Path $dest -Algorithm SHA256).Hash
+                    if ($localHash -eq $item.sha256) {
+                        $UpToDateCount++
+                    } else {
+                        $needsDownload = $true
+                        $isUpdate = $true
+                        $UpdatedCount++
+                        if (-not $isOffline) {
+                            Write-Info "Nova versao detectada no GitHub: $rel! Atualizando..."
+                            try { Copy-Item $dest "$dest.bak" -Force } catch {}
+                        }
+                    }
+                }
+            }
+
+            if ($needsDownload) {
+                if ($isOffline) {
+                    continue
+                }
+
+                $copiedLocal = $false
+                if ($LocalSourceDir) {
+                    $localSrc = Join-Path $LocalSourceDir ($rel.Replace('/', '\'))
+                    if (Test-Path $localSrc) {
+                        $srcLen = (Get-Item $localSrc).Length
+                        if ($item.category -in @("rom", "stock_rom") -and $srcLen -eq $item.size) {
+                            Copy-Item $localSrc $dest -Force
+                            $copiedLocal = $true
+                        } elseif ($item.category -notin @("rom", "stock_rom")) {
+                            $srcHash = (Get-FileHash -Path $localSrc -Algorithm SHA256).Hash
+                            if ($srcHash -eq $item.sha256) {
+                                Copy-Item $localSrc $dest -Force
+                                $copiedLocal = $true
+                            }
+                        }
+                    }
+                }
+
+                if (-not $copiedLocal) {
+                    try {
+                        $wc.DownloadFile("$RawBase/$rel", $dest)
+                    } catch {}
+                }
+
+                if (Test-Path $dest) {
+                    if ($isUpdate) {
+                        Write-Success "Atualizado com sucesso: $rel"
+                    } else {
+                        Write-Success "Baixado com sucesso: $rel"
+                    }
+                }
+            }
+        }
+
+        Write-Host ""
+        if ($isOffline) {
+            Write-Warn "Modo Offline: $UpToDateCount de $TotalChecked arquivos locais verificados. Continuando..."
+        } elseif ($UpdatedCount -eq 0 -and $NewCount -eq 0) {
+            Write-Success "Todas as $TotalChecked ferramentas verificadas e atualizadas (SHA-256 validado)!"
+        } else {
+            Write-Success "Sincronizacao concluida: $TotalChecked arquivos checados ($UpToDateCount ja atualizados, $($UpdatedCount + $NewCount) atualizados/baixados)."
+        }
+        Write-Host ""
+    } else {
+        if ($isOffline) {
+            Write-Warn "Sem conexao com internet e sem manifesto. Continuando com arquivos locais..."
+        }
+    }
+}
+
+# Executa sincronizacao inteligente no inicio (se nao tiver internet, continua normalmente)
+Sync-Suite-From-GitHub
+
 # 2. Selecao de Idioma
 if (-not $Lang) {
-    Clear-Host
     Write-Host "===========================================================================" -ForegroundColor Cyan
     Write-Host "             ACER PREDATOR CONNECT T7 & X7 - WIZARD & SUITE                " -ForegroundColor White
     Write-Host "===========================================================================" -ForegroundColor Cyan
@@ -276,180 +433,7 @@ function Ensure-Python {
     return $PythonCmd
 }
 
-function Ensure-All-Dependencies {
-    Write-Header $M["deps_title"]
-    Write-Info $M["deps_checking"]
-    Write-Host "  Pasta de Trabalho no Desktop: $RepoDir" -ForegroundColor Gray
-    Write-Host ""
-
-    $wc = New-Object System.Net.WebClient
-    $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AcerPredatorT7Suite/1.0")
-
-    $Manifest = $null
-    $ManifestFile = "$RepoDir\manifest_suite.json"
-    $ManifestUrl = "$RawBase/manifest_suite.json"
-
-    # 1. Carregar Manifesto Oficial (Remoto via GitHub ou Cache Local)
-    try {
-        Write-Info $M["deps_manifest_checking"]
-        $remoteJson = $wc.DownloadString($ManifestUrl)
-        $Manifest = $remoteJson | ConvertFrom-Json
-        [System.IO.File]::WriteAllText($ManifestFile, $remoteJson, [System.Text.Encoding]::UTF8)
-        Write-Success ($M["deps_manifest_ok"] -f $Manifest.suite_version, $Manifest.files.Count)
-    } catch {
-        if (Test-Path $ManifestFile) {
-            try {
-                $Manifest = Get-Content $ManifestFile -Raw | ConvertFrom-Json
-                Write-Warn ($M["deps_manifest_cached"] -f $Manifest.suite_version)
-            } catch {}
-        } elseif ($LocalSourceDir -and (Test-Path "$LocalSourceDir\manifest_suite.json")) {
-            try {
-                $Manifest = Get-Content "$LocalSourceDir\manifest_suite.json" -Raw | ConvertFrom-Json
-                Copy-Item "$LocalSourceDir\manifest_suite.json" $ManifestFile -Force
-                Write-Success ($M["deps_manifest_ok"] -f $Manifest.suite_version, $Manifest.files.Count)
-            } catch {}
-        }
-        if (-not $Manifest) {
-            Write-Warn $M["deps_manifest_offline"]
-        }
-    }
-
-    # 2. Verificacao Inteligente Baseada em Checksum SHA-256 e Timestamps
-    if ($Manifest -and $Manifest.files) {
-        $TotalChecked = 0
-        $UpToDateCount = 0
-        $UpdatedCount = 0
-        $NewCount = 0
-
-        foreach ($item in $Manifest.files) {
-            $rel = $item.path
-            $dest = Join-Path $RepoDir ($rel.Replace('/', '\'))
-            $destDir = Split-Path $dest -Parent
-            if (-not (Test-Path $destDir)) {
-                New-Item -ItemType Directory -Path $destDir -Force | Out-Null
-            }
-            $TotalChecked++
-
-            $needsDownload = $false
-            $isUpdate = $false
-
-            # Otimizacao para imagens de ROM grandes (~50 MB): checar tamanho primeiro
-            if ($item.category -in @("rom", "stock_rom")) {
-                if (Test-Path $dest) {
-                    $curLen = (Get-Item $dest).Length
-                    if ($curLen -eq $item.size) {
-                        $UpToDateCount++
-                        continue
-                    }
-                }
-                # Se nao existir ou tamanho nao bater
-                $needsDownload = $true
-                $NewCount++
-                $romLabel = "$([math]::Round($item.size / 1MB, 1)) MB"
-                Write-Info ($M["deps_down_rom"] -f (Split-Path $dest -Leaf), $romLabel)
-            } else {
-                # Scripts, CFG e Launchers
-                if (-not (Test-Path $dest)) {
-                    $needsDownload = $true
-                    $NewCount++
-                    Write-Info ($M["deps_file_new"] -f $rel)
-                } else {
-                    $localHash = (Get-FileHash -Path $dest -Algorithm SHA256).Hash
-                    if ($localHash -eq $item.sha256) {
-                        $UpToDateCount++
-                    } else {
-                        # Arquivo local difere do repositorio oficial
-                        $needsDownload = $true
-                        $isUpdate = $true
-                        $UpdatedCount++
-
-                        $localTime = (Get-Item $dest).LastWriteTimeUtc
-                        try {
-                            $remoteTime = [DateTime]::Parse($item.updated_at).ToUniversalTime()
-                        } catch {
-                            $remoteTime = [DateTime]::UtcNow
-                        }
-
-                        if ($localTime -gt $remoteTime) {
-                            Write-Warn ($M["deps_file_local_newer"] -f $rel, $localTime.ToString("yyyy-MM-dd HH:mm"))
-                            try { Copy-Item $dest "$dest.local_backup" -Force } catch {}
-                        } else {
-                            Write-Info ($M["deps_file_updating"] -f $rel)
-                            try { Copy-Item $dest "$dest.bak" -Force } catch {}
-                        }
-                    }
-                }
-            }
-
-            if ($needsDownload) {
-                $copiedLocal = $false
-                if ($LocalSourceDir) {
-                    $localSrc = Join-Path $LocalSourceDir ($rel.Replace('/', '\'))
-                    if (Test-Path $localSrc) {
-                        $srcLen = (Get-Item $localSrc).Length
-                        if ($item.category -in @("rom", "stock_rom") -and $srcLen -eq $item.size) {
-                            Copy-Item $localSrc $dest -Force
-                            $copiedLocal = $true
-                        } elseif ($item.category -notin @("rom", "stock_rom")) {
-                            $srcHash = (Get-FileHash -Path $localSrc -Algorithm SHA256).Hash
-                            if ($srcHash -eq $item.sha256) {
-                                Copy-Item $localSrc $dest -Force
-                                $copiedLocal = $true
-                            }
-                        }
-                    }
-                }
-
-                if (-not $copiedLocal) {
-                    try {
-                        $wc.DownloadFile("$RawBase/$rel", $dest)
-                    } catch {
-                        Write-Err "Falha ao baixar $rel : $_"
-                    }
-                }
-
-                if (Test-Path $dest) {
-                    if ($isUpdate) {
-                        Write-Success ($M["deps_file_updated_ok"] -f $rel)
-                    } else {
-                        Write-Success ($M["deps_file_downloaded_ok"] -f $rel)
-                    }
-                }
-            }
-        }
-
-        Write-Host ""
-        if ($UpdatedCount -eq 0 -and $NewCount -eq 0) {
-            Write-Success ($M["deps_summary_all_ok"] -f $TotalChecked)
-        } else {
-            Write-Success ($M["deps_summary_updates"] -f $TotalChecked, $UpToDateCount, ($UpdatedCount + $NewCount))
-        }
-        Write-Host ""
-    } else {
-        # Fallback legado se nenhum manifesto estiver disponivel
-        $scriptDir = "$RepoDir\Scripts_Automacao"
-        if (-not (Test-Path $scriptDir)) { New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null }
-        $scriptFiles = @(
-            "launcher_t7.py", "telnet_compat.py", "gerenciar_telnet.py",
-            "otimizar_e_ativar_luci_slot2.py", "gravar_v27_slot2.py",
-            "switch_boot_slot.py", "diagnostico_x7.py", "unlock_only_ssh.py",
-            "desbloquear_slot2_from_slot1.py", "logger_t7.py",
-            "boot-acer.sh", "boot-openwrt.sh",
-            "aplicar_configuracao_pessoal_ap_t7.py", "gerar_manifesto.py"
-        )
-        foreach ($s in $scriptFiles) {
-            $dest = "$scriptDir\$s"
-            if (-not (Test-Path $dest) -or (Get-Item $dest).Length -eq 0) {
-                Write-Info ($M["deps_down_file"] -f $s)
-                try { $wc.DownloadFile("$RawBase/Scripts_Automacao/$s", $dest) } catch {}
-            }
-        }
-        Write-Success $M["deps_scripts_ok"]
-    }
-}
-
-# 2.5. Primeira Etapa: Sincronizar Todas as Dependencias do GitHub e Garantir Python 3
-Ensure-All-Dependencies
+# 2.5. Garantir Ambiente Python 3
 $PythonCmd = Ensure-Python
 
 # 3. Detectar IP do Roteador

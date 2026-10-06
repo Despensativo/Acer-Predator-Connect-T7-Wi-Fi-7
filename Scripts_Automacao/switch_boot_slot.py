@@ -195,42 +195,50 @@ def main():
                 continue
 
             if opt == "1":
-                conf = input(f"\n[?] Tem certeza que deseja alternar para o {target_label} e reiniciar o roteador agora? [S/n] (Padrao: S): ").strip().lower()
-                if conf == "" or conf in ["s", "sim", "y", "yes"]:
-                    print(f"\n[*] Aplicando chaveamento para {target_label}...")
-                    log_event("SWITCH_BOOT", f"Alternando do Slot {cur_num} para o Slot {target_num}", "INFO")
-                    try:
-                        if target_num == "2":
-                            out = run_cmd(tn, "/usr/sbin/boot-openwrt", timeout=3)
-                        else:
-                            out = run_cmd(tn, "/usr/sbin/boot-acer", timeout=3)
-                        if out:
-                            print(out.strip())
-                    except Exception:
-                        pass
+                while True:
+                    conf = input(f"\n[?] Tem certeza que deseja alternar para o {target_label} e reiniciar o roteador agora? [S/N]: ").strip().lower()
+                    if conf in ["s", "sim", "y", "yes"]:
+                        break
+                    elif conf in ["n", "nao", "não", "no"]:
+                        print("[*] Operacao cancelada pelo usuario.")
+                        log_event("SWITCH_BOOT", "Cancelado na confirmacao pelo usuario", "AVISO")
+                        return
+                    print("\n[!] Entrada invalida! Digite obrigatoriamente 'S' para Sim ou 'N' para Nao.")
 
-                    print("\n" + "=" * 65)
-                    print(f"  [OK] CHAVEAMENTO GRAVADO COM SUCESSO!")
-                    print(f"  O roteador esta REINICIANDO agora no {target_label}.")
-                    print("  Aguarde cerca de 60 a 90 segundos para a inicializacao completa.")
-                    print("=" * 65)
-                    log_event("SWITCH_BOOT", f"Chaveamento para Slot {target_num} concluido e roteador reiniciando", "OK")
-                    break
-                else:
-                    print("[*] Operacao cancelada pelo usuario.")
-                    log_event("SWITCH_BOOT", "Cancelado na confirmacao pelo usuario", "AVISO")
-                    break
+                print(f"\n[*] Aplicando chaveamento para {target_label}...")
+                log_event("SWITCH_BOOT", f"Alternando do Slot {cur_num} para o Slot {target_num}", "INFO")
+                try:
+                    if target_num == "2":
+                        out = run_cmd(tn, "/usr/sbin/boot-openwrt", timeout=3)
+                    else:
+                        out = run_cmd(tn, "/usr/sbin/boot-acer", timeout=3)
+                    if out:
+                        print(out.strip())
+                except Exception:
+                    pass
+
+                print("\n" + "=" * 65)
+                print(f"  [OK] CHAVEAMENTO GRAVADO COM SUCESSO!")
+                print(f"  O roteador esta REINICIANDO agora no {target_label}.")
+                print("  Aguarde cerca de 60 a 90 segundos para a inicializacao completa.")
+                print("=" * 65)
+                log_event("SWITCH_BOOT", f"Chaveamento para Slot {target_num} concluido e roteador reiniciando", "OK")
+                break
             elif opt == "2":
-                conf = input(f"\n[?] Confirma forcar o reinicio no mesmo {cur_label}? [S/n] (Padrao: S): ").strip().lower()
-                if conf == "" or conf in ["s", "sim", "y", "yes"]:
-                    print(f"\n[*] Reiniciando no mesmo Slot {cur_num}...")
-                    log_event("SWITCH_BOOT", f"Reinicio forcado no mesmo Slot {cur_num}", "INFO")
-                    out = run_cmd(tn, "reboot")
-                    print(out)
-                    break
-                else:
-                    print("[*] Operacao cancelada pelo usuario.")
-                    break
+                while True:
+                    conf = input(f"\n[?] Confirma forcar o reinicio no mesmo {cur_label}? [S/N]: ").strip().lower()
+                    if conf in ["s", "sim", "y", "yes"]:
+                        break
+                    elif conf in ["n", "nao", "não", "no"]:
+                        print("[*] Operacao cancelada pelo usuario.")
+                        return
+                    print("\n[!] Entrada invalida! Digite obrigatoriamente 'S' para Sim ou 'N' para Nao.")
+
+                print(f"\n[*] Reiniciando no mesmo Slot {cur_num}...")
+                log_event("SWITCH_BOOT", f"Reinicio forcado no mesmo Slot {cur_num}", "INFO")
+                out = run_cmd(tn, "reboot")
+                print(out)
+                break
             elif opt == "0":
                 print("\n[*] Nenhuma alteracao efetuada. Retornando ao menu...")
                 log_event("SWITCH_BOOT", "Cancelado pelo usuario sem alteracao", "INFO")

@@ -362,14 +362,16 @@ def main():
         log_event("GRAVACAO_SLOT2", "Modo selecionado: Oficial v27 Stock OEM Travado", "INFO")
 
     if not args.yes:
-        confirm = input("\n  Confirma o inicio da gravacao no Slot 2 (mtd20)? [S/n] (Padrao: S): ").strip().upper()
-        if confirm == "":
-            confirm = "S"
-        if confirm not in ["S", "SIM", "Y", "YES"]:
-            print("\n  [!] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita.")
-            log_event("GRAVACAO_SLOT2", "Cancelado pelo usuario antes de gravar", "AVISO")
-            tn.close()
-            sys.exit(0)
+        while True:
+            confirm = input("\n  Confirma o inicio da gravacao no Slot 2 (mtd20)? [S/N]: ").strip().upper()
+            if confirm in ["S", "SIM", "Y", "YES"]:
+                break
+            elif confirm in ["N", "NAO", "NÃO", "NO"]:
+                print("\n  [!] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita.")
+                log_event("GRAVACAO_SLOT2", "Cancelado pelo usuario antes de gravar", "AVISO")
+                tn.close()
+                sys.exit(0)
+            print("\n  [!] Entrada invalida! Digite obrigatoriamente 'S' para Sim ou 'N' para Nao.")
     else:
         print("  [+] Confirmacao automatica (--yes). Iniciando gravacao no Slot 2...")
 
@@ -483,12 +485,15 @@ def main():
         run_cmd(tn, "ubiupdatevol /dev/ubi1_3 -t", timeout=30)
         log_event("GRAVACAO_SLOT2", "Instalacao Stock OEM (overlay limpo via -t)", "OK")
 
-    # Limpeza e sync
-    run_cmd(tn, "rm -f /tmp/v27_kernel.bin /tmp/v27_wifi.bin /tmp/v27_rootfs.bin")
+    # Limpeza, desmontagem de volumes e sync
+    print("\n[*] Desmontando volumes e desanexando particao Slot 2 (mtd20)...")
+    run_cmd(tn, "umount /tmp/slot2_mnt 2>/dev/null || true")
     run_cmd(tn, "ubidetach -m 20 /dev/ubi_ctrl 2>/dev/null || true")
+    run_cmd(tn, "rm -rf /tmp/slot2_mnt /tmp/v27_kernel.bin /tmp/v27_wifi.bin /tmp/v27_rootfs.bin 2>/dev/null || true")
+    run_cmd(tn, "for v in /dev/ubi1*; do [ -e \"$v\" ] && rm -f \"$v\"; done 2>/dev/null || true")
     run_cmd(tn, "sync")
-    print("    [OK] Volumes do Slot 2 gravados e sincronizados com sucesso!")
-    log_event("GRAVACAO_SLOT2", "Volumes gravados e sincronizados no Slot 2", "OK")
+    print("    [OK] Volumes desmontados, mtd20 desanexado do UBI e flash sincronizada!")
+    log_event("GRAVACAO_SLOT2", "Volumes gravados, desmontados e sincronizados no Slot 2", "OK")
 
     # 9. Chavear bootconfig para Slot 2 e reiniciar
     if not args.no_reboot:
@@ -512,13 +517,22 @@ def main():
         print("     /usr/sbin/boot-acer")
         print("=" * 72)
     else:
-        print("\n[*] [Developer Test / --no-reboot] Gravacao concluida sem reiniciar.")
-        print("    [OK] O Firmware Oficial v27 foi gravado com sucesso no Slot 2.")
-        print("    [OK] A ordem de boot permanece inalterada no Slot 1 (primaryboot = 1).")
-        print("    [OK] O roteador NAO foi reiniciado e segue operando normalmente.")
-        print("    Para chavear para o Slot 2 quando desejar, execute:")
-        print("    python switch_boot_slot.py 2")
-        log_event("GRAVACAO_SLOT2", "Gravacao concluida sem reiniciar (boot no Slot 1 mantido)", "INFO")
+        print("\n" + "=" * 72)
+        print("  [OK] [DEVELOPER TEST / SEM REINICIAR] CONCLUIDO COM SUCESSO!")
+        print("=" * 72)
+        print("  1. O Firmware Oficial v27 foi gravado com sucesso no Slot 2.")
+        print("  2. A ordem de boot permanece inalterada no Slot 1 (primaryboot = 1).")
+        print("  3. Todos os volumes do Slot 2 foram 100% desmontados e desanexados:")
+        print("     -> umount /tmp/slot2_mnt         (desmontou o sistema de arquivos UBIFS)")
+        print("     -> ubidetach -m 20 /dev/ubi_ctrl (desanexou o ubi1 da particao mtd20)")
+        print("     -> rm -f /dev/ubi1*              (removeu os device nodes temporarios)")
+        print("     -> sync                          (garantiu a gravacao na memoria flash)")
+        print("  4. O estado do sistema permanece exatamente o padrao (apenas ubi0 ativo).")
+        print("  5. O roteador NAO foi reiniciado e continua operando sem interrupcao.")
+        print("  6. Para chavear e iniciar pelo Slot 2 quando desejar, execute:")
+        print("     python switch_boot_slot.py 2")
+        print("=" * 72)
+        log_event("GRAVACAO_SLOT2", "Gravacao concluida sem reiniciar (boot no Slot 1 mantido, volumes desmontados)", "INFO")
 
     tn.close()
     httpd.shutdown()

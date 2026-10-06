@@ -78,13 +78,15 @@ def main():
     print("    * Reinicia o roteador ja acordando no Slot 2 desbloqueado!")
     print("=" * 75)
 
-    ans = input("  Deseja prosseguir com o desbloqueio do Slot 2 e reiniciar por ele? [S/n] (Padrao: S): ").strip().upper()
-    if ans == "":
-        ans = "S"
-    if ans not in ["S", "SIM", "Y", "YES"]:
-        print("\n  [!] Operacao cancelada pelo usuario.")
-        log_event("DESBLOQUEIO_SLOT2", "Cancelado pelo usuario no prompt", "AVISO")
-        return
+    while True:
+        ans = input("  Deseja prosseguir com o desbloqueio do Slot 2 e reiniciar por ele? [S/N]: ").strip().upper()
+        if ans in ["S", "SIM", "Y", "YES"]:
+            break
+        elif ans in ["N", "NAO", "NÃO", "NO"]:
+            print("\n  [!] Operacao cancelada pelo usuario.")
+            log_event("DESBLOQUEIO_SLOT2", "Cancelado pelo usuario no prompt", "AVISO")
+            return
+        print("\n  [!] Entrada invalida! Digite obrigatoriamente 'S' para Sim ou 'N' para Nao.")
 
     log_event("DESBLOQUEIO_SLOT2", f"Iniciando injecao de root no Slot 2 a partir do IP {router_ip}", "INFO")
 

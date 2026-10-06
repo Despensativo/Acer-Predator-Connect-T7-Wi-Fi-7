@@ -520,13 +520,15 @@ def main():
         print(f"  Perfil Selecionado : {nome_modo}")
         print(f"  Roteador Alvo      : {target_ip} (Slot 2)")
         print("-" * 80)
-        conf = safe_input("Deseja realmente aplicar essas configuracoes no Slot 2 agora? [S/n] (Padrao: S): ").strip().lower()
-        if conf == "":
-            conf = "s"
-        if conf not in ["s", "sim", "y", "yes"]:
-            print("\n[AVISO] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita no roteador.")
-            log_event("OTIMIZACAO_SLOT2", f"Cancelado na confirmacao para {target_ip} ({modo})", "INFO")
-            return
+        while True:
+            conf = safe_input("Deseja realmente aplicar essas configuracoes no Slot 2 agora? [S/N]: ").strip().lower()
+            if conf in ["s", "sim", "y", "yes"]:
+                break
+            elif conf in ["n", "nao", "não", "no"]:
+                print("\n[AVISO] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita no roteador.")
+                log_event("OTIMIZACAO_SLOT2", f"Cancelado na confirmacao para {target_ip} ({modo})", "INFO")
+                return
+            print("\n  [!] Entrada invalida! Digite obrigatoriamente 'S' para Sim ou 'N' para Nao.")
 
     log_event("OTIMIZACAO_SLOT2", f"Iniciando {nome_modo} em {target_ip}", "INFO")
 

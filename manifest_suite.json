@@ -1,6 +1,6 @@
 {
-  "suite_version": "1.0.4",
-  "updated_at": "2026-10-06T02:08:20Z",
+  "suite_version": "1.0.5",
+  "updated_at": "2026-10-06T02:13:34Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
@@ -27,23 +27,23 @@
     {
       "path": "Scripts_Automacao/otimizar_e_ativar_luci_slot2.py",
       "category": "script",
-      "size": 32106,
-      "sha256": "231E154E4CA34133B08E6BDD6F0D963E638E95E99262B05FF32A38FF2566E17D",
-      "updated_at": "2026-10-06T02:06:10Z"
+      "size": 32260,
+      "sha256": "60F5B50AF0AED5B8EBC93922608325D1D0A722128CD4639AB2D202A29CA7CBBA",
+      "updated_at": "2026-10-06T02:13:14Z"
     },
     {
       "path": "Scripts_Automacao/gravar_v27_slot2.py",
       "category": "script",
-      "size": 27748,
-      "sha256": "479D72629396C4714FFE68C4FFE21AF6A4310F54C1D246FE7F844F097916B0DB",
-      "updated_at": "2026-10-06T02:05:42Z"
+      "size": 28878,
+      "sha256": "0E663DD9A53533C1C65C56387F5E6031732930FD07939B9E6CEBDBA971A3EFF3",
+      "updated_at": "2026-10-06T02:12:42Z"
     },
     {
       "path": "Scripts_Automacao/switch_boot_slot.py",
       "category": "script",
-      "size": 9727,
-      "sha256": "95ADD3307C24A04B8221267338C2E58619D09BF7429DEB479FEE29AA155A3BC9",
-      "updated_at": "2026-10-06T02:05:58Z"
+      "size": 10031,
+      "sha256": "F9BE5D84267BDA675A9FFC6ABD659EB221E6F50F8558F7B14B2F8F60D9A640FB",
+      "updated_at": "2026-10-06T02:13:00Z"
     },
     {
       "path": "Scripts_Automacao/diagnostico_x7.py",
@@ -55,9 +55,9 @@
     {
       "path": "Scripts_Automacao/desbloquear_slot2_from_slot1.py",
       "category": "script",
-      "size": 13628,
-      "sha256": "75CCF98E4E4EB85CE7C7D6319D7A5783F7DD68CDFA031D7290DEDBBAD05BED02",
-      "updated_at": "2026-10-06T02:07:34Z"
+      "size": 13775,
+      "sha256": "0EDFBC281F3A1F5DB4B6566570B2BC4B167EC808C0FF89753E0FF473917D1392",
+      "updated_at": "2026-10-06T02:11:42Z"
     },
     {
       "path": "Scripts_Automacao/logger_t7.py",

@@ -133,8 +133,8 @@ def main():
     out_mount = run_cmd(tn, "mount -t ubifs /dev/ubi1_3 /tmp/slot2_mnt 2>&1")
     time.sleep(0.5)
 
-    check_mnt = run_cmd(tn, "ls /tmp/slot2_mnt 2>/dev/null")
-    if "upper" not in check_mnt and "etc" not in check_mnt:
+    check_mnt = run_cmd(tn, "grep /tmp/slot2_mnt /proc/mounts 2>/dev/null; ls /tmp/slot2_mnt 2>/dev/null")
+    if "/tmp/slot2_mnt" not in check_mnt and "upper" not in check_mnt and "etc" not in check_mnt:
         print("  [-] Falha ao montar overlay do Slot 2. Tentando recuperar...")
         log_event("DESBLOQUEIO_SLOT2", f"Falha de montagem: {out_mount}", "ERRO")
         run_cmd(tn, "ubidetach -m 20 /dev/ubi_ctrl 2>/dev/null")
@@ -146,6 +146,7 @@ def main():
 
     # Comandos de injeção
     injection_cmds = [
+        "mkdir -p /tmp/slot2_mnt/upper",
         "mkdir -p /tmp/slot2_mnt/upper/etc/config",
         "mkdir -p /tmp/slot2_mnt/upper/etc/dropbear",
         "mkdir -p /tmp/slot2_mnt/upper/etc/init.d",

@@ -110,6 +110,7 @@ TEXTS = {
         "prompt_choice": "Choose an option (0-9): ",
         "prompt_new_ip": "Enter the new router IP (e.g. 192.168.1.1): ",
         "press_enter": "\nPress ENTER to return to menu...",
+        "cable_warning": "\033[91m[!] CRITICAL: DO NOT execute these tools over Wi-Fi! Use a wired (Ethernet) connection to prevent soft-bricks.\033[0m",
         "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [4] (Hardening)!\033[0m",
         "suite_version": "Suite Version",
         "sync_header": "CHECKING & SYNCING UPDATES FROM GITHUB",
@@ -164,6 +165,7 @@ TEXTS = {
         "prompt_choice": "Escolha uma opcao (0-9): ",
         "prompt_new_ip": "Digite o IP do novo roteador (ex: 192.168.1.1): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
+        "cable_warning": "\033[91m[!] AVISO CRITICO: NAO execute estas ferramentas via Wi-Fi! Utilize um cabo de rede (Ethernet) para evitar perda de conexao e soft-bricks.\033[0m",
         "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [4] (Hardening)!\033[0m",
         "suite_version": "Versao da Suite",
         "sync_header": "VERIFICANDO E SINCRONIZANDO ATUALIZACOES DO GITHUB",
@@ -728,6 +730,8 @@ def main_menu():
             print(f"  [!] Conexao: {t('status_offline')}")
         print(f"  {t('root_password_hint')}")
         print("=" * 75)
+        print(f"  {t('cable_warning')}")
+        print("-" * 75)
         if info["telnet_ok"]:
             print(f"  {t('telnet_active_warning')}")
             print("-" * 75)

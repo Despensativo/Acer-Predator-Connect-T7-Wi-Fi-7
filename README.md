@@ -14,6 +14,8 @@
 
 > **Keywords / SEO**: Acer Predator Connect T7, Wi-Fi 7 router unlock, Qualcomm IPQ5332, MLO 6GHz, root access dropbear, telnet unlock, unbrick predator t7, openwrt predator t7, dual-boot slot rollback, firmware dump MTD.
 
+> ⚠️ **CRITICAL WARNING**: **DO NOT** execute any of the scripts or optimization processes over a Wi-Fi connection. Modifying network interfaces or flashing over wireless may drop your connection mid-process and soft-brick the router. **Always use a wired (Ethernet) connection when running the management suite.**
+
 ---
 
 ## ⚡ QUICK INSTALLATION (TESTED & HOMOLOGATED ENVIRONMENT)

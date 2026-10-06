@@ -209,6 +209,9 @@ def main():
     parser.add_argument("--v27-dir", "-d", help="Diretorio com kernel.bin, wifi_fw.bin e rootfs.squashfs")
     parser.add_argument("--http-port", type=int, default=DEFAULT_HTTP_PORT, help="Porta para servidor HTTP temporario")
     parser.add_argument("--no-reboot", action="store_true", help="Grava sem reiniciar automaticamente no final")
+    parser.add_argument("--with-root", action="store_true", help="Grava v27 com ROOT desbloqueado diretamente sem prompt")
+    parser.add_argument("--pure-stock", action="store_true", help="Grava v27 puro de fabrica sem root")
+    parser.add_argument("--yes", "-y", action="store_true", help="Confirma automaticamente sem pedir confirmacao manual")
     args, unknown = parser.parse_known_args()
 
     # Se o usuario passou o IP diretamente sem flag: python gravar_v27_slot2.py 192.168.76.1
@@ -304,24 +307,29 @@ def main():
     print("    [OK] Seguranca confirmada: Slot 1 OEM ativo. Slot 2 livre para gravacao.")
 
     # Submenu de Escolha de Modo de Instalacao
-    while True:
-        print("\n" + "=" * 72)
-        print("  MODO DE INSTALACAO DO FIRMWARE NO SLOT 2:")
-        print("=" * 72)
-        print("  [1] Firmware Oficial v27 + ROOT Desbloqueado (Recomendado)")
-        print("      - Grava o sistema oficial v27 da Acer")
-        print("      - Injeta automaticamente usuario 'root', SSH Dropbear e Telnet")
-        print("      - O Slot 2 ja acorda liberado no terminal sem precisar de .cfg!")
-        print("")
-        print("  [2] Firmware Oficial v27 Puro de Fabrica (100% Stock OEM Travado)")
-        print("      - Grava o sistema oficial v27 da Acer")
-        print("      - Formata e zera o volume de dados (sem qualquer alteracao)")
-        print("      - O Slot 2 acorda exatamente como veio de fabrica na caixa")
-        print("=" * 72)
-        inst_choice = input("  Digite o numero da opcao desejada [1 ou 2]: ").strip()
-        if inst_choice in ["1", "2"]:
-            break
-        print("\n  [!] Entrada invalida! Digite obrigatoriamente o numero 1 ou 2.")
+    if args.with_root:
+        inst_choice = "1"
+    elif args.pure_stock:
+        inst_choice = "2"
+    else:
+        while True:
+            print("\n" + "=" * 72)
+            print("  MODO DE INSTALACAO DO FIRMWARE NO SLOT 2:")
+            print("=" * 72)
+            print("  [1] Firmware Oficial v27 + ROOT Desbloqueado (Recomendado)")
+            print("      - Grava o sistema oficial v27 da Acer")
+            print("      - Injeta automaticamente usuario 'root', SSH Dropbear e Telnet")
+            print("      - O Slot 2 ja acorda liberado no terminal sem precisar de .cfg!")
+            print("")
+            print("  [2] Firmware Oficial v27 Puro de Fabrica (100% Stock OEM Travado)")
+            print("      - Grava o sistema oficial v27 da Acer")
+            print("      - Formata e zera o volume de dados (sem qualquer alteracao)")
+            print("      - O Slot 2 acorda exatamente como veio de fabrica na caixa")
+            print("=" * 72)
+            inst_choice = input("  Digite o numero da opcao desejada [1 ou 2]: ").strip()
+            if inst_choice in ["1", "2"]:
+                break
+            print("\n  [!] Entrada invalida! Digite obrigatoriamente o numero 1 ou 2.")
 
     with_root = (inst_choice == "1")
     if with_root:
@@ -331,12 +339,15 @@ def main():
         print("  [+] Modo confirmado: Oficial v27 100% Stock OEM Travado de Fabrica.")
         log_event("GRAVACAO_SLOT2", "Modo selecionado: Oficial v27 Stock OEM Travado", "INFO")
 
-    confirm = input("\n  Confirma o inicio da gravacao no Slot 2 (mtd20)? [S/N]: ").strip().upper()
-    if confirm not in ["S", "SIM", "Y", "YES"]:
-        print("\n  [!] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita.")
-        log_event("GRAVACAO_SLOT2", "Cancelado pelo usuario antes de gravar", "AVISO")
-        tn.close()
-        sys.exit(0)
+    if not args.yes:
+        confirm = input("\n  Confirma o inicio da gravacao no Slot 2 (mtd20)? [S/N]: ").strip().upper()
+        if confirm not in ["S", "SIM", "Y", "YES"]:
+            print("\n  [!] Operacao cancelada pelo usuario. Nenhuma alteracao foi feita.")
+            log_event("GRAVACAO_SLOT2", "Cancelado pelo usuario antes de gravar", "AVISO")
+            tn.close()
+            sys.exit(0)
+    else:
+        print("  [+] Confirmacao automatica (--yes). Iniciando gravacao no Slot 2...")
 
     # Instala atalhos de rollback
     install_rollback_shortcuts(tn)
@@ -394,9 +405,10 @@ def main():
         print("    -> Injetando credenciais e acesso Root no volume de dados (ubi1_3)...")
         run_cmd(tn, "mkdir -p /tmp/slot2_mnt")
         run_cmd(tn, "mount -t ubifs /dev/ubi1_3 /tmp/slot2_mnt 2>/dev/null")
-        check_mnt = run_cmd(tn, "ls /tmp/slot2_mnt 2>/dev/null")
-        if "upper" in check_mnt or "etc" in check_mnt:
+        check_mnt = run_cmd(tn, "grep /tmp/slot2_mnt /proc/mounts 2>/dev/null; ls /tmp/slot2_mnt 2>/dev/null")
+        if "/tmp/slot2_mnt" in check_mnt or "upper" in check_mnt or "etc" in check_mnt:
             injection_cmds = [
+                "mkdir -p /tmp/slot2_mnt/upper",
                 "rm -rf /tmp/slot2_mnt/upper/*",
                 "mkdir -p /tmp/slot2_mnt/upper/etc/config",
                 "mkdir -p /tmp/slot2_mnt/upper/etc/dropbear",
@@ -449,6 +461,7 @@ def main():
 
     # Limpeza e sync
     run_cmd(tn, "rm -f /tmp/v27_kernel.bin /tmp/v27_wifi.bin /tmp/v27_rootfs.bin")
+    run_cmd(tn, "ubidetach -m 20 /dev/ubi_ctrl 2>/dev/null || true")
     run_cmd(tn, "sync")
     print("    [OK] Volumes do Slot 2 gravados e sincronizados com sucesso!")
     log_event("GRAVACAO_SLOT2", "Volumes gravados e sincronizados no Slot 2", "OK")

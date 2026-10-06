@@ -9,7 +9,7 @@
 ## 1. Ferramentas Necessárias
 
 Utilize o pacote compilado e validado em:
-`05_COMPILADORES/SquashFS_QSDK_T7/v1.0/`
+`_FORA DO GitHub/08_COMPILADORES_E_FONTES_HISTORICAS/05_COMPILADORES/SquashFS_QSDK_T7/v1.0/`
 
 - **Binários**: `mksquashfs` e `unsquashfs` (derivados do Qualcomm QSDK).
 - **Dependências no Ubuntu/Debian/WSL**:

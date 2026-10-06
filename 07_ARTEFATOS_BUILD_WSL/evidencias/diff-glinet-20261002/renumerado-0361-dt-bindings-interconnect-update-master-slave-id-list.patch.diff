@@ -1,7 +1,0 @@
---- local/0367-dt-bindings-interconnect-update-master-slave-id-list.patch
-+++ glinet/0361-dt-bindings-interconnect-update-master-slave-id-list.patch
-@@ -1,4 +1,3 @@
--From 27229393135f21d81c2bbaa5feb8a4b79135a3ae Mon Sep 17 00:00:00 2001
- From: Varadarajan Narayanan <quic_varada@quicinc.com>
- Subject: dt-bindings: interconnect: Update master/slave id list
- Date: Thu, 29 Aug 2024 13:58:26 +0530

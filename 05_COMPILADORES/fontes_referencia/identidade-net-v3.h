@@ -1,1 +1,0 @@
-#define T7_NET_ID "30712cb0064047b6b603bf562d069c4e"

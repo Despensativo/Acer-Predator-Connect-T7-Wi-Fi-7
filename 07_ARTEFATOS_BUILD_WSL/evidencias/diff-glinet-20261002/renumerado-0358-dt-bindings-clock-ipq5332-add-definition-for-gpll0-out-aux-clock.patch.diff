@@ -1,7 +1,0 @@
---- local/0364-dt-bindings-clock-ipq5332-add-definition-for-gpll0-out-aux-clock.patch
-+++ glinet/0358-dt-bindings-clock-ipq5332-add-definition-for-gpll0-out-aux-clock.patch
-@@ -1,4 +1,3 @@
--From 1fb7102cdaeee8b9405b915573af9d29baabaff8 Mon Sep 17 00:00:00 2001
- From: Kathiravan Thirumoorthy <quic_kathirav@quicinc.com>
- Subject: dt-bindings: clock: ipq5332: add definition for GPLL0_OUT_AUX clock
- Date: Thu, 29 Aug 2024 13:58:23 +0530

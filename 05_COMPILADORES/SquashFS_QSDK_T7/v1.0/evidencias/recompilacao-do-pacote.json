@@ -1,8 +1,0 @@
-{
-  "work": "/home/builder/t7-squashfs-pacote-oficial-20261002-v1",
-  "hashes": {
-    "mksquashfs": "0b6341e0080f6f8f03ca6d06ce51e078da908f2b03d201f98035d33d86131ac6",
-    "unsquashfs": "daa0fa607de1f454b064ce0b503985044ea58009b005daadbd127a8698a1f0a4"
-  },
-  "matches_validated_binaries": true
-}

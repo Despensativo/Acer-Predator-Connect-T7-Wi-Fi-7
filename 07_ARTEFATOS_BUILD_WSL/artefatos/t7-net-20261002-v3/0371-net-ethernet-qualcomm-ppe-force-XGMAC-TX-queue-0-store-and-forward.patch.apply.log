@@ -1,3 +1,0 @@
-patching file drivers/net/ethernet/qualcomm/ppe/ppe_port.c
-Hunk #1 succeeded at 903 (offset 1 line).
-patching file drivers/net/ethernet/qualcomm/ppe/ppe_regs.h

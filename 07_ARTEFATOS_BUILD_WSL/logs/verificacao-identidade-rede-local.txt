@@ -1,9 +1,0 @@
-test_expected_init (__main__.IdentityTests.test_expected_init) ... ok
-test_logs_are_not_init (__main__.IdentityTests.test_logs_are_not_init) ... ok
-test_reject_wrong_arch_and_unknown_boot (__main__.IdentityTests.test_reject_wrong_arch_and_unknown_boot) ... ok
-test_reject_wrong_identity (__main__.IdentityTests.test_reject_wrong_identity) ... ok
-
-----------------------------------------------------------------------
-Ran 4 tests in 0.000s
-
-OK

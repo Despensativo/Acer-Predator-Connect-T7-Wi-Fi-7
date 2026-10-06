@@ -1,7 +1,0 @@
---- local/0376-net-ethernet-qualcomm-ppe-reset-all-EDMA-controls.patch
-+++ glinet/0370-net-ethernet-qualcomm-ppe-reset-all-EDMA-controls.patch
-@@ -1,4 +1,3 @@
--From c7585f898c707af985dacc0f00d43519460c7f99 Mon Sep 17 00:00:00 2001
- From: Til Kaiser <mail@tk154.de>
- Date: Thu, 30 Apr 2026 00:00:00 +0200
- Subject: [PATCH] net: ethernet: qualcomm: ppe: reset all EDMA controls

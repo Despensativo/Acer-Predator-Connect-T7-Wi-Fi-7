@@ -1,6 +1,0 @@
-config interface  ledd
-    option enable  '1'
-    option start_time '00:00:01'
-    option end_time '23:59:59'
-    option night_mode '0'
-    option weekday '1234567'

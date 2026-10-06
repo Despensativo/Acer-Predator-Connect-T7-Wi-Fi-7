@@ -1,7 +1,0 @@
---- local/0372-net-ethernet-qualcomm-ppe-Add-initial-IPQ5332-supp.patch
-+++ glinet/0366-net-ethernet-qualcomm-ppe-Add-initial-IPQ5332-supp.patch
-@@ -1,4 +1,3 @@
--From 65ee8cd8d6e5f9df981c0b9e7037c413ff9cf37a Mon Sep 17 00:00:00 2001
- From: Til Kaiser <mail@tk154.de>
- Date: Sun, 19 Apr 2026 00:00:00 +0200
- Subject: [PATCH] net: ethernet: qualcomm: ppe: add initial IPQ5332 support

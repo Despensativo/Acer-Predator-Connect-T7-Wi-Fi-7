@@ -1,8 +1,0 @@
-{
-  "url": "https://npcap.com/dist/npcap-1.89.exe",
-  "sha256": "8AED85E900D783D1308506E919587D3E540451947AF8A82F2D04F819E44305CC",
-  "signature_status": "Valid",
-  "signer": "CN=Nmap Software LLC, O=Nmap Software LLC, L=Beaverton, S=Oregon, C=US, SERIALNUMBER=6397588, OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Delaware, OID.1.3.6.1.4.1.311.60.2.1.3=US",
-  "path": "H:\\FEITOS COM IA\\Acer-Predator-Connect-T7\\Feito por ChatGPT\\artefatos\\instaladores-rede-20261002\\npcap-1.89.exe",
-  "launched": false
-}

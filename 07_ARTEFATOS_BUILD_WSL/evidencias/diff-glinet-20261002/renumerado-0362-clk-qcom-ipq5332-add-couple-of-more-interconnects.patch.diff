@@ -1,7 +1,0 @@
---- local/0368-clk-qcom-ipq5332-add-couple-of-more-interconnects.patch
-+++ glinet/0362-clk-qcom-ipq5332-add-couple-of-more-interconnects.patch
-@@ -1,4 +1,3 @@
--From f062892f0af0a4facbbcebd37e028ff78145047d Mon Sep 17 00:00:00 2001
- From: Varadarajan Narayanan <quic_varada@quicinc.com>
- Subject: clk: qcom: ipq5332: Add couple of more interconnects
- Date: Thu, 29 Aug 2024 13:58:27 +0530

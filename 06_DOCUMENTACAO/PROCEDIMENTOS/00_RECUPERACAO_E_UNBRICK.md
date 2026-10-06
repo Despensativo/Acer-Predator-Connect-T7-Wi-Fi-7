@@ -17,11 +17,11 @@ Se o botão físico **RESET** for pressionado por 10 segundos:
 2. Acesse no navegador `http://192.168.76.1` (ou `http://acer-connect.com`).
 3. Conclua o Quick Setup provisório.
 4. Acesse: **System** $\rightarrow$ **Backup and restore** $\rightarrow$ **Restore**.
-5. Selecione o arquivo:
+5. Selecione o arquivo de desbloqueio oficial:
    ```text
-   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_ap_ssh_unlocked.cfg
+   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg
    ```
-6. Clique em **Restore** e aguarde 2 minutos. O roteador reinicia com SSH liberado e modo AP configurado.
+6. Clique em **Restore** e aguarde 2 minutos. O roteador reinicia com SSH/Telnet liberados.
 
 ---
 
@@ -44,11 +44,11 @@ sync && reboot
 ## Cenário 3: Restauração da Partição de Calibração ART (Rádio Wi-Fi)
 
 > [!CAUTION]
-> A partição ART contém a calibração de fábrica e os endereços MAC exclusivos do hardware. Nunca inicialize sem conferir o tamanho da imagem antes da gravação.
+> A partição ART contém a calibração de fábrica e os endereços MAC exclusivos do hardware. Nunca inicialize sem conferir o tamanho da imagem antes da gravação. (Arquivo de backup preservado localmente em `_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/backup_predator_t7_art.bin`).
 
 1. Envie o backup de calibração para `/tmp/`:
    ```sh
-   scp -O "02_BACKUPS_E_DUMPS/MTD_Full_Dumps/backup_predator_t7_art.bin" Admin@192.168.73.2:/tmp/art.bin
+   scp -O "_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/backup_predator_t7_art.bin" Admin@192.168.73.2:/tmp/art.bin
    ```
 2. No terminal do roteador, grave de volta na flash:
    ```sh

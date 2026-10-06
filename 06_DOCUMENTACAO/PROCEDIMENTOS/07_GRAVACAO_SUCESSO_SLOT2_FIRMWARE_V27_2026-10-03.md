@@ -218,7 +218,7 @@ Como o volume de dados (`rootfs_data` / `ubi1_3`) subiu limpo de fábrica:
    * Conecte-se via navegador em **`http://192.168.76.1`**.
    * Complete as etapas iniciais de senha de administrador do painel.
    * Navegue até a área de Manutenção / Atualização e restaure o arquivo de configuração desbloqueado:
-     `H:\FEITOS COM IA\Acer-Predator-Connect-T7\02_BACKUPS_E_DUMPS\Configuracoes_CFG\config_ssh_unlocked.cfg`
+     `02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg`
    * Após a reinicialização automática da restauração, as portas `22` (SSH) e `23` (Telnet) estarão operacionais.
 
 ---
@@ -226,5 +226,5 @@ Como o volume de dados (`rootfs_data` / `ubi1_3`) subiu limpo de fábrica:
 ## 5. Scripts de Automação Utilizados
 
 Todo o procedimento foi compilado e salvo para repetição automatizada em:
-* [gravar_v27_slot2.py](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/gravar_v27_slot2.py)
-* [switch_boot_slot.py](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/switch_boot_slot.py)
+* [gravar_v27_slot2.py](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/Scripts_Automacao/gravar_v27_slot2.py)
+* [switch_boot_slot.py](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/Scripts_Automacao/switch_boot_slot.py)

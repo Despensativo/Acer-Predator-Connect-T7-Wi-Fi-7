@@ -36,36 +36,43 @@
 
 ---
 
-## 4. Mapa da Arquitetura em 7 Módulos
+## 4. Mapa da Arquitetura do Repositório
+
+### 📁 [Scripts_Automacao/](Scripts_Automacao/) — Central Ativa da Suite
+- `launcher_t7.py`: Gerenciador central interativo (menus 0 a 8).
+- `gravar_v27_slot2.py`, `otimizar_e_ativar_luci_slot2.py`: Gravação, debloat e LuCI na porta 80.
+- `switch_boot_slot.py`, `unlock_only_ssh.py`, `instalar_ark_router.py`: Dual-boot, desbloqueio e temas.
+- `telnet_compat.py`, `logger_t7.py`: Bibliotecas universais de comunicação e logging.
 
 ### 📁 [01_FIRMWARES_E_IMAGENS/](01_FIRMWARES_E_IMAGENS/)
-- `OpenWrt_Imagens/`: Imagens FIT `.itb`, sysupgrade e initramfs.
-- `Custom_SquashFS/`: Imagens compiladas e modificadas de RootFS.
+- `Official_v27_Componentes/`: Kernel, rootfs e wifi_fw da ROM oficial v27 para Slot 2.
+- `Stock_OEM_Recovery/`: Imagem completa de fábrica v27 (`nand-4k-...`) e binários U-Boot para unbrick físico WPS 5s.
+- `Ark_Router/`: Pacote oficial LuCI do painel customizado (`luci-app-ark-router.ipk`).
+- `Custom_SquashFS/`: Imagem consolidada de RootFS otimizado.
 
 ### 📁 [02_BACKUPS_E_DUMPS/](02_BACKUPS_E_DUMPS/)
-- `MTD_Full_Dumps/`: Cópias 1:1 de todas as partições MTD da SPI NAND (`ART`, U-Boot, Kernel).
-- `Backups_Configuracao_Pessoal/`: Snapshot do Overlay (`backup_overlay_completo_2026-10-03.tar.gz`) e Sysupgrade do LuCI.
-- `Configuracoes_CFG/`: Backups `.cfg` da interface Web OEM.
-
-### 📁 [03_ENGENHARIA_REVERSA/](03_ENGENHARIA_REVERSA/)
-- `DeviceTree_DTS/`: Árvores de dispositivos `.dts` e `.dtb` descompiladas.
-- `Modulos_Kernel_QSDK/`: Drivers de aceleração proprietários (PPE, NSS, ECM).
-- `Modem_5G_Fibocom_X7/`: Engenharia reversa dos binários celulares e barramento MHI.
-- `Homologacao_FCC/`: Documentos oficiais e fotos forenses do circuito PCB.
-- `Desmontagem_U-Boot/`: Scripts de engenharia reversa e análise estática do bootloader.
+- `Configuracoes_CFG/`: Arquivo canônico oficial de desbloqueio (`config_v27_ssh_unlocked.cfg`).
+- `Backups_Configuracao_Pessoal/`: Snapshots locais de overlay e backups pessoais do roteador.
+- `Imagens_Recuperacao_WPS_Failsafe/`: Imagens auxiliares de emergência para U-Boot.
 
 ### 📁 [04_SCRIPTS_E_FERRAMENTAS/](04_SCRIPTS_E_FERRAMENTAS/)
-- `Automacao_e_Unlock/`: Scripts Python de automação, debloat, liberação de SSH e gerenciamento Dual-Boot.
-- `Diagnostico_de_Rede/`: Ferramentas de escuta DHCP, sniffers ARP e monitoramento.
-- `Servidor_TFTP/`: Utilitários e binários do servidor TFTP para Windows.
-
-### 📁 [05_COMPILADORES/](05_COMPILADORES/)
-- `SquashFS_QSDK_T7/`: Ferramenta `mksquashfs-qsdk` validada para empacotamento 256k XZ.
+- `Servidor_TFTP/`: Servidor TFTP RFC 1350/2348 nativo para recuperação de baixo nível em rede.
+- `Diagnostico_de_Rede/`: Utilitários forenses, sniffers e decodificadores de tráfego.
 
 ### 📁 [06_DOCUMENTACAO/](06_DOCUMENTACAO/)
-- [**`PROCEDIMENTOS/`**](06_DOCUMENTACAO/PROCEDIMENTOS/): Runbooks operacionais passo a passo (`00` a `08`).
+- [**`PROCEDIMENTOS/`**](06_DOCUMENTACAO/PROCEDIMENTOS/): Runbooks operacionais passo a passo (`00` a `09`).
 - [**`NOTAS_HARDWARE/`**](06_DOCUMENTACAO/NOTAS_HARDWARE/): Estudos técnicos de hardware, MTD, FOTA e Wi-Fi TrustZone.
-- [**`logs_e_rascunhos/`**](06_DOCUMENTACAO/logs_e_rascunhos/): Arquivo histórico e quarentena de logs de testes.
+- [**`logs_e_rascunhos/`**](06_DOCUMENTACAO/logs_e_rascunhos/): Relatórios de auditoria e históricos técnicos.
 
-### 📁 [07_ARTEFATOS_BUILD_WSL/](07_ARTEFATOS_BUILD_WSL/)
-- Ambiente de compilação cruzada do kernel ARM64 Linux, manifestos e imagens experimentais.
+---
+
+## 5. Acervo Histórico e Pesquisa Local (`_FORA DO GitHub/`)
+
+O material de pesquisa pesada, compilações intermediárias e dumps brutos foi preservado localmente fora do controle de versão em `_FORA DO GitHub/`:
+- `01_ARTEFATOS_BUILD_WSL/`: Kernels experimentais compilados em WSL e logs brutos de compilação.
+- `02_FIRMWARES_E_DUMPS_PESADOS/`: Dumps brutos MTD de todas as partições da flash e imagens de fábrica legadas.
+- `03_DOCUMENTOS_PESADOS_FCC/`: Documentação e PDFs completos da homologação FCC dos modelos T7 e X7.
+- `06_OPENWRT_IMAGENS_DESENVOLVIMENTO/`: Compilações do kernel OpenWrt 6.18 em RAM.
+- `07_ENGENHARIA_REVERSA_HISTORICA/`: Desmontagens de U-Boot, módulos de kernel QSDK e pinouts.
+- `08_COMPILADORES_E_FONTES_HISTORICAS/`: Ferramenta e código-fonte em C do `mksquashfs-qsdk`.
+

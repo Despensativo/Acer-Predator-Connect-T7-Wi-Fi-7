@@ -167,9 +167,9 @@ TELNETD=$(command -v telnetd || echo "/usr/sbin/telnetd")
 ## 7. Automação Completa via Script Python
 
 Todo este procedimento foi empacotado no script oficial:  
-📁 [otimizar_e_ativar_luci_slot2.py](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/otimizar_e_ativar_luci_slot2.py)
+📁 [otimizar_e_ativar_luci_slot2.py](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/Scripts_Automacao/otimizar_e_ativar_luci_slot2.py)
 
 ### Como Executar Novamente a Qualquer Momento:
 ```powershell
-python "H:\FEITOS COM IA\Acer-Predator-Connect-T7\04_SCRIPTS_E_FERRAMENTAS\Automacao_e_Unlock\otimizar_e_ativar_luci_slot2.py" 192.168.76.1
+python "H:\FEITOS COM IA\Acer-Predator-Connect-T7\Scripts_Automacao\otimizar_e_ativar_luci_slot2.py" 192.168.76.1
 ```

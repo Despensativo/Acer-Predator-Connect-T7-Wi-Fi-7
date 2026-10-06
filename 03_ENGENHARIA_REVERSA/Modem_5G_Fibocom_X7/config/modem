@@ -1,9 +1,0 @@
-config settings settings
-        option autoconnect '1'
-        option manualconnect '1'
-
-config scan scan
-        list network ''
-
-config state state
-        option message_unread '0'

@@ -1,6 +1,0 @@
-/dts-v1/;
-/ { description = "Flash T7 guarded return to Slot 1"; #address-cells = <1>; images {
-script { data = /incbin/("/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Feito por ChatGPT/artefatos/retorno-slot1-20261003T030556Z/retorno-script.txt"); type = "script"; compression = "none"; hash@1 { algo = "crc32"; }; };
-bc0 { data = /incbin/("/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Feito por ChatGPT/artefatos/retorno-slot1-20261003T030556Z/BOOTCONFIG.bin"); type = "firmware"; compression = "none"; hash@1 { algo = "crc32"; }; };
-bc1 { data = /incbin/("/mnt/h/FEITOS COM IA/Acer-Predator-Connect-T7/Feito por ChatGPT/artefatos/retorno-slot1-20261003T030556Z/BOOTCONFIG1.bin"); type = "firmware"; compression = "none"; hash@1 { algo = "crc32"; }; };
-}; };

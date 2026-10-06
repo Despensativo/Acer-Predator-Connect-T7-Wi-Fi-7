@@ -67,4 +67,4 @@ Get-FileHash -Algorithm SHA256 "H:\FEITOS COM IA\Acer-Predator-Connect-T7\Backup
 ```
 
 > [!TIP]
-> Nunca salve apenas uma cópia. Mantenha os arquivos de `02_BACKUPS_E_DUMPS/MTD_Full_Dumps/` sincronizados em armazenamento secundário ou nuvem.
+> Nunca salve apenas uma cópia. Mantenha os arquivos de `_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/` sincronizados em armazenamento secundário ou nuvem.

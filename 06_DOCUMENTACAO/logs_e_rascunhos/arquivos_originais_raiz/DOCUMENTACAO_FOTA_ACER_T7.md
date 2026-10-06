@@ -2,9 +2,9 @@
 ## Acer Predator Connect Series (T7 / W6x / X7) — OpenWrt Research & Upstream
 
 > **Bilingual Documentation / Documentação Bilíngue (PT-BR & EN-US)**  
-> Este documento técnico e a ferramenta associada [`acer_fota_extractor.py`](file:///h:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/acer_fota_extractor.py) funcionam de forma **100% autônoma em qualquer computador (Windows, Linux, macOS)**. Não requer acesso físico ao roteador, nem Telnet/SSH ou estar na mesma rede. Conecta-se diretamente aos servidores oficiais da Acer (Cloud FOTA / AWS S3).
+> Este documento técnico e a ferramenta associada [`acer_fota_extractor.py`](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/Scripts_Automacao/acer_fota_extractor.py) funcionam de forma **100% autônoma em qualquer computador (Windows, Linux, macOS)**. Não requer acesso físico ao roteador, nem Telnet/SSH ou estar na mesma rede. Conecta-se diretamente aos servidores oficiais da Acer (Cloud FOTA / AWS S3).
 > 
-> *This document and the companion script [`acer_fota_extractor.py`](file:///h:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/acer_fota_extractor.py) run **100% standalone on any PC, Linux, or Mac**. No physical router, SSH, or local connection is needed. It communicates directly with Acer Cloud FOTA and Amazon AWS S3.*
+> *This document and the companion script [`acer_fota_extractor.py`](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/Scripts_Automacao/acer_fota_extractor.py) run **100% standalone on any PC, Linux, or Mac**. No physical router, SSH, or local connection is needed. It communicates directly with Acer Cloud FOTA and Amazon AWS S3.*
 
 ---
 
@@ -89,7 +89,7 @@ $$\text{Plaintext} = \{\text{"project": } P, \text{ "deviceId": } D, \text{ "tim
 
 ## 4. Como Executar o Extrator Autônomo / How to Run the Extractor
 
-A ferramenta [`acer_fota_extractor.py`](file:///h:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/acer_fota_extractor.py) está pronta para uso em qualquer terminal.
+A ferramenta [`acer_fota_extractor.py`](file:///H:/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/Scripts_Automacao/acer_fota_extractor.py) está pronta para uso em qualquer terminal.
 
 ### 4.1. Instalação de Dependências
 ```bash

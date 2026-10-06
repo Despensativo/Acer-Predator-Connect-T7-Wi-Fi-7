@@ -19,8 +19,9 @@
 ---
 
 ## 2. Parâmetros dos Candidatos em RAM (Compilados em WSL)
+> *Nota: Artefatos brutos de compilação WSL e imagens de ensaio estão arquivados localmente em `_FORA DO GitHub/01_ARTEFATOS_BUILD_WSL/`.*
 
-- **Candidato v3**: `07_ARTEFATOS_BUILD_WSL/artefatos/t7-net-20261002-v3/t7-arm64-diag-CANDIDATO-NAO-ENVIAR.itb`
+- **Candidato v3**: `_FORA DO GitHub/01_ARTEFATOS_BUILD_WSL/artefatos/t7-net-20261002-v3/t7-arm64-diag-CANDIDATO-NAO-ENVIAR.itb`
   - **Tamanho FIT**: 3.503.744 bytes (~3,34 MiB)
   - **SHA-256**: `0d5a9205cfdcafc34004ed8dc94973a54c1e0c367db8efac4177026ff2caaed9`
   - **Endereço de Carga RAM**: `0x41000000`
@@ -29,8 +30,9 @@
 ---
 
 ## 3. Parâmetros do Compilador de RootFS (SquashFS QSDK)
+> *Nota: O compilador e seus fontes estão arquivados localmente em `_FORA DO GitHub/08_COMPILADORES_E_FONTES_HISTORICAS/05_COMPILADORES/`.*
 
-- **Versão**: `05_COMPILADORES/SquashFS_QSDK_T7/v1.0`
+- **Versão**: `_FORA DO GitHub/08_COMPILADORES_E_FONTES_HISTORICAS/05_COMPILADORES/SquashFS_QSDK_T7/v1.0`
 - **Comando Padrão**:
   ```bash
   ./mksquashfs rootfs_dir out.bin -b 256k -comp xz -noappend -all-root

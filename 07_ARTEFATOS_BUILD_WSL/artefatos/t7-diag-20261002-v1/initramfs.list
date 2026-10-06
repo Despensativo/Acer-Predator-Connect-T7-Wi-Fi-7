@@ -1,6 +1,0 @@
-dir /dev 0755 0 0
-dir /proc 0755 0 0
-dir /sys 0755 0 0
-dir /tmp 1777 0 0
-file /init /home/builder/t7-chatgpt-work-20261002-v1/initramfs/init 0755 0 0
-nod /dev/console 0600 0 0 c 5 1

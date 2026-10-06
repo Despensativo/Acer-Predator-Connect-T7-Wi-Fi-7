@@ -1,3 +1,0 @@
-patching file drivers/net/ethernet/qualcomm/ppe/edma_port.c
-patching file drivers/net/ethernet/qualcomm/ppe/edma_tx.c
-patching file drivers/net/ethernet/qualcomm/ppe/edma_tx.h

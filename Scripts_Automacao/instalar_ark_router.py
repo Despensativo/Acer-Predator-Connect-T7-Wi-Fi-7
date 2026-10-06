@@ -95,9 +95,8 @@ TEXTS = {
         "installing": "Executando instalacao do pacote no roteador (opkg install)...",
         "install_success": "Pacote instalado com sucesso no sistema!",
         "cleaning_cache": "Limpando cache do LuCI e reiniciando daemons de interface (rpcd/uhttpd)...",
-        "rainbow_prompt": "🌈 Deseja ativar o Modo LED RGB Arco-Iris (Rainbow Wave) agora? [S/N] (Padrao: S): ",
-        "activating_rainbow": "Ativando modo LED RGB Arco-Iris dinamico no roteador...",
-        "rainbow_activated": "Modo LED Arco-Iris ativado com sucesso! Observe os LEDs do seu Predator T7 trocando de cor.",
+        "activating_rainbow": "Ativando modo LED RGB Arco-Iris dinamico no hardware do roteador...",
+        "rainbow_activated": "Modo LED Arco-Iris ativado com sucesso! LEDs sincronizados.",
         "all_done": "PAINEL ARK ROUTER INSTALADO COM SUCESSO!",
         "url_access": "Acesse no navegador: http://{ip}/",
         "creds": "Login: root (ou Admin) | Senha padrao: root0100",
@@ -136,9 +135,8 @@ TEXTS = {
         "installing": "Executing package installation on router (opkg install)...",
         "install_success": "Package successfully installed into system!",
         "cleaning_cache": "Clearing LuCI cache and restarting UI daemons (rpcd/uhttpd)...",
-        "rainbow_prompt": "🌈 Would you like to activate Rainbow RGB LED mode (Rainbow Wave) now? [Y/N] (Default: Y): ",
-        "activating_rainbow": "Activating dynamic Rainbow RGB LED mode on router...",
-        "rainbow_activated": "Rainbow LED mode successfully activated! Enjoy the dynamic colors on your Predator T7.",
+        "activating_rainbow": "Activating dynamic Rainbow RGB LED mode on router hardware...",
+        "rainbow_activated": "Rainbow LED mode successfully activated! LEDs synchronized.",
         "all_done": "ARK ROUTER PANEL SUCCESSFULLY INSTALLED!",
         "url_access": "Access in browser: http://{ip}/",
         "creds": "Login: root (or Admin) | Default Password: root0100",
@@ -456,13 +454,10 @@ def main():
     run_cmd(tn, "/etc/init.d/rpcd restart 2>/dev/null")
     run_cmd(tn, "/etc/init.d/uhttpd enable 2>/dev/null; /etc/init.d/uhttpd restart 2>/dev/null")
     run_cmd(tn, "rm -f /tmp/luci-app-ark-router.ipk /tmp/data.tar.gz")
-    # Pergunta opcional para ativar o Efeito LED RGB Arco-Íris
-    print("\n" + "-" * 75)
-    led_ans = safe_input(f"  {t('rainbow_prompt')}").lower()
-    if led_ans in ["", "s", "sim", "y", "yes"]:
-        print(f"  [*] {t('activating_rainbow')}")
-        run_cmd(tn, "/usr/sbin/equipe-dashboard-control set-led-rgb-color rainbow 2>/dev/null || (/etc/init.d/ark-rainbowd enable 2>/dev/null; /etc/init.d/ark-rainbowd restart 2>/dev/null) || (/bin/sh /usr/sbin/ark-rainbowd &)")
-        print(f"  {C_GREEN}[OK] {t('rainbow_activated')}{C_RESET}")
+    # Ativar Modo LED RGB Arco-Íris automaticamente no hardware do roteador
+    print(f"\n[*] {t('activating_rainbow')}")
+    run_cmd(tn, "/usr/sbin/equipe-dashboard-control set-led-rgb-color rainbow 2>/dev/null || (/etc/init.d/ark-rainbowd enable 2>/dev/null; /etc/init.d/ark-rainbowd restart 2>/dev/null) || (/bin/sh /usr/sbin/ark-rainbowd &)")
+    print(f"    [OK] {t('rainbow_activated')}")
 
     tn.close()
 

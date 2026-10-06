@@ -11,7 +11,7 @@ import json
 import hashlib
 from datetime import datetime, timezone
 
-SUITE_VERSION = "1.0.5"
+SUITE_VERSION = "1.0.7"
 
 TRACKED_FILES = [
     {"path": "Scripts_Automacao/launcher_t7.py", "category": "script"},
@@ -21,7 +21,6 @@ TRACKED_FILES = [
     {"path": "Scripts_Automacao/gravar_v27_slot2.py", "category": "script"},
     {"path": "Scripts_Automacao/switch_boot_slot.py", "category": "script"},
     {"path": "Scripts_Automacao/diagnostico_x7.py", "category": "script"},
-    {"path": "Scripts_Automacao/desbloquear_slot2_from_slot1.py", "category": "script"},
     {"path": "Scripts_Automacao/logger_t7.py", "category": "script"},
     {"path": "Scripts_Automacao/boot-acer.sh", "category": "sh"},
     {"path": "Scripts_Automacao/boot-openwrt.sh", "category": "sh"},

@@ -98,18 +98,17 @@ TEXTS = {
         "status_web_only": "Web Active (Terminal Locked)",
         "status_offline": "Unreachable / Disconnected",
         "menu_1": "[1] Switch Dual-Boot (Toggle Slot 1 / Slot 2)",
-        "menu_2": "[2] Unlock Root on Slot 2 and Boot into It",
-        "menu_3": "[3] Flash Stock Firmware v27 to Slot 2 (With/Without Root) [T7 Exclusive]",
-        "menu_4": "[4] Optimize & Activate LuCI on Port 80 (Slot 2)",
-        "menu_5": "[5] Manage Telnet (Hardening / Disable or Enable)",
-        "menu_6": "[6] Install Ark Router Dashboard (OpenWrt / LuCI)",
-        "menu_7": "[7] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
-        "menu_8": "[8] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
-        "menu_9": "[9] Check & Sync Updates from GitHub (Smart Checksum)",
+        "menu_2": "[2] Flash Stock Firmware v27 to Slot 2 (With/Without Root) [T7 Exclusive]",
+        "menu_3": "[3] Optimize & Activate LuCI on Port 80 (Slot 2)",
+        "menu_4": "[4] Manage Telnet (Hardening / Disable or Enable)",
+        "menu_5": "[5] Install Ark Router Dashboard (OpenWrt / LuCI)",
+        "menu_6": "[6] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
+        "menu_7": "[7] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
+        "menu_8": "[8] Check & Sync Updates from GitHub (Smart Checksum)",
         "menu_0": "[0] Exit",
-        "prompt_choice": "Choose an option (0-9): ",
+        "prompt_choice": "Choose an option (0-8): ",
         "press_enter": "\nPress ENTER to return to menu...",
-        "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [5] (Hardening)!\033[0m",
+        "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [4] (Hardening)!\033[0m",
         "suite_version": "Suite Version",
         "sync_header": "CHECKING & SYNCING UPDATES FROM GITHUB",
         "sync_checking": "[*] Connecting to GitHub to fetch manifest and verify files...",
@@ -125,8 +124,8 @@ TEXTS = {
         "python": "Versao do Python",
         "rom_files": "Arquivos v27 (ROM)",
         "rom_ok": "[OK] 3/3 arquivos validados (Pronto para gravar Slot 2)",
-        "rom_fail": "[-] ROM v27 ausente (Apenas Opcao 3 afetada)",
-        "rom_notice_missing": "Arquivos da ROM nao encontrados nesta pasta (Necessarios APENAS para a Opcao [3] - Gravar Slot 2. Demais opcoes funcionam normalmente).",
+        "rom_fail": "[-] ROM v27 ausente (Apenas Opcao 2 afetada)",
+        "rom_notice_missing": "Arquivos da ROM nao encontrados nesta pasta (Necessarios APENAS para a Opcao [2] - Gravar Slot 2. Demais opcoes funcionam normalmente).",
         "file_missing": "Arquivo ausente",
         "file_corrupt": "[!] Arquivo corrompido ou divergente",
         "tftp_port": "Porta TFTP PC (UDP 69)",
@@ -151,18 +150,17 @@ TEXTS = {
         "status_web_only": "Web Ativa (Terminal Bloqueado)",
         "status_offline": "Inacessivel / Desconectado",
         "menu_1": "[1] Alternar Dual-Boot (Chavear entre Slot 1 e Slot 2)",
-        "menu_2": "[2] Desbloquear Root no Slot 2 e Iniciar por ele",
-        "menu_3": "[3] Gravar Firmware Stock v27 no Slot 2 (Com/Sem Root) [Exclusivo T7]",
-        "menu_4": "[4] Otimizar e Ativar LuCI na Porta 80 (Slot 2)",
-        "menu_5": "[5] Gerenciar Telnet (Hardening / Desativar ou Reativar)",
-        "menu_6": "[6] Instalar Painel Ark Router (OpenWrt / LuCI)",
-        "menu_7": "[7] Area de Pesquisa do Modelo X7 (Somente Leitura)",
-        "menu_8": "[8] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
-        "menu_9": "[9] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
+        "menu_2": "[2] Gravar Firmware Stock v27 no Slot 2 (Com/Sem Root) [Exclusivo T7]",
+        "menu_3": "[3] Otimizar e Ativar LuCI na Porta 80 (Slot 2)",
+        "menu_4": "[4] Gerenciar Telnet (Hardening / Desativar ou Reativar)",
+        "menu_5": "[5] Instalar Painel Ark Router (OpenWrt / LuCI)",
+        "menu_6": "[6] Area de Pesquisa do Modelo X7 (Somente Leitura)",
+        "menu_7": "[7] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
+        "menu_8": "[8] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
         "menu_0": "[0] Sair",
-        "prompt_choice": "Escolha uma opcao (0-9): ",
+        "prompt_choice": "Escolha uma opcao (0-8): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
-        "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [5] (Hardening)!\033[0m",
+        "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [4] (Hardening)!\033[0m",
         "suite_version": "Versao da Suite",
         "sync_header": "VERIFICANDO E SINCRONIZANDO ATUALIZACOES DO GITHUB",
         "sync_checking": "[*] Conectando ao GitHub para buscar manifesto e verificar arquivos...",
@@ -668,7 +666,7 @@ def show_emergency_recovery():
             print("    ==> Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin")
         print("""    • Takes only 2 seconds and points U-Boot back to intact Slot 1.
     • If router boots to 192.168.76.1: RESCUED!
-      From Slot 1, use Option [3] to reflash clean Slot 2 anytime.
+      From Slot 1, use Option [2] to reflash clean Slot 2 anytime.
     • If it does not boot: Proceed to OPTION B below.
 
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -682,8 +680,7 @@ def show_emergency_recovery():
         else:
             print("    ==> Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img")
         print("""    • ⚠️ NOTE: U-Boot recovery flashes ONLY 1 partition (primary Slot 1)!
-      Router boots factory clean into Slot 1. Then gain root (Option [2])
-      and you can reflash partition 2 (Slot 2) cleanly via Option [3]!
+      Router boots factory clean into Slot 1, where you can reflash partition 2 (Slot 2) cleanly via Option [2]!
     • Wait 2 to 3 minutes without unplugging power.
 
   [STEP 4] FINALIZATION:
@@ -738,7 +735,6 @@ def main_menu():
         print(f"  {t('menu_6')}")
         print(f"  {t('menu_7')}")
         print(f"  {t('menu_8')}")
-        print(f"  {t('menu_9')}")
         print(f"  {t('menu_0')}")
         print("=" * 75)
 
@@ -748,7 +744,7 @@ def main_menu():
             print(t("goodbye"))
             break
 
-        if choice in ["1", "2", "3", "4", "6"] and not info["telnet_ok"]:
+        if choice in ["1", "2", "3", "5"] and not info["telnet_ok"]:
             if info["ssh_ok"]:
                 print("\n" + "=" * 75)
                 print(f"  {t('ssh_active_telnet_closed')}")
@@ -761,7 +757,7 @@ def main_menu():
                     print("\n  [OK] Porta Telnet (23) reativada com sucesso! Prosseguindo...")
                 else:
                     print("\n  [!] Nao foi possivel reativar o Telnet automaticamente.")
-                    print("      Por favor, selecione a Opcao [5] no menu para gerenciar o Telnet/SSH.")
+                    print("      Por favor, selecione a Opcao [4] no menu para gerenciar o Telnet/SSH.")
                     safe_input(t("press_enter"))
                     continue
             else:
@@ -778,11 +774,7 @@ def main_menu():
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "2":
-            log_event("MENU", "Opcao [2] Desbloquear Root no Slot 2 selecionada", "INFO")
-            script = get_script_path("desbloquear_slot2_from_slot1.py")
-            subprocess.call([sys.executable, script, rip])
-        elif choice == "3":
-            log_event("MENU", "Opcao [3] Gravar Firmware v27 no Slot 2 selecionada", "INFO")
+            log_event("MENU", "Opcao [2] Gravar Firmware v27 no Slot 2 selecionada", "INFO")
             if not info["files_ok"]:
                 print("\n" + "=" * 75)
                 print(f"  [!] {t('rom_notice_missing')}")
@@ -794,30 +786,30 @@ def main_menu():
             script = get_script_path("gravar_v27_slot2.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "4":
-            log_event("MENU", "Opcao [4] Otimizar e Ativar LuCI na Porta 80 selecionada", "INFO")
+        elif choice == "3":
+            log_event("MENU", "Opcao [3] Otimizar e Ativar LuCI na Porta 80 selecionada", "INFO")
             script = get_script_path("otimizar_e_ativar_luci_slot2.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "5":
-            log_event("MENU", "Opcao [5] Gerenciar Telnet selecionada", "INFO")
+        elif choice == "4":
+            log_event("MENU", "Opcao [4] Gerenciar Telnet selecionada", "INFO")
             script = get_script_path("gerenciar_telnet.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "6":
-            log_event("MENU", "Opcao [6] Instalar Painel Ark Router selecionada", "INFO")
+        elif choice == "5":
+            log_event("MENU", "Opcao [5] Instalar Painel Ark Router selecionada", "INFO")
             script = get_script_path("instalar_ark_router.py")
             subprocess.call([sys.executable, script, f"--ip={rip}", f"--lang={CURRENT_LANG}"])
-        elif choice == "7":
-            log_event("MENU", "Opcao [7] Area de Pesquisa X7 selecionada", "INFO")
+        elif choice == "6":
+            log_event("MENU", "Opcao [6] Area de Pesquisa X7 selecionada", "INFO")
             script = get_script_path("diagnostico_x7.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "8":
-            log_event("MENU", "Opcao [8] Modo de Recuperacao de Emergencia selecionada", "INFO")
+        elif choice == "7":
+            log_event("MENU", "Opcao [7] Modo de Recuperacao de Emergencia selecionada", "INFO")
             show_emergency_recovery()
-        elif choice == "9":
-            log_event("MENU", "Opcao [9] Sincronizar e Atualizar Ferramenta selecionada", "INFO")
+        elif choice == "8":
+            log_event("MENU", "Opcao [8] Sincronizar e Atualizar Ferramenta selecionada", "INFO")
             check_and_sync_updates()
 
 if __name__ == "__main__":

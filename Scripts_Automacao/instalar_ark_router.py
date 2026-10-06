@@ -71,10 +71,22 @@ TEXTS = {
         "router_ip": "IP do Roteador",
         "slot_warning": "⚠️ AVISO: O roteador parece estar no Slot 1 (Firmware Original Acer).\nO painel ARK Router e projetado para rodar no Slot 2 (OpenWrt / LuCI).\nRecomenda-se chavear para o Slot 2 antes de instalar.",
         "slot_prompt": "Deseja continuar a instalacao mesmo assim? [S/N]: ",
-        "menu_opt1": "[1] Versao Padrao / Lite (Recomendada - Dashboard Completo ~628 KB)",
-        "menu_opt2": "[2] Versao Full (Com Modulos Extras: Speedtest, ZeroTier ~1.35 MB)",
-        "menu_opt3": "[3] Instalar pacote local (.ipk customizado)",
-        "choose_prompt": "Escolha a versao desejada [1-3] (Padrao: 1): ",
+        "arch_detected": "Arquitetura do Roteador: ARM 32-bit ({arch})",
+        "features_title": "DESTAQUES E RECURSOS DO PAINEL ARK ROUTER:",
+        "feat_rainbow": "  🌈 MODO LED RGB ARCO-IRIS (Rainbow Wave):\n     Efeito fluido dinamico de 120 tons no anel de LED do T7 (driver AW21018).\n     Rotacao suave de espectro sem consumo perceptivel de CPU!",
+        "feat_dash": "  ⚡ DASHBOARD GAMER DE ALTA PERFORMANCE:\n     Telemetria ao vivo dos 4 nucleos Qualcomm IPQ5332, uso de RAM e temperaturas.",
+        "feat_traffic": "  📊 MONITOR DE TRAFEGO POR DISPOSITIVO:\n     Graficos instantaneos de largura de banda por IP/MAC (Download e Upload separados).",
+        "feat_sqm": "  🎮 OTIMIZACAO SQM CAKE (ANTI-BUFFERBLOAT):\n     Filas inteligentes para garantir ping estavel e jitter zero em jogos online.",
+        "feat_theme": "  🎨 TEMA VISUAL ARK GAMER MODERNO:\n     Interface escura (Glassmorphism / Dark Theme) 100% responsiva para celular e PC.",
+        "menu_title": "SELECAO DA VERSAO DO PAINEL ARK ROUTER:",
+        "menu_opt1": "[1] Versao Padrao / Lite (luci-app-ark-router.ipk ~628 KB) [RECOMENDADA / 32-BIT]",
+        "menu_opt1_desc": "    └─ 100% compativel com ARM 32-bit. Codigo interpretado puro, leve e completo.",
+        "menu_opt2": "[2] Versao Full (luci-app-ark-router-full.ipk ~1.35 MB) [AVISO: MODULOS 64-BIT]",
+        "menu_opt2_desc": "    └─ Contem utilitarios compilados para 64-bit (aarch64) incompativeis com userland 32-bit.",
+        "choose_prompt": "Escolha a versao desejada [1 ou 2] (Recomendada: 1 - Pressione ENTER): ",
+        "full_arch_warn": "⚠️  ALERTA DE ARQUITETURA: O roteador opera com Linux 32-bit (armv7l).\nA versao Full contem modulos compilados para 64-bit (aarch64, ex: Starlink Dish)\nque apresentarao erro de execucao ('Exec format error') nesta arquitetura.",
+        "full_confirm_prompt": "Deseja insistir na versao Full mesmo assim? [S/N] (Padrao: N - usar Lite): ",
+        "fallback_lite_safe": "[*] Alternando com seguranca para a Versao Padrao / Lite (Recomendada).",
         "fetching_release": "Consultando versao mais recente no GitHub Releases...",
         "found_release": "Ultima versao detectada no GitHub: {tag}",
         "downloading": "Baixando {name} do GitHub...",
@@ -88,6 +100,9 @@ TEXTS = {
         "installing": "Executando instalacao do pacote no roteador (opkg install)...",
         "install_success": "Pacote instalado com sucesso no sistema!",
         "cleaning_cache": "Limpando cache do LuCI e reiniciando daemons de interface (rpcd/uhttpd)...",
+        "rainbow_prompt": "🌈 Deseja ativar o Modo LED RGB Arco-Iris (Rainbow Wave) agora? [S/N] (Padrao: S): ",
+        "activating_rainbow": "Ativando modo LED RGB Arco-Iris dinamico no roteador...",
+        "rainbow_activated": "Modo LED Arco-Iris ativado com sucesso! Observe os LEDs do seu Predator T7 trocando de cor.",
         "all_done": "PAINEL ARK ROUTER INSTALADO COM SUCESSO!",
         "url_access": "Acesse no navegador: http://{ip}/",
         "creds": "Login: root (ou Admin) | Senha padrao: root0100",
@@ -102,10 +117,22 @@ TEXTS = {
         "router_ip": "Router IP",
         "slot_warning": "⚠️ WARNING: Router appears to be in Slot 1 (Factory Stock Acer).\nARK Router panel is designed to run in Slot 2 (OpenWrt / LuCI).\nIt is recommended to switch to Slot 2 before installing.",
         "slot_prompt": "Do you want to proceed anyway? [Y/N]: ",
-        "menu_opt1": "[1] Standard / Lite Version (Recommended - Full Dashboard ~628 KB)",
-        "menu_opt2": "[2] Full Version (With Extra Modules: Speedtest, ZeroTier ~1.35 MB)",
-        "menu_opt3": "[3] Install local package (custom .ipk file)",
-        "choose_prompt": "Choose package version [1-3] (Default: 1): ",
+        "arch_detected": "Router Architecture: ARM 32-bit ({arch})",
+        "features_title": "ARK ROUTER PANEL HIGHLIGHTS & FEATURES:",
+        "feat_rainbow": "  🌈 RAINBOW RGB LED MODE (Rainbow Wave):\n     Fluid 120-step dynamic spectrum continuous transition on T7 LED ring (AW21018).\n     Smooth analog color flow with near-zero CPU overhead!",
+        "feat_dash": "  ⚡ HIGH-PERFORMANCE GAMING DASHBOARD:\n     Real-time telemetry for 4-core IPQ5332 CPU, RAM utilization, and temperatures.",
+        "feat_traffic": "  📊 PER-DEVICE TRAFFIC MONITORING:\n     Live real-time bandwidth graphs per host/IP/MAC (Upload and Download separated).",
+        "feat_sqm": "  🎮 SQM CAKE ANTI-BUFFERBLOAT OPTIMIZATION:\n     Intelligent queue management to guarantee rock-solid ping and zero jitter in gaming.",
+        "feat_theme": "  🎨 MODERN DARK ARK THEME:\n     Sleek Glassmorphism dark interface, 100% responsive for smartphones and desktops.",
+        "menu_title": "ARK ROUTER PANEL VERSION SELECTION:",
+        "menu_opt1": "[1] Standard / Lite Version (luci-app-ark-router.ipk ~628 KB) [RECOMMENDED / 32-BIT]",
+        "menu_opt1_desc": "    └─ 100% compatible with ARM 32-bit. Clean interpreted code, lightweight and full-featured.",
+        "menu_opt2": "[2] Full Version (luci-app-ark-router-full.ipk ~1.35 MB) [WARNING: 64-BIT MODULES]",
+        "menu_opt2_desc": "    └─ Contains binaries compiled for 64-bit (aarch64) incompatible with 32-bit userland.",
+        "choose_prompt": "Choose version [1 or 2] (Recommended: 1 - Press ENTER): ",
+        "full_arch_warn": "⚠️  ARCHITECTURE WARNING: Router runs 32-bit ARM Linux (armv7l).\nThe Full version contains 64-bit binaries (aarch64, e.g. Starlink Dish)\nthat will fail with 'Exec format error' on this architecture.",
+        "full_confirm_prompt": "Do you really want to force the Full version? [Y/N] (Default: N - use Lite): ",
+        "fallback_lite_safe": "[*] Safely switching to Standard / Lite Version (Recommended).",
         "fetching_release": "Checking latest release on GitHub...",
         "found_release": "Latest release found on GitHub: {tag}",
         "downloading": "Downloading {name} from GitHub...",
@@ -119,6 +146,9 @@ TEXTS = {
         "installing": "Executing package installation on router (opkg install)...",
         "install_success": "Package successfully installed into system!",
         "cleaning_cache": "Clearing LuCI cache and restarting UI daemons (rpcd/uhttpd)...",
+        "rainbow_prompt": "🌈 Would you like to activate Rainbow RGB LED mode (Rainbow Wave) now? [Y/N] (Default: Y): ",
+        "activating_rainbow": "Activating dynamic Rainbow RGB LED mode on router...",
+        "rainbow_activated": "Rainbow LED mode successfully activated! Enjoy the dynamic colors on your Predator T7.",
         "all_done": "ARK ROUTER PANEL SUCCESSFULLY INSTALLED!",
         "url_access": "Access in browser: http://{ip}/",
         "creds": "Login: root (or Admin) | Default Password: root0100",
@@ -301,72 +331,93 @@ def main():
             safe_input(t("press_enter"))
             return
 
-    # Menu de Escolha da Versão
-    print("\n" + "=" * 75)
-    print("  SELECAO DA VERSAO DO ARK ROUTER:")
-    print("=" * 75)
-    print(f"  {t('menu_opt1')}")
-    print(f"  {t('menu_opt2')}")
-    print(f"  {t('menu_opt3')}")
-    print("=" * 75)
-    choice = safe_input(f"  {t('choose_prompt')}")
-    if choice not in ["1", "2", "3"]:
-        choice = "1"
+    # Detectar Arquitetura do Roteador
+    arch_raw = run_cmd(tn, "uname -m 2>/dev/null").strip()
+    if not arch_raw or len(arch_raw) > 20:
+        arch_raw = "armv7l (32-bit)"
+    else:
+        arch_raw = f"{arch_raw} (32-bit)" if ("v7" in arch_raw or "arm" in arch_raw) and "64" not in arch_raw else arch_raw
+    print(f"\n  [+] {C_GREEN}{t('arch_detected').format(arch=arch_raw)}{C_RESET}")
 
-    local_ipk = None
+    # Exibir Destaques e Recursos do Ark Router
+    print("\n" + "=" * 75)
+    print(f"  {C_BOLD}{t('features_title')}{C_RESET}")
+    print("=" * 75)
+    print(f"{C_CYAN}{t('feat_rainbow')}{C_RESET}\n")
+    print(f"{t('feat_dash')}\n")
+    print(f"{t('feat_traffic')}\n")
+    print(f"{t('feat_sqm')}\n")
+    print(f"{t('feat_theme')}")
+    print("=" * 75)
+
+    # Menu de Escolha da Versão
+    print(f"\n  {C_BOLD}{t('menu_title')}{C_RESET}")
+    print("  " + "-" * 73)
+    print(f"  {C_GREEN}{t('menu_opt1')}{C_RESET}")
+    print(f"{t('menu_opt1_desc')}\n")
+    print(f"  {C_WHITE}{t('menu_opt2')}{C_RESET}")
+    print(f"{C_YELLOW}{t('menu_opt2_desc')}{C_RESET}")
+    print("  " + "-" * 73)
+
+    raw_choice = safe_input(f"  {t('choose_prompt')}")
+    if raw_choice not in ["1", "2"]:
+        choice = "1"
+    else:
+        choice = raw_choice
+
+    prefer_full = False
+    if choice == "2":
+        print(f"\n{C_RED}{t('full_arch_warn')}{C_RESET}\n")
+        force_ans = safe_input(f"  {t('full_confirm_prompt')}").lower()
+        if force_ans in ["s", "sim", "y", "yes"]:
+            prefer_full = True
+            print("  [!] Prosseguindo com a versao Full por escolha explicita.")
+        else:
+            print(f"  {C_GREEN}{t('fallback_lite_safe')}{C_RESET}")
+            prefer_full = False
+            choice = "1"
+
+    pkg_label = "luci-app-ark-router-full.ipk" if prefer_full else "luci-app-ark-router.ipk"
     cache_dir = os.path.join(repo_root, "01_FIRMWARES_E_IMAGENS", "Ark_Router")
     os.makedirs(cache_dir, exist_ok=True)
+    dest_cached = os.path.join(cache_dir, pkg_label)
 
-    if choice == "3":
-        user_path = safe_input("  Digite o caminho completo do arquivo .ipk: ").strip('"').strip("'")
-        if os.path.isfile(user_path) and user_path.endswith(".ipk"):
-            local_ipk = user_path
-        else:
-            print(f"  {C_RED}[-] Arquivo nao encontrado ou invalido.{C_RESET}")
-            tn.close()
-            safe_input(t("press_enter"))
-            return
-    else:
-        prefer_full = (choice == "2")
-        pkg_label = "luci-app-ark-router-full.ipk" if prefer_full else "luci-app-ark-router.ipk"
-        dest_cached = os.path.join(cache_dir, pkg_label)
+    print(f"\n[*] {t('fetching_release')}")
+    tag, urls = get_latest_release_info()
+    print(f"    [+] {t('found_release').format(tag=tag)}")
 
-        print(f"\n[*] {t('fetching_release')}")
-        tag, urls = get_latest_release_info()
-        print(f"    [+] {t('found_release').format(tag=tag)}")
+    dl_url = urls.get("full" if prefer_full else "lite")
+    print(f"[*] {t('downloading').format(name=pkg_label)}")
+    print(f"    URL: {dl_url}")
 
-        dl_url = urls.get("full" if prefer_full else "lite")
-        print(f"[*] {t('downloading').format(name=pkg_label)}")
-        print(f"    URL: {dl_url}")
-
-        download_success = False
+    download_success = False
+    try:
+        sz = download_file(dl_url, dest_cached)
+        print(f"    [OK] {t('download_ok').format(size=sz)}")
+        local_ipk = dest_cached
+        download_success = True
+    except Exception as e:
+        print(f"    [!] {t('download_fail').format(err=e)}")
+        print(f"    [*] {t('using_fallback')}")
+        fb_url = FALLBACK_URL_FULL if prefer_full else FALLBACK_URL_LITE
         try:
-            sz = download_file(dl_url, dest_cached)
+            sz = download_file(fb_url, dest_cached)
             print(f"    [OK] {t('download_ok').format(size=sz)}")
             local_ipk = dest_cached
             download_success = True
-        except Exception as e:
-            print(f"    [!] {t('download_fail').format(err=e)}")
-            print(f"    [*] {t('using_fallback')}")
-            fb_url = FALLBACK_URL_FULL if prefer_full else FALLBACK_URL_LITE
-            try:
-                sz = download_file(fb_url, dest_cached)
-                print(f"    [OK] {t('download_ok').format(size=sz)}")
-                local_ipk = dest_cached
-                download_success = True
-            except Exception as e2:
-                print(f"    [-] Falha no fallback: {e2}")
+        except Exception as e2:
+            print(f"    [-] Falha no fallback: {e2}")
 
-        if not download_success:
-            cached = locate_local_cached_ipk(repo_root, prefer_full)
-            if cached:
-                print(f"    {C_YELLOW}[!] {t('using_cached').format(path=cached)}{C_RESET}")
-                local_ipk = cached
-            else:
-                print(f"\n{C_RED}[-] {t('offline_warn')}{C_RESET}")
-                tn.close()
-                safe_input(t("press_enter"))
-                return
+    if not download_success:
+        cached = locate_local_cached_ipk(repo_root, prefer_full)
+        if cached:
+            print(f"    {C_YELLOW}[!] {t('using_cached').format(path=cached)}{C_RESET}")
+            local_ipk = cached
+        else:
+            print(f"\n{C_RED}[-] {t('offline_warn')}{C_RESET}")
+            tn.close()
+            safe_input(t("press_enter"))
+            return
 
     # Iniciar Servidor HTTP Local para transferência instantânea
     pc_ip = get_local_ip_towards(rip)
@@ -434,7 +485,13 @@ def main():
     run_cmd(tn, "/etc/init.d/rpcd restart 2>/dev/null")
     run_cmd(tn, "/etc/init.d/uhttpd enable 2>/dev/null; /etc/init.d/uhttpd restart 2>/dev/null")
     run_cmd(tn, "rm -f /tmp/luci-app-ark-router.ipk /tmp/data.tar.gz")
-    time.sleep(1.5)
+    # Pergunta opcional para ativar o Efeito LED RGB Arco-Íris
+    print("\n" + "-" * 75)
+    led_ans = safe_input(f"  {t('rainbow_prompt')}").lower()
+    if led_ans in ["", "s", "sim", "y", "yes"]:
+        print(f"  [*] {t('activating_rainbow')}")
+        run_cmd(tn, "/usr/sbin/equipe-dashboard-control set-led-rgb-color rainbow 2>/dev/null || (/etc/init.d/ark-rainbowd enable 2>/dev/null; /etc/init.d/ark-rainbowd restart 2>/dev/null) || (/bin/sh /usr/sbin/ark-rainbowd &)")
+        print(f"  {C_GREEN}[OK] {t('rainbow_activated')}{C_RESET}")
 
     tn.close()
 

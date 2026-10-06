@@ -277,6 +277,7 @@ $T = @{
         "checking_python"    = "Checking Python 3 environment..."
         "python_ok"          = "Python 3 detected: {0}"
         "python_missing"     = "Python 3 not found. Installing Python 3.14 via WinGet..."
+        "python_added_path"  = "Python permanently added to Windows User PATH: {0}"
         "ip_confirm_prompt"  = "Press ENTER to confirm [{0}] or type your router IP: "
         "ip_not_found"       = "Could not automatically find Predator router on standard IPs."
         "ip_manual_prompt"   = "Type your Predator router IP [Default: 192.168.76.1]: "
@@ -354,6 +355,7 @@ $T = @{
         "checking_python"    = "Verificando ambiente Python 3..."
         "python_ok"          = "Python 3 detectado: {0}"
         "python_missing"     = "Python 3 nao encontrado. Instalando Python 3.14 via WinGet..."
+        "python_added_path"  = "Python adicionado permanentemente ao PATH do Windows: {0}"
         "ip_confirm_prompt"  = "Pressione ENTER para confirmar [{0}] ou digite o IP correto: "
         "ip_not_found"       = "Nao foi possivel detectar automaticamente o roteador nos IPs padrao."
         "ip_manual_prompt"   = "Digite o IP do seu roteador Predator [Padrao: 192.168.76.1]: "
@@ -415,33 +417,101 @@ function Test-Port($ip, $port, $timeoutMs = 800) {
 
 function Ensure-Python {
     Write-Info $M["checking_python"]
-    $PythonCmd = ""
-    if (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe") {
-        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe"
-    } elseif (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe") {
-        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe"
-    } elseif (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe") {
-        $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"
-    } else {
-        try {
-            $ver = & python --version 2>$null
-            if ($LASTEXITCODE -eq 0) { $PythonCmd = "python" }
-        } catch {}
-    }
+    $PythonExe = $null
 
-    if (-not $PythonCmd) {
-        Write-Warn $M["python_missing"]
-        winget install Python.Python.3.14 --silent --override "/passive PrependPath=1"
-        Start-Sleep -Seconds 2
-        if (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe") {
-            $PythonCmd = "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe"
-        } else {
-            $PythonCmd = "python"
+    # 1. Verificar se o comando 'python' ja esta funcional no PATH e nao e o atalho vazio da WindowsApps
+    try {
+        $cmdInfo = Get-Command "python.exe" -ErrorAction SilentlyContinue
+        if ($cmdInfo -and ($cmdInfo.Source -notlike "*WindowsApps*")) {
+            $testVer = & $cmdInfo.Source --version 2>&1
+            if ($LASTEXITCODE -eq 0 -and "$testVer" -like "*Python 3*") {
+                $PythonExe = $cmdInfo.Source
+            }
+        }
+    } catch {}
+
+    # 2. Se nao encontrou ou se o PATH aponta para o atalho da loja, procurar instalacoes reais no disco
+    if (-not $PythonExe) {
+        $searchDirs = @(
+            "$env:LOCALAPPDATA\Programs\Python",
+            "$env:ProgramFiles\Python3*",
+            "${env:ProgramFiles(x86)}\Python3*",
+            "C:\Python3*"
+        )
+        foreach ($sdir in $searchDirs) {
+            if (Test-Path $sdir) {
+                $found = Get-ChildItem -Path $sdir -Filter "python.exe" -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+                         Where-Object { $_.FullName -notlike "*WindowsApps*" } |
+                         Sort-Object FullName -Descending |
+                         Select-Object -First 1
+                if ($found) {
+                    $PythonExe = $found.FullName
+                    break
+                }
+            }
         }
     }
 
-    Write-Success ($M["python_ok"] -f (& $PythonCmd --version 2>&1))
-    return $PythonCmd
+    # 3. Tentar via Python Launcher oficial (py.exe) se existir
+    if (-not $PythonExe) {
+        try {
+            $pyLauncher = Get-Command "py.exe" -ErrorAction SilentlyContinue
+            if ($pyLauncher) {
+                $resolved = & $pyLauncher.Source -c "import sys; print(sys.executable)" 2>$null
+                if ($resolved -and (Test-Path $resolved.Trim())) {
+                    $PythonExe = $resolved.Trim()
+                }
+            }
+        } catch {}
+    }
+
+    # 4. Se nao estiver instalado em nenhum local, instalar automaticamente via WinGet
+    if (-not $PythonExe) {
+        Write-Warn $M["python_missing"]
+        try {
+            winget install Python.Python.3.14 --silent --override "/passive PrependPath=1"
+        } catch {
+            Write-Warn "WinGet falhou. Tentando instalador alternativo..."
+        }
+        Start-Sleep -Seconds 3
+
+        # Re-procurar na pasta padrao do usuario apos a instalacao
+        $newFound = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python" -Filter "python.exe" -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+                     Sort-Object FullName -Descending |
+                     Select-Object -First 1
+        if ($newFound) {
+            $PythonExe = $newFound.FullName
+        } else {
+            $PythonExe = "python"
+        }
+    }
+
+    # 5. Adicionar a pasta do Python e Scripts permanentemente ao PATH do Windows e a sessao atual
+    if ($PythonExe -and (Test-Path $PythonExe)) {
+        $pyDir = Split-Path $PythonExe -Parent
+        $scriptsDir = Join-Path $pyDir "Scripts"
+
+        # Prepend na sessao ativa do terminal imediatamente
+        if ($env:PATH -notlike "*$pyDir*") {
+            $env:PATH = "$pyDir;$scriptsDir;$env:PATH"
+        }
+
+        # Configurar permanentemente no PATH do usuario no Windows (Registro HKCU)
+        try {
+            $currentUserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+            if (-not $currentUserPath) { $currentUserPath = "" }
+            if ($currentUserPath -notlike "*$pyDir*") {
+                # Prepend para ter precedencia sobre o atalho quebrado da Microsoft Store (WindowsApps)
+                $newUserPath = "$pyDir;$scriptsDir;" + ($currentUserPath.Trim(';'))
+                [Environment]::SetEnvironmentVariable("Path", $newUserPath, "User")
+                Write-Success ($M["python_added_path"] -f $pyDir)
+            }
+        } catch {}
+    }
+
+    $verOutput = (& $PythonExe --version 2>&1)
+    Write-Success ($M["python_ok"] -f $verOutput)
+    return $PythonExe
 }
 
 # 2.5. Garantir Ambiente Python 3

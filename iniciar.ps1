@@ -181,13 +181,17 @@ function Sync-Suite-From-GitHub {
                     }
                 }
 
+                $downloadOk = $false
                 if (-not $copiedLocal) {
                     try {
-                        $wc.DownloadFile("$RawBase/$rel?t=$cacheBuster", $dest)
-                    } catch {}
+                        $wc.DownloadFile("$RawBase/${rel}?t=$cacheBuster", $dest)
+                        $downloadOk = $true
+                    } catch {
+                        Write-Err "Falha ao baixar do GitHub: $rel ($($_.Exception.Message))"
+                    }
                 }
 
-                if (Test-Path $dest) {
+                if ($copiedLocal -or $downloadOk) {
                     if ($isUpdate) {
                         Write-Success "Atualizado com sucesso: $rel"
                     } else {

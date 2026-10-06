@@ -11,7 +11,7 @@ import json
 import hashlib
 from datetime import datetime, timezone
 
-SUITE_VERSION = "1.0.9"
+SUITE_VERSION = "1.1.0"
 
 TRACKED_FILES = [
     {"path": "Scripts_Automacao/launcher_t7.py", "category": "script"},
@@ -37,6 +37,8 @@ TRACKED_FILES = [
     {"path": "Scripts_Automacao/instalar_ark_router.py", "category": "script"},
     {"path": "01_FIRMWARES_E_IMAGENS/Ark_Router/luci-app-ark-router.ipk", "category": "app"},
     {"path": "iniciar.ps1", "category": "launcher"},
+    {"path": "iniciar.py", "category": "launcher"},
+    {"path": "executar_t7.sh", "category": "launcher"},
     {"path": "EXECUTAR_T7.bat", "category": "launcher"}
 ]
 

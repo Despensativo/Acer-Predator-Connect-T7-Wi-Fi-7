@@ -47,6 +47,11 @@ fi
 
 # 4. Selecao de Idioma se nao passado por argumento
 LANG_PARAM="en"
+ENTRY_SCRIPT="$SCRIPT_DIR/iniciar.py"
+if [ ! -f "$ENTRY_SCRIPT" ]; then
+    ENTRY_SCRIPT="$SCRIPT_DIR/Scripts_Automacao/launcher_t7.py"
+fi
+
 if [ $# -eq 0 ]; then
     echo "==========================================================================="
     echo "              ACER PREDATOR CONNECT T7 & X7 MANAGEMENT SUITE"
@@ -61,7 +66,7 @@ if [ $# -eq 0 ]; then
     if [ "$LANG_INPUT" = "2" ] || [ "$LANG_INPUT" = "pt" ] || [ "$LANG_INPUT" = "pt-br" ]; then
         LANG_PARAM="pt"
     fi
-    exec "$PYTHON_CMD" "$SCRIPT_DIR/Scripts_Automacao/launcher_t7.py" --lang "$LANG_PARAM"
+    exec "$PYTHON_CMD" "$ENTRY_SCRIPT" --lang "$LANG_PARAM"
 else
-    exec "$PYTHON_CMD" "$SCRIPT_DIR/Scripts_Automacao/launcher_t7.py" "$@"
+    exec "$PYTHON_CMD" "$ENTRY_SCRIPT" "$@"
 fi

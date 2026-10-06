@@ -1,14 +1,14 @@
 {
   "suite_version": "1.0.1",
-  "updated_at": "2026-10-06T00:17:16Z",
+  "updated_at": "2026-10-06T00:28:20Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
-      "size": 39185,
-      "sha256": "D70E88C1A7C907DFACABB75E9C5456E9B451419CBDC2771764A6047A59EEF684",
-      "updated_at": "2026-10-06T00:16:30Z"
+      "size": 41447,
+      "sha256": "CB3B96A16C59A099648325CAB015B25522AD874D5C883020A2EDFA0B84A4AD01",
+      "updated_at": "2026-10-06T00:28:04Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",
@@ -34,9 +34,9 @@
     {
       "path": "Scripts_Automacao/gravar_v27_slot2.py",
       "category": "script",
-      "size": 22009,
-      "sha256": "C51CE04AC319C702A5F06C327BE6021E60FA93DA4BD022061542686C504E7957",
-      "updated_at": "2026-10-05T23:47:44Z"
+      "size": 25281,
+      "sha256": "1E48291652F5C860B0D5C98DD76819E19FC51B66181957CB72429D96750B1FB1",
+      "updated_at": "2026-10-06T00:26:38Z"
     },
     {
       "path": "Scripts_Automacao/switch_boot_slot.py",
@@ -55,9 +55,9 @@
     {
       "path": "Scripts_Automacao/desbloquear_slot2_from_slot1.py",
       "category": "script",
-      "size": 10241,
-      "sha256": "CDA935F096E60DD459FA143AB024849AA6F1255CAFBC001DC3C3EBED4A9B03B6",
-      "updated_at": "2026-10-05T22:24:34Z"
+      "size": 13451,
+      "sha256": "1B66389E0953BA0752C95D8157B490D4B42241F1E0D62562FCE98171630D7653",
+      "updated_at": "2026-10-06T00:27:06Z"
     },
     {
       "path": "Scripts_Automacao/logger_t7.py",

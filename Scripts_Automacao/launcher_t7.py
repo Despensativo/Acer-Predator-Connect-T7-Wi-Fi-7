@@ -303,6 +303,36 @@ def preflight_check(quiet=False, explicit_ip=None):
             if slot_raw == "0":
                 info["active_slot_label"] = t("slot2")
                 info["boot_default_label"] = f"{t('slot2')} (primaryboot = 0)"
+                try:
+                    check_web = get_single_line("ps | grep lighttpd | grep -v grep 2>/dev/null")
+                    if "lighttpd" in check_web:
+                        heal_cmd = (
+                            "killall -9 lighttpd 2>/dev/null; "
+                            "/etc/init.d/lighttpd.init stop 2>/dev/null; "
+                            "/etc/init.d/lighttpd.init disable 2>/dev/null; "
+                            "sed -i 's/#config_load uhttpd/config_load uhttpd/' /etc/init.d/uhttpd 2>/dev/null; "
+                            "sed -i 's/#config_foreach start_instance uhttpd/config_foreach start_instance uhttpd/' /etc/init.d/uhttpd 2>/dev/null; "
+                            "chmod -R 755 /www 2>/dev/null; "
+                            "uci -q delete uhttpd.main.listen_http 2>/dev/null; "
+                            "uci add_list uhttpd.main.listen_http='0.0.0.0:80' 2>/dev/null; "
+                            "uci add_list uhttpd.main.listen_http='[::]:80' 2>/dev/null; "
+                            "uci set uhttpd.main.rfc1918_filter='0' 2>/dev/null; "
+                            "uci set uhttpd.main.redirect_https='0' 2>/dev/null; "
+                            "uci commit uhttpd 2>/dev/null; "
+                            "/etc/init.d/rpcd restart 2>/dev/null; "
+                            "/etc/init.d/uhttpd enable 2>/dev/null; "
+                            "/etc/init.d/uhttpd restart 2>/dev/null; "
+                            "sed -i 's|/etc/init.d/lighttpd/lighttpd.init start|# lighttpd desativado|' /etc/rc.local 2>/dev/null; "
+                            "sed -i 's|/etc/init.d/lighttpd.init start|# lighttpd desativado|' /etc/rc.local 2>/dev/null; "
+                            "sed -i 's|/etc/init.d/uhttpd stop|/etc/init.d/uhttpd start|' /etc/rc.local 2>/dev/null; "
+                            "rm -rf /tmp/luci-indexcache /tmp/luci-modulecache* 2>/dev/null"
+                        )
+                        tn.write(heal_cmd + "\n")
+                        time.sleep(0.5)
+                        tn.read_until("/ # ", timeout=2)
+                        log_event("PREFLIGHT", "Auto-cura LuCI no Slot 2 aplicada (porta 80 liberada)", "OK")
+                except Exception:
+                    pass
             elif slot_raw == "1":
                 info["active_slot_label"] = t("slot1")
                 info["boot_default_label"] = f"{t('slot1')} (primaryboot = 1)"

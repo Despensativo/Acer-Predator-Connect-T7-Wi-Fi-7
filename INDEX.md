@@ -18,8 +18,7 @@
 
 ## 2. Parâmetros de Conexão e Rede
 
-- **IP Web Stock (Fábrica):** `192.168.76.1` (Porta 80)
-- **IP Atual do Laboratório (Modo AP Wi-Fi 7):** `192.168.73.2` (LuCI Porta 80)
+- **IP Web Stock (Fábrica / LuCI):** `192.168.76.1` (Porta 80)
 - **IP do Servidor TFTP de Recuperação (PC):** `192.168.1.66` (ou `192.168.10.10`)
 - **Porta Serial UART:** `115200 8N1` (`ttyMSM0`), 3.3V
 
@@ -30,10 +29,10 @@
 | MTD | Nome da Partição | Papel no Sistema | Risco |
 | :--- | :--- | :--- | :--- |
 | `mtd18` | `0:ART` | Calibração de rádio e MAC Address | **CRÍTICO - Nunca apagar sem backup** |
-| `mtd11` | `0:APPSBL` | Bootloader U-Boot oficial | **CRÍTICO - Não sobrescrever** |
+| `mtd11` | `0:APPSBL` | Bootloader U-Boot oficial | **CRÍTICO - 100% Intacto de Fábrica** |
 | `mtd3` / `mtd4` | `BOOTCONFIG` / `1` | Seletor de Slot A/B (`primaryboot`) | Chaveador de inicialização |
-| `mtd21` | `rootfs` | **Slot 1 (Reserva / Fallback v24)** | **Preservado 100% intacto** |
-| `mtd20` | `rootfs_1` | **Slot 2 (Ativo / Otimizado v27)** | **ATIVO - LuCI Porta 80 + Wi-Fi 7 + IPv6 Híbrido** |
+| `mtd21` | `rootfs` | **Slot 1 (Reserva / Fallback OEM)** | **Preservado 100% intacto de fábrica** |
+| `mtd20` | `rootfs_1` | **Slot 2 (Ativo / Otimizado v27)** | **ATIVO - LuCI Porta 80 + Wi-Fi 7** |
 
 ---
 
@@ -56,7 +55,7 @@
 - `Desmontagem_U-Boot/`: Scripts de engenharia reversa e análise estática do bootloader.
 
 ### 📁 [04_SCRIPTS_E_FERRAMENTAS/](04_SCRIPTS_E_FERRAMENTAS/)
-- `Automacao_e_Unlock/`: Scripts Python de debloat, liberação de SSH, AP pessoal e restauração rápida (`restaurar_backup_pessoal.py`).
+- `Automacao_e_Unlock/`: Scripts Python de automação, debloat, liberação de SSH e gerenciamento Dual-Boot.
 - `Diagnostico_de_Rede/`: Ferramentas de escuta DHCP, sniffers ARP e monitoramento.
 - `Servidor_TFTP/`: Utilitários e binários do servidor TFTP para Windows.
 

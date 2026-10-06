@@ -8,51 +8,82 @@
   <a href="README.md">🇺🇸 English</a>
 </p>
 
-# Acer Predator Connect T7 — Desbloqueio Root, Modo AP 2.5 Gbps, Wi-Fi 7 & Arquitetura Dual-Boot
+# Acer Predator Connect T7 — Desbloqueio Root, LuCI Nativo, Wi-Fi 7 & Arquitetura Dual-Boot
 
-> **Status do Projeto (Outubro / 2026)**: Roteador operando em produção no **Slot 2 (`rootfs_1`)** com **Firmware Oficial v1.01.000027 (v27)**, interface **LuCI nativa na Porta 80**, aceleração de switch **Layer-2 a 2.5 Gbps puro**, **Wi-Fi 7 (320 MHz / 5.76 Gbps)** com Roaming 802.11k/v e debloat total de telemetrias. **Slot 1 (`rootfs`) mantido 100% intacto como salvaguarda anti-brick**.
+> **Status do Projeto (Outubro / 2026)**: Roteador operando em produção no **Slot 2 (`rootfs_1`)** com **Firmware Oficial v1.01.000027 (v27)**, interface **LuCI nativa na Porta 80**, **Wi-Fi 7 (320 MHz / 5.76 Gbps)** com Roaming 802.11k/v e debloat total de telemetrias. **Slot 1 (`rootfs`) e U-Boot mantidos 100% intactos de fábrica como salvaguarda anti-brick definitiva**.
 
-> **Keywords / SEO**: Acer Predator Connect T7, Wi-Fi 7 router unlock, Qualcomm IPQ5332, MLO 6GHz, AP Mode 2.5Gbps, root access dropbear, telnet unlock, unbrick predator t7, openwrt predator t7, double NAT fix, dual-boot slot rollback, firmware dump MTD.
-
----
-
-## ⚡ Sumário Rápido de Recursos Ativos
-
-* 🛡️ **Dual-Boot A/B Seguro:** O Slot 1 (`mtd21` / v24) é uma reserva de fábrica intocável. Todas as customizações rodam no Slot 2 (`mtd20` / v27).
-* 🔄 **Rollback em 1 Comando:** Se o Slot 2 apresentar qualquer falha, o comando `/usr/sbin/boot-acer` restaura o boot para o Slot 1 instantaneamente.
-* 🌐 **LuCI Nativo na Porta 80:** Servidor web da Acer (`lighttpd`) desativado; LuCI (`uhttpd`) promovido a servidor principal.
-* 🚀 **Switch 2.5 Gbps Puro (Modo AP):** Bypass de netfilter na ponte (`net.bridge.bridge-nf-call-iptables = 0`), eliminando drops de DHCP, mDNS, AirPlay e entregando throughput L2 de velocidade de fio.
-* 📶 **Wi-Fi 7 Turbo & Acelerações de Protocolo:** Rádio 6 GHz em 320 MHz (5.76 Gbps) com Preamble Puncturing (anti-interferência), Target Wake Time (TWT - economia de bateria em celulares), BSS Coloring, Beamforming 4x4, OFDMA e Roaming Rápido 802.11k/v/r (<50ms).
-* ⚖️ **Calibração Multicore RPS (4 CPUs):** Filas de pacotes da porta 2.5 Gbps distribuídas em paralelo pelos 4 núcleos do SoC Qualcomm IPQ5332 com buffers TCP expandidos para 8 MB.
-* ⚡ **Parallel Turbo DNS (All-Servers):** Resolução DNS em paralelo no dnsmasq para respostas instantâneas (0 ms).
-* 🧹 **Debloat Severo:** Daemons celulares 5G inexistentes (`at_ril`, `modem_readd`), telemetrias pesadas (`monitord`, `sodd`, `cwmp`, `breakpad`) e Samba desativados, liberando **+50 MB de memória RAM**.
-* 💾 **Central de Backup de 1 Clique:** Utilitário interativo `RESTAURAR_OU_BACKUP_T7.bat` para restauração e snapshot em segundos.
+> **Keywords / SEO**: Acer Predator Connect T7, Wi-Fi 7 router unlock, Qualcomm IPQ5332, MLO 6GHz, root access dropbear, telnet unlock, unbrick predator t7, openwrt predator t7, dual-boot slot rollback, firmware dump MTD.
 
 ---
+
+## ⚡ INSTALAÇÃO RÁPIDA (AMBIENTE HOMOLOGADO & TESTADO)
 
 > [!IMPORTANT]
-> ### ⚠️ Endereços IP, Credenciais e a Regra de Ouro de Senhas:
-> * **IP Padrão de Fábrica (Stock Default):** **`192.168.76.1`** (Modo Roteador tradicional com DHCP ativo na faixa `192.168.76.x`).
-> * **IP em Modo AP de Alta Performance:** **`192.168.73.2`** (Opera como Switch L2 / AP na rede do roteador principal `192.168.73.1`, com DHCP desativado).
-> * **🔑 Credenciais Padrão Unificadas:**
->   - **Usuário:** **`root`** (ou **`Admin`**)
->   - **Senha:** **`root`**
->   - **Interface LuCI Web (Porta 80):** `http://192.168.76.1` (ou `73.2`) | Usuário: `root` | Senha: `root`
->   - **Acesso SSH (Porta 22):** `ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o HostKeyAlgorithms=+ssh-rsa root@192.168.76.1` (Senha: `root`)
->   - **Acesso de Emergência (Zero Risco de Trancar Fora):** O **Telnet na porta 23** (`telnet 192.168.76.1 23`) conecta direto ao shell `ash` como root **sem pedir senha**.
-> * **🛡️ Regra de Ouro ao Alterar Senhas:**
->   - **JAMAIS apague ou renomeie os usuários `root` ou `Admin`.** Ambos compartilham UID 0. Tarefas agendadas do cron e daemons da Acer dependem de `Admin`, enquanto o OpenWrt/LuCI espera `root`.
->   - **Se você for alterar a senha pelo terminal, atualize SEMPRE OS DOIS usuários para mantê-los sincronizados:**
->     ```sh
->     passwd root
->     passwd Admin
->     ```
+> ### 💻 AMBIENTE RECOMENDADO: WINDOWS + POWERSHELL
+> Todo o ecossistema de automação, injeção de arquivos `.cfg`, detecção de portas e gravação de memória flash foi **exaustivamente testado, validado e homologado no ambiente Windows com PowerShell**.  
+> Para garantir **100% de sucesso e zero risco de falhas**, utilize um computador com Windows conectado via cabo de rede diretamente ao roteador.
+
+### 🚀 Método Oficial (1 Linha no PowerShell — Sem Baixar Nada Manualmente):
+Abra o **PowerShell** no seu Windows (como Usuário ou Administrador) e cole o comando oficial abaixo:
+
+```powershell
+irm https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.ps1 | iex
+```
+
+#### 📦 O que este comando faz automaticamente:
+1. **Configura o Ambiente:** Baixa e organiza as ferramentas na pasta `Desktop\Acer-Predator-Connect-T7`.
+2. **Garante o Python 3.14:** Detecta se o Python está presente; se não estiver, instala de forma silenciosa via WinGet e configura o `PATH` do sistema.
+3. **Diagnóstico em Tempo Real:** Escaneia a rede, encontra o IP do seu Predator T7 e verifica se as portas Web (80), Telnet (23) e SSH (22) estão ativas.
+4. **Fluxo Inteligente:**
+   * **Se o roteador estiver travado de fábrica:** Gera na sua Área de Trabalho o arquivo de desbloqueio `.cfg`, abre a página de restauração no navegador e aguarda a reinicialização.
+   * **Se o roteador já estiver liberado:** Abre direto a **Central de Gerenciamento Interativa** para gravação do Slot 2, ativação do LuCI, chaveamento de boot ou gerenciamento de Telnet.
 
 ---
 
-## 1. 🛡️ Arquitetura Dual-Boot A/B e Salvaguarda Anti-Brick
+### 📂 Alternativa Offline (Caso já tenha clonado ou baixado o repositório):
+Se você já baixou o arquivo `.zip` ou clonou o repositório para o seu computador:
+* **No Windows:** Dê duplo clique diretamente no arquivo **`EXECUTAR_T7.bat`** (ou execute `.\iniciar.ps1` no PowerShell).  
+  *(Totalmente compatível com "Executar como Administrador" sem perder pastas ou caminhos).*
 
-O Acer Predator Connect T7 possui uma memória flash SPI NAND de 1 GB com **particionamento duplo redundante (Slots A e B)** gerenciado pelo SoC Qualcomm IPQ5332.
+---
+
+## 🔑 Endereços IP, Credenciais e Regra de Ouro
+
+| Parâmetro | Configuração Padrão do Roteador |
+| :--- | :--- |
+| **Endereço IP** | **`192.168.76.1`** (Padrão de Fábrica OEM) |
+| **Painel Web (Porta 80)** | **`http://192.168.76.1/`** (LuCI Oficial) |
+| **Usuário Web / SSH** | **`root`** (ou **`Admin`**) |
+| **Senha Padrão** | **`root0100`** (ou **`root`**) |
+| **Porta SSH (Terminal)** | Porta **`22`** (Dropbear com chave/senha) |
+| **Porta Telnet (Resgate)**| Porta **`23`** (Shell root imediato para automações) |
+
+> [!WARNING]
+> ### 🛡️ A Regra de Ouro de Usuários e Senhas
+> **JAMAIS delete ou renomeie as contas `root` ou `Admin`.**  
+> Ambas compartilham o mesmo UID 0 no Linux. O LuCI e ferramentas OpenWrt esperam o usuário `root`, enquanto rotinas de cron e binários originais da Qualcomm/Acer dependem do usuário `Admin`.  
+> Caso decida trocar sua senha pelo terminal, atualize **sempre ambos os usuários** para mantê-los sincronizados:
+> ```sh
+> passwd root
+> passwd Admin
+> ```
+
+---
+
+## ⚡ Sumário de Recursos do Projeto
+
+* 🛡️ **Dual-Boot A/B com Salvaguarda de Fábrica:** O Slot 1 (`mtd21` / firmware OEM original que veio no aparelho) e o **U-Boot** são mantidos **100% intactos de fábrica**. Todas as customizações e gravações rodam no Slot 2 (`mtd20` / v27).
+* 🔄 **Rollback Instantâneo em 1 Comando:** Se o Slot 2 apresentar qualquer inconsistência, rodar `/usr/sbin/boot-acer` restaura o boot para o Slot 1 de fábrica em segundos.
+* 🌐 **LuCI Nativo na Porta 80:** O servidor proprietário da Acer (`lighttpd`) é desativado e o LuCI (`uhttpd`) assume a porta 80 por padrão, com redirecionamento automático de rotas legadas (`/pub/dist/index.html` -> LuCI).
+* 📶 **Wi-Fi 7 Turbo Calibrado:** Rádio 6 GHz em 320 MHz de largura (5.76 Gbps) com *Preamble Puncturing*, *Target Wake Time* (TWT para economia de bateria móvel), *BSS Coloring*, Beamforming 4x4, OFDMA e Roaming Rápido 802.11k/v/r (<50ms).
+* ⚖️ **Calibração Multicore RPS (4 CPUs):** Distribuição do tráfego das portas de rede entre todos os 4 núcleos do processador Qualcomm IPQ5332 com buffers TCP otimizados.
+* 🧹 **Debloat do Sistema:** Desativação de processos celulares desnecessários do modelo X7 (`at_ril`, `modem_readd`), telemetrias pesadas da OEM (`monitord`, `sodd`, `cwmp`, `breakpad`) e Samba, liberando **mais de 50 MB de memória RAM**.
+
+---
+
+## 1. 🛡️ Arquitetura Dual-Boot A/B e Proteção Anti-Brick
+
+O Acer Predator Connect T7 conta com 1 GB de memória Flash SPI NAND estruturada em particionamento redundante gerenciado pelo SoC Qualcomm IPQ5332:
 
 ```
        +-----------------------------------------------------------+
@@ -63,153 +94,89 @@ O Acer Predator Connect T7 possui uma memória flash SPI NAND de 1 GB com **part
            |                                                   |
      [SLOT 1 - A]                                        [SLOT 2 - B]
   Partição: mtd21 (rootfs)                           Partição: mtd20 (rootfs_1)
-  Estado: INTATO / RESERVA DE FÁBRICA                Estado: ATIVO EM PRODUÇÃO
-  Firmware: v1.01.000024 OEM                         Firmware: v1.01.000027 Otimizado
-  Função: Salvaguarda Anti-Brick                     Função: LuCI Porta 80 + Wi-Fi 7 AP
+  Estado: INTACTO / RESERVA OEM                      Estado: ATIVO EM PRODUÇÃO
+  Firmware: Versão Nativa do seu Aparelho             Firmware: v1.01.000027 Otimizado
+            (ex: v24, v26 ou v27 - varia por lote)
+  Função: Salvaguarda Anti-Brick de Fábrica           Função: LuCI Porta 80 + Wi-Fi 7
+  U-Boot: 100% Intacto de Fábrica                    U-Boot: 100% Intacto de Fábrica
 ```
 
-### O que controla qual slot inicializa?
-O U-Boot lê as partições **`mtd3` (`0:BOOTCONFIG`)** e **`mtd4` (`0:BOOTCONFIG1`)**. Dentro delas existe a variável binária `primaryboot`:
-* `primaryboot = 1`: O roteador inicializa o Slot 1 (`mtd21`).
-* `primaryboot = 2`: O roteador inicializa o Slot 2 (`mtd20`).
+### O que define qual slot inicializa?
+O U-Boot faz a leitura das partições `mtd3` (`0:BOOTCONFIG`) e `mtd4` (`0:BOOTCONFIG1`), onde fica armazenada a variável `primaryboot`:
+* **`primaryboot = 1`:** Inicializa o **Slot 1** (Firmware de fábrica OEM protegido).
+* **`primaryboot = 2` (ou `0`):** Inicializa o **Slot 2** (OpenWrt v27 com LuCI).
 
 ---
 
-### 🚨 O que fazer se o Slot 2 for corrompido ou quebrar?
+### 🚨 O que fazer se o Slot 2 apresentar problemas?
 
 #### Cenário A: O roteador ainda responde via terminal (Telnet ou SSH)
-Se você estiver no Slot 2 e quiser voltar para o Slot 1 de fábrica a qualquer momento:
-1. Digite um único comando no terminal:
-   ```sh
-   /usr/sbin/boot-acer
-   ```
-2. O script regrava automaticamente `primaryboot = 1` nas partições `mtd3` e `mtd4`, sincroniza a memória flash e reinicia o roteador diretamente no **Slot 1 (OEM intacto)**.
+Basta digitar um único comando no terminal:
+```sh
+/usr/sbin/boot-acer
+```
+O roteador grava `primaryboot = 1` em ambas as partições de boot e reinicia de volta no **Slot 1 oficial intacto**.
 
-*(Alternativa no Windows: basta rodar o script Python [`04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/executar_chaveamento_slot1_recovery.py`](04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/executar_chaveamento_slot1_recovery.py)).*
+*(Alternativa no Windows: basta rodar a opção [1] de chaveamento no launcher).*
 
-#### Cenário B: O Roteador NÃO Inicializa (Brick, Loop de Boot ou Sem Rede)
-* **A Realidade da UART e do Watchdog:** Os pads de teste da UART na placa vêm cobertos de fábrica por máscara de solda preta (sem pinos nem estanho exposto), e o watchdog da Qualcomm muitas vezes congela se o kernel travar no início do init.
-* **A Solução Definitiva de Hardware (Modo Failsafe Web no IP `192.168.1.1`):**
-  1. Desligue a fonte da tomada.
-  2. Pressione e mantenha o **botão físico WPS** pressionado na carcaça.
-  3. Ligue a fonte mantendo o **WPS pressionado por 5 a 10 segundos** até os LEDs piscarem no padrão de recuperação.
-  4. O U-Boot sobe uma **Página Web de Emergência no IP `http://192.168.1.1`**.
-  5. Fixe o IP do seu PC em `192.168.1.66` (máscara `255.255.255.0`, gateway `192.168.1.1`).
-  6. Acesse `http://192.168.1.1` pelo navegador e envie o arquivo `.itb` desejado:
-     * **[`restaurar_slot1_acer.itb`](02_BACKUPS_E_DUMPS/Imagens_Recuperacao_WPS_Failsafe/restaurar_slot1_acer.itb):** Regrava a NAND e reinicia direto no **Slot 1 (OEM v24 de fábrica)**.
-     * **[`chavear_slot2_acer.itb`](02_BACKUPS_E_DUMPS/Imagens_Recuperacao_WPS_Failsafe/chavear_slot2_acer.itb):** Regrava a NAND e reinicia no **Slot 2 (v27 LuCI)**.
-  *O U-Boot descompacta o arquivo na memória RAM, regrava a partição `BOOTCONFIG` e reinicia no slot selecionado em menos de 1 minuto, sem cabos seriais e sem abrir o aparelho!*
+#### Cenário B: Recuperação de Emergência de Hardware (WPS Failsafe no IP `192.168.1.1`)
+Como o **U-Boot permanece 100% intacto de fábrica**, o modo de recuperação por hardware está sempre disponível:
+1. Desconecte a fonte de energia.
+2. Mantenha pressionado o **botão físico WPS** na carcaça.
+3. Conecte a fonte mantendo o **WPS pressionado por 5 a 10 segundos** até os LEDs começarem a piscar no modo recovery.
+4. O U-Boot inicializa uma **Página Web de Emergência no IP `http://192.168.1.1`**.
+5. Configure a placa de rede do seu PC com o IP estático `192.168.1.66` (máscara `255.255.255.0`, gateway `192.168.1.1`).
+6. Abra `http://192.168.1.1` no navegador e faça o upload do arquivo de recuperação correspondente:
+   * **`restaurar_slot1_acer.itb`:** Restaura o boot para o **Slot 1 (Firmware OEM nativo de fábrica do seu roteador)**.
+   * **`chavear_slot2_acer.itb`:** Restaura o boot para o **Slot 2 (LuCI v27)**.
 
-#### Cenário C: Como reinstalar o Slot 2 do zero (Reflash Limpo)
-Se o sistema de arquivos do Slot 2 for apagado ou danificado:
+#### Cenário C: Regravação Limpa do Slot 2 a partir do Slot 1
+Caso queira reinstalar o Slot 2 do zero com partição limpa:
 1. Inicialize no Slot 1.
-2. Execute o script de gravação direta via rede:
-   ```powershell
-   python "04_SCRIPTS_E_FERRAMENTAS\Automacao_e_Unlock\gravar_v27_slot2.py"
-   ```
-3. Ele regrava a imagem oficial v27 na partição `mtd20`, define `primaryboot = 2` e reinicia no Slot 2 novo em folha!
+2. No menu da Central de Gerenciamento, selecione a opção **`[2] Gravar Firmware Stock v27 no Slot 2`**.
+3. O script baixa os arquivos na memória RAM, valida os hashes MD5 e regrava os volumes do Slot 2 com LuCI pré-injetado na porta 80.
 
 ---
 
-## 2. 🚀 Configuração de Alta Performance (Modo Access Point 2.5 Gbps)
+## 2. 📶 Canais de Rádio e Ajustes de Wi-Fi 7
 
-Para transformar o roteador em um ponto de acesso sem gargalos de rede:
-
-| Parâmetro | Padrão Stock | Modo AP Otimizado | Benefício Técnico |
-| :--- | :--- | :--- | :--- |
-| **Porta WAN (2.5G)** | Roteamento NAT L3 | Integrada na `br-lan` | As 3 portas físicas viram um switch unificado de 2.5 Gbps |
-| **Bypass de Netfilter** | `iptables = 1` | `sysctl net.bridge.bridge-nf-call-iptables=0` | Zero drops de DHCP/mDNS/AirPlay; comutação Layer-2 a velocidade de fio |
-| **Servidor DHCP** | Ativo (Pool 76.x) | Desativado | Sem duplo NAT; IP distribuído pelo roteador mestre |
-| **Cache DNS** | 150 registros | 10.000 registros (TTL min 300s) | Resposta de resolução DNS instantânea (0 ms) |
-| **Tabela Conntrack**| 16.384 conexões | 65.536 conexões (timeout 7440s) | Estabilidade para centenas de conexões P2P e torrents |
-| **TCP Fast Open** | Desativado | Ativado (`tcp_fastopen = 3`) | Aceleração de abertura de páginas web e APIs |
-| **UPnP Gamer** | Básico | `miniupnpd` com NAT-PMP e IGDv1 | NAT Tipo 1 / Aberto automático no PS5, Xbox e PC |
-
----
-
-## 3. 📶 Canais de Rádio e Ajustes Finos de Wi-Fi 7
-
-| Rádio | Frequência | SSID | Canal / Largura | Taxa Física | Roaming / Recursos |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`wifi2`** | 6 GHz | **`CASA_ARK_7G`** | Auto / **`HT320` (320 MHz)** | **5.7648 Gb/s** | WPA3-SAE, PMF Obrigatório, 802.11k/v, DTIM=2 |
-| **`wifi1`** | 5 GHz | **`CASA_ARK_5G`** | Auto / **`HT80` (80 MHz)** | **1.44 Gb/s** | 4 Antenas Beamforming (8.38 dBi), 802.11k/v, DTIM=2 |
-| **`wifi0`** | 2.4 GHz | *(Opcional / IoT)* | Auto / `HT20` | 688 Mb/s | WPA2-PSK AES (Compatibilidade legada universal) |
+| Rádio | Frequência | Largura / Canal | Taxa de Link | Recursos & Roaming |
+| :--- | :--- | :--- | :--- | :--- |
+| **`wifi2`** | 6 GHz | **HT320 (320 MHz)** / Auto | **5.7648 Gb/s** | WPA3-SAE, PMF Obrigatório, 802.11k/v, DTIM=2, TWT, Puncturing |
+| **`wifi1`** | 5 GHz | **HT80 (80 MHz)** / Auto | **1.44 Gb/s** | 4 Antenas Beamforming (8.38 dBi), 802.11k/v, DTIM=2 |
+| **`wifi0`** | 2.4 GHz | `HT20` / Auto | 688 Mb/s | WPA2-PSK AES (Compatibilidade legada e dispositivos IoT) |
 
 > [!NOTE]
-> **Sobre a Potência de Transmissão (dBm):** O rádio de 5 GHz já opera no teto físico de seus amplificadores (~27.3 dBm conduzido / ~35 dBm EIRP com beamforming). O rádio de 6 GHz é calibrado de fábrica sob a máscara regulatória internacional LPI (Low Power Indoor - 5 dBm/MHz). Tentar forçar dBm mais alto no software em canais de 320 MHz satura os amplificadores e gera distorção de constelação (EVM) no 4096-QAM, derrubando a velocidade real. A calibração de fábrica já entrega o limiar perfeito.
+> **Calibração de Potência de Transmissão (dBm):** O rádio de 5 GHz já opera no limite físico de projeto de seus amplificadores (~27.3 dBm conduzido / ~35 dBm EIRP). O rádio de 6 GHz é calibrado de fábrica sob a máscara internacional LPI (Low Power Indoor - 5 dBm/MHz). Forçar potência superior por software em canais de 320 MHz satura os front-ends e causa degradação de modulação (EVM) em 4096-QAM, reduzindo a taxa de transferência. Os valores de fábrica entregam o equilíbrio matemático ideal de alcance e estabilidade.
 
 ---
 
-## 4. 🚀 Assistente Interativo Universal & One-Liner PowerShell (Windows, macOS e Linux)
+## 3. 🔒 Hardening de Segurança: Gerenciamento do Telnet
 
-Para garantir que qualquer pessoa consiga operar o roteador sem erros — mesmo em um computador recém-formatado —, disponibilizamos um assistente inteligente com **triagem guiada de root, gerador automático de `.cfg` e Pre-Flight Check**:
+A porta **Telnet (23)** vem ativada no desbloqueio para assegurar que qualquer computador consiga gerenciar o roteador sem bloqueios de chaves SSH. O serviço escuta **estritamente na rede local (LAN)** e é bloqueado 100% na WAN.
 
-### ⚡ Método Mais Rápido (1 Linha no Windows — Sem Baixar Nada Manualmente):
-Abra o **PowerShell** no Windows e cole o comando oficial:
-```powershell
-irm https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.ps1 | iex
-```
-
-### Outras Formas de Executar (Se já clonou ou baixou o repositório):
-* **No Windows:** Dê duplo clique em **`EXECUTAR_T7.bat`** (ou execute `.\iniciar.ps1` no PowerShell).  
-  *(Totalmente compatível com "Executar como Administrador" sem perder os caminhos).*
-* **No macOS e Linux:** Abra o terminal na pasta e execute:
-  ```bash
-  sh executar_t7.sh
-  ```
-
----
-
-### 🧭 Como Funciona a Triagem do Assistente:
-
-1. **Seleção de Idioma:** Escolha Inglês (padrão ao apertar ENTER) ou Português (Brasil).
-2. **Sonda Automática:** O script localiza o IP do roteador e inspeciona se as portas Web (80), Telnet (23) e SSH (22) estão abertas.
-3. **Pergunta de Triagem Inicial:**
-   > *"Você já possui acesso ROOT / SSH liberado no roteador?"*
-   * **Se responder NÃO (Roteador travado de fábrica):**
-     - O assistente gera o arquivo **`config_desbloqueio_t7.cfg`** direto na sua **Área de Trabalho**.
-     - Abre seu navegador automaticamente na tela de restauração do painel da Acer.
-     - Explica onde clicar para enviar o backup e ativar o root em 1 minuto.
-     - Monitora ativamente a reinicialização e confirma quando a porta Telnet abrir com sucesso!
-   * **Se responder SIM (Já desbloqueado):**
-     - Confere o ambiente Python 3.14 (se faltar, instala silenciosamente via WinGet em 1 clique).
-     - Abre a **Central de Gerenciamento** com Pre-Flight Check, gravação do Slot 2, ativação do LuCI, Dual-Boot e Hardening.
-
----
-
-## 5. 🔒 Hardening Pós-Instalação: Como Desativar o Telnet
-
-O **Telnet (porta 23)** vem ativado no desbloqueio para garantir que qualquer computador (mesmo sem chaves SSH cadastradas) consiga se comunicar com o roteador sem erros de autenticação ou certificados. Ele opera **estritamente na rede local (LAN)** e é 100% bloqueado na WAN pelo firewall.
-
-Se após concluir sua instalação e testar o LuCI você desejar desativar o Telnet para manter apenas conexões SSH criptografadas:
-* **No terminal do roteador:** digite apenas:
+Para desativar o Telnet após concluir sua configuração:
+* **No terminal do roteador:** digite:
   ```sh
   desativar-telnet
   ```
-  *(Para reativar no futuro caso precise rodar automações, basta digitar: `ativar-telnet`)*.
-* **Pelo computador:** execute a opção [5] no launcher ou rode:
-  ```bash
-  python Scripts_Automacao/gerenciar_telnet.py desativar
-  ```
+  *(Para reativar a qualquer momento, basta digitar: `ativar-telnet`)*.
+* **Pelo computador:** Escolha a opção **`[4] Gerenciar Telnet (Hardening)`** na Central de Gerenciamento.
 
 ---
 
-## 6. 🔗 Protocolo de Pesquisa e Termos de Teste: Acer Predator Connect X7 (5G CPE)
+## 4. 🔗 Protocolo de Pesquisa: Acer Predator Connect X7 (5G CPE)
 
-O **Acer Predator Connect X7** possui arquitetura muito similar ao T7, porém conta com um modem celular 5G (Qualcomm Snapdragon X62) em slot interno e firmware oficial `v50`.
+O modelo **Acer Predator Connect X7** compartilha o mesmo SoC Qualcomm IPQ5332, porém incorpora um modem celular 5G M.2 (Snapdragon X62) com firmware oficial `v50`.
 
-> [!WARNING]
-> **TRAVA ANTI-BRICK ATIVA:** As imagens da versão 27 (`v27`) contidas neste repositório são **EXCLUSIVAS do Predator Connect T7**. A gravação direta dessas imagens no X7 causará **BRICK**. Por essa razão, a gravação no X7 está bloqueada no código.
+> [!CAUTION]
+> **TRAVA DE SEGURANÇA ATIVA:** As imagens v27 deste repositório são **EXCLUSIVAS do Predator Connect T7**. A gravação dessas imagens em um X7 causará **BRICK**. O script de gravação detecta a arquitetura e bloqueia tentativas indevidas.
 
-### Como Colaborar com os Testes do X7:
-1. **Diagnóstico Seguro:** Execute a opção `[7] Area de Pesquisa e Diagnostico do Modelo X7` no launcher (`python Scripts_Automacao/diagnostico_x7.py`) para gerar um relatório somente-leitura do seu aparelho.
-2. **Envio do Backup (.cfg):** O usuário com X7 precisará compartilhar seu arquivo de backup `.cfg` original para auditoria dos serviços do modem.
-3. **Disposição para Testes em Bancada:** Testes em hardware híbrido exigem acompanhamento cauteloso.
-4. **Alta Recuperabilidade:** Assim como no T7, o X7 utiliza particionamento redundante Dual-Boot A/B. **Desde que a Partição 1 (Slot 1 original) NÃO seja sobrescrita ou forçada após obter o root, a chance de recuperação e chaveamento seguro de volta para o sistema original é altíssima!**
+* Proprietários do modelo X7 podem utilizar a opção **`[6] Área de Pesquisa do Modelo X7`** para coletar dumps de diagnóstico somente-leitura e colaborar com a engenharia reversa do módulo 5G.
 
 ---
 
 <p align="center">
   <b>Desenvolvido pela Comunidade OpenWrt & Engenharia Reversa Independente</b><br>
-  Licença MIT — Livre para modificação e aprimoramento.
+  Licença MIT — Livre para uso, estudo e aprimoramento.
 </p>

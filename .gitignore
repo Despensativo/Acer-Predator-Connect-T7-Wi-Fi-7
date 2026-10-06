@@ -1,6 +1,7 @@
 # Ambientes e temporarios
 _FORA DO GitHub/
 *.log
+*.ipk
 .DS_Store
 ._*
 Thumbs.db

@@ -47,7 +47,7 @@
 ### 📁 [01_FIRMWARES_E_IMAGENS/](01_FIRMWARES_E_IMAGENS/)
 - `Official_v27_Componentes/`: Kernel, rootfs e wifi_fw da ROM oficial v27 para Slot 2.
 - `Stock_OEM_Recovery/`: Imagem completa de fábrica v27 (`nand-4k-...`) e binários U-Boot para unbrick físico WPS 5s.
-- `Ark_Router/`: Pacote oficial LuCI do painel customizado (`luci-app-ark-router.ipk`).
+- `Ark_Router/`: Cache local do painel (pacote baixado sob demanda direto do GitHub Releases pela Opção [5]).
 - `Custom_SquashFS/`: Imagem consolidada de RootFS otimizado.
 
 ### 📁 [02_BACKUPS_E_DUMPS/](02_BACKUPS_E_DUMPS/)

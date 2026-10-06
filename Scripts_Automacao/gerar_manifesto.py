@@ -35,7 +35,6 @@ TRACKED_FILES = [
     {"path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot2_openwrt.bin", "category": "boot"},
     {"path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/COMO_USAR_MODO_RECOVERY_INSTRUCTIONS.txt", "category": "doc"},
     {"path": "Scripts_Automacao/instalar_ark_router.py", "category": "script"},
-    {"path": "01_FIRMWARES_E_IMAGENS/Ark_Router/luci-app-ark-router.ipk", "category": "app"},
     {"path": "iniciar.ps1", "category": "launcher"},
     {"path": "iniciar.py", "category": "launcher"},
     {"path": "executar_t7.sh", "category": "launcher"},

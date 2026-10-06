@@ -1,6 +1,6 @@
 {
   "suite_version": "1.1.0",
-  "updated_at": "2026-10-06T04:44:02Z",
+  "updated_at": "2026-10-06T15:35:11Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
@@ -149,13 +149,6 @@
       "size": 25265,
       "sha256": "EFD0141816E3439BE6C8F31E51020CAA1D31E9BB10F4DC60A85322A189BF570F",
       "updated_at": "2026-10-06T04:18:30Z"
-    },
-    {
-      "path": "01_FIRMWARES_E_IMAGENS/Ark_Router/luci-app-ark-router.ipk",
-      "category": "app",
-      "size": 601545,
-      "sha256": "0EB1D69CDF0848266760E7ED23FC300E14D13C5CD23A32C3E0973831DA56897C",
-      "updated_at": "2026-10-06T04:21:54Z"
     },
     {
       "path": "iniciar.ps1",

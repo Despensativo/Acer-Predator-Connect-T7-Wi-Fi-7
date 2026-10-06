@@ -301,20 +301,14 @@ def aplicar_otimizacao_completa(tn, target_ip):
     print("\n[*] [3/10] Limpando interfaces de rede fantasmas (Guest, IoT, WAN5GMODEM celular herdado do X7)...")
     print("    -> [O QUE FAZ]: Remove configuracoes de interfaces orfas do X7 que geravam caixas vermelhas no LuCI.")
     print("    -> [NOTA DE SEGURANCA]: Sua porta fisica WAN Ethernet 2.5 Gbps (eth0) permanece 100% INTACTA e ATIVA!")
-    run_cmd(tn, "uci set system.@system[0].hostname='Predator-Connect-T7'")
-    run_cmd(tn, "uci commit system")
-    run_cmd(tn, "/etc/init.d/system reload")
+    print("    -> [TEMPO ESTIMADO]: ~10 a 20 segundos (aguarde a compilacao e recarga das regras do firewall)...")
+    run_cmd(tn, "uci set system.@system[0].hostname='Predator-Connect-T7'; uci commit system")
+    run_cmd(tn, "/etc/init.d/system reload 2>/dev/null")
     run_cmd(tn, "uci -q delete network.guest; uci -q delete network.iot; uci -q delete network.wan1; uci -q delete network.xlatd; uci commit network")
     run_cmd(tn, "uci -q delete dhcp.guest; uci -q delete dhcp.iot; uci commit dhcp")
-    fw_rules = [
-        "guest", "iot", "guest_fwd", "iot_fwd", "guest_dhcp", "iot_dhcp",
-        "guest_dns", "iot_dns", "guest_ltogaccess", "iot_ltoiaccess",
-        "guest_gtolaccess", "iot_itolaccess", "guest_gtoiaccess", "iot_itogaccess"
-    ]
-    for r in fw_rules:
-        run_cmd(tn, f"uci -q delete firewall.{r}")
-    run_cmd(tn, "uci -q del_list firewall.wan.network='wan1'; uci commit firewall")
-    run_cmd(tn, "/etc/init.d/network reload; /etc/init.d/firewall restart")
+    run_cmd(tn, "for r in guest iot guest_fwd iot_fwd guest_dhcp iot_dhcp guest_dns iot_dns guest_ltogaccess iot_ltoiaccess guest_gtolaccess iot_itolaccess guest_gtoiaccess iot_itogaccess; do uci -q delete firewall.$r; done; uci -q del_list firewall.wan.network='wan1'; uci commit firewall")
+    print("    [*] Recarregando servicos de rede e firewall (aguarde)...")
+    run_cmd(tn, "/etc/init.d/network reload; /etc/init.d/firewall restart", timeout=30)
     print("    [OK] Interfaces fantasmas removidas e Hostname corrigido para RFC 1123.")
     print("    [OK] Conexao WAN de internet cabeada 100% preservada.")
 

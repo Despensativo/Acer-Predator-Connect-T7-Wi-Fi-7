@@ -69,7 +69,10 @@ TEXTS = {
         "repo_info": "Repositorio Oficial: https://github.com/Despensativo/ark-router",
         "checking_status": "Verificando conexao e servicos no roteador...",
         "router_ip": "IP do Roteador",
-        "slot_warning": "⚠️ AVISO: O roteador parece estar no Slot 1 (Firmware Original Acer).\nO painel ARK Router e projetado para rodar no Slot 2 (OpenWrt / LuCI).\nRecomenda-se chavear para o Slot 2 antes de instalar.",
+        "slot_detected": "Slot Ativo Detectado: {slot}",
+        "slot1_name": "Slot 1 (Firmware Original Acer Stock)",
+        "slot2_name": "Slot 2 (OpenWrt / LuCI)",
+        "slot_warning": "⚠️ AVISO: O roteador esta no Slot 1 (Firmware Original Acer).\nO painel ARK Router e projetado para rodar no Slot 2 (OpenWrt / LuCI).\nRecomenda-se chavear para o Slot 2 antes de instalar.",
         "slot_prompt": "Deseja continuar a instalacao mesmo assim? [S/N]: ",
         "arch_detected": "Arquitetura do Roteador: ARM 32-bit ({arch})",
         "features_title": "DESTAQUES E RECURSOS DO PAINEL ARK ROUTER:",
@@ -115,7 +118,10 @@ TEXTS = {
         "repo_info": "Official Repository: https://github.com/Despensativo/ark-router",
         "checking_status": "Checking connection and router services...",
         "router_ip": "Router IP",
-        "slot_warning": "⚠️ WARNING: Router appears to be in Slot 1 (Factory Stock Acer).\nARK Router panel is designed to run in Slot 2 (OpenWrt / LuCI).\nIt is recommended to switch to Slot 2 before installing.",
+        "slot_detected": "Active Slot Detected: {slot}",
+        "slot1_name": "Slot 1 (Factory Stock Acer)",
+        "slot2_name": "Slot 2 (OpenWrt / LuCI)",
+        "slot_warning": "⚠️ WARNING: Router is currently in Slot 1 (Factory Stock Acer).\nARK Router panel is designed to run in Slot 2 (OpenWrt / LuCI).\nIt is recommended to switch to Slot 2 before installing.",
         "slot_prompt": "Do you want to proceed anyway? [Y/N]: ",
         "arch_detected": "Router Architecture: ARM 32-bit ({arch})",
         "features_title": "ARK ROUTER PANEL HIGHLIGHTS & FEATURES:",
@@ -319,9 +325,14 @@ def main():
         safe_input(t("press_enter"))
         return
 
-    # Verificar Slot Atual
-    slot_out = run_cmd(tn, "uci -q get bootconfig.@bootconfig[0].primaryboot 2>/dev/null || cat /proc/cmdline")
-    is_slot1 = ("primaryboot=0" in slot_out) or ("primaryboot=1" not in slot_out and "slot2" not in slot_out and "rootfs" in slot_out)
+    # Verificar Slot Atual (IPQ5332: primaryboot = 1 -> Slot 1 Acer OEM; primaryboot = 0 -> Slot 2 OpenWrt)
+    slot_out = run_cmd(tn, "cat /proc/boot_info/bootconfig0/rootfs/primaryboot 2>/dev/null || cat /proc/boot_info/bootconfig1/rootfs/primaryboot 2>/dev/null").strip()
+    slot_lines = [l.strip() for l in slot_out.splitlines() if l.strip() and not l.strip().startswith("cat ") and not l.strip().startswith("/")]
+    slot_val = slot_lines[-1] if slot_lines else ""
+    is_slot1 = (slot_val == "1")
+    slot_label = t("slot1_name") if is_slot1 else t("slot2_name")
+    print(f"  [+] {C_BOLD}{t('slot_detected').format(slot=slot_label)}{C_RESET}")
+
     if is_slot1:
         print(f"\n{C_YELLOW}{t('slot_warning')}{C_RESET}\n")
         ans = safe_input(f"  {t('slot_prompt')}").lower()

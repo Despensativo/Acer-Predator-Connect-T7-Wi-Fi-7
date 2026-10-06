@@ -755,4 +755,50 @@ if ($NeedsUnlock) {
 # 6. Executar a Central de Gerenciamento (launcher_t7.py)
 Write-Header $M["launching_suite"]
 $LauncherPy = "$RepoDir\Scripts_Automacao\launcher_t7.py"
-& $PythonCmd $LauncherPy --lang $Lang --ip $RouterIP
+
+if (-not (Test-Path $LauncherPy)) {
+    # 1. Tentar encontrar em diretorios locais alternativos
+    $candidates = @(
+        "$LocalSourceDir\Scripts_Automacao\launcher_t7.py",
+        "$PSScriptRoot\Scripts_Automacao\launcher_t7.py",
+        ".\Scripts_Automacao\launcher_t7.py",
+        "H:\FEITOS COM IA\Acer-Predator-Connect-T7\Scripts_Automacao\launcher_t7.py"
+    )
+    foreach ($cand in $candidates) {
+        if ($cand -and (Test-Path $cand)) {
+            $LauncherPy = $cand
+            break
+        }
+    }
+}
+
+# 2. Se ainda assim nao existir, baixar diretamente do GitHub como salvaguarda
+if (-not (Test-Path $LauncherPy)) {
+    $LauncherDir = "$RepoDir\Scripts_Automacao"
+    if (-not (Test-Path $LauncherDir)) {
+        New-Item -ItemType Directory -Path $LauncherDir -Force | Out-Null
+    }
+    Write-Info "Garantindo arquivos mestre da central do GitHub..."
+    $cacheBuster = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    try {
+        Invoke-WebRequest -Uri "$RawBase/Scripts_Automacao/launcher_t7.py?t=$cacheBuster" -OutFile "$LauncherDir\launcher_t7.py" -UseBasicParsing
+        Invoke-WebRequest -Uri "$RawBase/Scripts_Automacao/telnet_compat.py?t=$cacheBuster" -OutFile "$LauncherDir\telnet_compat.py" -UseBasicParsing
+        Invoke-WebRequest -Uri "$RawBase/Scripts_Automacao/logger_t7.py?t=$cacheBuster" -OutFile "$LauncherDir\logger_t7.py" -UseBasicParsing
+        $LauncherPy = "$LauncherDir\launcher_t7.py"
+    } catch {
+        Write-Err "Nao foi possivel baixar launcher_t7.py do GitHub: $_"
+    }
+}
+
+# 3. Garantir que o diretorio de execucao seja a pasta da suite (evita executar dentro de system32)
+$SuiteRootDir = Split-Path (Split-Path $LauncherPy -Parent) -Parent
+if (Test-Path $SuiteRootDir) {
+    Push-Location $SuiteRootDir
+}
+try {
+    & $PythonCmd $LauncherPy --lang $Lang --ip $RouterIP
+} finally {
+    if (Test-Path $SuiteRootDir) {
+        Pop-Location
+    }
+}

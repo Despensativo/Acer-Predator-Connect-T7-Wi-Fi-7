@@ -167,9 +167,9 @@
     {
       "path": "iniciar.ps1",
       "category": "launcher",
-      "size": 38907,
-      "sha256": "AA2AEF9FA232A564CB4211AC3F939CD83F88DFE5814D11411F18ACBD23EA1FD3",
-      "updated_at": "2026-10-06T02:38:00Z"
+      "size": 40761,
+      "sha256": "5A6BD24117F409EA60A843339F1743273DB5CFEB9883B9FE2CC1513BED33C2FF",
+      "updated_at": "2026-10-06T02:41:00Z"
     },
     {
       "path": "EXECUTAR_T7.bat",

@@ -37,6 +37,7 @@ irm https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-F
 4. **Fluxo Inteligente:**
    * **Se o roteador estiver travado de fábrica:** Gera na sua Área de Trabalho o arquivo de desbloqueio `.cfg`, abre a página de restauração no navegador e aguarda a reinicialização.
    * **Se o roteador já estiver liberado:** Abre direto a **Central de Gerenciamento Interativa** para gravação do Slot 2, ativação do LuCI, chaveamento de boot ou gerenciamento de Telnet.
+5. **Geração Automática de Logs (`LOG_PREDATOR_T7.txt`):** Todas as etapas, verificações de portas e comandos executados são gravados em tempo real no arquivo `Desktop\LOG_PREDATOR_T7.txt`. Se você encontrar qualquer erro ou comportamento inesperado, basta compartilhar esse arquivo para suporte imediato!
 
 ---
 
@@ -78,6 +79,7 @@ Se você já baixou o arquivo `.zip` ou clonou o repositório para o seu computa
 * 📶 **Wi-Fi 7 Turbo Calibrado:** Rádio 6 GHz em 320 MHz de largura (5.76 Gbps) com *Preamble Puncturing*, *Target Wake Time* (TWT para economia de bateria móvel), *BSS Coloring*, Beamforming 4x4, OFDMA e Roaming Rápido 802.11k/v/r (<50ms).
 * ⚖️ **Calibração Multicore RPS (4 CPUs):** Distribuição do tráfego das portas de rede entre todos os 4 núcleos do processador Qualcomm IPQ5332 com buffers TCP otimizados.
 * 🧹 **Debloat do Sistema:** Desativação de processos celulares desnecessários do modelo X7 (`at_ril`, `modem_readd`), telemetrias pesadas da OEM (`monitord`, `sodd`, `cwmp`, `breakpad`) e Samba, liberando **mais de 50 MB de memória RAM**.
+* 📋 **Log de Diagnóstico Automático em Tempo Real:** O toolkit grava continuamente o arquivo `Desktop\LOG_PREDATOR_T7.txt` com o histórico detalhado de todas as operações, facilitando o diagnóstico e suporte em caso de dúvidas.
 
 ---
 

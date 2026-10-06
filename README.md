@@ -37,6 +37,7 @@ irm https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-F
 4. **Smart Workflow:**
    * **If the router is factory locked:** Generates the unlock `.cfg` directly on your Desktop, launches the restore page in your browser, and monitors reboot.
    * **If the router is already unlocked:** Opens straight into the **Master Management Suite** for Slot 2 flashing, LuCI activation, dual-boot switching, or Telnet hardening.
+5. **Automatic Diagnostic Logging (`LOG_PREDATOR_T7.txt`):** Every step, probe, flash write, and integrity verification is automatically logged in real time to `Desktop\LOG_PREDATOR_T7.txt`. If you run into any unexpected issue or need assistance, simply share this file!
 
 ---
 
@@ -78,6 +79,7 @@ If you have already downloaded the `.zip` or cloned the repository:
 * 📶 **Calibrated Turbo Wi-Fi 7:** 6 GHz radio in 320 MHz width (5.76 Gbps) with *Preamble Puncturing*, *Target Wake Time* (TWT for mobile battery saving), *BSS Coloring*, 4x4 Beamforming, OFDMA, and Fast Roaming 802.11k/v/r (<50ms).
 * ⚖️ **Multicore RPS Calibration (4 CPUs):** Network port packet queues distributed across all 4 Qualcomm IPQ5332 cores with optimized TCP buffers.
 * 🧹 **Clean System Debloat:** Orphaned cellular daemons from model X7 (`at_ril`, `modem_readd`), heavy OEM telemetry (`monitord`, `sodd`, `cwmp`, `breakpad`), and Samba halted, freeing **+50 MB of RAM**.
+* 📋 **Real-Time Automatic Diagnostic Logging:** The toolkit continuously logs all operational details into `Desktop\LOG_PREDATOR_T7.txt`, making troubleshooting and community support immediate and effortless.
 
 ---
 

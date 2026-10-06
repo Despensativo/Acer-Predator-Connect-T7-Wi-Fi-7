@@ -102,11 +102,12 @@ TEXTS = {
         "menu_3": "[3] Flash Stock Firmware v27 to Slot 2 (With/Without Root) [T7 Exclusive]",
         "menu_4": "[4] Optimize & Activate LuCI on Port 80 (Slot 2)",
         "menu_5": "[5] Manage Telnet (Hardening / Disable or Enable)",
-        "menu_6": "[6] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
-        "menu_7": "[7] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
-        "menu_8": "[8] Check & Sync Updates from GitHub (Smart Checksum)",
+        "menu_6": "[6] Install Ark Router Dashboard (OpenWrt / LuCI)",
+        "menu_7": "[7] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
+        "menu_8": "[8] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
+        "menu_9": "[9] Check & Sync Updates from GitHub (Smart Checksum)",
         "menu_0": "[0] Exit",
-        "prompt_choice": "Choose an option (0-8): ",
+        "prompt_choice": "Choose an option (0-9): ",
         "press_enter": "\nPress ENTER to return to menu...",
         "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [5] (Hardening)!\033[0m",
         "suite_version": "Suite Version",
@@ -154,11 +155,12 @@ TEXTS = {
         "menu_3": "[3] Gravar Firmware Stock v27 no Slot 2 (Com/Sem Root) [Exclusivo T7]",
         "menu_4": "[4] Otimizar e Ativar LuCI na Porta 80 (Slot 2)",
         "menu_5": "[5] Gerenciar Telnet (Hardening / Desativar ou Reativar)",
-        "menu_6": "[6] Area de Pesquisa do Modelo X7 (Somente Leitura)",
-        "menu_7": "[7] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
-        "menu_8": "[8] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
+        "menu_6": "[6] Instalar Painel Ark Router (OpenWrt / LuCI)",
+        "menu_7": "[7] Area de Pesquisa do Modelo X7 (Somente Leitura)",
+        "menu_8": "[8] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
+        "menu_9": "[9] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
         "menu_0": "[0] Sair",
-        "prompt_choice": "Escolha uma opcao (0-8): ",
+        "prompt_choice": "Escolha uma opcao (0-9): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
         "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [5] (Hardening)!\033[0m",
         "suite_version": "Versao da Suite",
@@ -699,6 +701,7 @@ def main_menu():
         print(f"  {t('menu_6')}")
         print(f"  {t('menu_7')}")
         print(f"  {t('menu_8')}")
+        print(f"  {t('menu_9')}")
         print(f"  {t('menu_0')}")
         print("=" * 75)
 
@@ -765,15 +768,19 @@ def main_menu():
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "6":
-            log_event("MENU", "Opcao [6] Area de Pesquisa X7 selecionada", "INFO")
+            log_event("MENU", "Opcao [6] Instalar Painel Ark Router selecionada", "INFO")
+            script = get_script_path("instalar_ark_router.py")
+            subprocess.call([sys.executable, script, f"--ip={rip}", f"--lang={CURRENT_LANG}"])
+        elif choice == "7":
+            log_event("MENU", "Opcao [7] Area de Pesquisa X7 selecionada", "INFO")
             script = get_script_path("diagnostico_x7.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "7":
-            log_event("MENU", "Opcao [7] Modo de Recuperacao de Emergencia selecionada", "INFO")
-            show_emergency_recovery()
         elif choice == "8":
-            log_event("MENU", "Opcao [8] Sincronizar e Atualizar Ferramenta selecionada", "INFO")
+            log_event("MENU", "Opcao [8] Modo de Recuperacao de Emergencia selecionada", "INFO")
+            show_emergency_recovery()
+        elif choice == "9":
+            log_event("MENU", "Opcao [9] Sincronizar e Atualizar Ferramenta selecionada", "INFO")
             check_and_sync_updates()
 
 if __name__ == "__main__":

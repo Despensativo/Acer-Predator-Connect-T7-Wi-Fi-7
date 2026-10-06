@@ -81,15 +81,7 @@ TEXTS = {
         "feat_traffic": "  📊 MONITOR DE TRAFEGO POR DISPOSITIVO:\n     Graficos instantaneos de largura de banda por IP/MAC (Download e Upload separados).",
         "feat_sqm": "  🎮 OTIMIZACAO SQM CAKE (ANTI-BUFFERBLOAT):\n     Filas inteligentes para garantir ping estavel e jitter zero em jogos online.",
         "feat_theme": "  🎨 TEMA VISUAL ARK GAMER MODERNO:\n     Interface escura (Glassmorphism / Dark Theme) 100% responsiva para celular e PC.",
-        "menu_title": "SELECAO DA VERSAO DO PAINEL ARK ROUTER:",
-        "menu_opt1": "[1] Versao Padrao / Lite (luci-app-ark-router.ipk ~628 KB) [RECOMENDADA / 32-BIT]",
-        "menu_opt1_desc": "    └─ 100% compativel com ARM 32-bit. Codigo interpretado puro, leve e completo.",
-        "menu_opt2": "[2] Versao Full (luci-app-ark-router-full.ipk ~1.35 MB) [AVISO: MODULOS 64-BIT]",
-        "menu_opt2_desc": "    └─ Contem utilitarios compilados para 64-bit (aarch64) incompativeis com userland 32-bit.",
-        "choose_prompt": "Escolha a versao desejada [1 ou 2] (Recomendada: 1 - Pressione ENTER): ",
-        "full_arch_warn": "⚠️  ALERTA DE ARQUITETURA: O roteador opera com Linux 32-bit (armv7l).\nA versao Full contem modulos compilados para 64-bit (aarch64, ex: Starlink Dish)\nque apresentarao erro de execucao ('Exec format error') nesta arquitetura.",
-        "full_confirm_prompt": "Deseja insistir na versao Full mesmo assim? [S/N] (Padrao: N - usar Lite): ",
-        "fallback_lite_safe": "[*] Alternando com seguranca para a Versao Padrao / Lite (Recomendada).",
+        "target_pkg_info": "Pacote Oficial: luci-app-ark-router.ipk (~628 KB - 100% ARM 32-bit Nativo)",
         "fetching_release": "Consultando versao mais recente no GitHub Releases...",
         "found_release": "Ultima versao detectada no GitHub: {tag}",
         "downloading": "Baixando {name} do GitHub...",
@@ -130,15 +122,7 @@ TEXTS = {
         "feat_traffic": "  📊 PER-DEVICE TRAFFIC MONITORING:\n     Live real-time bandwidth graphs per host/IP/MAC (Upload and Download separated).",
         "feat_sqm": "  🎮 SQM CAKE ANTI-BUFFERBLOAT OPTIMIZATION:\n     Intelligent queue management to guarantee rock-solid ping and zero jitter in gaming.",
         "feat_theme": "  🎨 MODERN DARK ARK THEME:\n     Sleek Glassmorphism dark interface, 100% responsive for smartphones and desktops.",
-        "menu_title": "ARK ROUTER PANEL VERSION SELECTION:",
-        "menu_opt1": "[1] Standard / Lite Version (luci-app-ark-router.ipk ~628 KB) [RECOMMENDED / 32-BIT]",
-        "menu_opt1_desc": "    └─ 100% compatible with ARM 32-bit. Clean interpreted code, lightweight and full-featured.",
-        "menu_opt2": "[2] Full Version (luci-app-ark-router-full.ipk ~1.35 MB) [WARNING: 64-BIT MODULES]",
-        "menu_opt2_desc": "    └─ Contains binaries compiled for 64-bit (aarch64) incompatible with 32-bit userland.",
-        "choose_prompt": "Choose version [1 or 2] (Recommended: 1 - Press ENTER): ",
-        "full_arch_warn": "⚠️  ARCHITECTURE WARNING: Router runs 32-bit ARM Linux (armv7l).\nThe Full version contains 64-bit binaries (aarch64, e.g. Starlink Dish)\nthat will fail with 'Exec format error' on this architecture.",
-        "full_confirm_prompt": "Do you really want to force the Full version? [Y/N] (Default: N - use Lite): ",
-        "fallback_lite_safe": "[*] Safely switching to Standard / Lite Version (Recommended).",
+        "target_pkg_info": "Official Package: luci-app-ark-router.ipk (~628 KB - 100% Native ARM 32-bit)",
         "fetching_release": "Checking latest release on GitHub...",
         "found_release": "Latest release found on GitHub: {tag}",
         "downloading": "Downloading {name} from GitHub...",
@@ -361,34 +345,10 @@ def main():
     print(f"{t('feat_theme')}")
     print("=" * 75)
 
-    # Menu de Escolha da Versão
-    print(f"\n  {C_BOLD}{t('menu_title')}{C_RESET}")
-    print("  " + "-" * 73)
-    print(f"  {C_GREEN}{t('menu_opt1')}{C_RESET}")
-    print(f"{t('menu_opt1_desc')}\n")
-    print(f"  {C_WHITE}{t('menu_opt2')}{C_RESET}")
-    print(f"{C_YELLOW}{t('menu_opt2_desc')}{C_RESET}")
-    print("  " + "-" * 73)
-
-    raw_choice = safe_input(f"  {t('choose_prompt')}")
-    if raw_choice not in ["1", "2"]:
-        choice = "1"
-    else:
-        choice = raw_choice
-
+    # Pacote Oficial Alvo (100% Nativo ARM 32-bit)
+    print(f"\n  [+] {C_GREEN}{t('target_pkg_info')}{C_RESET}")
+    pkg_label = "luci-app-ark-router.ipk"
     prefer_full = False
-    if choice == "2":
-        print(f"\n{C_RED}{t('full_arch_warn')}{C_RESET}\n")
-        force_ans = safe_input(f"  {t('full_confirm_prompt')}").lower()
-        if force_ans in ["s", "sim", "y", "yes"]:
-            prefer_full = True
-            print("  [!] Prosseguindo com a versao Full por escolha explicita.")
-        else:
-            print(f"  {C_GREEN}{t('fallback_lite_safe')}{C_RESET}")
-            prefer_full = False
-            choice = "1"
-
-    pkg_label = "luci-app-ark-router-full.ipk" if prefer_full else "luci-app-ark-router.ipk"
     cache_dir = os.path.join(repo_root, "01_FIRMWARES_E_IMAGENS", "Ark_Router")
     os.makedirs(cache_dir, exist_ok=True)
     dest_cached = os.path.join(cache_dir, pkg_label)

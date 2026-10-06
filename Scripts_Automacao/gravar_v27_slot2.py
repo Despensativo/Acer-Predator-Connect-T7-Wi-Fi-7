@@ -333,11 +333,19 @@ def main():
             print("      - Grava o sistema oficial v27 Puro de Fabrica no Slot 2")
             print("      - Sem mudar a ordem do boot e sem reiniciar (mantendo o boot na 1)")
             print("      - Ideal para inspecao de volumes ou testes sem interromper a rede")
+            print("")
+            print("  [0] Cancelar e Voltar ao Menu Principal")
             print("=" * 72)
-            inst_choice = input("  Digite o numero da opcao desejada [1, 2 ou 3]: ").strip()
-            if inst_choice in ["1", "2", "3"]:
+            inst_choice = input("  Digite o numero da opcao desejada [1, 2, 3 ou 0 para Sair]: ").strip()
+            if inst_choice in ["0", "1", "2", "3"]:
                 break
-            print("\n  [!] Entrada invalida! Digite obrigatoriamente o numero 1, 2 ou 3.")
+            print("\n  [!] Entrada invalida! Digite obrigatoriamente o numero 1, 2, 3 ou 0.")
+
+    if inst_choice == "0":
+        print("\n  [!] Operacao cancelada pelo usuario. Retornando ao menu principal...")
+        log_event("GRAVACAO_SLOT2", "Operacao cancelada pelo usuario (Opcao 0)", "AVISO")
+        tn.close()
+        sys.exit(0)
 
     with_root = (inst_choice == "1")
     if inst_choice == "3":

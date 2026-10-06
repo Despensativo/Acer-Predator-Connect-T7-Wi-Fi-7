@@ -1,6 +1,6 @@
 {
-  "suite_version": "1.0.8",
-  "updated_at": "2026-10-06T03:14:48Z",
+  "suite_version": "1.0.9",
+  "updated_at": "2026-10-06T04:19:10Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
@@ -146,16 +146,16 @@
     {
       "path": "Scripts_Automacao/instalar_ark_router.py",
       "category": "script",
-      "size": 23466,
-      "sha256": "B62D094EFBC11C16FB091EED7EEAA916BE7CFDB71C700E3571DD3343E8C37C8C",
-      "updated_at": "2026-10-06T01:03:50Z"
+      "size": 25265,
+      "sha256": "EFD0141816E3439BE6C8F31E51020CAA1D31E9BB10F4DC60A85322A189BF570F",
+      "updated_at": "2026-10-06T04:18:30Z"
     },
     {
       "path": "01_FIRMWARES_E_IMAGENS/Ark_Router/luci-app-ark-router.ipk",
       "category": "app",
-      "size": 628730,
-      "sha256": "A707CC0F6B7E35B0056F5B35791EF1CF6F05102AA26019492834C361E63B0336",
-      "updated_at": "2026-10-06T00:15:04Z"
+      "size": 601545,
+      "sha256": "0EB1D69CDF0848266760E7ED23FC300E14D13C5CD23A32C3E0973831DA56897C",
+      "updated_at": "2026-10-06T04:19:02Z"
     },
     {
       "path": "iniciar.ps1",

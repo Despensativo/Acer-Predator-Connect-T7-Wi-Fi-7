@@ -17,9 +17,6 @@ import json
 import platform
 import argparse
 import subprocess
-import threading
-import http.server
-import socketserver
 import urllib.request
 
 # Ativar suporte ANSI no Windows
@@ -58,9 +55,10 @@ C_CYAN   = "\033[96m"
 C_WHITE  = "\033[97m"
 
 GITHUB_REPO_API   = "https://api.github.com/repos/Despensativo/ark-router/releases/latest"
-FALLBACK_TAG      = "v1.5.8"
-FALLBACK_URL_LITE = "https://github.com/Despensativo/ark-router/releases/download/v1.5.8/luci-app-ark-router.ipk"
-FALLBACK_URL_FULL = "https://github.com/Despensativo/ark-router/releases/download/v1.5.8/luci-app-ark-router-full.ipk"
+FALLBACK_TAG      = "v1.5.9"
+FALLBACK_URL_LITE = "https://github.com/Despensativo/ark-router/releases/download/v1.5.9/luci-app-ark-router.ipk"
+FALLBACK_URL_FULL = "https://github.com/Despensativo/ark-router/releases/download/v1.5.9/luci-app-ark-router-full.ipk"
+LATEST_DIRECT_URL = "https://github.com/Despensativo/ark-router/releases/latest/download/luci-app-ark-router.ipk"
 
 TEXTS = {
     "pt": {
@@ -81,17 +79,21 @@ TEXTS = {
         "feat_traffic": "  📊 MONITOR DE TRAFEGO POR DISPOSITIVO:\n     Graficos instantaneos de largura de banda por IP/MAC (Download e Upload separados).",
         "feat_sqm": "  🎮 OTIMIZACAO SQM CAKE (ANTI-BUFFERBLOAT):\n     Filas inteligentes para garantir ping estavel e jitter zero em jogos online.",
         "feat_theme": "  🎨 TEMA VISUAL ARK GAMER MODERNO:\n     Interface escura (Glassmorphism / Dark Theme) 100% responsiva para celular e PC.",
-        "target_pkg_info": "Pacote Oficial: luci-app-ark-router.ipk (~628 KB - 100% ARM 32-bit Nativo)",
+        "target_pkg_info": "Pacote Oficial: luci-app-ark-router.ipk (~600 KB - 100% ARM 32-bit Nativo)",
         "fetching_release": "Consultando versao mais recente no GitHub Releases...",
         "found_release": "Ultima versao detectada no GitHub: {tag}",
-        "downloading": "Baixando {name} do GitHub...",
-        "download_ok": "Download concluido com sucesso ({size} bytes).",
+        "direct_download_router": "Tentando download direto no roteador via curl...",
+        "direct_download_ok": "Download direto no roteador concluido com sucesso ({size} bytes).",
+        "streaming_fallback": "Download direto no roteador indisponivel. Transferindo via stream TCP local (nc)...",
+        "downloading_pc": "Baixando pacote mais recente no PC para transmissao...",
+        "download_ok": "Download no PC concluido com sucesso ({size} bytes).",
         "download_fail": "Falha no download via GitHub: {err}",
         "using_fallback": "Tentando URL direta de fallback...",
         "using_cached": "Usando pacote local em cache: {path}",
-        "offline_warn": "Sem conexao com a internet e sem pacote em cache. Nao e possivel continuar.",
+        "offline_warn": "Sem conexao com a internet e sem pacote local disponivel. Nao e possivel continuar.",
+        "streaming_transfer": "Enviando pacote para a memoria RAM (/tmp) do roteador via stream TCP (nc)...",
+        "stream_success": "Pacote transferido com sucesso para a RAM do roteador ({size} bytes).",
         "activating_uhttpd": "Garantindo que o servidor web LuCI (uhttpd) esta configurado na porta 80...",
-        "transferring": "Enviando pacote para a memoria RAM (/tmp) do roteador...",
         "installing": "Executando instalacao do pacote no roteador (opkg install)...",
         "install_success": "Pacote instalado com sucesso no sistema!",
         "cleaning_cache": "Limpando cache do LuCI e reiniciando daemons de interface (rpcd/uhttpd)...",
@@ -121,17 +123,21 @@ TEXTS = {
         "feat_traffic": "  📊 PER-DEVICE TRAFFIC MONITORING:\n     Live real-time bandwidth graphs per host/IP/MAC (Upload and Download separated).",
         "feat_sqm": "  🎮 SQM CAKE ANTI-BUFFERBLOAT OPTIMIZATION:\n     Intelligent queue management to guarantee rock-solid ping and zero jitter in gaming.",
         "feat_theme": "  🎨 MODERN DARK ARK THEME:\n     Sleek Glassmorphism dark interface, 100% responsive for smartphones and desktops.",
-        "target_pkg_info": "Official Package: luci-app-ark-router.ipk (~628 KB - 100% Native ARM 32-bit)",
+        "target_pkg_info": "Official Package: luci-app-ark-router.ipk (~600 KB - 100% Native ARM 32-bit)",
         "fetching_release": "Checking latest release on GitHub...",
         "found_release": "Latest release found on GitHub: {tag}",
-        "downloading": "Downloading {name} from GitHub...",
-        "download_ok": "Download completed successfully ({size} bytes).",
+        "direct_download_router": "Attempting direct download on router via curl...",
+        "direct_download_ok": "Direct router download completed successfully ({size} bytes).",
+        "streaming_fallback": "Direct router download unavailable. Transferring via local TCP stream (nc)...",
+        "downloading_pc": "Downloading latest package on PC for streaming...",
+        "download_ok": "Download on PC completed successfully ({size} bytes).",
         "download_fail": "Download failed via GitHub: {err}",
         "using_fallback": "Attempting direct fallback URL...",
         "using_cached": "Using locally cached package: {path}",
         "offline_warn": "No internet connection and no cached package found. Cannot continue.",
+        "streaming_transfer": "Sending package to router RAM (/tmp) via TCP stream (nc)...",
+        "stream_success": "Package successfully transferred to router RAM ({size} bytes).",
         "activating_uhttpd": "Ensuring LuCI web server (uhttpd) is active on port 80...",
-        "transferring": "Sending package to router RAM (/tmp)...",
         "installing": "Executing package installation on router (opkg install)...",
         "install_success": "Package successfully installed into system!",
         "cleaning_cache": "Clearing LuCI cache and restarting UI daemons (rpcd/uhttpd)...",
@@ -187,33 +193,28 @@ def detect_router_ip(explicit_ip=None):
             return cand
     return "192.168.76.1"
 
-def start_http_server(directory, port):
-    class QuietHandler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=directory, **kwargs)
-        def log_message(self, format, *args):
-            pass
-
-    socketserver.TCPServer.allow_reuse_address = True
-    server = socketserver.TCPServer(("0.0.0.0", port), QuietHandler)
-    th = threading.Thread(target=server.serve_forever, daemon=True)
-    th.start()
-    return server
-
 def run_cmd(tn, cmd, timeout=15):
     tn.read_very_eager()
     tn.write(cmd.strip().encode("ascii") + b"\n")
-    time.sleep(0.3)
+    time.sleep(0.1)
     out = tn.read_until(b"/ # ", timeout=timeout).decode("utf-8", errors="replace")
     log_cmd(cmd, out)
     return out
 
+def get_remote_file_size(tn, remote_path):
+    out = run_cmd(tn, f"wc -c < {remote_path} 2>/dev/null").strip()
+    for line in out.splitlines():
+        line = line.strip()
+        if line.isdigit():
+            return int(line)
+    return 0
+
 def get_latest_release_info():
-    """Consulta a API do GitHub para obter URLs dos pacotes da release mais recente."""
+    """Consulta a API do GitHub para obter informacoes da versao e pacotes da release mais recente."""
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     try:
         req = urllib.request.Request(GITHUB_REPO_API, headers=headers)
-        with urllib.request.urlopen(req, timeout=4) as response:
+        with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode("utf-8"))
             tag = data.get("tag_name", FALLBACK_TAG)
             assets = data.get("assets", [])
@@ -227,37 +228,74 @@ def get_latest_release_info():
                     elif "lite" in name or name == "luci-app-ark-router.ipk":
                         urls["lite"] = url
             if "lite" not in urls:
-                urls["lite"] = FALLBACK_URL_LITE
+                urls["lite"] = LATEST_DIRECT_URL
             if "full" not in urls:
                 urls["full"] = FALLBACK_URL_FULL
             return tag, urls
     except Exception as e:
-        log_event("ARK_INSTALLER", f"Falha ao consultar API do GitHub: {e}", "AVISO")
-        return FALLBACK_TAG, {"lite": FALLBACK_URL_LITE, "full": FALLBACK_URL_FULL}
+        log_event("ARK_INSTALLER", f"Consulta a API do GitHub indisponivel: {e}", "AVISO")
+        return FALLBACK_TAG, {"lite": LATEST_DIRECT_URL, "full": FALLBACK_URL_FULL}
 
-def download_file(url, target_path):
+def download_file(url, target_path, timeout=30):
     """Baixa um arquivo da internet gravando no disco local."""
     headers = {"User-Agent": "Mozilla/5.0"}
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=25) as response:
+    with urllib.request.urlopen(req, timeout=timeout) as response:
         with open(target_path, "wb") as f:
             while chunk := response.read(65536):
                 f.write(chunk)
     return os.path.getsize(target_path)
 
-def locate_local_cached_ipk(repo_root, prefer_full=False):
-    """Procura por arquivo IPK já presente na suite offline."""
+def locate_local_cached_ipk(repo_root):
+    """Procura por arquivo IPK ja presente na suite offline ou no cache local."""
     candidates = [
         os.path.join(repo_root, "01_FIRMWARES_E_IMAGENS", "Ark_Router", "luci-app-ark-router.ipk"),
         os.path.join(os.path.expanduser("~"), "Desktop", "Acer-Predator-Connect-T7", "01_FIRMWARES_E_IMAGENS", "Ark_Router", "luci-app-ark-router.ipk"),
         os.path.join(os.environ.get("TEMP", ""), "luci-app-ark-router.ipk"),
     ]
-    if prefer_full:
-        candidates.insert(0, os.path.join(repo_root, "01_FIRMWARES_E_IMAGENS", "Ark_Router", "luci-app-ark-router-full.ipk"))
     for c in candidates:
         if os.path.isfile(c) and os.path.getsize(c) > 100000:
             return c
     return None
+
+def try_direct_download_router(tn, url, timeout=45):
+    """Tenta baixar o pacote IPK diretamente no roteador via curl."""
+    run_cmd(tn, "rm -f /tmp/luci-app-ark-router.ipk /tmp/data.tar.gz")
+    cmd = f"curl -fsSL -k --connect-timeout 8 -m {timeout} -o /tmp/luci-app-ark-router.ipk {url}"
+    run_cmd(tn, cmd, timeout=timeout + 5)
+    return get_remote_file_size(tn, "/tmp/luci-app-ark-router.ipk")
+
+def stream_file_to_router(tn, rip, file_path_or_bytes, timeout=15):
+    """Envia o arquivo para a RAM (/tmp) do roteador via conexao TCP direta (nc) sem necessidade de servidor HTTP."""
+    if isinstance(file_path_or_bytes, (bytes, bytearray)):
+        data = file_path_or_bytes
+    else:
+        with open(file_path_or_bytes, "rb") as f:
+            data = f.read()
+
+    pc_ip = get_local_ip_towards(rip)
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.bind(("0.0.0.0", 0))
+    port = srv.getsockname()[1]
+    srv.listen(1)
+    srv.settimeout(timeout)
+
+    run_cmd(tn, "rm -f /tmp/luci-app-ark-router.ipk /tmp/data.tar.gz")
+    run_cmd(tn, f"nc {pc_ip} {port} > /tmp/luci-app-ark-router.ipk &")
+    time.sleep(0.3)
+
+    try:
+        conn, _ = srv.accept()
+        conn.sendall(data)
+        conn.close()
+    except socket.timeout:
+        log_event("ARK_INSTALLER", "Timeout aguardando conexao TCP do roteador (nc)", "ERRO")
+    finally:
+        srv.close()
+
+    time.sleep(0.4)
+    return get_remote_file_size(tn, "/tmp/luci-app-ark-router.ipk")
 
 def main():
     global CURRENT_LANG
@@ -298,9 +336,11 @@ def main():
             safe_input(t("press_enter"))
             return
 
-    # Conectar ao roteador
+    # Conectar ao roteador e normalizar prompt para '/ # '
     try:
         tn = Telnet(rip, 23, timeout=5)
+        tn.write(b"export PS1='/ # '\ncd /\n")
+        time.sleep(0.2)
         tn.read_until(b"/ # ", timeout=4)
     except Exception as e:
         print(f"\n{C_RED}[-] Falha ao conectar via Telnet: {e}{C_RESET}")
@@ -343,10 +383,9 @@ def main():
     print(f"{t('feat_theme')}")
     print("=" * 75)
 
-    # Pacote Oficial Alvo (100% Nativo ARM 32-bit)
+    # Preparar diretório de cache local
     print(f"\n  [+] {C_GREEN}{t('target_pkg_info')}{C_RESET}")
     pkg_label = "luci-app-ark-router.ipk"
-    prefer_full = False
     cache_dir = os.path.join(repo_root, "01_FIRMWARES_E_IMAGENS", "Ark_Router")
     os.makedirs(cache_dir, exist_ok=True)
     dest_cached = os.path.join(cache_dir, pkg_label)
@@ -355,71 +394,65 @@ def main():
     tag, urls = get_latest_release_info()
     print(f"    [+] {t('found_release').format(tag=tag)}")
 
-    dl_url = urls.get("full" if prefer_full else "lite")
-    print(f"[*] {t('downloading').format(name=pkg_label)}")
-    print(f"    URL: {dl_url}")
+    dl_url = urls.get("lite", LATEST_DIRECT_URL)
 
-    download_success = False
-    try:
-        sz = download_file(dl_url, dest_cached)
-        print(f"    [OK] {t('download_ok').format(size=sz)}")
-        local_ipk = dest_cached
-        download_success = True
-    except Exception as e:
-        print(f"    [!] {t('download_fail').format(err=e)}")
-        print(f"    [*] {t('using_fallback')}")
-        fb_url = FALLBACK_URL_FULL if prefer_full else FALLBACK_URL_LITE
+    # Etapa 1: Tentar download direto no roteador via curl
+    print(f"\n[*] {t('direct_download_router')}")
+    print(f"    URL: {dl_url}")
+    remote_sz = try_direct_download_router(tn, dl_url, timeout=45)
+
+    ipk_ready = False
+    if remote_sz > 100000:
+        print(f"    [OK] {t('direct_download_ok').format(size=remote_sz)}")
+        ipk_ready = True
+        # Atualizar cache local no PC para manter a suite sempre sincronizada
         try:
-            sz = download_file(fb_url, dest_cached)
+            download_file(dl_url, dest_cached, timeout=15)
+        except Exception:
+            pass
+    else:
+        # Etapa 2: Fallback - Baixar no PC e enviar via stream TCP (nc)
+        print(f"    [!] {t('streaming_fallback')}")
+        local_ipk = None
+
+        # Tentar baixar cópia fresca no PC
+        try:
+            print(f"    [*] {t('downloading_pc')}")
+            sz = download_file(dl_url, dest_cached, timeout=25)
             print(f"    [OK] {t('download_ok').format(size=sz)}")
             local_ipk = dest_cached
-            download_success = True
-        except Exception as e2:
-            print(f"    [-] Falha no fallback: {e2}")
+        except Exception as e:
+            print(f"    [!] {t('download_fail').format(err=e)}")
+            print(f"    [*] {t('using_fallback')}")
+            try:
+                sz = download_file(FALLBACK_URL_LITE, dest_cached, timeout=25)
+                print(f"    [OK] {t('download_ok').format(size=sz)}")
+                local_ipk = dest_cached
+            except Exception as e2:
+                print(f"    [-] Falha no fallback: {e2}")
 
-    if not download_success:
-        cached = locate_local_cached_ipk(repo_root, prefer_full)
-        if cached:
-            print(f"    {C_YELLOW}[!] {t('using_cached').format(path=cached)}{C_RESET}")
-            local_ipk = cached
+        if not local_ipk or not os.path.isfile(local_ipk):
+            cached = locate_local_cached_ipk(repo_root)
+            if cached:
+                print(f"    {C_YELLOW}[!] {t('using_cached').format(path=cached)}{C_RESET}")
+                local_ipk = cached
+            else:
+                print(f"\n{C_RED}[-] {t('offline_warn')}{C_RESET}")
+                tn.close()
+                safe_input(t("press_enter"))
+                return
+
+        # Enviar via stream TCP (nc)
+        print(f"    [*] {t('streaming_transfer')}")
+        remote_sz = stream_file_to_router(tn, rip, local_ipk, timeout=15)
+        if remote_sz > 100000:
+            print(f"    [OK] {t('stream_success').format(size=remote_sz)}")
+            ipk_ready = True
         else:
-            print(f"\n{C_RED}[-] {t('offline_warn')}{C_RESET}")
+            print(f"\n{C_RED}[-] Erro: Nao foi possivel transferir o pacote para o roteador.{C_RESET}")
             tn.close()
             safe_input(t("press_enter"))
             return
-
-    # Iniciar Servidor HTTP Local para transferência instantânea
-    pc_ip = get_local_ip_towards(rip)
-    http_port = 8899
-    http_dir = os.path.dirname(os.path.abspath(local_ipk))
-    ipk_filename = os.path.basename(local_ipk)
-
-    print(f"\n[*] {t('transferring')}")
-    print(f"    Servidor HTTP Local: http://{pc_ip}:{http_port}/{ipk_filename}")
-    try:
-        httpd = start_http_server(http_dir, http_port)
-    except Exception as e:
-        httpd = None
-
-    # Baixar pacote para a RAM do roteador
-    run_cmd(tn, "rm -f /tmp/luci-app-ark-router.ipk /tmp/data.tar.gz")
-    wget_cmd = f"wget -O /tmp/luci-app-ark-router.ipk http://{pc_ip}:{http_port}/{ipk_filename}"
-    out_dl = run_cmd(tn, wget_cmd, timeout=30)
-
-    # Verificar se o arquivo chegou no roteador
-    check_sz = run_cmd(tn, "ls -l /tmp/luci-app-ark-router.ipk 2>/dev/null")
-    if "luci-app-ark-router.ipk" not in check_sz:
-        print(f"    {C_YELLOW}[!] Transferencia local falhou. Tentando download direto via roteador...{C_RESET}")
-        run_cmd(tn, f"wget -q -O /tmp/luci-app-ark-router.ipk {FALLBACK_URL_LITE} 2>/dev/null || curl -k -s -o /tmp/luci-app-ark-router.ipk {FALLBACK_URL_LITE}")
-        check_sz = run_cmd(tn, "ls -l /tmp/luci-app-ark-router.ipk 2>/dev/null")
-
-    if "luci-app-ark-router.ipk" not in check_sz:
-        print(f"\n{C_RED}[-] Erro: Nao foi possivel transferir o pacote para o roteador.{C_RESET}")
-        tn.close()
-        safe_input(t("press_enter"))
-        return
-
-    print("    [OK] Pacote transferido para /tmp/luci-app-ark-router.ipk no roteador.")
 
     # Garantir uhttpd ativo na porta 80 antes da instalacao
     print(f"\n[*] {t('activating_uhttpd')}")
@@ -437,24 +470,24 @@ def main():
 
     # Instalar pacote via opkg
     print(f"\n[*] {t('installing')}")
-    opkg_res = run_cmd(tn, "opkg install --force-depends --force-overwrite /tmp/luci-app-ark-router.ipk", timeout=45)
+    opkg_res = run_cmd(tn, "opkg install --force-reinstall --force-depends --force-overwrite /tmp/luci-app-ark-router.ipk", timeout=60)
 
     if "Configuring luci-app-ark-router" not in opkg_res and "Collected errors" in opkg_res:
         print("    [!] opkg reportou aviso de dependencias. Aplicando fallback de extracao segura...")
-        run_cmd(tn, "opkg install --force-depends --force-downgrade --nodeps /tmp/luci-app-ark-router.ipk 2>/dev/null")
-        # Garantir extração de arquivos se o feed do opkg estiver inacessível
-        run_cmd(tn, "cd /tmp && tar -xzf luci-app-ark-router.ipk data.tar.gz 2>/dev/null && tar -xzf data.tar.gz -C / 2>/dev/null")
+        run_cmd(tn, "opkg install --force-reinstall --force-depends --force-downgrade --nodeps /tmp/luci-app-ark-router.ipk 2>/dev/null", timeout=30)
+        run_cmd(tn, "cd /tmp && tar -xzf luci-app-ark-router.ipk data.tar.gz 2>/dev/null && tar -xzf data.tar.gz -C / 2>/dev/null", timeout=30)
 
     print(f"    [OK] {t('install_success')}")
 
-    # Executar scripts uci-defaults se houver
+    # Executar scripts uci-defaults se houver e limpar caches
     print(f"\n[*] {t('cleaning_cache')}")
     run_cmd(tn, "for f in /etc/uci-defaults/99-ark-router*; do [ -f \"$f\" ] && sh \"$f\" && rm -f \"$f\"; done 2>/dev/null")
     run_cmd(tn, "rm -rf /tmp/luci-indexcache /tmp/luci-modulecache* /tmp/luci-sessions* 2>/dev/null")
     run_cmd(tn, "/etc/init.d/rpcd restart 2>/dev/null")
     run_cmd(tn, "/etc/init.d/uhttpd enable 2>/dev/null; /etc/init.d/uhttpd restart 2>/dev/null")
     run_cmd(tn, "rm -f /tmp/luci-app-ark-router.ipk /tmp/data.tar.gz")
-    # Ativar Modo LED RGB Arco-Íris automaticamente no hardware do roteador
+
+    # Ativar Modo LED RGB Arco-Iris automaticamente no hardware do roteador
     print(f"\n[*] {t('activating_rainbow')}")
     run_cmd(tn, "/usr/sbin/equipe-dashboard-control set-led-rgb-color rainbow 2>/dev/null || (/etc/init.d/ark-rainbowd enable 2>/dev/null; /etc/init.d/ark-rainbowd restart 2>/dev/null) || (/bin/sh /usr/sbin/ark-rainbowd &)")
     print(f"    [OK] {t('rainbow_activated')}")

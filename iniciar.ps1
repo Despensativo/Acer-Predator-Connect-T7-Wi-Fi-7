@@ -217,6 +217,14 @@ function Sync-Suite-From-GitHub {
     }
 }
 
+Write-Host ""
+Write-Host "==========================================================================="
+Write-Host "[!] CRITICAL WARNING / AVISO CRITICO: DO NOT proceed over Wi-Fi." -ForegroundColor Red
+Write-Host "    Please plug in an Ethernet cable before continuing!" -ForegroundColor Red
+Write-Host "    Por favor, conecte um cabo de rede (Ethernet) antes de continuar para evitar soft-bricks!" -ForegroundColor Red
+Write-Host "==========================================================================="
+Write-Host ""
+
 # Executa sincronizacao inteligente no inicio (se nao tiver internet, continua normalmente)
 Sync-Suite-From-GitHub
 

@@ -287,6 +287,12 @@ def main():
 
     os.makedirs(work_dir, exist_ok=True)
 
+    print("\n" + "=" * 75)
+    print("\033[91m[!] CRITICAL WARNING / AVISO CRITICO: DO NOT proceed over Wi-Fi.\033[0m")
+    print("\033[91m    Please plug in an Ethernet cable before continuing!\033[0m")
+    print("\033[91m    Por favor, conecte um cabo de rede (Ethernet) antes de continuar para evitar soft-bricks!\033[0m")
+    print("=" * 75)
+
     # Executar sincronizacao de ferramentas
     sync_suite(work_dir, local_source_dir=local_src)
 

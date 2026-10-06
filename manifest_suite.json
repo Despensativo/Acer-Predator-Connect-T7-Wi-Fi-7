@@ -160,15 +160,15 @@
         {
             "path": "iniciar.ps1",
             "category": "launcher",
-            "size": 43061,
-            "sha256": "BEB98E4A92E6A8DC60928846CC97AAB44F610F785891A23F59696DFB41C7C108",
+            "size": 43585,
+            "sha256": "8E1A8EC9CB2AB535F0B361CF990A8081505B2D1DADE6C1051AF7E77A6F689A67",
             "updated_at": "2026-10-06T04:42:10Z"
         },
         {
             "path": "iniciar.py",
             "category": "launcher",
-            "size": 12514,
-            "sha256": "4F3AE39787DDF7A9E8D76A136E6EB76B42386C0466DB8EED86C9ED63F9476E2F",
+            "size": 12861,
+            "sha256": "2ACA0AFF02CBAFB997C73C552354319FCDB23C2BC8D16C3D718C4CC119BA9CD4",
             "updated_at": "2026-10-06T04:43:08Z"
         },
         {

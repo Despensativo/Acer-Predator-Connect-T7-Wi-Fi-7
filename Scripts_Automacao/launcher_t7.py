@@ -428,7 +428,8 @@ def check_and_sync_updates():
     print(f"  {t('sync_checking')}")
 
     raw_base = "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main"
-    manifest_url = f"{raw_base}/manifest_suite.json"
+    cache_buster = int(time.time())
+    manifest_url = f"{raw_base}/manifest_suite.json?t={cache_buster}"
     mpath = os.path.join(REPO_DIR, "manifest_suite.json")
 
     manifest = None
@@ -436,8 +437,13 @@ def check_and_sync_updates():
 
     try:
         import urllib.request
-        req = urllib.request.Request(manifest_url, headers={"User-Agent": "Mozilla/5.0 AcerPredatorT7Suite/1.0"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        headers = {
+            "User-Agent": "Mozilla/5.0 AcerPredatorT7Suite/1.0",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache"
+        }
+        req = urllib.request.Request(manifest_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=8) as resp:
             data = resp.read().decode("utf-8")
             manifest = json.loads(data)
         with open(mpath, "w", encoding="utf-8") as f:
@@ -514,9 +520,10 @@ def check_and_sync_updates():
                 print(f"  [-] {rel_path}: Ausente ou modificado (Download indisponivel offline).")
             else:
                 try:
-                    file_url = f"{raw_base}/{rel_path}"
+                    file_url = f"{raw_base}/{rel_path}?t={cache_buster}"
                     print(f"  [*] Baixando {rel_path}...")
-                    with urllib.request.urlopen(urllib.request.Request(file_url, headers={"User-Agent": "Mozilla/5.0"}), timeout=20) as r:
+                    req_dl = urllib.request.Request(file_url, headers={"User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache", "Pragma": "no-cache"})
+                    with urllib.request.urlopen(req_dl, timeout=30) as r:
                         content = r.read()
                         with open(local_abs, "wb") as out:
                             out.write(content)

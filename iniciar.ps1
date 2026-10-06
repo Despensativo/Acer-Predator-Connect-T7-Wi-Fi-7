@@ -55,13 +55,19 @@ function Sync-Suite-From-GitHub {
     Write-Host ""
 
     $ManifestFile = "$RepoDir\manifest_suite.json"
-    $ManifestUrl  = "$RawBase/manifest_suite.json"
+    $cacheBuster  = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $ManifestUrl  = "$RawBase/manifest_suite.json?t=$cacheBuster"
     $Manifest     = $null
     $isOffline    = $false
 
-    # Carregar Manifesto Oficial (Remoto via GitHub com Timeout de 3s ou Cache Local)
+    # Carregar Manifesto Oficial (Remoto via GitHub com Timeout de 8s e sem Cache)
     try {
-        $resp = Invoke-WebRequest -Uri $ManifestUrl -TimeoutSec 3 -UseBasicParsing -Headers @{ "User-Agent" = "Mozilla/5.0" }
+        $headers = @{
+            "User-Agent"    = "Mozilla/5.0"
+            "Cache-Control" = "no-cache, no-store, must-revalidate"
+            "Pragma"        = "no-cache"
+        }
+        $resp = Invoke-WebRequest -Uri $ManifestUrl -TimeoutSec 8 -UseBasicParsing -Headers $headers
         $remoteJson = $resp.Content
         $Manifest = $remoteJson | ConvertFrom-Json
         [System.IO.File]::WriteAllText($ManifestFile, $remoteJson, [System.Text.Encoding]::UTF8)
@@ -95,6 +101,11 @@ function Sync-Suite-From-GitHub {
 
         $wc = New-Object System.Net.WebClient
         $wc.Headers.Add("User-Agent", "Mozilla/5.0")
+        $wc.Headers.Add("Cache-Control", "no-cache")
+        $wc.Headers.Add("Pragma", "no-cache")
+        try {
+            $wc.CachePolicy = New-Object System.Net.Cache.RequestCachePolicy([System.Net.Cache.RequestCacheLevel]::NoCacheNoStore)
+        } catch {}
 
         foreach ($item in $Manifest.files) {
             $rel = $item.path
@@ -172,7 +183,7 @@ function Sync-Suite-From-GitHub {
 
                 if (-not $copiedLocal) {
                     try {
-                        $wc.DownloadFile("$RawBase/$rel", $dest)
+                        $wc.DownloadFile("$RawBase/$rel?t=$cacheBuster", $dest)
                     } catch {}
                 }
 

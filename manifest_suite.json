@@ -1,14 +1,14 @@
 {
-  "suite_version": "1.0.1",
-  "updated_at": "2026-10-06T01:53:30Z",
+  "suite_version": "1.0.2",
+  "updated_at": "2026-10-06T01:59:40Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
-      "size": 41447,
-      "sha256": "CB3B96A16C59A099648325CAB015B25522AD874D5C883020A2EDFA0B84A4AD01",
-      "updated_at": "2026-10-06T00:28:04Z"
+      "size": 41754,
+      "sha256": "512A599E4C93C93D59FB7F68394EB58F755E3CBC98F06D55037903C441EC86EF",
+      "updated_at": "2026-10-06T01:59:30Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",
@@ -167,9 +167,9 @@
     {
       "path": "iniciar.ps1",
       "category": "launcher",
-      "size": 35467,
-      "sha256": "2CA19D4B03D8B8C544CA0E9A5D0A96AE0B801629C99561C5924B3B906DEA0128",
-      "updated_at": "2026-10-06T00:00:30Z"
+      "size": 35982,
+      "sha256": "2D2C713B54E27AFD600008B3807DEE8EDDE6C07E236A7DDFACDAA86A0E0DDF5F",
+      "updated_at": "2026-10-06T01:58:54Z"
     },
     {
       "path": "EXECUTAR_T7.bat",

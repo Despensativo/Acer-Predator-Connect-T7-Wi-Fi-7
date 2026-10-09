@@ -31,30 +31,76 @@ if [ -n "$0" ] && [ -f "$0" ]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 fi
 
+# Funcao para preparar a suite na Mesa com retentativas e fallback
+preparar_suite_desktop() {
+    DESKTOP_DIR="$HOME/Desktop/Acer-Predator-Connect-T7"
+    echo "==========================================================================="
+    echo "  [+] Configurando suite Acer Predator Connect T7 na Mesa (Desktop)..."
+    echo "==========================================================================="
+
+    # Se ja existe um repositorio Git valido na Mesa, tenta atualizar
+    if [ -d "$DESKTOP_DIR/.git" ]; then
+        echo "  [*] Atualizando suite existente na Mesa (Desktop)..."
+        if git -C "$DESKTOP_DIR" pull --ff-only 2>/dev/null; then
+            PROJECT_DIR="$DESKTOP_DIR"
+            return 0
+        fi
+        # Se pull falhar (conflito ou queda), tenta sincronizar direto
+        (cd "$DESKTOP_DIR" && git fetch --depth=1 origin main && git reset --hard origin/main) 2>/dev/null && {
+            PROJECT_DIR="$DESKTOP_DIR"
+            return 0
+        }
+    fi
+
+    # Se a pasta existe mas esta corrompida ou incompleta, limpa para baixar do zero
+    if [ -d "$DESKTOP_DIR" ]; then
+        rm -rf "$DESKTOP_DIR"
+    fi
+
+    DOWNLOAD_OK=0
+
+    # 1. Tentativa via Git Clone Rápido (--depth 1, muito mais leve e resistente a oscilacoes)
+    if command -v git >/dev/null 2>&1; then
+        echo "  [*] Baixando versao mais recente do GitHub (Clone Rapido --depth 1)..."
+        for tentativa in 1 2 3; do
+            if git clone --depth 1 https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git "$DESKTOP_DIR"; then
+                DOWNLOAD_OK=1
+                break
+            else
+                echo "  [!] Tentativa $tentativa falhou por oscilacao de rede. Limpando e tentando novamente..."
+                rm -rf "$DESKTOP_DIR"
+                sleep 2
+            fi
+        done
+    fi
+
+    # 2. Se o Git Clone falhou (ex: queda de conexao ou git ausente), ativar Fallback via cURL + iniciar.py
+    if [ "$DOWNLOAD_OK" -eq 0 ]; then
+        echo "  [*] Ativando download resiliente via cURL (tolerante a oscilacoes)..."
+        mkdir -p "$DESKTOP_DIR"
+        if curl -sSL --retry 3 --retry-delay 2 "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.py" -o "$DESKTOP_DIR/iniciar.py"; then
+            DOWNLOAD_OK=1
+        fi
+    fi
+
+    # 3. Se todas as tentativas falharem (sem internet)
+    if [ "$DOWNLOAD_OK" -eq 0 ] || [ ! -d "$DESKTOP_DIR" ]; then
+        echo "==========================================================================="
+        echo "  [-] ERRO: FALHA DE CONEXAO COM A INTERNET!"
+        echo "==========================================================================="
+        echo "  A conexao caiu durante o download da suite."
+        echo "  Por favor, verifique o cabo de rede/Wi-Fi e execute o comando novamente."
+        echo "==========================================================================="
+        exit 1
+    fi
+
+    PROJECT_DIR="$DESKTOP_DIR"
+}
+
 # Se for execucao via pipe (curl | bash) ou solicitada simulacao de cliente,
 # baixa e executa 100% como usuario real na Mesa (Desktop)
 if [ "$IS_PIPE" -eq 1 ] || [ "$SIMULAR_CLIENTE" -eq 1 ]; then
-    DESKTOP_DIR="$HOME/Desktop/Acer-Predator-Connect-T7"
-    echo "==========================================================================="
-    echo "  [+] Modo Cliente Real: Configurando suite na Mesa (Desktop)..."
-    echo "==========================================================================="
-    if [ -d "$DESKTOP_DIR/.git" ]; then
-        echo "  [*] Atualizando suite existente na Mesa (Desktop)..."
-        git -C "$DESKTOP_DIR" pull --ff-only 2>/dev/null || (cd "$DESKTOP_DIR" && git fetch && git reset --hard origin/main 2>/dev/null) || true
-    else
-        if [ -d "$DESKTOP_DIR" ]; then
-            rm -rf "$DESKTOP_DIR"
-        fi
-        if command -v git >/dev/null 2>&1; then
-            echo "  [*] Baixando repositorio oficial do GitHub..."
-            git clone https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git "$DESKTOP_DIR"
-        else
-            mkdir -p "$DESKTOP_DIR"
-            echo "  [*] Baixando assistente de inicializacao do GitHub..."
-            curl -sSL "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.py" -o "$DESKTOP_DIR/iniciar.py"
-        fi
-    fi
-    PROJECT_DIR="$DESKTOP_DIR"
+    preparar_suite_desktop
 elif [ -f "$CURRENT_DIR/Scripts_Automacao/launcher_t7.py" ]; then
     PROJECT_DIR="$CURRENT_DIR"
 elif [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/Scripts_Automacao/launcher_t7.py" ]; then
@@ -64,28 +110,16 @@ elif [ -d "$HOME/Desktop/Acer-Predator-Connect-T7/Scripts_Automacao" ]; then
 elif [ -d "$HOME/Acer-Predator-Connect-T7/Scripts_Automacao" ]; then
     PROJECT_DIR="$HOME/Acer-Predator-Connect-T7"
 else
-    # Se nao existe em nenhum local conhecido, clonar para a Mesa (Desktop)
-    DESKTOP_DIR="$HOME/Desktop/Acer-Predator-Connect-T7"
-    echo "==========================================================================="
-    echo "  [+] Configurando suite Acer Predator Connect T7 na Mesa (Desktop)..."
-    echo "==========================================================================="
-    if [ -d "$DESKTOP_DIR/.git" ]; then
-        git -C "$DESKTOP_DIR" pull --ff-only 2>/dev/null || true
-    else
-        if [ -d "$DESKTOP_DIR" ]; then
-            rm -rf "$DESKTOP_DIR"
-        fi
-        if command -v git >/dev/null 2>&1; then
-            git clone https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git "$DESKTOP_DIR"
-        else
-            mkdir -p "$DESKTOP_DIR"
-            curl -sSL "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.py" -o "$DESKTOP_DIR/iniciar.py"
-        fi
-    fi
-    PROJECT_DIR="$DESKTOP_DIR"
+    preparar_suite_desktop
 fi
 
-cd "$PROJECT_DIR"
+# Validar se a pasta do projeto existe antes de continuar
+if [ -z "$PROJECT_DIR" ] || [ ! -d "$PROJECT_DIR" ]; then
+    echo "[-] Erro critico: Pasta de trabalho nao encontrada. Execucao abortada."
+    exit 1
+fi
+
+cd "$PROJECT_DIR" || exit 1
 
 # 2. Detectar o melhor interpretador Python 3
 PYTHON_CMD=""
@@ -110,10 +144,20 @@ if [ -z "$PYTHON_CMD" ]; then
     exit 1
 fi
 
-# 3. Definir script de entrada
+# 3. Definir script de entrada e verificar existencia
 ENTRY_SCRIPT="$PROJECT_DIR/iniciar.py"
 if [ ! -f "$ENTRY_SCRIPT" ]; then
     ENTRY_SCRIPT="$PROJECT_DIR/Scripts_Automacao/launcher_t7.py"
+fi
+
+if [ ! -f "$ENTRY_SCRIPT" ]; then
+    echo "==========================================================================="
+    echo " [-] ERRO: ARQUIVOS INCOMPLETOS NA PASTA!"
+    echo "==========================================================================="
+    echo " O download parece ter sido interrompido antes de concluir."
+    echo " Execute o comando novamente para que a suíte seja baixada por completo."
+    echo "==========================================================================="
+    exit 1
 fi
 
 # 4. Selecao de Idioma e Execucao Interativa

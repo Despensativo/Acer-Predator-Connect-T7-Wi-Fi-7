@@ -97,7 +97,7 @@ TEXTS = {
         "status_router": "Router",
         "status_web_only": "Web Active (Terminal Locked)",
         "status_offline": "Unreachable / Disconnected",
-        "menu_1": "[1] Flash Custom OpenWrt + Root to Slot 2 (Pure OpenWrt + LuCI + Samba 4) [T7]",
+        "menu_1": "[1] Smart Dual-Boot Flash (3 Components: Kernel + Wi-Fi FW + RootFS to Free Slot) [T7]",
         "menu_2": "[2] Switch Dual-Boot (Toggle Slot 1 / Slot 2)",
         "menu_3": "[3] Manage Telnet (Hardening / Disable or Enable)",
         "menu_4": "[4] Install Ark Router Dashboard (OpenWrt / LuCI) [Optional]",
@@ -153,7 +153,7 @@ TEXTS = {
         "status_router": "Roteador",
         "status_web_only": "Web Ativa (Terminal Bloqueado)",
         "status_offline": "Inacessivel / Desconectado",
-        "menu_1": "[1] Gravar ROM OpenWrt Custom + Root no Slot 2 (OpenWrt Puro + LuCI + Samba 4) [Exclusivo T7]",
+        "menu_1": "[1] Gravacao Inteligente Dual-Boot Tripla (Kernel + Wi-Fi FW + RootFS no Slot Livre) [Exclusivo T7]",
         "menu_2": "[2] Alternar Dual-Boot (Chavear entre Slot 1 e Slot 2)",
         "menu_3": "[3] Gerenciar Telnet (Hardening / Desativar ou Reativar)",
         "menu_4": "[4] Instalar Painel Ark Router (OpenWrt / LuCI) [Opcional]",
@@ -268,6 +268,7 @@ def preflight_check(quiet=False, explicit_ip=None):
         "kernel.bin": [{"size": 4237480, "md5": "ade31977f9c740a36ecfe50ac9e335d9"}],
         "wifi_fw.bin": [{"size": 8554496, "md5": "f1091a9c062ff50dd3348e06a8a5457e"}],
         "rootfs.squashfs": [
+            {"size": 29765632, "md5": "a5ceb17fd4a76d2a81d260c18b3b6d99", "label": "Custom v27 Otimizada (Sem Samba / RF Tune)"},
             {"size": 34185216, "md5": "a4d5338a85b2d85cfba86e5991f3034e", "label": "Custom OpenWrt + Root"},
             {"size": 39616512, "md5": "99df532f68c147355c894611d1977cbf", "label": "Stock OEM v27"}
         ]
@@ -785,16 +786,18 @@ def main_menu():
                 continue
 
         if choice == "1":
-            log_event("MENU", "Opcao [1] Gravar Firmware Custom no Slot 2 selecionada", "INFO")
+            log_event("MENU", "Opcao [1] Gravacao Inteligente Dual-Boot Tripla selecionada", "INFO")
             if not info["files_ok"]:
                 print("\n" + "=" * 75)
                 print(f"  [!] {t('rom_notice_missing')}")
                 print(f"      Pasta: {V27_DIR}")
                 print("=" * 75)
-                log_event("MENU", "Arquivos de ROM v27 ausentes para gravacao do Slot 2", "ERRO")
+                log_event("MENU", "Arquivos de ROM v27 ausentes para gravacao inteligente", "ERRO")
                 safe_input(t("press_enter"))
                 continue
-            script = get_script_path("gravar_v27_slot2.py")
+            script = get_script_path("flasher_inteligente_dualboot.py")
+            if not os.path.isfile(script):
+                script = get_script_path("gravar_v27_slot2.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
         elif choice == "2":

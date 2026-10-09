@@ -1,0 +1,43 @@
+/dts-v1/;
+
+/ {
+    description = "Flash Chavear Slot 2";
+    #address-cells = <1>;
+
+    images {
+        script {
+            description = "Chavear para Slot 2 Script";
+            data = /incbin/("script_slot2.txt");
+            type = "script";
+            compression = "none";
+            hash-1 {
+                algo = "crc32";
+            };
+        };
+        bootconfig {
+            description = "Bootconfig Payload";
+            data = /incbin/("bootconfig.bin");
+            type = "firmware";
+            compression = "none";
+            hash-1 {
+                algo = "crc32";
+            };
+        };
+        padding {
+            description = "Padding for minimum size";
+            data = /incbin/("padding.bin");
+            type = "ramdisk";
+            compression = "none";
+            hash-1 {
+                algo = "crc32";
+            };
+        };
+    };
+
+    configurations {
+        default = "config-1";
+        config-1 {
+            description = "Chavear Slot 2";
+        };
+    };
+};

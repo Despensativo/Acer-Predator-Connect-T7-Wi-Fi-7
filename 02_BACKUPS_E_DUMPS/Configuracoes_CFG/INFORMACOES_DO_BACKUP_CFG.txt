@@ -1,0 +1,53 @@
+===============================================================================
+ACER PREDATOR CONNECT T7 - CREDENCIAIS E INFORMACOES DO BACKUP CFG DE DESBLOQUEIO
+Arquivo: 02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg
+===============================================================================
+
+Este arquivo e utilizado para realizar o PRIMEIRO DESBLOQUEIO do roteador
+caso ele esteja 100% bloqueado de fabrica (OEM Stock com portas 22 e 23 fechadas).
+
+-------------------------------------------------------------------------------
+1. COMO APLICAR O DESBLOQUEIO NO ROTEADOR (1 MINUTO)
+-------------------------------------------------------------------------------
+1. Conecte o cabo de rede do computador em uma porta LAN do roteador.
+2. Abra seu navegador em: http://192.168.76.1
+3. Faca login na interface web da Acer.
+4. Acesse: Sistema (System) -> Backup e Restauracao (Backup and restore).
+5. Na secao "Restaurar backup" (Restore backup), envie o arquivo:
+   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg
+6. Aguarde cerca de 2 minutos o roteador reiniciar automaticamente.
+
+-------------------------------------------------------------------------------
+2. CREDENCIAIS ATIVAS APOS RESTAURAR O BACKUP (.CFG)
+-------------------------------------------------------------------------------
+* Acesso Web GUI (Interface Original Acer):
+  - Endereco : http://192.168.76.1
+  - Usuario  : Admin (ou admin)
+  - Senha    : root0100
+
+* Acesso Terminal (SSH e Telnet Liberados):
+  - Porta 22 (SSH)    : Ativa (Dropbear)
+  - Porta 23 (Telnet) : Ativa (Root Ash Shell)
+  - Usuario           : root (ou Admin)
+  - Senha             : root0100
+
+* Redes Wi-Fi Transmitidas:
+  - Rede 2.4 GHz : PREDATOR T7_2.4GHz
+  - Rede 5 GHz   : PREDATOR T7_5GHz
+  - Rede 6 GHz   : PREDATOR T7_6GHz
+  - Senha Wi-Fi  : 123456789  (Valida para todas as frequencias)
+
+-------------------------------------------------------------------------------
+3. UNIFICACAO TOTAL COM A ROM OPENWRT CUSTOM (SLOT 2)
+-------------------------------------------------------------------------------
+As senhas e credenciais deste backup .cfg sao 100% PADRONIZADAS e IDENTICAS
+as da ROM OpenWrt Custom v27 gravada no Slot 2:
+
+- Senha do Sistema / Root / Web : root0100  (Padrao Unificado)
+- Senha das Redes Wi-Fi         : 123456789 (Padrao Unificado)
+- IP Padrao da Rede LAN         : 192.168.76.1
+
+Isso garante que, tanto no Slot 1 (OEM Desbloqueado via .cfg) quanto no Slot 2
+(OpenWrt Custom com LuCI e Samba 4), voce utiliza exatamente as mesmas
+credenciais para conectar ao Wi-Fi e administrar o equipamento.
+===============================================================================

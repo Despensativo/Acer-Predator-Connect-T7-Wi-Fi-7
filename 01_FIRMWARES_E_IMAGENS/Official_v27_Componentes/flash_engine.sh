@@ -126,8 +126,8 @@ umount /tmp/chk_val
 ubiblock -r /dev/ubi1_2 2>/dev/null || true
 rm -rf /tmp/chk_val
 
-# 8. Desanexar UBI1 e liberar RAM
-ubidetach /dev/ubi_ctrl -d 1
+# 8. Desanexar UBI1 e liberar RAM (nao fatal se o kernel ja tiver liberado)
+ubidetach -d 1 2>/dev/null || ubidetach -m "$TARGET_MTD" 2>/dev/null || true
 rm -f /tmp/wifi_fw.bin /tmp/kernel.bin /tmp/rootfs.squashfs /tmp/flash_engine.sh
 
 # 9. Chaveamento do BootConfig Qualcomm

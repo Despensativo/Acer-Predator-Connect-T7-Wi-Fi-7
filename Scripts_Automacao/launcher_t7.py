@@ -54,7 +54,6 @@ def find_v27_dir():
     candidates = [
         os.path.join(REPO_DIR, "01_FIRMWARES_E_IMAGENS", "Official_v27_Componentes"),
         r"C:\Users\User\Acer-Predator-Connect-T7\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes",
-        r"H:\FEITOS COM IA\Acer-Predator-Connect-T7\01_FIRMWARES_E_IMAGENS\Official_v27_Componentes",
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "01_FIRMWARES_E_IMAGENS", "Official_v27_Componentes")
     ]
     for c in candidates:

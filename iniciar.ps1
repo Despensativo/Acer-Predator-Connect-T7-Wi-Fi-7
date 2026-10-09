@@ -804,8 +804,7 @@ if (-not (Test-Path $LauncherPy)) {
     $candidates = @(
         "$LocalSourceDir\Scripts_Automacao\launcher_t7.py",
         "$PSScriptRoot\Scripts_Automacao\launcher_t7.py",
-        ".\Scripts_Automacao\launcher_t7.py",
-        "H:\FEITOS COM IA\Acer-Predator-Connect-T7\Scripts_Automacao\launcher_t7.py"
+        ".\Scripts_Automacao\launcher_t7.py"
     )
     foreach ($cand in $candidates) {
         if ($cand -and (Test-Path $cand)) {

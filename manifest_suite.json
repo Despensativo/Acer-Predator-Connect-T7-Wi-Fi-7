@@ -1,14 +1,14 @@
 {
   "suite_version": "1.1.0",
-  "updated_at": "2026-10-09T22:30:47Z",
+  "updated_at": "2026-10-09T22:43:32Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
-      "size": 44000,
-      "sha256": "9FA8450AADE55FCBEAB390E3A7FA95F68846436A9E0189A2D2F1568DD50B40EE",
-      "updated_at": "2026-10-09T19:44:19Z"
+      "size": 43898,
+      "sha256": "9391398CD828F3348D1E0D1579C50083F2B61204C1582448310B172EBD2F8AD2",
+      "updated_at": "2026-10-09T22:42:52Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",
@@ -34,9 +34,9 @@
     {
       "path": "Scripts_Automacao/gravar_v27_slot2.py",
       "category": "script",
-      "size": 30575,
-      "sha256": "FC298C1211A49EC703DBEFE3C5A2BB633E599EB4DED2082C15770668A55A886C",
-      "updated_at": "2026-10-09T22:14:47Z"
+      "size": 30473,
+      "sha256": "406C18B43F0C8331F573862D98351B3E698ADCD7785DD8AB5887D207B4B46A27",
+      "updated_at": "2026-10-09T22:43:14Z"
     },
     {
       "path": "Scripts_Automacao/switch_boot_slot.py",
@@ -167,9 +167,9 @@
     {
       "path": "iniciar.ps1",
       "category": "launcher",
-      "size": 44452,
-      "sha256": "BDD4DBC3E97BE3D46D0030897BF25CF5D929771B8984C6D0283274508EA90BC7",
-      "updated_at": "2026-10-09T22:19:41Z"
+      "size": 44365,
+      "sha256": "59EDFCA8A088E9D7815532A5129D3D3FB8DC4CF8E830073AFAF633502AC53A15",
+      "updated_at": "2026-10-09T22:42:37Z"
     },
     {
       "path": "iniciar.py",
@@ -181,9 +181,9 @@
     {
       "path": "executar_t7.sh",
       "category": "launcher",
-      "size": 4977,
-      "sha256": "01AFB905AC238AD8E50338CCF93100210E923FA5D07935A73D3A71E59DE41408",
-      "updated_at": "2026-10-09T22:19:41Z"
+      "size": 6733,
+      "sha256": "AB6915B86BFB56AA1A61C04369860E525D47F366ADB890F84F3241931B5E69A8",
+      "updated_at": "2026-10-09T22:42:26Z"
     },
     {
       "path": "EXECUTAR_T7.bat",

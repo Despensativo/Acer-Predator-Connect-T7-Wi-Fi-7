@@ -9,17 +9,56 @@
 PROJECT_DIR=""
 CURRENT_DIR="$(pwd)"
 SCRIPT_DIR=""
+IS_PIPE=0
+SIMULAR_CLIENTE=0
+
+# Detectar se esta sendo executado via pipe (curl | bash)
+case "$0" in
+    bash|sh|-bash|-sh)
+        IS_PIPE=1
+        ;;
+esac
+
+for arg in "$@"; do
+    case "$arg" in
+        --simular|--cliente|--fresh|--clean)
+            SIMULAR_CLIENTE=1
+            ;;
+    esac
+done
 
 if [ -n "$0" ] && [ -f "$0" ]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 fi
 
-if [ -f "$CURRENT_DIR/Scripts_Automacao/launcher_t7.py" ]; then
+# Se for execucao via pipe (curl | bash) ou solicitada simulacao de cliente,
+# baixa e executa 100% como usuario real na Mesa (Desktop)
+if [ "$IS_PIPE" -eq 1 ] || [ "$SIMULAR_CLIENTE" -eq 1 ]; then
+    DESKTOP_DIR="$HOME/Desktop/Acer-Predator-Connect-T7"
+    echo "==========================================================================="
+    echo "  [+] Modo Cliente Real: Configurando suite na Mesa (Desktop)..."
+    echo "==========================================================================="
+    if [ -d "$DESKTOP_DIR/.git" ]; then
+        echo "  [*] Atualizando suite existente na Mesa (Desktop)..."
+        git -C "$DESKTOP_DIR" pull --ff-only 2>/dev/null || (cd "$DESKTOP_DIR" && git fetch && git reset --hard origin/main 2>/dev/null) || true
+    else
+        if [ -d "$DESKTOP_DIR" ]; then
+            rm -rf "$DESKTOP_DIR"
+        fi
+        if command -v git >/dev/null 2>&1; then
+            echo "  [*] Baixando repositorio oficial do GitHub..."
+            git clone https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git "$DESKTOP_DIR"
+        else
+            mkdir -p "$DESKTOP_DIR"
+            echo "  [*] Baixando assistente de inicializacao do GitHub..."
+            curl -sSL "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.py" -o "$DESKTOP_DIR/iniciar.py"
+        fi
+    fi
+    PROJECT_DIR="$DESKTOP_DIR"
+elif [ -f "$CURRENT_DIR/Scripts_Automacao/launcher_t7.py" ]; then
     PROJECT_DIR="$CURRENT_DIR"
 elif [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/Scripts_Automacao/launcher_t7.py" ]; then
     PROJECT_DIR="$SCRIPT_DIR"
-elif [ -d "/Volumes/--400GB--/FEITOS COM IA/Acer-Predator-Connect-T7/Scripts_Automacao" ]; then
-    PROJECT_DIR="/Volumes/--400GB--/FEITOS COM IA/Acer-Predator-Connect-T7"
 elif [ -d "$HOME/Desktop/Acer-Predator-Connect-T7/Scripts_Automacao" ]; then
     PROJECT_DIR="$HOME/Desktop/Acer-Predator-Connect-T7"
 elif [ -d "$HOME/Acer-Predator-Connect-T7/Scripts_Automacao" ]; then
@@ -30,11 +69,18 @@ else
     echo "==========================================================================="
     echo "  [+] Configurando suite Acer Predator Connect T7 na Mesa (Desktop)..."
     echo "==========================================================================="
-    if command -v git >/dev/null 2>&1; then
-        git clone https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git "$DESKTOP_DIR"
+    if [ -d "$DESKTOP_DIR/.git" ]; then
+        git -C "$DESKTOP_DIR" pull --ff-only 2>/dev/null || true
     else
-        mkdir -p "$DESKTOP_DIR"
-        curl -sSL "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.py" -o "$DESKTOP_DIR/iniciar.py"
+        if [ -d "$DESKTOP_DIR" ]; then
+            rm -rf "$DESKTOP_DIR"
+        fi
+        if command -v git >/dev/null 2>&1; then
+            git clone https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git "$DESKTOP_DIR"
+        else
+            mkdir -p "$DESKTOP_DIR"
+            curl -sSL "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.py" -o "$DESKTOP_DIR/iniciar.py"
+        fi
     fi
     PROJECT_DIR="$DESKTOP_DIR"
 fi

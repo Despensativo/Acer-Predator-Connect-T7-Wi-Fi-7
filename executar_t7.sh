@@ -38,63 +38,20 @@ preparar_suite_desktop() {
     echo "  [+] Configurando suite Acer Predator Connect T7 na Mesa (Desktop)..."
     echo "==========================================================================="
 
-    # Se ja existe um repositorio Git valido na Mesa, tenta atualizar
-    if [ -d "$DESKTOP_DIR/.git" ]; then
-        echo "  [*] Atualizando suite existente na Mesa (Desktop)..."
-        if git -C "$DESKTOP_DIR" pull --ff-only 2>/dev/null; then
-            PROJECT_DIR="$DESKTOP_DIR"
-            return 0
-        fi
-        # Se pull falhar (conflito ou queda), tenta sincronizar direto
-        (cd "$DESKTOP_DIR" && git fetch --depth=1 origin main && git reset --hard origin/main) 2>/dev/null && {
-            PROJECT_DIR="$DESKTOP_DIR"
-            return 0
-        }
-    fi
-
-    # Se a pasta existe mas esta corrompida ou incompleta, limpa para baixar do zero
-    if [ -d "$DESKTOP_DIR" ]; then
-        rm -rf "$DESKTOP_DIR"
-    fi
-
-    DOWNLOAD_OK=0
-
-    # 1. Tentativa via Git Clone Rápido (--depth 1, muito mais leve e resistente a oscilacoes)
-    if command -v git >/dev/null 2>&1; then
-        echo "  [*] Baixando versao mais recente do GitHub (Clone Rapido --depth 1)..."
-        for tentativa in 1 2 3; do
-            if git clone --depth 1 https://github.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7.git "$DESKTOP_DIR"; then
-                DOWNLOAD_OK=1
-                break
-            else
-                echo "  [!] Tentativa $tentativa falhou por oscilacao de rede. Limpando e tentando novamente..."
-                rm -rf "$DESKTOP_DIR"
-                sleep 2
-            fi
-        done
-    fi
-
-    # 2. Se o Git Clone falhou (ex: queda de conexao ou git ausente), ativar Fallback via cURL + iniciar.py
-    if [ "$DOWNLOAD_OK" -eq 0 ]; then
-        echo "  [*] Ativando download resiliente via cURL (tolerante a oscilacoes)..."
-        mkdir -p "$DESKTOP_DIR"
-        if curl -sSL --retry 3 --retry-delay 2 "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.py" -o "$DESKTOP_DIR/iniciar.py"; then
-            DOWNLOAD_OK=1
-        fi
-    fi
-
-    # 3. Se todas as tentativas falharem (sem internet)
-    if [ "$DOWNLOAD_OK" -eq 0 ] || [ ! -d "$DESKTOP_DIR" ]; then
+    mkdir -p "$DESKTOP_DIR"
+    echo "  [*] Conectando ao GitHub (Download Modular Inteligente)..."
+    if curl -sSL --retry 3 --retry-delay 2 "https://raw.githubusercontent.com/Despensativo/Acer-Predator-Connect-T7-Wi-Fi-7/main/iniciar.py" -o "$DESKTOP_DIR/iniciar.py"; then
+        PROJECT_DIR="$DESKTOP_DIR"
+        return 0
+    else
         echo "==========================================================================="
         echo "  [-] ERRO: FALHA DE CONEXAO COM A INTERNET!"
         echo "==========================================================================="
-        echo "  A conexao caiu durante o download da suite."
-        echo "  Por favor, verifique o cabo de rede/Wi-Fi e execute o comando novamente."
+        echo "  Nao foi possivel conectar ao GitHub para iniciar a suite."
+        echo "  Por favor, verifique sua conexao de rede e execute novamente."
         echo "==========================================================================="
         exit 1
     fi
-
-    PROJECT_DIR="$DESKTOP_DIR"
 }
 
 # Se for execucao via pipe (curl | bash) ou solicitada simulacao de cliente,

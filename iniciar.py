@@ -98,30 +98,65 @@ def get_file_sha256(filepath):
     except Exception:
         return ""
 
-def download_file(url, dest_path, timeout=30):
-    """Baixa um arquivo da internet com cabecalho anti-cache e grava no destino."""
+def download_file(url, dest_path, timeout=45, expected_hash=None, retries=3):
+    """Baixa um arquivo da internet com cabecalho anti-cache, progresso em tempo real e validacao de integridade."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache"
     }
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-        temp_dest = dest_path + ".tmp"
-        with open(temp_dest, "wb") as f:
-            while chunk := resp.read(65536):
-                f.write(chunk)
-        if os.path.isfile(dest_path):
-            try:
-                os.remove(dest_path)
-            except Exception:
-                pass
-        os.replace(temp_dest, dest_path)
-    return os.path.getsize(dest_path)
+    for attempt in range(1, retries + 1):
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                total_size = int(resp.headers.get("Content-Length", 0))
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                temp_dest = dest_path + ".tmp"
+                downloaded = 0
+                last_print = 0
+                with open(temp_dest, "wb") as f:
+                    while chunk := resp.read(65536):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 1024 * 1024 and (downloaded - last_print > 1024 * 512 or downloaded == total_size):
+                            pct = int((downloaded / total_size) * 100)
+                            mb_cur = downloaded / (1024 * 1024)
+                            mb_tot = total_size / (1024 * 1024)
+                            sys.stdout.write(f"\r      [{pct:3d}%] {mb_cur:.1f} MB de {mb_tot:.1f} MB baixados...")
+                            sys.stdout.flush()
+                            last_print = downloaded
+                if total_size > 1024 * 1024:
+                    sys.stdout.write("\r" + " " * 50 + "\r")
+                    sys.stdout.flush()
 
-def sync_suite(work_dir, local_source_dir=None):
-    """Sincroniza a suite completa baseada no manifesto do GitHub."""
+                # Validar SHA-256 antes de aceitar o arquivo
+                if expected_hash:
+                    calc = get_file_sha256(temp_dest)
+                    if calc != expected_hash.upper():
+                        if os.path.exists(temp_dest):
+                            os.remove(temp_dest)
+                        raise ValueError(f"Checksum SHA-256 divergente (recebido: {calc[:12]}..., esperado: {expected_hash[:12]}...)")
+
+                if os.path.isfile(dest_path):
+                    try:
+                        os.remove(dest_path)
+                    except Exception:
+                        pass
+                os.replace(temp_dest, dest_path)
+                return os.path.getsize(dest_path)
+        except Exception as e:
+            if os.path.exists(dest_path + ".tmp"):
+                try:
+                    os.remove(dest_path + ".tmp")
+                except Exception:
+                    pass
+            if attempt < retries:
+                time.sleep(1.5)
+            else:
+                raise e
+
+def sync_suite(work_dir, local_source_dir=None, include_stock=False):
+    """Sincroniza a suite completa baseada no manifesto do GitHub (Apenas 42.7 MB essenciais)."""
     print("\n" + "=" * 75)
     print(f"  {C_BOLD}{t('sync_header')}{C_RESET}")
     print("=" * 75)
@@ -138,7 +173,7 @@ def sync_suite(work_dir, local_source_dir=None):
         download_file(manifest_url, manifest_file, timeout=8)
         with open(manifest_file, "r", encoding="utf-8") as f:
             manifest_data = json.load(f)
-        ver = manifest_data.get("suite_version", "1.0.9")
+        ver = manifest_data.get("suite_version", "1.1.0")
         cnt = len(manifest_data.get("files", []))
         print(f"  [OK] {t('manifest_loaded').format(version=ver, count=cnt)}")
     except Exception:
@@ -147,7 +182,7 @@ def sync_suite(work_dir, local_source_dir=None):
             try:
                 with open(manifest_file, "r", encoding="utf-8") as f:
                     manifest_data = json.load(f)
-                ver = manifest_data.get("suite_version", "1.0.9")
+                ver = manifest_data.get("suite_version", "1.1.0")
                 print(f"  {C_YELLOW}[!] {t('manifest_offline').format(version=ver)}{C_RESET}")
             except Exception:
                 pass
@@ -157,7 +192,7 @@ def sync_suite(work_dir, local_source_dir=None):
                 try:
                     with open(local_mf, "r", encoding="utf-8") as f:
                         manifest_data = json.load(f)
-                    ver = manifest_data.get("suite_version", "1.0.9")
+                    ver = manifest_data.get("suite_version", "1.1.0")
                     print(f"  [OK] Manifesto local v{ver} carregado")
                 except Exception:
                     pass
@@ -180,6 +215,10 @@ def sync_suite(work_dir, local_source_dir=None):
         exp_hash = item.get("sha256", "").upper()
         cat = item.get("category", "")
 
+        # Pular a ROM Stock de Recuperacao de Emergencia (58 MB) por padrao para manter o download leve (42.7 MB)
+        if cat == "stock_rom" and not include_stock:
+            continue
+
         total_checked += 1
         needs_download = False
         is_update = False
@@ -190,26 +229,16 @@ def sync_suite(work_dir, local_source_dir=None):
             if not is_offline:
                 print(f"  [*] {t('file_missing').format(path=rel)}")
         else:
-            local_size = os.path.getsize(dest)
-            if cat in ["rom", "stock_rom"]:
-                if local_size == exp_size:
-                    uptodate_count += 1
-                else:
-                    needs_download = True
-                    is_update = True
-                    updated_count += 1
-                    if not is_offline:
-                        print(f"  [*] {t('file_outdated').format(path=rel)}")
+            # Validacao estrita de SHA-256 para TODOS os arquivos
+            local_hash = get_file_sha256(dest)
+            if local_hash == exp_hash:
+                uptodate_count += 1
             else:
-                local_hash = get_file_sha256(dest)
-                if local_hash == exp_hash:
-                    uptodate_count += 1
-                else:
-                    needs_download = True
-                    is_update = True
-                    updated_count += 1
-                    if not is_offline:
-                        print(f"  [*] {t('file_outdated').format(path=rel)}")
+                needs_download = True
+                is_update = True
+                updated_count += 1
+                if not is_offline:
+                    print(f"  [*] {t('file_outdated').format(path=rel)}")
 
         if needs_download:
             if is_offline:
@@ -219,25 +248,18 @@ def sync_suite(work_dir, local_source_dir=None):
             if local_source_dir:
                 local_src = os.path.join(local_source_dir, rel.replace("/", os.sep))
                 if os.path.isfile(local_src):
-                    src_size = os.path.getsize(local_src)
-                    if cat in ["rom", "stock_rom"] and src_size == exp_size:
+                    src_hash = get_file_sha256(local_src)
+                    if src_hash == exp_hash:
                         os.makedirs(os.path.dirname(dest), exist_ok=True)
                         with open(local_src, "rb") as sf, open(dest, "wb") as df:
                             df.write(sf.read())
                         copied_local = True
-                    elif cat not in ["rom", "stock_rom"]:
-                        src_hash = get_file_sha256(local_src)
-                        if src_hash == exp_hash:
-                            os.makedirs(os.path.dirname(dest), exist_ok=True)
-                            with open(local_src, "rb") as sf, open(dest, "wb") as df:
-                                df.write(sf.read())
-                            copied_local = True
 
             download_ok = False
             if not copied_local:
                 file_url = f"{RAW_BASE}/{rel}?t={cache_buster}"
                 try:
-                    sz = download_file(file_url, dest, timeout=45)
+                    sz = download_file(file_url, dest, timeout=60, expected_hash=exp_hash, retries=3)
                     download_ok = True
                 except Exception as e:
                     print(f"  {C_RED}[-] {t('download_fail').format(path=rel, err=e)}{C_RESET}")

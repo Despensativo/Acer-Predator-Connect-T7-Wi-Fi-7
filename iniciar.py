@@ -263,12 +263,14 @@ def main():
     else:
         CURRENT_LANG = "en"
 
-    # Verificar argumentos passados na linha de comando
+    skip_sync = False
     for arg in sys.argv[1:]:
         if arg in ["--lang=pt", "pt", "-pt"]:
             CURRENT_LANG = "pt"
         elif arg in ["--lang=en", "en", "-en"]:
             CURRENT_LANG = "en"
+        elif arg in ["--no-sync", "--skip-sync", "--dev", "-n"]:
+            skip_sync = True
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     desktop_dir = get_desktop_dir()
@@ -293,8 +295,17 @@ def main():
     print("\033[91m    Por favor, conecte um cabo de rede (Ethernet) antes de continuar para evitar soft-bricks!\033[0m")
     print("=" * 75)
 
-    # Executar sincronizacao de ferramentas
-    sync_suite(work_dir, local_source_dir=local_src)
+    is_git_repo = os.path.isdir(os.path.join(work_dir, ".git"))
+    force_sync = any(a in ["--sync", "--force-sync"] for a in sys.argv)
+
+    if skip_sync:
+        print("\n  [*] Modo Direto (--no-sync): Sincronizacao via rede ignorada.")
+    elif is_git_repo and not force_sync:
+        print(f"\n  [*] Repositorio Git detectado ({work_dir}).")
+        print("      Usando arquivos locais do repositorio (Use --force-sync para forcar download do GitHub).\n")
+    else:
+        # Executar sincronizacao de ferramentas
+        sync_suite(work_dir, local_source_dir=local_src)
 
     # Disparar launcher oficial
     launcher_script = os.path.join(work_dir, "Scripts_Automacao", "launcher_t7.py")

@@ -1,0 +1,456 @@
+#!/bin/sh
+ACTION="$1"
+
+case "$ACTION" in
+    format)
+        DEV="$2"
+        LABEL="$3"
+        [ -z "$LABEL" ] && LABEL="Predator_Storage"
+        [ -z "$DEV" ] && { echo "Error: dispositivo nao especificado"; exit 1; }
+        
+        # 1. Trava anti-sistema: Bloqueio estrito de memoria interna do roteador (Flash/NAND/MTD/UBI)
+        case "$DEV" in
+            *mtd*|*ubi*|*rom*|*boot*|*kernel*|*rootfs*)
+                echo "FATAL: $DEV e particao interna do sistema do roteador! Abortado por seguranca."; exit 1 ;;
+        esac
+        
+        # 2. Trava de barramento: Aceita exclusivamente particoes de midia externa removivel
+        case "$DEV" in
+            /dev/sd[a-z][0-9]*|/dev/nvme[0-9]*n[0-9]*p[0-9]*|/dev/mmcblk[0-9]*p[0-9]*) ;;
+            *) echo "Error: Dispositivo invalido para formatacao: $DEV (deve ser particao valida como /dev/sda1)"; exit 1 ;;
+        esac
+        
+        # 3. Trava de seguranca do SO: Nunca tocar em montagens vitais do sistema
+        if grep "$DEV" /proc/mounts 2>/dev/null | grep -qE " (/$|/rom|/overlay|/lib/firmware) "; then
+            echo "FATAL: $DEV esta em uso como particao essencial do sistema! Abortado por seguranca."; exit 1;
+        fi
+        
+        sync
+        umount -l "$DEV" 2>/dev/null
+        grep "$DEV" /proc/mounts | awk '{print $2}' | while read -r mp; do
+            [ -n "$mp" ] && umount -l "$mp" 2>/dev/null
+        done
+        
+        LABEL=$(echo "$LABEL" | tr -cd 'a-zA-Z0-9_-' | cut -c1-16)
+        [ -z "$LABEL" ] && LABEL="Storage"
+        
+        /usr/sbin/mkfs.ext4 -F -m 1 -L "$LABEL" "$DEV" || { echo "Format failed"; exit 2; }
+        
+        DEVNAME=$(basename "$DEV")
+        MNTP="/mnt/$DEVNAME"
+        mkdir -p "$MNTP"
+        mount -t ext4 -o rw,noatime "$DEV" "$MNTP" || mount "$DEV" "$MNTP"
+        chmod 777 "$MNTP"
+        
+        /usr/sbin/samba4-disk-tool sync_shares 2>/dev/null
+        echo "SUCCESS: $DEV formatado com ext4 e montado em $MNTP"
+        ;;
+
+    benchmark)
+        TARGET="$2"
+        [ -z "$TARGET" ] && TARGET="/mnt/sda1"
+        [ ! -d "$TARGET" ] && { echo "Error: diretorio $TARGET nao existe"; exit 1; }
+        
+        TESTFILE="$TARGET/.speedtest.tmp"
+        sync
+        OUT=$(dd if=/dev/zero of="$TESTFILE" bs=1M count=50 conv=fsync 2>&1)
+        rm -f "$TESTFILE"
+        echo "$OUT"
+        ;;
+
+    checkfs)
+        DEV="$2"
+        [ -z "$DEV" ] && { echo "Error: dispositivo nao especificado"; exit 1; }
+        sync
+        umount -l "$DEV" 2>/dev/null
+        DEVNAME=$(basename "$DEV")
+        MNTP="/mnt/$DEVNAME"
+        [ -d "$MNTP" ] && umount -l "$MNTP" 2>/dev/null
+        FSTYPE=$(/sbin/block info | grep "^$DEV:" | grep -o 'TYPE="[^"]*"' | cut -d'"' -f2)
+        [ -z "$FSTYPE" ] && FSTYPE="Desconhecido"
+        if [ "$FSTYPE" = "ext4" ] || [ "$FSTYPE" = "ext3" ] || [ "$FSTYPE" = "ext2" ]; then
+            OUT=$(/usr/sbin/e2fsck -fy "$DEV" 2>&1)
+            RET=$?
+            mount -t ext4 -o rw,noatime "$DEV" "$MNTP" 2>/dev/null || mount "$DEV" "$MNTP" 2>/dev/null
+            chmod 777 "$MNTP"
+            echo "$OUT"
+            exit $RET
+        else
+            mount -o rw,noatime "$DEV" "$MNTP" 2>/dev/null || /sbin/mount.exfat "$DEV" "$MNTP" 2>/dev/null || mount "$DEV" "$MNTP" 2>/dev/null
+            chmod 777 "$MNTP"
+            echo "ℹ️ Sistema de arquivos detectado: $FSTYPE. Verificação automatica com reparo em bloco (e2fsck) está disponível nativamente para partições EXT4 (Linux). A partição foi remontada com sucesso."
+            exit 0
+        fi
+        ;;
+
+    mount_disk)
+        DEV="$2"
+        [ -z "$DEV" ] && { echo "Error: dispositivo nao especificado"; exit 1; }
+        case "$DEV" in
+            *mtd*|*ubi*|*rom*|*boot*|*kernel*|*rootfs*)
+                echo "FATAL: $DEV e particao interna do sistema! Abortado."; exit 1 ;;
+            /dev/sd[a-z][0-9]*|/dev/nvme[0-9]*n[0-9]*p[0-9]*|/dev/mmcblk[0-9]*p[0-9]*) ;;
+            *) echo "Error: Dispositivo invalido: $DEV"; exit 1 ;;
+        esac
+        DEVNAME=$(basename "$DEV")
+        MNTP="/mnt/$DEVNAME"
+        mkdir -p "$MNTP"
+        mount -o rw,noatime "$DEV" "$MNTP" 2>/dev/null || /sbin/mount.exfat "$DEV" "$MNTP" 2>/dev/null || mount "$DEV" "$MNTP" 2>/dev/null
+        chmod 777 "$MNTP"
+        if grep -qs "$MNTP " /proc/mounts; then
+            echo "SUCCESS: $DEV montado em $MNTP"
+        else
+            echo "Error: falha ao montar $DEV"
+            exit 2
+        fi
+        ;;
+
+    umount_disk)
+        DEV="$2"
+        [ -z "$DEV" ] && { echo "Error: dispositivo nao especificado"; exit 1; }
+        sync
+        umount -l "$DEV" 2>/dev/null
+        grep "$DEV" /proc/mounts | awk '{print $2}' | while read -r mp; do
+            [ -n "$mp" ] && umount -l "$mp" 2>/dev/null
+        done
+        echo "SUCCESS: $DEV desmontado com seguranca"
+        ;;
+
+    setuser)
+        USER=$(echo "$2" | tr -cd 'a-zA-Z0-9_.-')
+        PASS="$3"
+        [ -z "$USER" ] || [ -z "$PASS" ] && { echo "Error: usuario e senha necessarios (apenas letras, numeros, underline ou hifen)"; exit 1; }
+        
+        # Cria usuario linux se nao existir
+        if ! id "$USER" >/dev/null 2>&1; then
+            adduser -D -H -s /bin/false "$USER" 2>/dev/null || true
+        fi
+        
+        (echo "$PASS"; echo "$PASS") | smbpasswd -a -s "$USER" 2>/dev/null
+        
+        NUM_SHARES=$(uci show samba4 | grep -c '=sambashare$' 2>/dev/null)
+        for i in $(seq 0 $((NUM_SHARES - 1))); do
+            WLIST=$(uci get samba4.@sambashare[$i].write_list 2>/dev/null)
+            case " $WLIST " in
+                *" $USER "*) ;;
+                *)
+                    uci set samba4.@sambashare[$i].write_list="$WLIST $USER"
+                    ;;
+            esac
+        done
+        uci commit samba4
+        
+        /etc/init.d/samba4 restart 2>/dev/null
+        echo "SUCCESS: usuario $USER configurado"
+        ;;
+
+    deluser)
+        USER="$2"
+        [ -z "$USER" ] && { echo "Error: usuario necessario"; exit 1; }
+        if [ "$USER" = "root" ]; then
+            echo "Error: nao e permitido remover o usuario root master"
+            exit 1
+        fi
+        smbpasswd -x "$USER" 2>/dev/null
+        deluser "$USER" 2>/dev/null || true
+        
+        NUM_SHARES=$(uci show samba4 | grep -c '=sambashare$' 2>/dev/null)
+        for i in $(seq 0 $((NUM_SHARES - 1))); do
+            WLIST=$(uci get samba4.@sambashare[$i].write_list 2>/dev/null)
+            NEW_WLIST=$(echo "$WLIST" | sed "s/\\b$USER\\b//g" | tr -s ' ')
+            uci set samba4.@sambashare[$i].write_list="$NEW_WLIST"
+        done
+        uci commit samba4
+        
+        /etc/init.d/samba4 restart 2>/dev/null
+        echo "SUCCESS: usuario $USER removido"
+        ;;
+
+    listusers)
+        [ -f /etc/samba/smbpasswd ] && awk -F: '{print $1}' /etc/samba/smbpasswd
+        ;;
+
+    server_status)
+        RUNNING=0
+        if pidof smbd >/dev/null 2>&1; then
+            RUNNING=1
+        fi
+        ENABLED=0
+        if /etc/init.d/samba4 enabled >/dev/null 2>&1; then
+            ENABLED=1
+        fi
+        KEEPALIVE=0
+        if pidof disk-keepalive-daemon >/dev/null 2>&1; then
+            KEEPALIVE=1
+        fi
+        echo "{\"running\":$RUNNING,\"enabled\":$ENABLED,\"keepalive\":$KEEPALIVE}"
+        ;;
+
+    server_start)
+        /etc/init.d/samba4 enable
+        /etc/init.d/samba4 restart
+        echo "SUCCESS"
+        ;;
+
+    server_pause)
+        /etc/init.d/samba4 stop
+        echo "SUCCESS"
+        ;;
+
+    server_restart)
+        /etc/init.d/samba4 restart
+        echo "SUCCESS"
+        ;;
+
+    server_disable)
+        /etc/init.d/samba4 stop
+        /etc/init.d/samba4 disable
+        echo "SUCCESS"
+        ;;
+
+    keepalive_set)
+        VAL="$2"
+        if [ "$VAL" = "1" ]; then
+            /etc/init.d/disk-keepalive enable 2>/dev/null
+            /etc/init.d/disk-keepalive start 2>/dev/null
+        else
+            /etc/init.d/disk-keepalive stop 2>/dev/null
+            /etc/init.d/disk-keepalive disable 2>/dev/null
+            rm -f /mnt/*/.keepalive 2>/dev/null
+        fi
+        echo "SUCCESS"
+        ;;
+
+    sync_shares)
+        MOUNTS=$(grep -E '/mnt/sd[a-z][0-9]*' /proc/mounts | awk '{print $2}' | sort -u)
+        COUNT=$(echo "$MOUNTS" | grep -c '/mnt/' 2>/dev/null)
+        
+        USERS=$(awk -F: '{print $1}' /etc/samba/smbpasswd 2>/dev/null | tr '\n' ' ' | sed 's/ *$//')
+        [ -z "$USERS" ] && USERS="root"
+
+        if [ "$COUNT" -eq 0 ] || [ -z "$MOUNTS" ]; then
+            uci set samba4.@sambashare[0].path="/mnt"
+            uci set samba4.@sambashare[0].name="disk"
+            uci set samba4.@sambashare[0].guest_ok='yes'
+            uci set samba4.@sambashare[0].read_only='no'
+            uci set samba4.@sambashare[0].force_root='1'
+            uci set samba4.@sambashare[0].write_list="$USERS"
+            uci commit samba4
+            /etc/init.d/samba4 restart 2>/dev/null
+            echo "SUCCESS: Fallback para /mnt"
+            exit 0
+        fi
+        
+        FIRST=$(echo "$MOUNTS" | head -n 1)
+        uci set samba4.@sambashare[0].name="disk"
+        uci set samba4.@sambashare[0].path="$FIRST"
+        uci set samba4.@sambashare[0].force_root='1'
+        uci set samba4.@sambashare[0].read_only='no'
+        uci set samba4.@sambashare[0].guest_ok='yes'
+        uci set samba4.@sambashare[0].browseable='yes'
+        uci set samba4.@sambashare[0].write_list="$USERS"
+        uci set samba4.@sambashare[0].vfs_objects='xattr_tdb'
+        uci commit samba4
+        /etc/init.d/samba4 restart 2>/dev/null
+        echo "SUCCESS: Compartilhamentos sincronizados diretamente nos discos"
+        ;;
+
+    set_permission)
+        USER="$2"
+        MODE="$3"
+        [ -z "$USER" ] && { echo "Error: usuario necessario"; exit 1; }
+        [ -z "$MODE" ] && MODE="rw"
+        
+        NUM_SHARES=$(uci show samba4 | grep -c '=sambashare$' 2>/dev/null)
+        for i in $(seq 0 $((NUM_SHARES - 1))); do
+            RLIST=$(uci get samba4.@sambashare[$i].read_list 2>/dev/null)
+            if [ "$MODE" = "ro" ]; then
+                case " $RLIST " in
+                    *" $USER "*) ;;
+                    *)
+                        uci set samba4.@sambashare[$i].read_list="$RLIST $USER"
+                        ;;
+                esac
+            else
+                NEW_RLIST=$(echo "$RLIST" | sed "s/\\b$USER\\b//g" | tr -s ' ' | sed 's/^ *//;s/ *$//')
+                uci set samba4.@sambashare[$i].read_list="$NEW_RLIST"
+            fi
+        done
+        uci commit samba4
+        /etc/init.d/samba4 restart 2>/dev/null
+        echo "SUCCESS: permissao de $USER definida como $MODE"
+        ;;
+
+    get_permissions)
+        RLIST=$(uci get samba4.@sambashare[0].read_list 2>/dev/null)
+        USERS=$(awk -F: '{print $1}' /etc/samba/smbpasswd 2>/dev/null)
+        JSON="{"
+        FIRST=1
+        for u in $USERS; do
+            [ -z "$u" ] && continue
+            MODE="rw"
+            case " $RLIST " in
+                *" $u "*) MODE="ro" ;;
+            esac
+            [ "$FIRST" -eq 0 ] && JSON="$JSON,"
+            JSON="$JSON\"$u\":\"$MODE\""
+            FIRST=0
+        done
+        JSON="$JSON}"
+        echo "$JSON"
+        ;;
+
+    get_interfaces_status)
+        IFACE=$(uci get samba4.@samba[0].interface 2>/dev/null)
+        [ -z "$IFACE" ] && IFACE="lan"
+
+        get_iface_ip() {
+            _ip=$(ubus call network.interface.$1 status 2>/dev/null | grep -A 2 '"ipv4-address"' | grep '"address"' | cut -d'"' -f4)
+            [ -z "$_ip" ] && _ip="indisponivel"
+            echo "$_ip"
+        }
+
+        LAN_IP=$(get_iface_ip lan)
+        GUEST_IP=$(get_iface_ip guest)
+        IOT_IP=$(get_iface_ip iot)
+        WAN_IP=$(get_iface_ip wan)
+
+        LAN_EN=1
+
+        GUEST_EN=0
+        FW_GUEST=$(uci get firewall.samba4_guest.target 2>/dev/null)
+        case " $IFACE " in
+            *" guest "*)
+                [ "$FW_GUEST" = "ACCEPT" ] && GUEST_EN=1
+                ;;
+        esac
+
+        IOT_EN=0
+        FW_IOT=$(uci get firewall.samba4_iot.target 2>/dev/null)
+        case " $IFACE " in
+            *" iot "*)
+                [ "$FW_IOT" = "ACCEPT" ] && IOT_EN=1
+                ;;
+        esac
+
+        WAN_EN=0
+        FW_WAN=$(uci get firewall.samba4_wan.target 2>/dev/null)
+        case " $IFACE " in
+            *" wan "*)
+                [ "$FW_WAN" = "ACCEPT" ] && WAN_EN=1
+                ;;
+        esac
+
+        echo "{\"interfaces\":["\
+"{\"name\":\"lan\",\"label\":\"Rede Principal (LAN)\",\"ip\":\"$LAN_IP\",\"enabled\":$LAN_EN,\"is_core\":1,\"icon\":\"🏠\",\"desc\":\"Wi-Fi 2.4/5GHz e portas Ethernet da rede doméstica\"},"\
+"{\"name\":\"guest\",\"label\":\"Rede de Convidados (Guest)\",\"ip\":\"$GUEST_IP\",\"enabled\":$GUEST_EN,\"is_core\":0,\"icon\":\"📶\",\"desc\":\"Wi-Fi de Visitas. Conexão isolada para visitantes\"},"\
+"{\"name\":\"iot\",\"label\":\"Rede IoT (Dispositivos Inteligentes)\",\"ip\":\"$IOT_IP\",\"enabled\":$IOT_EN,\"is_core\":0,\"icon\":\"🤖\",\"desc\":\"Rede de Smart TVs, consoles e automação residencial\"},"\
+"{\"name\":\"wan\",\"label\":\"Acesso Remoto Externo (WAN)\",\"ip\":\"$WAN_IP\",\"enabled\":$WAN_EN,\"is_core\":0,\"icon\":\"🌐\",\"desc\":\"Acesso via Internet pública fora de casa (porta 445)\"}"\
+"]}"
+        ;;
+
+    set_interface_access)
+        TARGET="$2"
+        VAL="$3"
+        [ -z "$TARGET" ] && { echo "ERROR: Interface obrigatoria"; exit 1; }
+
+        CUR_IFACE=$(uci get samba4.@samba[0].interface 2>/dev/null)
+        [ -z "$CUR_IFACE" ] && CUR_IFACE="lan"
+
+        if [ "$VAL" = "1" ]; then
+            case " $CUR_IFACE " in
+                *" $TARGET "*) ;;
+                *) CUR_IFACE="$CUR_IFACE $TARGET" ;;
+            esac
+
+            case "$TARGET" in
+                wan)
+                    uci set firewall.samba4_wan=rule
+                    uci set firewall.samba4_wan.name='Allow-Samba4-WAN'
+                    uci set firewall.samba4_wan.src='wan'
+                    uci set firewall.samba4_wan.proto='tcp'
+                    uci set firewall.samba4_wan.dest_port='445'
+                    uci set firewall.samba4_wan.target='ACCEPT'
+                    uci commit firewall
+                    ;;
+                guest)
+                    uci set firewall.samba4_guest=rule
+                    uci set firewall.samba4_guest.name='Allow-Samba4-Guest'
+                    uci set firewall.samba4_guest.src='guest'
+                    uci set firewall.samba4_guest.proto='tcp'
+                    uci set firewall.samba4_guest.dest_port='445'
+                    uci set firewall.samba4_guest.target='ACCEPT'
+                    uci commit firewall
+                    ;;
+                iot)
+                    uci set firewall.samba4_iot=rule
+                    uci set firewall.samba4_iot.name='Allow-Samba4-IoT'
+                    uci set firewall.samba4_iot.src='iot'
+                    uci set firewall.samba4_iot.proto='tcp'
+                    uci set firewall.samba4_iot.dest_port='445'
+                    uci set firewall.samba4_iot.target='ACCEPT'
+                    uci commit firewall
+                    ;;
+            esac
+        else
+            NEW_IFACE=""
+            for i in $CUR_IFACE; do
+                [ "$i" != "$TARGET" ] && NEW_IFACE="$NEW_IFACE $i"
+            done
+            CUR_IFACE="$(echo "$NEW_IFACE" | tr -s ' ' | sed 's/^ //;s/ $//')"
+            case " $CUR_IFACE " in
+                *" lan "*) ;;
+                *) CUR_IFACE="lan $CUR_IFACE" ;;
+            esac
+
+            case "$TARGET" in
+                wan)
+                    uci -q delete firewall.samba4_wan
+                    uci commit firewall
+                    ;;
+                guest)
+                    uci -q delete firewall.samba4_guest
+                    uci commit firewall
+                    ;;
+                iot)
+                    uci -q delete firewall.samba4_iot
+                    uci commit firewall
+                    ;;
+            esac
+        fi
+
+        CUR_IFACE="$(echo "$CUR_IFACE" | tr -s ' ' | sed 's/^ //;s/ $//')"
+        uci set samba4.@samba[0].interface="$CUR_IFACE"
+        uci commit samba4
+
+        /etc/init.d/firewall reload 2>/dev/null
+        /etc/init.d/samba4 restart 2>/dev/null
+        echo "SUCCESS: Interface $TARGET atualizada para $VAL (interfaces: $CUR_IFACE)"
+        ;;
+
+    get_wan_status)
+        IFACE=$(uci get samba4.@samba[0].interface 2>/dev/null)
+        FW_RULE=$(uci get firewall.samba4_wan.target 2>/dev/null)
+        WAN_ENABLED=0
+        case " $IFACE " in
+            *" wan "*)
+                if [ "$FW_RULE" = "ACCEPT" ]; then
+                    WAN_ENABLED=1
+                fi
+                ;;
+        esac
+        WAN_IP=$(ubus call network.interface.wan status 2>/dev/null | grep -A 2 '"ipv4-address"' | grep '"address"' | cut -d'"' -f4)
+        [ -z "$WAN_IP" ] && WAN_IP="indisponivel"
+        echo "{\"wan_enabled\":$WAN_ENABLED,\"wan_ip\":\"$WAN_IP\"}"
+        ;;
+
+    set_wan_access)
+        VAL="$2"
+        $0 set_interface_access wan "$VAL"
+        ;;
+
+    *)
+        echo "Usage: $0 {format|benchmark|checkfs|mount_disk|umount_disk|setuser|deluser|listusers|set_permission|get_permissions|get_interfaces_status|set_interface_access|get_wan_status|set_wan_access|server_status|server_start|server_pause|server_restart|server_disable|keepalive_set|sync_shares}"
+        exit 1
+        ;;
+esac

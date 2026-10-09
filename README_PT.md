@@ -50,16 +50,27 @@ Se você já baixou o arquivo `.zip` ou clonou o repositório para o seu computa
 
 ---
 
-## 🔑 Endereços IP, Credenciais e Regra de Ouro
+## 🔑 Endereços IP, Credenciais Unificadas e Redes Wi-Fi
 
-| Parâmetro | Configuração Padrão do Roteador |
+As credenciais do ecossistema são **100% unificadas** entre o backup de desbloqueio `.cfg` (Slot 1) e a **ROM OpenWrt Custom** (Slot 2):
+
+| Parâmetro | Configuração Padrão (.cfg Desbloqueio & ROM Custom Slot 2) |
 | :--- | :--- |
-| **Endereço IP** | **`192.168.76.1`** (Padrão de Fábrica OEM) |
-| **Painel Web (Porta 80)** | **`http://192.168.76.1/`** (LuCI Oficial) |
-| **Usuário Web / SSH** | **`root`** (ou **`Admin`**) |
-| **Senha Padrão** | **`root0100`** (ou **`root`**) |
-| **Porta SSH (Terminal)** | Porta **`22`** (Dropbear com chave/senha) |
-| **Porta Telnet (Resgate)**| Porta **`23`** (Shell root imediato para automações) |
+| **Endereço IP LAN** | **`192.168.76.1`** (Padrão Oficial) |
+| **Interface Web (Porta 80)** | **`http://192.168.76.1/`** (LuCI Nativo no Slot 2 / OEM Web no Slot 1) |
+| **Usuário Web / SSH** | **`root`** (ou **`Admin`** na Web OEM) |
+| **Senha do Sistema / Root** | **`root0100`** (Senha única unificada para Web, SSH e Telnet) |
+| **Porta SSH (Terminal)** | Porta **`22`** (Dropbear ativo) |
+| **Porta Telnet (Resgate)** | Porta **`23`** (Shell root direto para automações) |
+| **Rede Wi-Fi 2.4 GHz** | **`PREDATOR T7_2.4GHz`** / **`Predator_T7_2.4G`** |
+| **Rede Wi-Fi 5 GHz** | **`PREDATOR T7_5GHz`** / **`Predator_T7_5G`** |
+| **Rede Wi-Fi 6 GHz (Wi-Fi 7)** | **`PREDATOR T7_6GHz`** / **`Predator_T7_6G`** (WPA3-SAE) |
+| **Senha Wi-Fi (Todas as Bandas)** | **`123456789`** (Padrão para 2.4G, 5G e 6G) |
+
+> [!TIP]
+> **Arquivo Informativo do Backup:**  
+> As instruções completas e credenciais do arquivo de desbloqueio `.cfg` estão descritas em:  
+> [`02_BACKUPS_E_DUMPS/Configuracoes_CFG/INFORMACOES_DO_BACKUP_CFG.txt`](02_BACKUPS_E_DUMPS/Configuracoes_CFG/INFORMACOES_DO_BACKUP_CFG.txt)
 
 > [!WARNING]
 > ### 🛡️ A Regra de Ouro de Usuários e Senhas
@@ -121,7 +132,7 @@ Basta digitar um único comando no terminal:
 ```
 O roteador grava `primaryboot = 1` em ambas as partições de boot e reinicia de volta no **Slot 1 oficial intacto**.
 
-*(Alternativa no Windows: basta rodar a opção [1] de chaveamento no launcher).*
+*(Alternativa no Windows: basta rodar a opção [2] de chaveamento no launcher).*
 
 #### Cenário B: Recuperação de Emergência de Hardware (WPS Failsafe no IP `192.168.1.1`)
 Como o **U-Boot permanece 100% intacto de fábrica**, o modo de recuperação por hardware está sempre disponível:
@@ -137,8 +148,8 @@ Como o **U-Boot permanece 100% intacto de fábrica**, o modo de recuperação po
 #### Cenário C: Regravação Limpa do Slot 2 a partir do Slot 1
 Caso queira reinstalar o Slot 2 do zero com partição limpa:
 1. Inicialize no Slot 1.
-2. No menu da Central de Gerenciamento, selecione a opção **`[2] Gravar Firmware Stock v27 no Slot 2`**.
-3. O script baixa os arquivos na memória RAM, valida os hashes MD5 e regrava os volumes do Slot 2 com LuCI pré-injetado na porta 80.
+2. No menu da Central de Gerenciamento, selecione a opção **`[1] Gravar ROM OpenWrt Custom + Root no Slot 2`**.
+3. O script transfere a ROM Custom v27 via HTTP local, valida os hashes MD5, grava os volumes e formata o overlay limpo com 147 MB livres.
 
 ---
 
@@ -165,7 +176,7 @@ Para desativar o Telnet após concluir sua configuração:
   desativar-telnet
   ```
   *(Para reativar a qualquer momento, basta digitar: `ativar-telnet`)*.
-* **Pelo computador:** Escolha a opção **`[4] Gerenciar Telnet (Hardening)`** na Central de Gerenciamento.
+* **Pelo computador:** Escolha a opção **`[3] Gerenciar Telnet (Hardening)`** na Central de Gerenciamento.
 
 ---
 
@@ -176,7 +187,7 @@ O modelo **Acer Predator Connect X7** compartilha o mesmo SoC Qualcomm IPQ5332, 
 > [!CAUTION]
 > **TRAVA DE SEGURANÇA ATIVA:** As imagens v27 deste repositório são **EXCLUSIVAS do Predator Connect T7**. A gravação dessas imagens em um X7 causará **BRICK**. O script de gravação detecta a arquitetura e bloqueia tentativas indevidas.
 
-* Proprietários do modelo X7 podem utilizar a opção **`[6] Área de Pesquisa do Modelo X7`** para coletar dumps de diagnóstico somente-leitura e colaborar com a engenharia reversa do módulo 5G.
+* Proprietários do modelo X7 podem utilizar a opção **`[5] Área de Pesquisa do Modelo X7`** para coletar dumps de diagnóstico somente-leitura e colaborar com a engenharia reversa do módulo 5G.
 
 ---
 

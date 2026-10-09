@@ -27,6 +27,7 @@ TRACKED_FILES = [
     {"path": "Scripts_Automacao/unlock_only_ssh.py", "category": "script"},
     {"path": "Scripts_Automacao/aplicar_configuracao_pessoal_ap_t7.py", "category": "script"},
     {"path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg", "category": "cfg"},
+    {"path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/INFORMACOES_DO_BACKUP_CFG.txt", "category": "doc"},
     {"path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/kernel.bin", "category": "rom"},
     {"path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/wifi_fw.bin", "category": "rom"},
     {"path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/rootfs.squashfs", "category": "rom"},

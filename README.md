@@ -50,16 +50,27 @@ If you have already downloaded the `.zip` or cloned the repository:
 
 ---
 
-## 🔑 IP Addresses, Credentials & The Golden Rule
+## 🔑 IP Addresses, Unified Credentials & Wi-Fi Networks
 
-| Parameter | Default Router Configuration |
+Credentials across the ecosystem are **100% unified** between the unlock backup `.cfg` (Slot 1) and the **Custom OpenWrt ROM** (Slot 2):
+
+| Parameter | Default Configuration (.cfg Unlock & Custom ROM Slot 2) |
 | :--- | :--- |
-| **IP Address** | **`192.168.76.1`** (Stock OEM Default) |
-| **Web GUI (Port 80)** | **`http://192.168.76.1/`** (Official LuCI Interface) |
-| **Web / SSH User** | **`root`** (or **`Admin`**) |
-| **Default Password** | **`root0100`** (or **`root`**) |
-| **SSH Port (Terminal)** | Port **`22`** (Dropbear key/password) |
-| **Telnet Port (Rescue)**| Port **`23`** (Direct root ash shell for automation) |
+| **LAN IP Address** | **`192.168.76.1`** (Official Default) |
+| **Web GUI (Port 80)** | **`http://192.168.76.1/`** (Native LuCI on Slot 2 / OEM Web on Slot 1) |
+| **Web / SSH User** | **`root`** (or **`Admin`** on OEM Web) |
+| **System / Root Password** | **`root0100`** (Unified password for Web, SSH and Telnet) |
+| **SSH Port (Terminal)** | Port **`22`** (Active Dropbear) |
+| **Telnet Port (Rescue)** | Port **`23`** (Direct root ash shell for automation) |
+| **Wi-Fi Network 2.4 GHz** | **`PREDATOR T7_2.4GHz`** / **`Predator_T7_2.4G`** |
+| **Wi-Fi Network 5 GHz** | **`PREDATOR T7_5GHz`** / **`Predator_T7_5G`** |
+| **Wi-Fi Network 6 GHz (Wi-Fi 7)** | **`PREDATOR T7_6GHz`** / **`Predator_T7_6G`** (WPA3-SAE) |
+| **Wi-Fi Password (All Bands)** | **`123456789`** (Default for 2.4G, 5G, and 6G) |
+
+> [!TIP]
+> **Backup Reference Document:**  
+> Detailed instructions and credentials for the `.cfg` unlock file are preserved in:  
+> [`02_BACKUPS_E_DUMPS/Configuracoes_CFG/INFORMACOES_DO_BACKUP_CFG.txt`](02_BACKUPS_E_DUMPS/Configuracoes_CFG/INFORMACOES_DO_BACKUP_CFG.txt)
 
 > [!WARNING]
 > ### 🛡️ The Golden Rule for Changing Passwords
@@ -121,7 +132,7 @@ Run a single command in the router terminal:
 ```
 The script writes `primaryboot = 1` across both boot partitions and reboots back into **factory Slot 1**.
 
-*(Windows alternative: choose Option [1] Dual-Boot switch in the management suite).*
+*(Windows alternative: choose Option [2] Dual-Boot switch in the management suite).*
 
 #### Scenario B: Hardware Failsafe Recovery (WPS Button on IP `192.168.1.1`)
 Because **U-Boot remains 100% untouched**, hardware web recovery is always intact:
@@ -137,8 +148,8 @@ Because **U-Boot remains 100% untouched**, hardware web recovery is always intac
 #### Scenario C: Clean Reflash of Slot 2 from Scratch
 To reinstall Slot 2 completely:
 1. Boot into Slot 1.
-2. In the Management Suite menu, choose option **`[2] Flash Stock v27 to Slot 2`**.
-3. The script downloads component images into RAM, verifies MD5 checksums, and flashes Slot 2 with LuCI pre-injected on port 80.
+2. In the Management Suite menu, choose option **`[1] Flash Custom OpenWrt + Root to Slot 2`**.
+3. The script transfers the custom v27 ROM via local HTTP, verifies MD5 checksums, flashes the partitions, and wipes overlay clean with 147 MB free space.
 
 ---
 
@@ -165,7 +176,7 @@ To disable Telnet after completing your setup:
   desativar-telnet
   ```
   *(To reactivate whenever needed, simply run: `ativar-telnet`)*.
-* **From your PC:** Select option **`[4] Manage Telnet (Hardening)`** in the Management Suite.
+* **From your PC:** Select option **`[3] Manage Telnet (Hardening)`** in the Management Suite.
 
 ---
 
@@ -174,9 +185,9 @@ To disable Telnet after completing your setup:
 The **Acer Predator Connect X7** shares the same base Qualcomm IPQ5332 SoC, but integrates a 5G cellular M.2 modem (Snapdragon X62) with official firmware `v50`.
 
 > [!CAUTION]
-> **ANTI-BRICK LOCK ACTIVE:** The version 27 (v27) images in this repository are **STRICTLY EXCLUSIVE to the Predator Connect T7**. Flashing these images on an X7 will cause a **BRICK**. Flashing on X7 hardware is automatically blocked.
+> **SAFETY LOCK ACTIVE:** The v27 images in this repository are **EXCLUSIVE to the Predator Connect T7**. Flashing these images onto an X7 will cause a **BRICK**. The flashing script detects hardware and strictly blocks unauthorized models.
 
-* X7 owners can use option **`[6] Model X7 Research Area`** to collect read-only diagnostic dumps and assist in reverse-engineering cellular services.
+* Owners of the X7 model can use option **`[5] Acer Connect X7 Research & Diagnostic Area`** to capture read-only diagnostic dumps and assist in reverse-engineering the 5G modem.
 
 ---
 

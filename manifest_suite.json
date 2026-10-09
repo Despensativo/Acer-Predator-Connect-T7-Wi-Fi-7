@@ -1,189 +1,189 @@
 {
-    "suite_version": "1.1.0",
-    "updated_at": "2026-10-06T04:44:02Z",
-    "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
-    "files": [
-        {
-            "path": "Scripts_Automacao/launcher_t7.py",
-            "category": "script",
-            "size": 42341,
-            "sha256": "015CD08D6B83AF94425FEE45B0CA3A1EA79E360F17BB7BF2E9CF4A47CBFB6895",
-            "updated_at": "2026-10-06T03:01:48Z"
-        },
-        {
-            "path": "Scripts_Automacao/telnet_compat.py",
-            "category": "script",
-            "size": 3072,
-            "sha256": "CC8D0692D3424AA0E86EB3010305E7B87E5430763E086198FE978E4FE2FA489A",
-            "updated_at": "2026-10-05T18:48:00Z"
-        },
-        {
-            "path": "Scripts_Automacao/gerenciar_telnet.py",
-            "category": "script",
-            "size": 20342,
-            "sha256": "4EA3E8928B64D1D07EE506969CDF44A9977BE4473F3174106AA237A6DE57D638",
-            "updated_at": "2026-10-05T22:51:14Z"
-        },
-        {
-            "path": "Scripts_Automacao/otimizar_e_ativar_luci_slot2.py",
-            "category": "script",
-            "size": 33634,
-            "sha256": "99F8BC381AC6791055D16307E332F1583354E77C6F746269DE0ACCECCC5A7F8C",
-            "updated_at": "2026-10-06T03:08:04Z"
-        },
-        {
-            "path": "Scripts_Automacao/gravar_v27_slot2.py",
-            "category": "script",
-            "size": 29922,
-            "sha256": "F1DBF467E5BD7C75552ED79432917F25BFD4987C7A34F513AB150DB09471409E",
-            "updated_at": "2026-10-06T03:07:34Z"
-        },
-        {
-            "path": "Scripts_Automacao/switch_boot_slot.py",
-            "category": "script",
-            "size": 10031,
-            "sha256": "F9BE5D84267BDA675A9FFC6ABD659EB221E6F50F8558F7B14B2F8F60D9A640FB",
-            "updated_at": "2026-10-06T02:13:00Z"
-        },
-        {
-            "path": "Scripts_Automacao/diagnostico_x7.py",
-            "category": "script",
-            "size": 4303,
-            "sha256": "40231BA93CF24EA16E471F0F3422AD3D6BB0CED8C2E994C2725BF5BDAECA95A0",
-            "updated_at": "2026-10-05T17:06:00Z"
-        },
-        {
-            "path": "Scripts_Automacao/logger_t7.py",
-            "category": "script",
-            "size": 3703,
-            "sha256": "7E6AF6DD62B6018D42CA6316B2E49FBCEF6FFE21749002E93C38CB3B67947AB1",
-            "updated_at": "2026-10-05T21:46:58Z"
-        },
-        {
-            "path": "Scripts_Automacao/boot-acer.sh",
-            "category": "sh",
-            "size": 572,
-            "sha256": "B7CD39B4BD471B5BFE39196112E1EBD64038EE639059E2DA06F0207805730728",
-            "updated_at": "2026-10-05T21:14:58Z"
-        },
-        {
-            "path": "Scripts_Automacao/boot-openwrt.sh",
-            "category": "sh",
-            "size": 576,
-            "sha256": "65B87C56E8E187AB833901A4B4AB266295D7827027C1F5442C8F50158685D1EB",
-            "updated_at": "2026-10-05T21:15:08Z"
-        },
-        {
-            "path": "Scripts_Automacao/unlock_only_ssh.py",
-            "category": "script",
-            "size": 9926,
-            "sha256": "DE86352EF6902F42B5DAD26FE2D52B10B66118E7CD4BAB51BE4479E2169CE234",
-            "updated_at": "2026-10-05T22:21:46Z"
-        },
-        {
-            "path": "Scripts_Automacao/aplicar_configuracao_pessoal_ap_t7.py",
-            "category": "script",
-            "size": 14106,
-            "sha256": "48E6480503116A1D8E84387DB882B570F9FF48E95E3B1918CDF729B96085120F",
-            "updated_at": "2026-10-05T18:51:22Z"
-        },
-        {
-            "path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg",
-            "category": "cfg",
-            "size": 50441,
-            "sha256": "4ABC75939C0045294152842E74FF88855D05D2B2E6D53863F9B1EBEC88CA4E0A",
-            "updated_at": "2026-10-05T22:30:04Z"
-        },
-        {
-            "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/kernel.bin",
-            "category": "rom",
-            "size": 4237480,
-            "sha256": "818C3A986277E56BC224470342D20F010696C7F28A457145301C6AFD864736AB",
-            "updated_at": "2026-10-03T16:35:18Z"
-        },
-        {
-            "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/wifi_fw.bin",
-            "category": "rom",
-            "size": 8554496,
-            "sha256": "5C05C0E0747C8F678178FCDF3631D272FC784C82D270E7EE60BE72E8CEB1F9DE",
-            "updated_at": "2026-10-03T16:35:18Z"
-        },
-        {
-            "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/rootfs.squashfs",
-            "category": "rom",
-            "size": 39616512,
-            "sha256": "FB4C1611319749F17C0BCFB6AC6265697550EB39365AA52A9FD143AA02741348",
-            "updated_at": "2026-10-03T16:35:18Z"
-        },
-        {
-            "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img",
-            "category": "stock_rom",
-            "size": 57997600,
-            "sha256": "B18C54AABFBAD9DA22245748E393E63F8B56467E011FAC3BDBA021F8A91103CC",
-            "updated_at": "2026-10-02T18:47:52Z"
-        },
-        {
-            "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin",
-            "category": "boot",
-            "size": 524288,
-            "sha256": "BCB6B37E13B0231CE735F31705ECD97DDE563A35C2605C0DE467A77C35D56EBE",
-            "updated_at": "2026-10-02T13:56:34Z"
-        },
-        {
-            "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot2_openwrt.bin",
-            "category": "boot",
-            "size": 524288,
-            "sha256": "E2F66A844A76C6E1BF5E80C855905A09B4EC259A9A5FA00FE628B87DB59DB163",
-            "updated_at": "2026-10-02T14:06:40Z"
-        },
-        {
-            "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/COMO_USAR_MODO_RECOVERY_INSTRUCTIONS.txt",
-            "category": "doc",
-            "size": 9737,
-            "sha256": "FC9288DB00047604A094BE295AF4943D599DEA6A4D5BC041CE6D91EC862638FE",
-            "updated_at": "2026-10-05T23:07:18Z"
-        },
-        {
-            "path": "Scripts_Automacao/instalar_ark_router.py",
-            "category": "script",
-            "size": 25265,
-            "sha256": "EFD0141816E3439BE6C8F31E51020CAA1D31E9BB10F4DC60A85322A189BF570F",
-            "updated_at": "2026-10-06T04:18:30Z"
-        },
-        {
-            "path": "01_FIRMWARES_E_IMAGENS/Ark_Router/luci-app-ark-router.ipk",
-            "category": "app",
-            "size": 601545,
-            "sha256": "0EB1D69CDF0848266760E7ED23FC300E14D13C5CD23A32C3E0973831DA56897C",
-            "updated_at": "2026-10-06T04:21:54Z"
-        },
-        {
-            "path": "iniciar.ps1",
-            "category": "launcher",
-            "size": 43585,
-            "sha256": "8E1A8EC9CB2AB535F0B361CF990A8081505B2D1DADE6C1051AF7E77A6F689A67",
-            "updated_at": "2026-10-06T04:42:10Z"
-        },
-        {
-            "path": "iniciar.py",
-            "category": "launcher",
-            "size": 12861,
-            "sha256": "2ACA0AFF02CBAFB997C73C552354319FCDB23C2BC8D16C3D718C4CC119BA9CD4",
-            "updated_at": "2026-10-06T04:43:08Z"
-        },
-        {
-            "path": "executar_t7.sh",
-            "category": "launcher",
-            "size": 2728,
-            "sha256": "4E148802CAE6595B4DBA6704BB7A745B0047DE1C2288FF850314E843ED09042B",
-            "updated_at": "2026-10-06T04:43:32Z"
-        },
-        {
-            "path": "EXECUTAR_T7.bat",
-            "category": "launcher",
-            "size": 263,
-            "sha256": "27C03696CDE84FF3EC49EF224837D1E61A48EBDEA5D55E77A2434FC7148E114C",
-            "updated_at": "2026-10-05T18:08:34Z"
-        }
-    ]
+  "suite_version": "1.1.0",
+  "updated_at": "2026-10-09T16:33:04Z",
+  "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
+  "files": [
+    {
+      "path": "Scripts_Automacao/launcher_t7.py",
+      "category": "script",
+      "size": 43036,
+      "sha256": "850E95806D8F568AF724ECAEA1EB89FF934A727489BF22E4816BF650561683EA",
+      "updated_at": "2026-10-09T16:30:02Z"
+    },
+    {
+      "path": "Scripts_Automacao/telnet_compat.py",
+      "category": "script",
+      "size": 3072,
+      "sha256": "CC8D0692D3424AA0E86EB3010305E7B87E5430763E086198FE978E4FE2FA489A",
+      "updated_at": "2026-10-09T16:14:19Z"
+    },
+    {
+      "path": "Scripts_Automacao/gerenciar_telnet.py",
+      "category": "script",
+      "size": 20342,
+      "sha256": "4EA3E8928B64D1D07EE506969CDF44A9977BE4473F3174106AA237A6DE57D638",
+      "updated_at": "2026-10-05T22:51:14Z"
+    },
+    {
+      "path": "Scripts_Automacao/otimizar_e_ativar_luci_slot2.py",
+      "category": "script",
+      "size": 33634,
+      "sha256": "99F8BC381AC6791055D16307E332F1583354E77C6F746269DE0ACCECCC5A7F8C",
+      "updated_at": "2026-10-06T17:03:30Z"
+    },
+    {
+      "path": "Scripts_Automacao/gravar_v27_slot2.py",
+      "category": "script",
+      "size": 30575,
+      "sha256": "E15D860662FD74D5DB60800D1A97A07B734A769A1611985AC6C4E78916CDE163",
+      "updated_at": "2026-10-09T16:18:07Z"
+    },
+    {
+      "path": "Scripts_Automacao/switch_boot_slot.py",
+      "category": "script",
+      "size": 10031,
+      "sha256": "F9BE5D84267BDA675A9FFC6ABD659EB221E6F50F8558F7B14B2F8F60D9A640FB",
+      "updated_at": "2026-10-06T02:13:00Z"
+    },
+    {
+      "path": "Scripts_Automacao/diagnostico_x7.py",
+      "category": "script",
+      "size": 4303,
+      "sha256": "40231BA93CF24EA16E471F0F3422AD3D6BB0CED8C2E994C2725BF5BDAECA95A0",
+      "updated_at": "2026-10-05T17:06:00Z"
+    },
+    {
+      "path": "Scripts_Automacao/logger_t7.py",
+      "category": "script",
+      "size": 3703,
+      "sha256": "7E6AF6DD62B6018D42CA6316B2E49FBCEF6FFE21749002E93C38CB3B67947AB1",
+      "updated_at": "2026-10-05T21:46:58Z"
+    },
+    {
+      "path": "Scripts_Automacao/boot-acer.sh",
+      "category": "sh",
+      "size": 572,
+      "sha256": "B7CD39B4BD471B5BFE39196112E1EBD64038EE639059E2DA06F0207805730728",
+      "updated_at": "2026-10-05T21:14:58Z"
+    },
+    {
+      "path": "Scripts_Automacao/boot-openwrt.sh",
+      "category": "sh",
+      "size": 576,
+      "sha256": "65B87C56E8E187AB833901A4B4AB266295D7827027C1F5442C8F50158685D1EB",
+      "updated_at": "2026-10-05T21:15:08Z"
+    },
+    {
+      "path": "Scripts_Automacao/unlock_only_ssh.py",
+      "category": "script",
+      "size": 9926,
+      "sha256": "DE86352EF6902F42B5DAD26FE2D52B10B66118E7CD4BAB51BE4479E2169CE234",
+      "updated_at": "2026-10-05T22:21:46Z"
+    },
+    {
+      "path": "Scripts_Automacao/aplicar_configuracao_pessoal_ap_t7.py",
+      "category": "script",
+      "size": 14106,
+      "sha256": "48E6480503116A1D8E84387DB882B570F9FF48E95E3B1918CDF729B96085120F",
+      "updated_at": "2026-10-05T18:51:22Z"
+    },
+    {
+      "path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg",
+      "category": "cfg",
+      "size": 50441,
+      "sha256": "4ABC75939C0045294152842E74FF88855D05D2B2E6D53863F9B1EBEC88CA4E0A",
+      "updated_at": "2026-10-05T22:30:04Z"
+    },
+    {
+      "path": "02_BACKUPS_E_DUMPS/Configuracoes_CFG/INFORMACOES_DO_BACKUP_CFG.txt",
+      "category": "doc",
+      "size": 2687,
+      "sha256": "B030C4A6B4777CBEADA697B9610BE82C99FA902AD00CAB5C1158920FEBF46B0A",
+      "updated_at": "2026-10-09T16:28:33Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/kernel.bin",
+      "category": "rom",
+      "size": 4237480,
+      "sha256": "818C3A986277E56BC224470342D20F010696C7F28A457145301C6AFD864736AB",
+      "updated_at": "2026-10-03T16:35:18Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/wifi_fw.bin",
+      "category": "rom",
+      "size": 8554496,
+      "sha256": "5C05C0E0747C8F678178FCDF3631D272FC784C82D270E7EE60BE72E8CEB1F9DE",
+      "updated_at": "2026-10-03T16:35:18Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/rootfs.squashfs",
+      "category": "rom",
+      "size": 34185216,
+      "sha256": "E3D88E9490070B9803566B469230A8D86BED593B5DC30DE2364A24FC82795D30",
+      "updated_at": "2026-10-09T16:15:09Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img",
+      "category": "stock_rom",
+      "size": 57997600,
+      "sha256": "B18C54AABFBAD9DA22245748E393E63F8B56467E011FAC3BDBA021F8A91103CC",
+      "updated_at": "2026-10-02T18:47:52Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin",
+      "category": "boot",
+      "size": 524288,
+      "sha256": "BCB6B37E13B0231CE735F31705ECD97DDE563A35C2605C0DE467A77C35D56EBE",
+      "updated_at": "2026-10-02T13:56:34Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot2_openwrt.bin",
+      "category": "boot",
+      "size": 524288,
+      "sha256": "E2F66A844A76C6E1BF5E80C855905A09B4EC259A9A5FA00FE628B87DB59DB163",
+      "updated_at": "2026-10-02T14:06:40Z"
+    },
+    {
+      "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/COMO_USAR_MODO_RECOVERY_INSTRUCTIONS.txt",
+      "category": "doc",
+      "size": 9737,
+      "sha256": "FC9288DB00047604A094BE295AF4943D599DEA6A4D5BC041CE6D91EC862638FE",
+      "updated_at": "2026-10-05T23:07:18Z"
+    },
+    {
+      "path": "Scripts_Automacao/instalar_ark_router.py",
+      "category": "script",
+      "size": 25265,
+      "sha256": "EFD0141816E3439BE6C8F31E51020CAA1D31E9BB10F4DC60A85322A189BF570F",
+      "updated_at": "2026-10-06T04:18:30Z"
+    },
+    {
+      "path": "iniciar.ps1",
+      "category": "launcher",
+      "size": 43585,
+      "sha256": "8E1A8EC9CB2AB535F0B361CF990A8081505B2D1DADE6C1051AF7E77A6F689A67",
+      "updated_at": "2026-10-06T17:14:36Z"
+    },
+    {
+      "path": "iniciar.py",
+      "category": "launcher",
+      "size": 13398,
+      "sha256": "AD2CE3E73C6715A702F7C91B5BCC514C09EA5D193ED11EB4AEB9B0173832788C",
+      "updated_at": "2026-10-09T16:15:39Z"
+    },
+    {
+      "path": "executar_t7.sh",
+      "category": "launcher",
+      "size": 2728,
+      "sha256": "4E148802CAE6595B4DBA6704BB7A745B0047DE1C2288FF850314E843ED09042B",
+      "updated_at": "2026-10-07T14:53:00Z"
+    },
+    {
+      "path": "EXECUTAR_T7.bat",
+      "category": "launcher",
+      "size": 263,
+      "sha256": "27C03696CDE84FF3EC49EF224837D1E61A48EBDEA5D55E77A2434FC7148E114C",
+      "updated_at": "2026-10-05T18:08:34Z"
+    }
+  ]
 }

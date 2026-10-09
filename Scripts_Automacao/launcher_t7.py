@@ -93,30 +93,30 @@ TEXTS = {
         "locked_notice": "NOTICE: Router Web GUI is up, but Telnet/SSH are closed (Factory Locked)!\n      Restore config_v27_ssh_unlocked.cfg via Web GUI to unlock.",
         "locked_status": "Locked (OEM Stock - Telnet Closed)",
         "unknown_locked": "Locked (Unlock via .cfg required)",
-        "terminal_required": "ACTION REQUIRED: This option requires terminal access (Telnet / root).\nYour router Web GUI is responding, but Telnet (port 23) is closed (Locked).\n\nHow to unlock in 1 minute:\n1. Open your browser at http://{rip}\n2. Log in and navigate to: System -> Backup and restore\n3. Under 'Restore backup', upload the file:\n   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg\n4. Wait 2 minutes for the router to reboot, then run this option again!",
+        "terminal_required": "ACTION REQUIRED: This option requires terminal access (Telnet / root).\nYour router Web GUI is responding, but Telnet (port 23) is closed (Locked).\n\nHow to unlock in 1 minute:\n1. Open your browser at http://{rip}\n2. Log in and navigate to: System -> Backup and restore\n3. Under 'Restore backup', upload the file:\n   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg\n4. Wait 2 minutes for the router to reboot automatically.\n\n[ℹ️ AFTER RESTORING .CFG (UNIFIED CREDENTIALS)]:\n- Acer Web GUI Login : User 'Admin' | Password 'root0100'\n- Terminal SSH/Telnet : User 'root' | Password 'root0100'\n- Wi-Fi Networks      : PREDATOR T7_* | Password '123456789'\n(Details saved in: 02_BACKUPS_E_DUMPS/Configuracoes_CFG/INFORMACOES_DO_BACKUP_CFG.txt)",
         "status_router": "Router",
         "status_web_only": "Web Active (Terminal Locked)",
         "status_offline": "Unreachable / Disconnected",
-        "menu_1": "[1] Switch Dual-Boot (Toggle Slot 1 / Slot 2)",
-        "menu_2": "[2] Flash Stock Firmware v27 to Slot 2 (With/Without Root) [T7 Exclusive]",
-        "menu_3": "[3] Optimize & Activate LuCI on Port 80 (Slot 2)",
-        "menu_4": "[4] Manage Telnet (Hardening / Disable or Enable)",
-        "menu_5": "[5] Install Ark Router Dashboard (OpenWrt / LuCI)",
-        "menu_6": "[6] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
-        "menu_7": "[7] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
-        "menu_8": "[8] Check & Sync Updates from GitHub (Smart Checksum)",
-        "menu_9": "[9] Inform IP of another router (Reload Target)",
+        "menu_1": "[1] Flash Custom OpenWrt + Root to Slot 2 (Pure OpenWrt + LuCI + Samba 4) [T7]",
+        "menu_2": "[2] Switch Dual-Boot (Toggle Slot 1 / Slot 2)",
+        "menu_3": "[3] Manage Telnet (Hardening / Disable or Enable)",
+        "menu_4": "[4] Install Ark Router Dashboard (OpenWrt / LuCI) [Optional]",
+        "menu_5": "[5] Acer Connect X7 Research & Diagnostic Area (Read-Only)",
+        "menu_6": "[6] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
+        "menu_7": "[7] Check & Sync Updates from GitHub (Smart Checksum)",
+        "menu_8": "[8] Inform IP of another router (Reload Target)",
         "menu_0": "[0] Exit",
-        "prompt_choice": "Choose an option (0-9): ",
+        "prompt_choice": "Choose an option (0-8): ",
         "prompt_new_ip": "Enter the new router IP (e.g. 192.168.1.1): ",
         "press_enter": "\nPress ENTER to return to menu...",
         "cable_warning": "\033[91m[!] CRITICAL: DO NOT execute these tools over Wi-Fi! Use a wired (Ethernet) connection to prevent soft-bricks.\033[0m",
-        "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [4] (Hardening)!\033[0m",
+        "telnet_active_warning": "\033[93m[!] SECURITY WARNING: Telnet port (23) is currently OPEN on your local network!\n    If you have finished your configurations, please disable Telnet in option [3] (Hardening)!\033[0m",
         "suite_version": "Suite Version",
         "sync_header": "CHECKING & SYNCING UPDATES FROM GITHUB",
         "sync_checking": "[*] Connecting to GitHub to fetch manifest and verify files...",
         "sync_all_ok": "[OK] All suite files are 100% up-to-date and intact (SHA-256 verified)!",
         "root_password_hint": "[🔑 ROOT CREDENTIAL]: Default password is 'root0100' (8 lowercase chars - Acer requirement).",
+        "wifi_password_hint": "[📶 WI-FI CREDENTIAL]: Default Wi-Fi password is '123456789' (SSID: PREDATOR T7_*).",
         "ssh_active_telnet_closed": "NOTE: Telnet port (23) is closed, but SSH (port 22) is ACTIVE with Root!\nActivating Telnet now via SSH to run this option...",
         "goodbye": "\nExiting management suite. Goodbye!"
     },
@@ -148,31 +148,31 @@ TEXTS = {
         "locked_notice": "AVISO: O roteador responde na Web, mas Telnet e SSH estao fechados (Bloqueado de fábrica)!\n      Restaure o arquivo config_v27_ssh_unlocked.cfg pela Web GUI para liberar.",
         "locked_status": "Bloqueado (OEM Fábrica - Telnet Fechado)",
         "unknown_locked": "Bloqueado (Necessita desbloqueio via .cfg)",
-        "terminal_required": "AÇÃO NECESSÁRIA: Esta opção requer acesso ao terminal (Telnet / root).\nO painel Web do roteador responde, mas o Telnet (porta 23) está fechado (Bloqueado de fábrica).\n\nComo desbloquear em 1 minuto:\n1. Abra seu navegador em http://{rip}\n2. Faça login e acesse: System -> Backup and restore\n3. Na opção 'Restore backup', envie o arquivo:\n   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg\n4. Aguarde 2 minutos o roteador reiniciar e execute esta opção novamente!",
+        "terminal_required": "AÇÃO NECESSÁRIA: Esta opção requer acesso ao terminal (Telnet / root).\nO painel Web do roteador responde, mas o Telnet (porta 23) está fechado (Bloqueado de fábrica).\n\nComo desbloquear em 1 minuto:\n1. Abra seu navegador em http://{rip}\n2. Faça login e acesse: System -> Backup and restore\n3. Na opção 'Restore backup', envie o arquivo:\n   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg\n4. Aguarde 2 minutos o roteador reiniciar automaticamente.\n\n[ℹ️ APÓS RESTAURAR O .CFG (CREDENCIAIS UNIFICADAS)]:\n- Login Web Acer     : Usuário 'Admin' | Senha 'root0100'\n- Terminal SSH/Telnet : Usuário 'root'  | Senha 'root0100'\n- Redes Wi-Fi         : PREDATOR T7_*  | Senha '123456789'\n(Detalhes salvos em: 02_BACKUPS_E_DUMPS/Configuracoes_CFG/INFORMACOES_DO_BACKUP_CFG.txt)",
         "status_router": "Roteador",
         "status_web_only": "Web Ativa (Terminal Bloqueado)",
         "status_offline": "Inacessivel / Desconectado",
-        "menu_1": "[1] Alternar Dual-Boot (Chavear entre Slot 1 e Slot 2)",
-        "menu_2": "[2] Gravar Firmware Stock v27 no Slot 2 (Com/Sem Root) [Exclusivo T7]",
-        "menu_3": "[3] Otimizar e Ativar LuCI na Porta 80 (Slot 2)",
-        "menu_4": "[4] Gerenciar Telnet (Hardening / Desativar ou Reativar)",
-        "menu_5": "[5] Instalar Painel Ark Router (OpenWrt / LuCI)",
-        "menu_6": "[6] Area de Pesquisa do Modelo X7 (Somente Leitura)",
-        "menu_7": "[7] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
-        "menu_8": "[8] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
-        "menu_9": "[9] Informar IP de outro roteador (Recarregar Alvo)",
+        "menu_1": "[1] Gravar ROM OpenWrt Custom + Root no Slot 2 (OpenWrt Puro + LuCI + Samba 4) [Exclusivo T7]",
+        "menu_2": "[2] Alternar Dual-Boot (Chavear entre Slot 1 e Slot 2)",
+        "menu_3": "[3] Gerenciar Telnet (Hardening / Desativar ou Reativar)",
+        "menu_4": "[4] Instalar Painel Ark Router (OpenWrt / LuCI) [Opcional]",
+        "menu_5": "[5] Area de Pesquisa do Modelo X7 (Somente Leitura)",
+        "menu_6": "[6] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
+        "menu_7": "[7] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
+        "menu_8": "[8] Informar IP de outro roteador (Recarregar Alvo)",
         "menu_0": "[0] Sair",
-        "prompt_choice": "Escolha uma opcao (0-9): ",
+        "prompt_choice": "Escolha uma opcao (0-8): ",
         "prompt_new_ip": "Digite o IP do novo roteador (ex: 192.168.1.1): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
         "cable_warning": "\033[91m[!] AVISO CRITICO: NAO execute estas ferramentas via Wi-Fi! Utilize um cabo de rede (Ethernet) para evitar perda de conexao e soft-bricks.\033[0m",
-        "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [4] (Hardening)!\033[0m",
+        "telnet_active_warning": "\033[93m[!] ALERTA DE SEGURANCA: A porta Telnet (23) esta ATIVA na sua rede local!\n    Se ja concluiu suas configuracoes, desative o Telnet na opcao [3] (Hardening)!\033[0m",
         "suite_version": "Versao da Suite",
         "sync_header": "VERIFICANDO E SINCRONIZANDO ATUALIZACOES DO GITHUB",
         "sync_checking": "[*] Conectando ao GitHub para buscar manifesto e verificar arquivos...",
         "sync_all_ok": "[OK] Todos os arquivos da suite estao 100% atualizados e integros (SHA-256 validado)!",
         "sync_updated": "[OK] Sincronizacao concluida! {0} arquivos atualizados do GitHub (backups salvos em .bak)!",
         "root_password_hint": "[🔑 CREDENCIAL ROOT]: Senha padrão necessária é 'root0100' (8 caracteres minúsculos).",
+        "wifi_password_hint": "[📶 WI-FI PADRÃO]: Senha do Wi-Fi é '123456789' (Rede: PREDATOR T7_*).",
         "ssh_active_telnet_closed": "AVISO: Porta Telnet (23) fechada, mas SSH (porta 22) está ATIVO com Root!\nReativando Telnet agora via SSH para executar esta opção...",
         "goodbye": "\nEncerrando central. Ate logo!"
     },
@@ -263,11 +263,14 @@ def preflight_check(quiet=False, explicit_ip=None):
     }
 
     expected = {
-        "kernel.bin": {"size": 4237480, "md5": "ade31977f9c740a36ecfe50ac9e335d9"},
-        "wifi_fw.bin": {"size": 8554496, "md5": "f1091a9c062ff50dd3348e06a8a5457e"},
-        "rootfs.squashfs": {"size": 39616512, "md5": "99df532f68c147355c894611d1977cbf"}
+        "kernel.bin": [{"size": 4237480, "md5": "ade31977f9c740a36ecfe50ac9e335d9"}],
+        "wifi_fw.bin": [{"size": 8554496, "md5": "f1091a9c062ff50dd3348e06a8a5457e"}],
+        "rootfs.squashfs": [
+            {"size": 34185216, "md5": "a4d5338a85b2d85cfba86e5991f3034e", "label": "Custom OpenWrt + Root"},
+            {"size": 39616512, "md5": "99df532f68c147355c894611d1977cbf", "label": "Stock OEM v27"}
+        ]
     }
-    for fname, exp in expected.items():
+    for fname, exps in expected.items():
         fpath = os.path.join(V27_DIR, fname)
         if not os.path.isfile(fpath):
             info["files_ok"] = False
@@ -276,7 +279,8 @@ def preflight_check(quiet=False, explicit_ip=None):
         else:
             sz = os.path.getsize(fpath)
             f_md5 = calc_md5(fpath)
-            if sz != exp["size"] or f_md5 != exp["md5"]:
+            matched = any(sz == e["size"] and f_md5 == e["md5"] for e in exps)
+            if not matched:
                 info["files_ok"] = False
                 if not quiet:
                     print(f"  [!] {t('file_corrupt')}: {fname}")
@@ -729,6 +733,7 @@ def main_menu():
         else:
             print(f"  [!] Conexao: {t('status_offline')}")
         print(f"  {t('root_password_hint')}")
+        print(f"  {t('wifi_password_hint')}")
         print("=" * 75)
         print(f"  {t('cable_warning')}")
         print("-" * 75)
@@ -743,7 +748,6 @@ def main_menu():
         print(f"  {t('menu_6')}")
         print(f"  {t('menu_7')}")
         print(f"  {t('menu_8')}")
-        print(f"  {t('menu_9')}")
         print(f"  {t('menu_0')}")
         print("=" * 75)
 
@@ -753,7 +757,7 @@ def main_menu():
             print(t("goodbye"))
             break
 
-        if choice in ["1", "2", "3", "5"] and not info["telnet_ok"]:
+        if choice in ["1", "2", "3", "4"] and not info["telnet_ok"]:
             if info["ssh_ok"]:
                 print("\n" + "=" * 75)
                 print(f"  {t('ssh_active_telnet_closed')}")
@@ -766,7 +770,7 @@ def main_menu():
                     print("\n  [OK] Porta Telnet (23) reativada com sucesso! Prosseguindo...")
                 else:
                     print("\n  [!] Nao foi possivel reativar o Telnet automaticamente.")
-                    print("      Por favor, selecione a Opcao [4] no menu para gerenciar o Telnet/SSH.")
+                    print("      Por favor, selecione a Opcao [3] no menu para gerenciar o Telnet/SSH.")
                     safe_input(t("press_enter"))
                     continue
             else:
@@ -778,12 +782,7 @@ def main_menu():
                 continue
 
         if choice == "1":
-            log_event("MENU", "Opcao [1] Alternar Dual-Boot selecionada", "INFO")
-            script = get_script_path("switch_boot_slot.py")
-            subprocess.call([sys.executable, script, rip])
-            safe_input(t("press_enter"))
-        elif choice == "2":
-            log_event("MENU", "Opcao [2] Gravar Firmware v27 no Slot 2 selecionada", "INFO")
+            log_event("MENU", "Opcao [1] Gravar Firmware Custom no Slot 2 selecionada", "INFO")
             if not info["files_ok"]:
                 print("\n" + "=" * 75)
                 print(f"  [!] {t('rom_notice_missing')}")
@@ -795,33 +794,33 @@ def main_menu():
             script = get_script_path("gravar_v27_slot2.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "3":
-            log_event("MENU", "Opcao [3] Otimizar e Ativar LuCI na Porta 80 selecionada", "INFO")
-            script = get_script_path("otimizar_e_ativar_luci_slot2.py")
+        elif choice == "2":
+            log_event("MENU", "Opcao [2] Alternar Dual-Boot selecionada", "INFO")
+            script = get_script_path("switch_boot_slot.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "4":
-            log_event("MENU", "Opcao [4] Gerenciar Telnet selecionada", "INFO")
+        elif choice == "3":
+            log_event("MENU", "Opcao [3] Gerenciar Telnet selecionada", "INFO")
             script = get_script_path("gerenciar_telnet.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "5":
-            log_event("MENU", "Opcao [5] Instalar Painel Ark Router selecionada", "INFO")
+        elif choice == "4":
+            log_event("MENU", "Opcao [4] Instalar Painel Ark Router selecionada", "INFO")
             script = get_script_path("instalar_ark_router.py")
             subprocess.call([sys.executable, script, f"--ip={rip}", f"--lang={CURRENT_LANG}"])
-        elif choice == "6":
-            log_event("MENU", "Opcao [6] Area de Pesquisa X7 selecionada", "INFO")
+        elif choice == "5":
+            log_event("MENU", "Opcao [5] Area de Pesquisa X7 selecionada", "INFO")
             script = get_script_path("diagnostico_x7.py")
             subprocess.call([sys.executable, script, rip])
             safe_input(t("press_enter"))
-        elif choice == "7":
-            log_event("MENU", "Opcao [7] Modo de Recuperacao de Emergencia selecionada", "INFO")
+        elif choice == "6":
+            log_event("MENU", "Opcao [6] Modo de Recuperacao de Emergencia selecionada", "INFO")
             show_emergency_recovery()
-        elif choice == "8":
-            log_event("MENU", "Opcao [8] Sincronizar e Atualizar Ferramenta selecionada", "INFO")
+        elif choice == "7":
+            log_event("MENU", "Opcao [7] Sincronizar e Atualizar Ferramenta selecionada", "INFO")
             check_and_sync_updates()
-        elif choice == "9":
-            log_event("MENU", "Opcao [9] Mudar IP do roteador selecionada", "INFO")
+        elif choice == "8":
+            log_event("MENU", "Opcao [8] Mudar IP do roteador selecionada", "INFO")
             new_ip = safe_input(t("prompt_new_ip")).strip()
             if new_ip:
                 args.ip = new_ip

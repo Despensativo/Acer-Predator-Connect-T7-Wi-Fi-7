@@ -28,3 +28,12 @@ fontes-kernel-isoladas.tar.gz
 07_ARTEFATOS_BUILD_WSL/artefatos/*/fontes-kernel-isoladas.tar.gz
 
 
+
+# Auditoria e Scratch Temporario de Testes
+audit/
+auditoria_*
+*.png
+TASK.md
+etc/
+clean_*.py
+patch_wireless.py

@@ -1,0 +1,26 @@
+{
+        "luci-app-samba4": {
+                "description": "Grant access to LuCI app samba4",
+                "read": {
+                        "file": {
+                                "/etc/samba/smb.conf.template": [ "read" ],
+                                "/etc/samba/smbpasswd": [ "read" ],
+                                "/usr/sbin/smbd": [ "exec" ],
+                                "/usr/sbin/samba4-disk-tool": [ "exec" ],
+                                "/sbin/modinfo": [ "exec" ],
+                                "/bin/df": [ "exec" ],
+                                "/bin/sync": [ "exec" ],
+                                "/bin/umount": [ "exec" ],
+                                "/bin/mount": [ "exec" ],
+                                "/sbin/block": [ "exec" ],
+                                "/bin/netstat": [ "exec" ]
+                        }
+                },
+                "write": {
+                        "file": {
+                                "/etc/samba/smb.conf.template": [ "write" ],
+                                "/usr/sbin/samba4-disk-tool": [ "exec" ]
+                        }
+                }
+        }
+}

@@ -704,7 +704,7 @@ def main_menu():
     parser = argparse.ArgumentParser(description="Acer Predator T7/X7 Management Suite")
     parser.add_argument("--lang", "-l", choices=["en", "pt"], default=None, help="Interface language (en or pt)")
     parser.add_argument("--ip", default=None, help="Explicit router IP")
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
 
     if args.lang:
         CURRENT_LANG = args.lang

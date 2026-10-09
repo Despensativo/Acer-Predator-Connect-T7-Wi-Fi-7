@@ -315,9 +315,9 @@ def main():
 
     if os.path.isfile(launcher_script):
         args = [sys.executable, launcher_script, f"--lang={CURRENT_LANG}"]
-        # Repassar outros argumentos
+        # Repassar apenas argumentos relevantes como --ip
         for a in sys.argv[1:]:
-            if not a.startswith("--lang"):
+            if a.startswith("--ip"):
                 args.append(a)
         subprocess.call(args)
     else:

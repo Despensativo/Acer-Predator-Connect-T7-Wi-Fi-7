@@ -6,9 +6,9 @@
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
-      "size": 43045,
-      "sha256": "FBFD5197AFB678BF067AE1DC9C8C761BF34E0297EF8D3C29113185B2E0E34631",
-      "updated_at": "2026-10-09T16:38:04Z"
+      "size": 43730,
+      "sha256": "3876403B12CDEBC585EF86608811932193CE78F3D3880F7846E208536352DC62",
+      "updated_at": "2026-10-09T17:25:00Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",

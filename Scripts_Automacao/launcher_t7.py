@@ -105,8 +105,9 @@ TEXTS = {
         "menu_6": "[6] Emergency Recovery Mode (U-Boot Web / WPS 5s)",
         "menu_7": "[7] Check & Sync Updates from GitHub (Smart Checksum)",
         "menu_8": "[8] Inform IP of another router (Reload Target)",
+        "menu_9": "[9] Real-Time Telemetry & Performance Monitor (HUD / Wi-Fi 7 / CPU Turbo / Thermals)",
         "menu_0": "[0] Exit",
-        "prompt_choice": "Choose an option (0-8): ",
+        "prompt_choice": "Choose an option (0-9): ",
         "prompt_new_ip": "Enter the new router IP (e.g. 192.168.1.1): ",
         "press_enter": "\nPress ENTER to return to menu...",
         "cable_warning": "\033[91m[!] CRITICAL: DO NOT execute these tools over Wi-Fi! Use a wired (Ethernet) connection to prevent soft-bricks.\033[0m",
@@ -160,8 +161,9 @@ TEXTS = {
         "menu_6": "[6] Modo de Recuperacao de Emergencia (U-Boot Recovery / WPS 5s)",
         "menu_7": "[7] Sincronizar e Atualizar Ferramenta (GitHub Checksum)",
         "menu_8": "[8] Informar IP de outro roteador (Recarregar Alvo)",
+        "menu_9": "[9] Monitor de Telemetria e Desempenho ao Vivo (HUD / Wi-Fi 7 / CPU Turbo / Térmico)",
         "menu_0": "[0] Sair",
-        "prompt_choice": "Escolha uma opcao (0-8): ",
+        "prompt_choice": "Escolha uma opcao (0-9): ",
         "prompt_new_ip": "Digite o IP do novo roteador (ex: 192.168.1.1): ",
         "press_enter": "\nPressione ENTER para voltar ao menu...",
         "cable_warning": "\033[91m[!] AVISO CRITICO: NAO execute estas ferramentas via Wi-Fi! Utilize um cabo de rede (Ethernet) para evitar perda de conexao e soft-bricks.\033[0m",
@@ -748,6 +750,7 @@ def main_menu():
         print(f"  {t('menu_6')}")
         print(f"  {t('menu_7')}")
         print(f"  {t('menu_8')}")
+        print(f"  {t('menu_9')}")
         print(f"  {t('menu_0')}")
         print("=" * 75)
 
@@ -825,6 +828,11 @@ def main_menu():
             if new_ip:
                 args.ip = new_ip
                 log_event("MENU", f"Novo IP definido pelo usuario: {new_ip}", "INFO")
+        elif choice == "9":
+            log_event("MENU", "Opcao [9] Monitor de Telemetria ao Vivo selecionada", "INFO")
+            script = os.path.join(REPO_DIR, "04_SCRIPTS_E_FERRAMENTAS", "monitorar_t7_live.py")
+            py_bin = "/Users/user/.antigravity-tools-env/bin/python3" if os.path.exists("/Users/user/.antigravity-tools-env/bin/python3") else sys.executable
+            subprocess.call([py_bin, script, f"--host={rip}"])
 
 if __name__ == "__main__":
     main_menu()

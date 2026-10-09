@@ -247,15 +247,8 @@ def download_file(url, target_path, timeout=30):
     return os.path.getsize(target_path)
 
 def locate_local_cached_ipk(repo_root):
-    """Procura por arquivo IPK ja presente na suite offline ou no cache local."""
-    candidates = [
-        os.path.join(repo_root, "01_FIRMWARES_E_IMAGENS", "Ark_Router", "luci-app-ark-router.ipk"),
-        os.path.join(os.path.expanduser("~"), "Desktop", "Acer-Predator-Connect-T7", "01_FIRMWARES_E_IMAGENS", "Ark_Router", "luci-app-ark-router.ipk"),
-        os.path.join(os.environ.get("TEMP", ""), "luci-app-ark-router.ipk"),
-    ]
-    for c in candidates:
-        if os.path.isfile(c) and os.path.getsize(c) > 100000:
-            return c
+    # Conforme regra do projeto, o app nunca deve ser reaproveitado localmente;
+    # deve ser sempre baixado do zero via link oficial para garantir versao atualizada.
     return None
 
 def try_direct_download_router(tn, url, timeout=45):
@@ -385,10 +378,6 @@ def main():
 
     # Preparar diretório de cache local
     print(f"\n  [+] {C_GREEN}{t('target_pkg_info')}{C_RESET}")
-    pkg_label = "luci-app-ark-router.ipk"
-    cache_dir = os.path.join(repo_root, "01_FIRMWARES_E_IMAGENS", "Ark_Router")
-    os.makedirs(cache_dir, exist_ok=True)
-    dest_cached = os.path.join(cache_dir, pkg_label)
 
     print(f"\n[*] {t('fetching_release')}")
     tag, urls = get_latest_release_info()
@@ -396,7 +385,7 @@ def main():
 
     dl_url = urls.get("lite", LATEST_DIRECT_URL)
 
-    # Etapa 1: Tentar download direto no roteador via curl
+    # Etapa 1: Download direto no roteador via curl (sempre do zero via link)
     print(f"\n[*] {t('direct_download_router')}")
     print(f"    URL: {dl_url}")
     remote_sz = try_direct_download_router(tn, dl_url, timeout=45)
@@ -405,46 +394,44 @@ def main():
     if remote_sz > 100000:
         print(f"    [OK] {t('direct_download_ok').format(size=remote_sz)}")
         ipk_ready = True
-        # Atualizar cache local no PC para manter a suite sempre sincronizada
-        try:
-            download_file(dl_url, dest_cached, timeout=15)
-        except Exception:
-            pass
     else:
-        # Etapa 2: Fallback - Baixar no PC e enviar via stream TCP (nc)
+        # Etapa 2: Fallback - Baixar arquivo temporario no PC do zero e transmitir via TCP (nc)
         print(f"    [!] {t('streaming_fallback')}")
         local_ipk = None
+        import tempfile
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix="_ark.ipk")
+        os.close(tmp_fd)
 
-        # Tentar baixar cópia fresca no PC
         try:
             print(f"    [*] {t('downloading_pc')}")
-            sz = download_file(dl_url, dest_cached, timeout=25)
+            sz = download_file(dl_url, tmp_path, timeout=25)
             print(f"    [OK] {t('download_ok').format(size=sz)}")
-            local_ipk = dest_cached
+            local_ipk = tmp_path
         except Exception as e:
             print(f"    [!] {t('download_fail').format(err=e)}")
             print(f"    [*] {t('using_fallback')}")
             try:
-                sz = download_file(FALLBACK_URL_LITE, dest_cached, timeout=25)
+                sz = download_file(FALLBACK_URL_LITE, tmp_path, timeout=25)
                 print(f"    [OK] {t('download_ok').format(size=sz)}")
-                local_ipk = dest_cached
+                local_ipk = tmp_path
             except Exception as e2:
                 print(f"    [-] Falha no fallback: {e2}")
 
-        if not local_ipk or not os.path.isfile(local_ipk):
-            cached = locate_local_cached_ipk(repo_root)
-            if cached:
-                print(f"    {C_YELLOW}[!] {t('using_cached').format(path=cached)}{C_RESET}")
-                local_ipk = cached
-            else:
-                print(f"\n{C_RED}[-] {t('offline_warn')}{C_RESET}")
-                tn.close()
-                safe_input(t("press_enter"))
-                return
+        if not local_ipk or not os.path.isfile(local_ipk) or os.path.getsize(local_ipk) < 100000:
+            print(f"\n{C_RED}[-] {t('offline_warn')}{C_RESET}")
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+            tn.close()
+            safe_input(t("press_enter"))
+            return
 
         # Enviar via stream TCP (nc)
         print(f"    [*] {t('streaming_transfer')}")
         remote_sz = stream_file_to_router(tn, rip, local_ipk, timeout=15)
+        # Limpar arquivo temporario do PC imediatamente
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
         if remote_sz > 100000:
             print(f"    [OK] {t('stream_success').format(size=remote_sz)}")
             ipk_ready = True

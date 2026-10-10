@@ -699,7 +699,16 @@ def show_emergency_recovery():
     Restore your Windows network adapter back to Automatic (DHCP).""")
 
     print("=" * 75)
-    safe_input(t("press_enter"))
+    prompt_auto = "  [>] Deseja que a ferramenta envie a ROM oficial de 55 MB automaticamente para http://192.168.1.1 agora? (s/N): " if CURRENT_LANG == "pt" else "  [>] Do you want the tool to automatically upload the official 55MB ROM to http://192.168.1.1 now? (y/N): "
+    ans = safe_input(prompt_auto)
+    if ans and ans.lower() in ["s", "y", "sim", "yes"]:
+        script_rec = get_script_path("recuperar_uboot_t7.py")
+        if os.path.isfile(script_rec):
+            subprocess.call([sys.executable, script_rec])
+        else:
+            print(f"[-] Script {script_rec} nao encontrado.")
+    else:
+        safe_input(t("press_enter"))
 
 def main_menu():
     global CURRENT_LANG

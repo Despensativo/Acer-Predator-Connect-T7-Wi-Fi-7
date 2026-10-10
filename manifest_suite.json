@@ -1,14 +1,14 @@
 {
   "suite_version": "1.1.0",
-  "updated_at": "2026-10-09T22:59:36Z",
+  "updated_at": "2026-10-10T00:01:44Z",
   "description": "Acer Predator Connect T7 & X7 - Manifest Oficial de Sincronizacao da Suite",
   "files": [
     {
       "path": "Scripts_Automacao/launcher_t7.py",
       "category": "script",
-      "size": 43898,
-      "sha256": "9391398CD828F3348D1E0D1579C50083F2B61204C1582448310B172EBD2F8AD2",
-      "updated_at": "2026-10-09T22:42:52Z"
+      "size": 44510,
+      "sha256": "B23F7B593C252F3294D35EE4E4454D194059D9B461BC128E8BF934B93566065F",
+      "updated_at": "2026-10-09T23:57:12Z"
     },
     {
       "path": "Scripts_Automacao/telnet_compat.py",
@@ -125,9 +125,9 @@
     {
       "path": "01_FIRMWARES_E_IMAGENS/Official_v27_Componentes/flash_engine.sh",
       "category": "sh",
-      "size": 5786,
-      "sha256": "C4C1391FB2F4E33F89CD506FA8E218F0C6A9ACB37BE9D65255DFEBDA09441860",
-      "updated_at": "2026-10-09T22:13:24Z"
+      "size": 6290,
+      "sha256": "F0D779F179B1A8A4C77CEA67508D97B47EA9EF80357A312B61CD73D81E0CACE5",
+      "updated_at": "2026-10-09T23:12:17Z"
     },
     {
       "path": "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img",
@@ -156,6 +156,13 @@
       "size": 9737,
       "sha256": "FC9288DB00047604A094BE295AF4943D599DEA6A4D5BC041CE6D91EC862638FE",
       "updated_at": "2026-10-05T23:07:18Z"
+    },
+    {
+      "path": "Scripts_Automacao/recuperar_uboot_t7.py",
+      "category": "script",
+      "size": 9737,
+      "sha256": "DA57CC592E3D0D7846AE01FE7D1EB0DC77FAC02BC89F9102956AE149F145F5B5",
+      "updated_at": "2026-10-10T00:01:19Z"
     },
     {
       "path": "Scripts_Automacao/instalar_ark_router.py",

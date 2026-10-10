@@ -18,21 +18,24 @@ echo "    - PrimaryBoot atual: $CURRENT_PB"
 if [ "$ACTIVE_ROOTFS" = "rootfs" ] || [ "$UPGRADE_PART" = "rootfs_1" ]; then
     TARGET_SLOT="SLOT 2 (rootfs_1)"
     TARGET_MTD="21"
-    NEW_PB="0"
+    NEW_PB="1"
     ACTIVE_SLOT_NAME="SLOT 1 (rootfs)"
 elif [ "$ACTIVE_ROOTFS" = "rootfs_1" ] || [ "$UPGRADE_PART" = "rootfs" ]; then
     TARGET_SLOT="SLOT 1 (rootfs)"
     TARGET_MTD="20"
-    NEW_PB="1"
+    NEW_PB="0"
     ACTIVE_SLOT_NAME="SLOT 2 (rootfs_1)"
 else
     echo "[-] ERRO: Nao foi possivel determinar o slot ativo com seguranca."
     exit 1
 fi
 
+CURRENT_AGE=$(cat /proc/boot_info/bootconfig0/age 2>/dev/null || echo "1")
+NEW_AGE=$((CURRENT_AGE + 2))
+
 echo "[+] Slot ativo detectado: $ACTIVE_SLOT_NAME"
 echo "[+] Gravando no slot livre: $TARGET_SLOT (MTD $TARGET_MTD)"
-echo "[+] Novo PrimaryBoot que sera ativado: $NEW_PB"
+echo "[+] Novo PrimaryBoot que sera ativado: $NEW_PB (Age: $NEW_AGE)"
 
 # 2. Anexar o MTD alvo como UBI1
 echo ""
@@ -133,6 +136,13 @@ rm -f /tmp/wifi_fw.bin /tmp/kernel.bin /tmp/rootfs.squashfs /tmp/flash_engine.sh
 # 9. Chaveamento do BootConfig Qualcomm
 echo ""
 echo "=== ATUALIZANDO BOOTCONFIG QUALCOMM PARA $TARGET_SLOT (PRIMARYBOOT = $NEW_PB) ==="
+if [ "$NEW_PB" = "1" ]; then
+    fw_setenv fsbootargs "ubi.mtd=rootfs_1 root=mtd:ubi_rootfs rootfstype=squashfs" 2>/dev/null || true
+else
+    fw_setenv fsbootargs "ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs" 2>/dev/null || true
+fi
+echo "$NEW_AGE" > /proc/boot_info/bootconfig0/age 2>/dev/null || true
+echo "$NEW_AGE" > /proc/boot_info/bootconfig1/age 2>/dev/null || true
 echo "$NEW_PB" > /proc/boot_info/bootconfig0/rootfs/primaryboot
 echo "$NEW_PB" > /proc/boot_info/bootconfig1/rootfs/primaryboot
 cat /proc/boot_info/bootconfig0/getbinary_bootconfig > /tmp/bc0.bin

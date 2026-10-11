@@ -7,15 +7,22 @@ Este arquivo e utilizado para realizar o PRIMEIRO DESBLOQUEIO do roteador
 caso ele esteja 100% bloqueado de fabrica (OEM Stock com portas 22 e 23 fechadas).
 
 -------------------------------------------------------------------------------
-1. COMO APLICAR O DESBLOQUEIO NO ROTEADOR (1 MINUTO)
+1. COMO APLICAR O BACKUP / RESTAURAÇÃO NO ROTEADOR (1 MINUTO)
 -------------------------------------------------------------------------------
-1. Conecte o cabo de rede do computador em uma porta LAN do roteador.
-2. Abra seu navegador em: http://192.168.76.1
-3. Faca login na interface web da Acer.
-4. Acesse: Sistema (System) -> Backup e Restauracao (Backup and restore).
-5. Na secao "Restaurar backup" (Restore backup), envie o arquivo:
-   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg
-6. Aguarde cerca de 2 minutos o roteador reiniciar automaticamente.
+1. Conecte o cabo de rede do computador em uma porta LAN do roteador (IP 192.168.76.1).
+2. Abra seu navegador e acesse diretamente o link da tela de restauração OEM:
+   👉 https://192.168.76.1/pub/dist/index.html#/system/backRestore
+   (Ou pelo menu lateral: System -> Backup & restore)
+   * Imagem de referência salva em: assets/tela_carregamento_backup_oem.png
+3. Faça login na interface com as credenciais (ex: admin / root0100).
+4. Na seção inferior "Restore:":
+   a) Clique no botão [Browse] e selecione o arquivo:
+      - Para restauração mestre completa com todas as páginas e blindagens:
+        02_BACKUPS_E_DUMPS/Configuracoes_CFG/cfg_restauracao_master_v2.cfg
+      - Para primeiro desbloqueio básico OEM:
+        02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg
+   b) Clique no botão azul [Restore].
+5. Aguarde cerca de 2 minutos o roteador aplicar as configurações e reiniciar.
 
 -------------------------------------------------------------------------------
 2. CREDENCIAIS ATIVAS APOS RESTAURAR O BACKUP (.CFG)

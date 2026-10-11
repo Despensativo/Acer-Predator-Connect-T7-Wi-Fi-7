@@ -1,0 +1,1256 @@
+{
+  "files": {
+    "nand-4k-ipq5332-single_100000032.img": {
+      "bytes": 57735436,
+      "sha256": "9b37e865792abd82da8c3870c18cf7f999a1f986019f4eff9147b33e136c0985",
+      "fit_timestamp": "2024-02-22T03:37:31+00:00",
+      "payloads": {
+        "flash.scr": {
+          "node": "script",
+          "bytes": 3503,
+          "sha256": "0a01501b5b10c1907824fe8af4e9345e6a37d603881757339a09f188b11495f8"
+        },
+        "xbl_nand_4K.elf": {
+          "node": "sbl1-f8f0b5d3a7cabd04503cc9e9c31ede178ed5ba0d",
+          "bytes": 390344,
+          "sha256": "e0ed82390c72582b5aed5ac8cc3adb0fcdd31de29357461a84fe0798d7c1d705"
+        },
+        "nand-system-partition-ipq5332-m4096-p256KiB.bin": {
+          "node": "mibib-2831cb5ab2d77a629456369888b9a2e17ff49f41",
+          "bytes": 524288,
+          "sha256": "e39596e013d7d95ac1636b5e9badf9ced30783b0336fb73162d8719cb229ec9a"
+        },
+        "bootconfig.bin": {
+          "node": "bootconfig1-f1050e638265203cd2a74f220c37aeaa88edfc7e",
+          "bytes": 65536,
+          "sha256": "75a6b7ae4845e4523403bac122fbdbd29199815fa38f551c006073e9792771ca"
+        },
+        "tz.mbn": {
+          "node": "tz-5371ff12800ec75037875b90289bbafe482dee9f",
+          "bytes": 1490944,
+          "sha256": "681dd61560e9d64fb40cc9fcb658550c3afcaafe03bfd4fd545711990a1c825d"
+        },
+        "devcfg.mbn": {
+          "node": "devcfg-8666c73196e28125dc783776af0206b2c4b86a6b",
+          "bytes": 42064,
+          "sha256": "5ad2ddc555648e6746fade659a0a17c2aca8ef62985cfb3e6d6031204ba6c5d6"
+        },
+        "tmel-ipq53xx-patch.elf": {
+          "node": "tme-4dc0eff2f7f0c211c601d547aa54e925361bc441",
+          "bytes": 49016,
+          "sha256": "23f0e184c61b644de2b93c7995ec96fd4fc4ce8752085a50dc998aabc5aa7333"
+        },
+        "cdt-MI-EMU_512M16_DDR4_LM512.bin": {
+          "node": "ddr-MI-EMU_512M16_DDR4-c68e7a42208b2fc41afd2dc7e6af3b4431eafc6b",
+          "bytes": 588,
+          "sha256": "b04957a80dabc5617f28e0e73a2f25ca73dd760a5f1b3f4b1a448b330613aadf"
+        },
+        "cdt-AP-MI01.2_512M16_DDR4_LM512.bin": {
+          "node": "ddr-AP-MI01.2_512M16_DDR4-08ecf30710b8cefabfc6acab5db2f9a2ec0f5111",
+          "bytes": 588,
+          "sha256": "2a3b2ae37ea1638d0bc51285d25d7aafebdf92b7337d58bf1e69c389d97a4be5"
+        },
+        "cdt-AP-MI01.2-QCN9160-C1_512M16_DDR4_LM512.bin": {
+          "node": "ddr-AP-MI01.2-QCN9160-C1_512M16_DDR4-0a4c1cbeb4ae05b907e93e6956f082288529c3fb",
+          "bytes": 588,
+          "sha256": "bb08baafc7f57389d645814636037105ff62a5b8e227435c1055e71206fcf44b"
+        },
+        "cdt-AP-MI01.3_512M16_DDR4_LM512.bin": {
+          "node": "ddr-AP-MI01.3_512M16_DDR4-eb151cab03f8ae677a10a4e858e18b9407d41d78",
+          "bytes": 588,
+          "sha256": "9e2369b0ee33beba28a4f5888d582583db8b472ab47e9e00f7e72cb534a3161e"
+        },
+        "cdt-AP-MI01.4_256M16_DDR4_LM512.bin": {
+          "node": "ddr-AP-MI01.4_256M16_DDR4-c90d37d6c54f8e13c6d05487dd64dec1fd5bbe39",
+          "bytes": 588,
+          "sha256": "34ab3143cb553d92d8f40fd35fe68d904f46489d81d1b66d4de426aee404c272"
+        },
+        "cdt-AP-MI01.6_256M16_DDR4_LM512.bin": {
+          "node": "ddr-AP-MI01.6_256M16_DDR4-71408992f5cc2ad976d98c465df0b00bad14dd6e",
+          "bytes": 588,
+          "sha256": "c94cee8cf0e2163b3f3e6ddf64334ff31e9fd4b4f79ba9b2d741aa89964b1ece"
+        },
+        "cdt-AP-MI01.9_512M16_DDR4_LM512.bin": {
+          "node": "ddr-AP-MI01.9_512M16_DDR4-0d066c3de53c131b84b2099f419883188d5f0f15",
+          "bytes": 588,
+          "sha256": "a94a10fd0be3134a8873aa635cf8abb5515a03ad52b4bc92a2064725dbcdbb88"
+        },
+        "cdt-AP-MI03.1_128M16_DDR3_LM512.bin": {
+          "node": "ddr-AP-MI03.1_128M16_DDR3-236afed9b581eabe533e1c3e904436980234b6d1",
+          "bytes": 584,
+          "sha256": "4d37594c5f5f399a7ee95f189aeb277ae0c74398c0c0b451dec0c56851791273"
+        },
+        "cdt-AP-MI04.1_256M16_DDR4_LM512.bin": {
+          "node": "ddr-AP-MI04.1_256M16_DDR4-4e224a542707514ec96b80b048f4a1a1c2a48c36",
+          "bytes": 588,
+          "sha256": "9b457b96dda10fb9dfa3035c64ce6e153a896bd6b049b04b173a2064199f916c"
+        },
+        "cdt-DB-MI01.1_512M16_DDR4_LM512.bin": {
+          "node": "ddr-DB-MI01.1_512M16_DDR4-f131c94ae2e97930cb5a49d1e7fcde743df293d5",
+          "bytes": 588,
+          "sha256": "71bc107981b94c8442f43222d15d40585c3697940ec5c49470c669cc0d16022f"
+        },
+        "cdt-DB-MI02.1_256M16_DDR3_LM512.bin": {
+          "node": "ddr-DB-MI02.1_256M16_DDR3-581c155825a1195dd4ebade1552eb39c3abe542a",
+          "bytes": 584,
+          "sha256": "1e514dea95fc04c2e1ffbba5730f6f1316c35616007c193eaa9e4955f53cb761"
+        },
+        "cdt-DB-MI03.1_128M16_DDR3_LM512.bin": {
+          "node": "ddr-DB-MI03.1_128M16_DDR3-c8f46c3ec481f2c788162c9e293cc38fed9fcecd",
+          "bytes": 584,
+          "sha256": "3e9e9014f54e84ad66b0b974d8d9c0e012ea52eeb2420698c3cc40e0ab409450"
+        },
+        "openwrt-ipq5332-u-boot.mbn": {
+          "node": "u-boot-424d046a769fc23dfac0fd98117ad414516f54e7",
+          "bytes": 565248,
+          "sha256": "77fa4b3566351655cf7beadc1226aa5cc871096b5eb61e9c5268f0e349893d6e"
+        },
+        "openwrt-ipq53xx-ipq53xx_32-ubi-root-m4096-p256KiB.img": {
+          "node": "ubi-3304d9ecb7faded1e862c1b88d50413f4795f30b",
+          "bytes": 54525952,
+          "sha256": "d5a797949c4d66b890f403da58498f8bddff5469923a3defab15ba4ca4f06a7b"
+        }
+      },
+      "fit_hash_failures": [],
+      "flash_script": "if test -n $soc_hw_version; then\nif test \"$soc_hw_version\" = \"201a0100\" || test \"$soc_hw_version\" = \"201a0101\" ; then\necho 'soc_hw_version : Validation success'\nelse\necho 'soc_hw_version : did not match, aborting upgrade'\nexit 1\nfi\nelse\necho 'soc_hw_version : unknown, skipping validation'\nfi\nif test \"$machid\" = \"f060000\" || test \"$machid\" = \"8060001\" || test \"$machid\" = \"8060101\" || test \"$machid\" = \"8060002\" || test \"$machid\" = \"8060003\" || test \"$machid\" = \"8060000\" || test \"$machid\" = \"8060006\" || test \"$machid\" = \"8060005\" || test \"$machid\" = \"8060004\" || test \"$machid\" = \"1060001\" || test \"$machid\" = \"1060003\" || test \"$machid\" = \"1060002\" ; then\necho 'machid : Validation success'\nelse\necho 'machid : unknown, aborting upgrade'\nexit 1\nfi\nflashinit nand || exit 1\nimxtract $imgaddr mibib-2831cb5ab2d77a629456369888b9a2e17ff49f41 || exit 1\nmibib_reload 0 1000 40000 20000000 || exit 1\nxtract_n_flash $imgaddr sbl1-f8f0b5d3a7cabd04503cc9e9c31ede178ed5ba0d 0:SBL1 || exit 1\nxtract_n_flash $imgaddr mibib-2831cb5ab2d77a629456369888b9a2e17ff49f41 0:MIBIB || exit 1\nxtract_n_flash $imgaddr bootconfig-f1050e638265203cd2a74f220c37aeaa88edfc7e 0:BOOTCONFIG || exit 1\nxtract_n_flash $imgaddr bootconfig1-f1050e638265203cd2a74f220c37aeaa88edfc7e 0:BOOTCONFIG1 || exit 1\nxtract_n_flash $imgaddr tz-5371ff12800ec75037875b90289bbafe482dee9f 0:QSEE || exit 1\nxtract_n_flash $imgaddr devcfg-8666c73196e28125dc783776af0206b2c4b86a6b 0:DEVCFG || exit 1\nxtract_n_flash $imgaddr tme-4dc0eff2f7f0c211c601d547aa54e925361bc441 0:TME || exit 1\nif test \"$machid\" = \"f060000\"; then\n\nxtract_n_flash $imgaddr ddr-MI-EMU_512M16_DDR4-c68e7a42208b2fc41afd2dc7e6af3b4431eafc6b 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060001\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.2_512M16_DDR4-08ecf30710b8cefabfc6acab5db2f9a2ec0f5111 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060101\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.2-QCN9160-C1_512M16_DDR4-0a4c1cbeb4ae05b907e93e6956f082288529c3fb 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060002\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.3_512M16_DDR4-eb151cab03f8ae677a10a4e858e18b9407d41d78 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060003\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.4_256M16_DDR4-c90d37d6c54f8e13c6d05487dd64dec1fd5bbe39 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060000\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.6_256M16_DDR4-71408992f5cc2ad976d98c465df0b00bad14dd6e 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060006\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.9_512M16_DDR4-0d066c3de53c131b84b2099f419883188d5f0f15 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060005\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI03.1_128M16_DDR3-236afed9b581eabe533e1c3e904436980234b6d1 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060004\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI04.1_256M16_DDR4-4e224a542707514ec96b80b048f4a1a1c2a48c36 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"1060001\"; then\n\nxtract_n_flash $imgaddr ddr-DB-MI01.1_512M16_DDR4-f131c94ae2e97930cb5a49d1e7fcde743df293d5 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"1060003\"; then\n\nxtract_n_flash $imgaddr ddr-DB-MI02.1_256M16_DDR3-581c155825a1195dd4ebade1552eb39c3abe542a 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"1060002\"; then\n\nxtract_n_flash $imgaddr ddr-DB-MI03.1_128M16_DDR3-c8f46c3ec481f2c788162c9e293cc38fed9fcecd 0:CDT || exit 1\nfi\n\nxtract_n_flash $imgaddr u-boot-424d046a769fc23dfac0fd98117ad414516f54e7 0:APPSBL || exit 1\nxtract_n_flash $imgaddr ubi-3304d9ecb7faded1e862c1b88d50413f4795f30b rootfs || exit 1\nexit 0\n\n",
+      "qsee_identifiers": [
+        "QC_IMAGE_VERSION_STRING=TZ.WNS.5.3-00297"
+      ],
+      "uboot_identifiers": [
+        "jenkins-build_qca-networking-2022-spf-12-2_qca_oem-557",
+        "U-Boot 2016.01 (Feb 22 2024 - 02:14:32 +0000)"
+      ],
+      "netconsole_markers": {
+        "ncip": -1,
+        "ncinport": -1,
+        "ncoutport": -1
+      },
+      "ubi_volumes": [
+        {
+          "id": 0,
+          "name": "wifi_fw",
+          "reserved_pebs": 44,
+          "type": 2,
+          "flags": 0
+        },
+        {
+          "id": 1,
+          "name": "kernel",
+          "reserved_pebs": 25,
+          "type": 2,
+          "flags": 0
+        },
+        {
+          "id": 2,
+          "name": "ubi_rootfs",
+          "reserved_pebs": 155,
+          "type": 1,
+          "flags": 0
+        },
+        {
+          "id": 3,
+          "name": "rootfs_data",
+          "reserved_pebs": 1,
+          "type": 1,
+          "flags": 1
+        }
+      ],
+      "kernel_fit_bytes": 4217004,
+      "kernel": {
+        "description": "ARM OpenWrt Linux-5.4.213",
+        "type": "kernel",
+        "arch": "0x61726d00",
+        "os": "linux",
+        "compression": "lzma",
+        "load": "0x40008000",
+        "entry": "0x40008000"
+      },
+      "linux_version": [
+        "Linux version 5.4.213 (faiot@build-server3) (gcc version 7.5.0 (OpenWrt GCC 7.5.0 r0+13545-8512340a5b)) #0 SMP PREEMPT Thu Feb 22 02:14:32 2024"
+      ],
+      "selected_rootfs_files": {
+        "etc/version": {
+          "bytes": 12,
+          "sha256": "cb342ccd97fa50db36f4ca410ce29248f3ac54ef8a194ed5f2b9a039516677e6",
+          "text": "1.00.000032\n"
+        },
+        "etc/openwrt_release": {
+          "bytes": 275,
+          "sha256": "15a71340a952b794b1a9c4aa0394cf3d25984c1ddfacf6fa3287ab626b50821c",
+          "text": "DISTRIB_ID='OpenWrt'\nDISTRIB_RELEASE='19.07-SNAPSHOT'\nDISTRIB_REVISION='r0+13545-8512340a5b'\nDISTRIB_TARGET='ipq53xx/ipq53xx_32'\nDISTRIB_ARCH='arm_cortex-a7_neon-vfpv4'\nDISTRIB_DESCRIPTION='OpenWrt 19.07-SNAPSHOT r0+13545-8512340a5b'\nDISTRIB_TAINTS='no-all busybox override'\n"
+        },
+        "etc/openwrt_version": {
+          "bytes": 20,
+          "sha256": "5d2543a108895f5f1d6d1c75703e54c7822e0ea013159f90193321903ed46c21",
+          "text": "r0+13545-8512340a5b\n"
+        },
+        "etc/config/system": {
+          "bytes": 460,
+          "sha256": "c268621935daa4c2af562cdeda18bf7fe477d9e9e61cae10b11ea3ef46d28037",
+          "region_lines": []
+        },
+        "etc/config/repacd": {
+          "bytes": 15155,
+          "sha256": "2b175744e756d9380b599b4948a705abe98ff0f33693e612d915e3246567b39e",
+          "region_lines": [
+            "\toption MapCountry                       'US4'"
+          ]
+        },
+        "etc/config/wifi_cert": {
+          "bytes": 7660,
+          "sha256": "43b9f941ee708a4d3c0fb826b5b47cb4ae5f1a18e2a491a1edde2530aef48105"
+        },
+        "lib/upgrade/platform.sh": {
+          "bytes": 18757,
+          "sha256": "8cade9c82a7a4e1138217d218ac4c6733ffe57d9ac49d20f5055a6fc5a3e7f6b"
+        },
+        "usr/lib/opkg/status": {
+          "bytes": 125902,
+          "sha256": "5d24274bae89528b81b616b451429c901c4564a94322f97a1c502dec9e53b1d0"
+        }
+      },
+      "package_count": 551
+    },
+    "nand-4k-ipq5332-single_101000027.img": {
+      "bytes": 57997600,
+      "sha256": "b18c54aabfbad9da22245748e393e63f8b56467e011fac3bdba021f8a91103cc",
+      "fit_timestamp": "2025-03-11T10:18:15+00:00",
+      "payloads": {
+        "flash.scr": {
+          "node": "script",
+          "bytes": 3503,
+          "sha256": "b8e54d3e6c31aa108e140aa18852f6c89e5739784c4f1108b42d02ee125c82ad"
+        },
+        "xbl_nand_4K.elf": {
+          "node": "sbl1-f8f0b5d3a7cabd04503cc9e9c31ede178ed5ba0d",
+          "bytes": 390344,
+          "sha256": "e0ed82390c72582b5aed5ac8cc3adb0fcdd31de29357461a84fe0798d7c1d705"
+        },
+        "nand-system-partition-ipq5332-m4096-p256KiB.bin": {
+          "node": "mibib-2831cb5ab2d77a629456369888b9a2e17ff49f41",
+          "bytes": 524288,
+          "sha256": "e39596e013d7d95ac1636b5e9badf9ced30783b0336fb73162d8719cb229ec9a"
+        },
+        "bootconfig.bin": {
+          "node": "bootconfig1-f1050e638265203cd2a74f220c37aeaa88edfc7e",
+          "bytes": 65536,
+          "sha256": "75a6b7ae4845e4523403bac122fbdbd29199815fa38f551c006073e9792771ca"
+        },
+        "tz.mbn": {
+          "node": "tz-5371ff12800ec75037875b90289bbafe482dee9f",
+          "bytes": 1490944,
+          "sha256": "681dd61560e9d64fb40cc9fcb658550c3afcaafe03bfd4fd545711990a1c825d"
+        },
+        "devcfg.mbn": {
+          "node": "devcfg-8666c73196e28125dc783776af0206b2c4b86a6b",
+          "bytes": 42064,
+          "sha256": "5ad2ddc555648e6746fade659a0a17c2aca8ef62985cfb3e6d6031204ba6c5d6"
+        },
+        "tmel-ipq53xx-patch.elf": {
+          "node": "tme-4dc0eff2f7f0c211c601d547aa54e925361bc441",
+          "bytes": 49016,
+          "sha256": "23f0e184c61b644de2b93c7995ec96fd4fc4ce8752085a50dc998aabc5aa7333"
+        },
+        "cdt-MI-EMU_512M16_DDR4.bin": {
+          "node": "ddr-MI-EMU_512M16_DDR4-3575430c2bc6a902d3d55503f636ba638bf5f1d8",
+          "bytes": 588,
+          "sha256": "6d88f242e2cf363de20b2f05a5100815a21dbb92fff8b66a836e183f388f0b3a"
+        },
+        "cdt-AP-MI01.2_512M16_DDR4.bin": {
+          "node": "ddr-AP-MI01.2_512M16_DDR4-ee0b154c726988e2e2866edb37a40b45f31bd925",
+          "bytes": 588,
+          "sha256": "14f6f5da5a7af058a8be98c75713081748cdd40f443098d971c3bfb29973ca1c"
+        },
+        "cdt-AP-MI01.2-QCN9160-C1_512M16_DDR4.bin": {
+          "node": "ddr-AP-MI01.2-QCN9160-C1_512M16_DDR4-2ed560ab6a620be64850b2748c6f1f95193773ae",
+          "bytes": 588,
+          "sha256": "66c39ef0f19d2268a5b05e9f4155ed1695ce73f0fbe23a8116a4bb85d90bbd8d"
+        },
+        "cdt-AP-MI01.3_512M16_DDR4.bin": {
+          "node": "ddr-AP-MI01.3_512M16_DDR4-88a3fc9b74a271f457cb19f9453ab083a1c22455",
+          "bytes": 588,
+          "sha256": "92a903a06f33b97b606d3ec6add430bd31a58a93adae7eab739d9e528bd82169"
+        },
+        "cdt-AP-MI01.4_256M16_DDR4.bin": {
+          "node": "ddr-AP-MI01.4_256M16_DDR4-c11cee738a19ddba6135a6413e79c073d8ccf7a2",
+          "bytes": 588,
+          "sha256": "34ab3143cb553d92d8f40fd35fe68d904f46489d81d1b66d4de426aee404c272"
+        },
+        "cdt-AP-MI01.6_512M16_DDR4.bin": {
+          "node": "ddr-AP-MI01.6_512M16_DDR4-01800bdf355eca7c7b52c6dfb2d122718a67e101",
+          "bytes": 588,
+          "sha256": "bd0c73538a5e5c845cea86454bf5272e92d7b0975d092b826e58d106329a3a0c"
+        },
+        "cdt-AP-MI01.9_512M16_DDR4.bin": {
+          "node": "ddr-AP-MI01.9_512M16_DDR4-d1ef5dabc0d50165405a92e1259d30334cb8c5ff",
+          "bytes": 588,
+          "sha256": "a9ca9dfafcaf40723c4dbead6eae65d02dfbe9da135e46e572c225fe9e3c4ec9"
+        },
+        "cdt-AP-MI03.1_128M16_DDR3.bin": {
+          "node": "ddr-AP-MI03.1_128M16_DDR3-4f79d66d571737b15811e8d673d99e520b60e34a",
+          "bytes": 584,
+          "sha256": "b682c1bf03478bcd3a23b2e4b00031f47fa258b98a31ed26b614b3a228c16503"
+        },
+        "cdt-AP-MI04.1_256M16_DDR4.bin": {
+          "node": "ddr-AP-MI04.1_256M16_DDR4-65d64a3dea69139eafbc91685116d76f9f7f99f4",
+          "bytes": 588,
+          "sha256": "9b457b96dda10fb9dfa3035c64ce6e153a896bd6b049b04b173a2064199f916c"
+        },
+        "cdt-DB-MI01.1_512M16_DDR4.bin": {
+          "node": "ddr-DB-MI01.1_512M16_DDR4-5f431b4a63a49c67d9dd697f63f86ae5693b155d",
+          "bytes": 588,
+          "sha256": "62d7b36ba14ccb6425a0176d7ed9e691f464d71fbad3899dd4ed33b2ffbe4d65"
+        },
+        "cdt-DB-MI02.1_256M16_DDR3.bin": {
+          "node": "ddr-DB-MI02.1_256M16_DDR3-f0d35c1c843ee22dd9f5efd0a5ceebf304faa3b0",
+          "bytes": 584,
+          "sha256": "1e514dea95fc04c2e1ffbba5730f6f1316c35616007c193eaa9e4955f53cb761"
+        },
+        "cdt-DB-MI03.1_128M16_DDR3.bin": {
+          "node": "ddr-DB-MI03.1_128M16_DDR3-2b07ec258fff368e3d4f3cb153ab1e1eb2c1eea2",
+          "bytes": 584,
+          "sha256": "3e9e9014f54e84ad66b0b974d8d9c0e012ea52eeb2420698c3cc40e0ab409450"
+        },
+        "openwrt-ipq5332-u-boot.mbn": {
+          "node": "u-boot-424d046a769fc23dfac0fd98117ad414516f54e7",
+          "bytes": 565320,
+          "sha256": "3432d0c417f31cd76835fd3f3a54c6ab0a35476c5ef0fc2ac443073ae9423daf"
+        },
+        "openwrt-ipq53xx-ipq53xx_32-ubi-root-m4096-p256KiB.img": {
+          "node": "ubi-3304d9ecb7faded1e862c1b88d50413f4795f30b",
+          "bytes": 54788096,
+          "sha256": "de21a88a9457c86767fbdc66c5f0e68cdbe94b6b1271cd32fe9e3e019494be17"
+        }
+      },
+      "fit_hash_failures": [],
+      "flash_script": "if test -n $soc_hw_version; then\nif test \"$soc_hw_version\" = \"201a0100\" || test \"$soc_hw_version\" = \"201a0101\" ; then\necho 'soc_hw_version : Validation success'\nelse\necho 'soc_hw_version : did not match, aborting upgrade'\nexit 1\nfi\nelse\necho 'soc_hw_version : unknown, skipping validation'\nfi\nif test \"$machid\" = \"f060000\" || test \"$machid\" = \"8060001\" || test \"$machid\" = \"8060101\" || test \"$machid\" = \"8060002\" || test \"$machid\" = \"8060003\" || test \"$machid\" = \"8060000\" || test \"$machid\" = \"8060006\" || test \"$machid\" = \"8060005\" || test \"$machid\" = \"8060004\" || test \"$machid\" = \"1060001\" || test \"$machid\" = \"1060003\" || test \"$machid\" = \"1060002\" ; then\necho 'machid : Validation success'\nelse\necho 'machid : unknown, aborting upgrade'\nexit 1\nfi\nflashinit nand || exit 1\nimxtract $imgaddr mibib-2831cb5ab2d77a629456369888b9a2e17ff49f41 || exit 1\nmibib_reload 0 1000 40000 20000000 || exit 1\nxtract_n_flash $imgaddr sbl1-f8f0b5d3a7cabd04503cc9e9c31ede178ed5ba0d 0:SBL1 || exit 1\nxtract_n_flash $imgaddr mibib-2831cb5ab2d77a629456369888b9a2e17ff49f41 0:MIBIB || exit 1\nxtract_n_flash $imgaddr bootconfig-f1050e638265203cd2a74f220c37aeaa88edfc7e 0:BOOTCONFIG || exit 1\nxtract_n_flash $imgaddr bootconfig1-f1050e638265203cd2a74f220c37aeaa88edfc7e 0:BOOTCONFIG1 || exit 1\nxtract_n_flash $imgaddr tz-5371ff12800ec75037875b90289bbafe482dee9f 0:QSEE || exit 1\nxtract_n_flash $imgaddr devcfg-8666c73196e28125dc783776af0206b2c4b86a6b 0:DEVCFG || exit 1\nxtract_n_flash $imgaddr tme-4dc0eff2f7f0c211c601d547aa54e925361bc441 0:TME || exit 1\nif test \"$machid\" = \"f060000\"; then\n\nxtract_n_flash $imgaddr ddr-MI-EMU_512M16_DDR4-3575430c2bc6a902d3d55503f636ba638bf5f1d8 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060001\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.2_512M16_DDR4-ee0b154c726988e2e2866edb37a40b45f31bd925 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060101\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.2-QCN9160-C1_512M16_DDR4-2ed560ab6a620be64850b2748c6f1f95193773ae 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060002\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.3_512M16_DDR4-88a3fc9b74a271f457cb19f9453ab083a1c22455 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060003\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.4_256M16_DDR4-c11cee738a19ddba6135a6413e79c073d8ccf7a2 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060000\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.6_512M16_DDR4-01800bdf355eca7c7b52c6dfb2d122718a67e101 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060006\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI01.9_512M16_DDR4-d1ef5dabc0d50165405a92e1259d30334cb8c5ff 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060005\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI03.1_128M16_DDR3-4f79d66d571737b15811e8d673d99e520b60e34a 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"8060004\"; then\n\nxtract_n_flash $imgaddr ddr-AP-MI04.1_256M16_DDR4-65d64a3dea69139eafbc91685116d76f9f7f99f4 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"1060001\"; then\n\nxtract_n_flash $imgaddr ddr-DB-MI01.1_512M16_DDR4-5f431b4a63a49c67d9dd697f63f86ae5693b155d 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"1060003\"; then\n\nxtract_n_flash $imgaddr ddr-DB-MI02.1_256M16_DDR3-f0d35c1c843ee22dd9f5efd0a5ceebf304faa3b0 0:CDT || exit 1\nfi\n\nif test \"$machid\" = \"1060002\"; then\n\nxtract_n_flash $imgaddr ddr-DB-MI03.1_128M16_DDR3-2b07ec258fff368e3d4f3cb153ab1e1eb2c1eea2 0:CDT || exit 1\nfi\n\nxtract_n_flash $imgaddr u-boot-424d046a769fc23dfac0fd98117ad414516f54e7 0:APPSBL || exit 1\nxtract_n_flash $imgaddr ubi-3304d9ecb7faded1e862c1b88d50413f4795f30b rootfs || exit 1\nexit 0\n\n",
+      "qsee_identifiers": [
+        "QC_IMAGE_VERSION_STRING=TZ.WNS.5.3-00297"
+      ],
+      "uboot_identifiers": [
+        "jenkins-build_qca-networking-2022-spf-12-2_qca_oem-2262",
+        "U-Boot 2016.01 (Mar 11 2025 - 08:57:41 +0000)"
+      ],
+      "netconsole_markers": {
+        "ncip": -1,
+        "ncinport": -1,
+        "ncoutport": -1
+      },
+      "ubi_volumes": [
+        {
+          "id": 0,
+          "name": "wifi_fw",
+          "reserved_pebs": 44,
+          "type": 2,
+          "flags": 0
+        },
+        {
+          "id": 1,
+          "name": "kernel",
+          "reserved_pebs": 25,
+          "type": 2,
+          "flags": 0
+        },
+        {
+          "id": 2,
+          "name": "ubi_rootfs",
+          "reserved_pebs": 156,
+          "type": 1,
+          "flags": 0
+        },
+        {
+          "id": 3,
+          "name": "rootfs_data",
+          "reserved_pebs": 1,
+          "type": 1,
+          "flags": 1
+        }
+      ],
+      "kernel_fit_bytes": 4237480,
+      "kernel": {
+        "description": "ARM OpenWrt Linux-5.4.213",
+        "type": "kernel",
+        "arch": "0x61726d00",
+        "os": "linux",
+        "compression": "lzma",
+        "load": "0x40008000",
+        "entry": "0x40008000"
+      },
+      "linux_version": [
+        "Linux version 5.4.213 (faiot@build-server3) (gcc version 7.5.0 (OpenWrt GCC 7.5.0 r0+14315-60fc7c16ce)) #0 SMP PREEMPT Tue Mar 11 08:57:41 2025"
+      ],
+      "selected_rootfs_files": {
+        "etc/version": {
+          "bytes": 12,
+          "sha256": "642a9006a8181f2eb5269e2aed5620a7af88eadedfd1289e48b48a38a6fb6a15",
+          "text": "1.01.000027\n"
+        },
+        "etc/openwrt_release": {
+          "bytes": 275,
+          "sha256": "e879aa8b5f762331b01f5757d26e625adca88808fbe671b787a7c5d30f01fb6a",
+          "text": "DISTRIB_ID='OpenWrt'\nDISTRIB_RELEASE='19.07-SNAPSHOT'\nDISTRIB_REVISION='r0+14315-60fc7c16ce'\nDISTRIB_TARGET='ipq53xx/ipq53xx_32'\nDISTRIB_ARCH='arm_cortex-a7_neon-vfpv4'\nDISTRIB_DESCRIPTION='OpenWrt 19.07-SNAPSHOT r0+14315-60fc7c16ce'\nDISTRIB_TAINTS='no-all busybox override'\n"
+        },
+        "etc/openwrt_version": {
+          "bytes": 20,
+          "sha256": "3687ccc29136d9464c328117db9999a7cd9115cb6b80a397cd1a807c7dd41b62",
+          "text": "r0+14315-60fc7c16ce\n"
+        },
+        "webapps/web/pub/dist/version.json": {
+          "bytes": 38,
+          "sha256": "a9d382b9d4303465986ef0f730383a0724d27b30d7301941812ebbbf987fabfe",
+          "text": "{\r\n  \"version\":\"T7_WEB_1.01.000034\"\r\n}"
+        },
+        "etc/config/system": {
+          "bytes": 501,
+          "sha256": "7eba092edf0a92d7f23b3fe1760a2af1db07af046264131351e195ccb7b4c232",
+          "region_lines": [
+            "\toption region 74"
+          ]
+        },
+        "etc/config/repacd": {
+          "bytes": 15155,
+          "sha256": "2b175744e756d9380b599b4948a705abe98ff0f33693e612d915e3246567b39e",
+          "region_lines": [
+            "\toption MapCountry                       'US4'"
+          ]
+        },
+        "etc/config/wifi_cert": {
+          "bytes": 7660,
+          "sha256": "b815386b94aea4a2aa728b0da6010ca08fc767433179f4ae371e5288d75f8c8b"
+        },
+        "lib/wifiCountryCode.sh": {
+          "bytes": 1160,
+          "sha256": "5ef70faa8e8700e8f6d546915ab1d8406fa5e7ca0c8e2cafffaeb2e6f38edf0b"
+        },
+        "lib/upgrade/platform.sh": {
+          "bytes": 18757,
+          "sha256": "8cade9c82a7a4e1138217d218ac4c6733ffe57d9ac49d20f5055a6fc5a3e7f6b"
+        },
+        "usr/lib/opkg/status": {
+          "bytes": 129556,
+          "sha256": "8ab17fc1e71f5a8b433299b0596a117cb90c87701fc599dfa3b310d9c3bc8662"
+        }
+      },
+      "package_count": 568
+    }
+  },
+  "payload_comparison": [
+    {
+      "description": "bootconfig.bin",
+      "equal": true,
+      "present_in_old": true,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI01.2-QCN9160-C1_512M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI01.2-QCN9160-C1_512M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-AP-MI01.2_512M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI01.2_512M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-AP-MI01.3_512M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI01.3_512M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-AP-MI01.4_256M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI01.4_256M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-AP-MI01.6_256M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-AP-MI01.6_512M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI01.9_512M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI01.9_512M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-AP-MI03.1_128M16_DDR3.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI03.1_128M16_DDR3_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-AP-MI04.1_256M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-AP-MI04.1_256M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-DB-MI01.1_512M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-DB-MI01.1_512M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-DB-MI02.1_256M16_DDR3.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-DB-MI02.1_256M16_DDR3_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-DB-MI03.1_128M16_DDR3.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-DB-MI03.1_128M16_DDR3_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "cdt-MI-EMU_512M16_DDR4.bin",
+      "equal": false,
+      "present_in_old": false,
+      "present_in_new": true
+    },
+    {
+      "description": "cdt-MI-EMU_512M16_DDR4_LM512.bin",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": false
+    },
+    {
+      "description": "devcfg.mbn",
+      "equal": true,
+      "present_in_old": true,
+      "present_in_new": true
+    },
+    {
+      "description": "flash.scr",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": true
+    },
+    {
+      "description": "nand-system-partition-ipq5332-m4096-p256KiB.bin",
+      "equal": true,
+      "present_in_old": true,
+      "present_in_new": true
+    },
+    {
+      "description": "openwrt-ipq5332-u-boot.mbn",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": true
+    },
+    {
+      "description": "openwrt-ipq53xx-ipq53xx_32-ubi-root-m4096-p256KiB.img",
+      "equal": false,
+      "present_in_old": true,
+      "present_in_new": true
+    },
+    {
+      "description": "tmel-ipq53xx-patch.elf",
+      "equal": true,
+      "present_in_old": true,
+      "present_in_new": true
+    },
+    {
+      "description": "tz.mbn",
+      "equal": true,
+      "present_in_old": true,
+      "present_in_new": true
+    },
+    {
+      "description": "xbl_nand_4K.elf",
+      "equal": true,
+      "present_in_old": true,
+      "present_in_new": true
+    }
+  ],
+  "backup_comparison": [
+    {
+      "image": "nand-4k-ipq5332-single_100000032.img",
+      "component": "tz.mbn",
+      "backup": "backup_predator_t7_qsee_tz.bin",
+      "equal_prefix": true,
+      "backup_sha256": "1a7a5d0352b5224fbeab224696f54cb468087149cac0de44c75aadc27a46fe68"
+    },
+    {
+      "image": "nand-4k-ipq5332-single_100000032.img",
+      "component": "openwrt-ipq5332-u-boot.mbn",
+      "backup": "backup_predator_t7_uboot_appsbl.bin",
+      "equal_prefix": false,
+      "backup_sha256": "3d6281190512ba50b83eea1a2d6fca69f01da5bb390d52b601e762ce8f1df2fc"
+    },
+    {
+      "image": "nand-4k-ipq5332-single_100000032.img",
+      "component": "xbl_nand_4K.elf",
+      "backup": "backup_predator_t7_sbl1.bin",
+      "equal_prefix": true,
+      "backup_sha256": "ba23449fb698fd41c94b5f586a5b94cb053350956b8c51f4402d0d03ea7fa6bf"
+    },
+    {
+      "image": "nand-4k-ipq5332-single_100000032.img",
+      "component": "nand-system-partition-ipq5332-m4096-p256KiB.bin",
+      "backup": "backup_predator_t7_mibib.bin",
+      "equal_prefix": true,
+      "backup_sha256": "880049c43e55aeef60b9d683fe367092f27e61510092a97f92a2fdcf31db30a2"
+    },
+    {
+      "image": "nand-4k-ipq5332-single_101000027.img",
+      "component": "tz.mbn",
+      "backup": "backup_predator_t7_qsee_tz.bin",
+      "equal_prefix": true,
+      "backup_sha256": "1a7a5d0352b5224fbeab224696f54cb468087149cac0de44c75aadc27a46fe68"
+    },
+    {
+      "image": "nand-4k-ipq5332-single_101000027.img",
+      "component": "openwrt-ipq5332-u-boot.mbn",
+      "backup": "backup_predator_t7_uboot_appsbl.bin",
+      "equal_prefix": false,
+      "backup_sha256": "3d6281190512ba50b83eea1a2d6fca69f01da5bb390d52b601e762ce8f1df2fc"
+    },
+    {
+      "image": "nand-4k-ipq5332-single_101000027.img",
+      "component": "xbl_nand_4K.elf",
+      "backup": "backup_predator_t7_sbl1.bin",
+      "equal_prefix": true,
+      "backup_sha256": "ba23449fb698fd41c94b5f586a5b94cb053350956b8c51f4402d0d03ea7fa6bf"
+    },
+    {
+      "image": "nand-4k-ipq5332-single_101000027.img",
+      "component": "nand-system-partition-ipq5332-m4096-p256KiB.bin",
+      "backup": "backup_predator_t7_mibib.bin",
+      "equal_prefix": true,
+      "backup_sha256": "880049c43e55aeef60b9d683fe367092f27e61510092a97f92a2fdcf31db30a2"
+    },
+    {
+      "image": "nand-4k-ipq5332-single_101000027.img",
+      "component": "cdt-AP-MI01.6_512M16_DDR4.bin",
+      "backup": "backup_predator_t7_cdt.bin",
+      "equal_prefix": true,
+      "backup_sha256": "7a8e2a643a2304e5225e638efae7dc4e87da8e2ca1e96721487496629c7678a8"
+    }
+  ],
+  "package_changes": [
+    {
+      "package": "base-files",
+      "old": {
+        "Version": "204.4-r0+13545-8512340a5b",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "204.4-r0+14315-60fc7c16ce",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "configdb",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "dnsmasq-dhcpv6",
+      "old": {
+        "Version": "2.80-16.3",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": null
+    },
+    {
+      "package": "dnsmasq-full",
+      "old": null,
+      "new": {
+        "Version": "2.80-16.3",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "dsi_netctrl",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "dsi_netctrl_test",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "dsutils",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "fwupgrade-tools",
+      "old": {
+        "Version": "g6a1c6f4-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "gdf2ea5a-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "ipqcm",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "iptables-mod-nat-extra",
+      "old": null,
+      "new": {
+        "Version": "1.8.3-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kernel",
+      "old": {
+        "Version": "5.4.213-1-e393b91cb915323318068f93bbcbadd3",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "5.4.213-1-8c55ce7208ebd682bc2ba232019f7c51",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kmod-cryptodev",
+      "old": null,
+      "new": {
+        "Version": "5.4.213+1.10-ipq53xx-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kmod-ipt-nat-extra",
+      "old": null,
+      "new": {
+        "Version": "5.4.213-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kmod-ipt-nat6",
+      "old": null,
+      "new": {
+        "Version": "5.4.213-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kmod-nss-udp-st-drv",
+      "old": null,
+      "new": {
+        "Version": "5.4.213+g7924a20-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kmod-qca-nss-fls",
+      "old": null,
+      "new": {
+        "Version": "5.4.213+gff49d7d-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kmod-qca-nss-nsm",
+      "old": null,
+      "new": {
+        "Version": "5.4.213+gff49d7d-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kmod-qca-wifi-unified-profile",
+      "old": {
+        "Version": "5.4.213+g238b0c5-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "5.4.213+g5e30b91-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "kmod-veth",
+      "old": null,
+      "new": {
+        "Version": "5.4.213-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "libnetmgr",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "libqmi_client_helper",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "libqmi_client_qmux",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "libqnicorn",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "libqnicorn_internal",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "modem_fota_tool",
+      "old": null,
+      "new": {
+        "Version": "1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "modem_monitor",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "nss-udp-st",
+      "old": null,
+      "new": {
+        "Version": "g7924a20-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "odhcpd-ipv6only",
+      "old": {
+        "Version": "2020-05-03-49e4949c-3",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "2023-01-02-4a673e1c",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qca-mad",
+      "old": null,
+      "new": {
+        "Version": "g56f3ed0-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qca-nsm-app",
+      "old": null,
+      "new": {
+        "Version": "g17523bf-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qca-nsm-lib",
+      "old": null,
+      "new": {
+        "Version": "g17523bf-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qca-son-cli",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qca-whc-repacd-init",
+      "old": {
+        "Version": "g5f8293c-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "ge42ee3c-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qca-whc-repacd-map",
+      "old": {
+        "Version": "g5f8293c-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "ge42ee3c-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qca-wsplcd-init",
+      "old": {
+        "Version": "g4bcf57b-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "gb0f5258-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qca-wsplcd-map",
+      "old": {
+        "Version": "g4bcf57b-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "gb0f5258-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qdi",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qmi",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qmi_simple_ril",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qmiidl",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qmiservices",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qmuxd",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qnicorn_tests",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "qnicornd",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "shadow-common",
+      "old": null,
+      "new": {
+        "Version": "4.8.1-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "shadow-useradd",
+      "old": null,
+      "new": {
+        "Version": "4.8.1-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "shadow-userdel",
+      "old": null,
+      "new": {
+        "Version": "4.8.1-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "shadow-utils",
+      "old": null,
+      "new": {
+        "Version": "4.8.1-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "uboot-2016-ipq5332",
+      "old": {
+        "Version": "g6a1c6f4-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "gdf2ea5a-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "udev_scripts",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    },
+    {
+      "package": "xmllib",
+      "old": {
+        "Version": "g8512340-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      },
+      "new": {
+        "Version": "g60fc7c1-dirty-1",
+        "Architecture": "arm_cortex-a7_neon-vfpv4"
+      }
+    }
+  ],
+  "extra": {
+    "100000032": {
+      "volume_hashes": {
+        "0": {
+          "bytes": 8554496,
+          "sha256": "367f220439b921ce994d2c441c77b42e84bdbaaf246f1e88051ddc24faeabe26"
+        },
+        "1": {
+          "bytes": 4217004,
+          "sha256": "1423292478b7c138f4ab04a0ca52abb4cdb1aea894c8bf3fd73cc42089f8b2e2"
+        },
+        "2": {
+          "bytes": 39362560,
+          "sha256": "e11cd7e832898a99bca3874ae5b25bed1a374015aff7aa4d6a830f76c90da0f0"
+        }
+      },
+      "mi01_6_memory_base": "0x40000000",
+      "mi01_6_memory_size": "0x20000000",
+      "wifi_cert_relevant": [
+        "BR               1        2      Y",
+        "RO               0        1      N",
+        "US               2        2      Y"
+      ]
+    },
+    "101000027": {
+      "volume_hashes": {
+        "0": {
+          "bytes": 8554496,
+          "sha256": "5c05c0e0747c8f678178fcdf3631d272fc784c82d270e7ee60be72e8ceb1f9de"
+        },
+        "1": {
+          "bytes": 4237480,
+          "sha256": "818c3a986277e56bc224470342d20f010696c7f28a457145301c6afd864736ab"
+        },
+        "2": {
+          "bytes": 39616512,
+          "sha256": "fb4c1611319749f17c0bcfb6ac6265697550eb39365aa52a9fd143aa02741348"
+        }
+      },
+      "mi01_6_memory_base": "0x40000000",
+      "mi01_6_memory_size": "0x20000000",
+      "wifi_cert_relevant": [
+        "BR               1        2      Y",
+        "RO               0        1      Y",
+        "US               2        2      Y"
+      ]
+    }
+  }
+}

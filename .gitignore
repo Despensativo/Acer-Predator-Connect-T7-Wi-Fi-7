@@ -33,6 +33,7 @@ fontes-kernel-isoladas.tar.gz
 audit/
 auditoria_*
 *.png
+!assets/**
 TASK.md
 etc/
 clean_*.py

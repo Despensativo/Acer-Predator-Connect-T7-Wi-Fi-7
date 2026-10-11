@@ -8,9 +8,9 @@
 
 ## 📦 Arquivos Binários de Chaveamento (512 KB):
 
-* **`chaveador_slot1_acer_oem.bin`** (ou `bootconfig_slot1_acer_oem.bin`):  
+* **`chaveador_slot1_acer_oem.bin`**:  
   Força a inicialização no **Slot 1 (`rootfs` / `mtd21`)**, que contém o Firmware Original OEM da Acer de fábrica.
-* **`chaveador_slot2_openwrt.bin`** (ou `bootconfig_slot2_openwrt.bin`):  
+* **`chaveador_slot2_openwrt.bin`**:  
   Força a inicialização no **Slot 2 (`rootfs_1` / `mtd20`)**, que contém a ROM OpenWrt Customizada com LuCI na porta 80 e Wi-Fi 7.
 
 ---

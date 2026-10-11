@@ -132,7 +132,7 @@ Como o **U-Boot original da Acer está 100% intacto**, o aparelho nunca dá bric
 6. Na página web de emergência da Acer (U-Boot Web Recovery):
    * Clique no campo de seleção de arquivo.
    * Selecione o arquivo de imagem da ROM Stock oficial da Acer:  
-     👉 **`01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img`** *(Versão v27 recomendada)*  
+     👉 **`recovery_stock/nand-4k-ipq5332-single_101000027.img`** *(Versão v27 recomendada)*  
      *(ou `nand-4k-ipq5332-single_101000024.img` caso queira a v24)*.
    * Clique em **Upload / Upgrade**.
    * A gravação avançará escrevendo diretamente na memória flash NAND. Aguarde o processo concluir e o roteador reiniciar sozinho.

@@ -115,8 +115,8 @@ Como o **U-Boot original da Acer está 100% intacto**, o aparelho nunca dá bric
 6. Na página web de emergência da Acer (U-Boot Web Recovery):
    * Clique no campo de seleção de arquivo.
    * Selecione o arquivo de imagem da ROM Stock oficial da Acer:  
-     👉 **`01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img`** *(Versão v27 recomendada)*  
-     *(ou `01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000024.img` caso deseje a v24)*.
+     👉 **`recovery_stock/nand-4k-ipq5332-single_101000027.img`** *(Versão v27 recomendada)*  
+     *(ou `recovery_stock/nand-4k-ipq5332-single_101000024.img` caso deseje a v24)*.
    * Clique em **Upload / Upgrade**.
    * Uma barra de gravação avançará gravando os blocos da flash. Aguarde o processo concluir e o roteador reiniciar sozinho.
 7. Retorne a placa de rede do seu computador para "Obter endereço IP automaticamente (DHCP)". O roteador voltará a responder no IP oficial `192.168.76.1` 100% de fábrica.

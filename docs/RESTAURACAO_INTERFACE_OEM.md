@@ -47,7 +47,7 @@ Caso prefira navegar visualmente pelos menus da interface Acer:
    - Clique no botão **`Browse`**.
    - Selecione o pacote no seu computador:
      ```text
-     02_BACKUPS_E_DUMPS/Configuracoes_CFG/cfg_restauracao_master_v2.cfg
+     cfg_restauracao_master_v2.cfg (na raiz do repositório)
      ```
 2. Clique no botão cinza/azul **`Restore`**.
 3. Uma barra de progresso será exibida. Aguarde cerca de **1 a 2 minutos**.
@@ -66,9 +66,9 @@ Caso prefira navegar visualmente pelos menus da interface Acer:
   - Usuário: `root` (ou `admin`)
   - Senha: `root0100` (ou chave SSH `~/.ssh/id_rsa_antigravity`)
 - **Documentação de Boot e LEDs Físicos:**
-  - Consulte [`06_DOCUMENTACAO/NOTAS_HARDWARE/TEMPOS_BOOT_WIFI_LEDS_E_CREDENCIAIS_T7.md`](file:///Volumes/--400GB--/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/06_DOCUMENTACAO/NOTAS_HARDWARE/TEMPOS_BOOT_WIFI_LEDS_E_CREDENCIAIS_T7.md) para detalhes da cronometria e comportamento das luzes do equipamento.
+  - Consulte [`docs/TEMPOS_BOOT_WIFI_E_LEDS.md`](TEMPOS_BOOT_WIFI_E_LEDS.md) para detalhes da cronometria e comportamento das luzes do equipamento.
 - **Redes Wi-Fi:**
-  - 2.4 GHz: `PREDATOR T7_2.4GHz_2.4GHz`
-  - 5.0 GHz: `PREDATOR T7_2.4GHz_5GHz`
-  - 6.0 GHz (Wi-Fi 7): `PREDATOR T7_2.4GHz_6GHz`
-  - Senha Wi-Fi: `123456789` (ou configurada pelo usuário)
+  - 2.4 GHz: `PREDATOR T7_2.4GHz`
+  - 5.0 GHz: `PREDATOR T7_5GHz`
+  - 6.0 GHz (Wi-Fi 7): `PREDATOR T7_6GHz`
+  - Senha Wi-Fi: `123456789`

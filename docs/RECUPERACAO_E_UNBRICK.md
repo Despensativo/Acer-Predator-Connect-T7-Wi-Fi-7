@@ -19,9 +19,9 @@ Se o botão físico **RESET** for pressionado por 10 segundos:
 4. Acesse: **System** $\rightarrow$ **Backup and restore** $\rightarrow$ **Restore**.
 5. Selecione o arquivo de desbloqueio oficial:
    ```text
-   02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg
+   cfg_restauracao_master_v2.cfg (na raiz do repositório)
    ```
-6. Clique em **Restore** e aguarde 2 minutos. O roteador reinicia com SSH/Telnet liberados.
+6. Clique em **Restore** e aguarde 2 minutos. O roteador reinicia com SSH/Telnet e LuCI liberados.
 
 ---
 
@@ -79,9 +79,9 @@ Se o sistema operacional não inicializar e entrar em modo de recuperação:
 Ao realizar downgrade de versão oficial (ex: v27 para v24), a primeira gravação substitui o bootloader U-Boot (`APPSBL`), mas o roteador retorna para o recovery porque o `BOOTCONFIG` fica dessincronizado.
 
 ### Sequência Comprovada em 3 Etapas:
-1. **Passo 1:** Gravar `nand-4k-ipq5332-single_101000024.img` via Web Recovery (`192.168.1.1`). *(O U-Boot regride para 25.01.17, mas o Linux ainda não inicia).*
-2. **Passo 2:** Enviar o pacote FIT `01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/chaveador_slot1_acer_v2.itb` para forçar o `BOOTCONFIG` para a Partição 1 (Slot 1).
-3. **Passo 3:** Regravar `nand-4k-ipq5332-single_101000024.img` via Web Recovery. O sistema sincroniza todos os blocos na mesma geração e **sobe perfeitamente no IP 192.168.76.1**.
+1. **Passo 1:** Gravar `recovery_stock/nand-4k-ipq5332-single_101000024.img` via Web Recovery (`192.168.1.1`). *(O U-Boot regride para 25.01.17, mas o Linux ainda não inicia).*
+2. **Passo 2:** Enviar o arquivo de ponteiro `dev/chaveador_slot1_acer_oem.bin` para forçar o `BOOTCONFIG` para a Partição 1 (Slot 1).
+3. **Passo 3:** Regravar `recovery_stock/nand-4k-ipq5332-single_101000024.img` via Web Recovery. O sistema sincroniza todos os blocos na mesma geração e **sobe perfeitamente no IP 192.168.76.1**.
 
-> Para o guia técnico detalhado, consulte: [Procedimento 10: Método de Recuperação e Downgrade para v1.01.000024 (v24)](10_METODO_RECUPERACAO_E_DOWNGRADE_V24.md).
+> Para o guia técnico detalhado, consulte: [Método de Recuperação e Downgrade para v24](METODO_RECUPERACAO_E_DOWNGRADE_V24.md).
 

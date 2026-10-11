@@ -36,8 +36,8 @@ PASSO 3: ENVIAR O ARQUIVO DE RECUPERACAO EM: http://192.168.1.1
   FORCAR O BOOT DE VOLTA PARA O SLOT 1 (ORIGINAL ACER INTACTO)
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Na tela do navegador (http://192.168.1.1), envie primeiro apenas o arquivo de ponteiro:
-  📁 Localizado na sua Area de Trabalho (Desktop):
-     Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin (512 KB)
+  📁 Localizado no repositorio:
+     dev/chaveador_slot1_acer_oem.bin (512 KB)
 
   • O QUE FAZ: O envio dura apenas 2 segundos! Ele nao apaga o sistema; apenas
     muda o ponteiro do U-Boot para carregar o SLOT 1 (sistema original de fabrica da Acer),
@@ -45,19 +45,17 @@ PASSO 3: ENVIAR O ARQUIVO DE RECUPERACAO EM: http://192.168.1.1
   • TESTE: O roteador vai reiniciar. Aguarde 60 a 90 segundos e veja se ele liga
     normalmente no IP original 192.168.76.1.
   • RESULTADO:
-    -> SE INICIAR: Perfeito, roteador recuperado sem reinstalar nada! A partir do Slot 1,
-       se você quiser consertar o Slot 2, basta abrir nossa central e usar a Opcao [3]
-       para reinstalar o Slot 2 limpo com root de forma 100% automatica!
+    -> SE INICIAR: Perfeito, roteador recuperado sem reinstalar nada!
     -> SE NAO INICIAR: Significa que o Slot 1 tambem foi corrompido. Siga para a OPCAO B.
 
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   OPCAO B (TENTATIVA 2 - ULTIMO RECURSO / RESTAURACAO DE FABRICA):
   REGRAVAR A ROM OFICIAL NA MEMORIA FLASH NAND
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Se a Opcao A nao subiu, coloque o roteador novamente no Modo Recovery (WPS 5s)
+  Se a Opcao A nao subiu, coloque o roteador novamente no Modo Recovery (WPS 8-10s)
   e em http://192.168.1.1 envie a imagem oficial completa:
-  📁 Localizado na sua Area de Trabalho (Desktop):
-     Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img (55.3 MB)
+  📁 Localizado na pasta recovery_stock:
+     recovery_stock/nand-4k-ipq5332-single_101000027.img (55.3 MB)
 
   • ⚠️ LEMBRETE CRUCIAL SOBRE AS PARTICOES:
     O modo de recuperacao do U-Boot grava SOMENTE 1 particao (o Slot 1 principal)
@@ -65,9 +63,8 @@ PASSO 3: ENVIAR O ARQUIVO DE RECUPERACAO EM: http://192.168.1.1
     Portanto:
     1. O U-Boot vai regravar e restaurar o Slot 1 e reiniciar o aparelho.
     2. O roteador vai subir 100% original de fabrica no IP: 192.168.76.1.
-    3. Depois que subir, você obtem acesso root (pela Opcao [2] ou restaurando o
-       backup 'config_v27_ssh_unlocked.cfg') e ai sim podera regravar a particao 2
-       (Slot 2) limpa usando a Opcao [3] da nossa central!
+    3. Depois que subir, você pode restaurar o desbloqueio master
+       aplicando o arquivo 'cfg_restauracao_master_v2.cfg' pela interface web!
   • AGUARDE: O envio e gravacao da ROM completa levam de 2 a 3 minutos. NAO desligue a energia!
 
 PASSO 4: FINALIZACAO
@@ -108,8 +105,8 @@ STEP 3: FLASH RECOVERY FILE AT: http://192.168.1.1
   FORCE BOOT BACK INTO SLOT 1 (INTACT FACTORY ACER OEM)
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   On the browser page (http://192.168.1.1), first upload only the boot pointer file:
-  📁 Located on your Desktop:
-     Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/bootconfig_slot1_acer_oem.bin (512 KB)
+  📁 Located in the repository:
+     dev/chaveador_slot1_acer_oem.bin (512 KB)
 
   • WHAT IT DOES: Flashing takes only 2 seconds! It does not erase firmware; it
     simply updates the U-Boot pointer to boot SLOT 1 (official factory Acer OEM),
@@ -117,19 +114,17 @@ STEP 3: FLASH RECOVERY FILE AT: http://192.168.1.1
   • TEST: The router will reboot. Wait 60 to 90 seconds and verify if it boots
     normally on original IP 192.168.76.1.
   • RESULT:
-    -> IF IT BOOTS: Router successfully rescued without reinstalling! Once in Slot 1,
-       if you want to fix Slot 2, simply open our tool and use Option [3] to
-       reinstall clean Slot 2 with root automatically!
+    -> IF IT BOOTS: Router successfully rescued without reinstalling!
     -> IF IT DOES NOT BOOT: Slot 1 is also corrupted. Proceed to OPTION B below.
 
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   OPTION B (ATTEMPT 2 - LAST RESORT / COMPLETE FACTORY RESTORE):
   REFLASH FULL OFFICIAL ROM TO NAND FLASH
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  If Option A did not boot, place the router back into Recovery Mode (WPS 5s)
+  If Option A did not boot, place the router back into Recovery Mode (WPS 8-10s)
   and at http://192.168.1.1 upload the complete official image:
-  📁 Located on your Desktop:
-     Desktop/Acer-Predator-Connect-T7/01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img (55.3 MB)
+  📁 Located in recovery_stock directory:
+     recovery_stock/nand-4k-ipq5332-single_101000027.img (55.3 MB)
 
   • ⚠️ CRUCIAL NOTE REGARDING PARTITIONS:
     U-Boot Web Recovery flashes ONLY 1 partition (primary Slot 1) and NOT both
@@ -137,9 +132,8 @@ STEP 3: FLASH RECOVERY FILE AT: http://192.168.1.1
     Therefore:
     1. U-Boot will reflash and restore Slot 1 and reboot the router.
     2. The router will boot 100% factory original to IP: 192.168.76.1.
-    3. Once booted, gain root access (via Option [2] or restoring the backup
-       'config_v27_ssh_unlocked.cfg') and then you can reflash partition 2
-       (Slot 2) cleanly using Option [3] of our suite!
+    3. Once booted, you can restore full master unlock and LuCI by applying
+       'cfg_restauracao_master_v2.cfg' through the web GUI!
   • WAIT: Uploading and flashing takes 2 to 3 minutes. DO NOT disconnect power!
 
 STEP 4: FINALIZATION

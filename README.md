@@ -124,7 +124,7 @@ Because the **stock U-Boot is 100% intact**, the device is unbrickable:
 4. Set PC static IP: `192.168.1.50`, subnet `255.255.255.0`, gateway `192.168.1.1`.
 5. Open browser incognito at `http://192.168.1.1`.
 6. Upload the official Acer firmware image:  
-   👉 **`01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img`** *(v27 recommended)*.
+   👉 **`recovery_stock/nand-4k-ipq5332-single_101000027.img`** *(v27 recommended)*.
 7. Click **Upgrade** and wait for automatic reboot. Set PC back to DHCP.
 
 ---

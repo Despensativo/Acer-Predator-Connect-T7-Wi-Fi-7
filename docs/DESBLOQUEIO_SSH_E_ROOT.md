@@ -84,8 +84,7 @@ Restaurar a conta de superusuário `root` (id `0:0`):
 
 ---
 
-## 5. Arquivos de Referência Arquivados no Repositório
+## 5. Pacote Mestre Oficial e Arquivos
 
-* `02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_stock_original.cfg`: Backup virgem de fábrica da versão v1.01.000027.
-* `02_BACKUPS_E_DUMPS/Configuracoes_CFG/config_v27_ssh_unlocked.cfg`: Backup pronto com SSH/Telnet e script `/usr/sbin/boot-acer` injetados.
-* `04_SCRIPTS_E_FERRAMENTAS/Automacao_e_Unlock/unlock_only_ssh.py`: Script automatizado para geração de qualquer pacote desbloqueado.
+* `cfg_restauracao_master_v2.cfg`: Pacote Mestre consolidado (na raiz do repositório) pronto com LuCI, Central Wi-Fi com blindagem de deadlocks, SSH/Telnet liberados e script `/usr/sbin/boot-acer` injetado.
+* Backups históricos e scripts de desenvolvimento foram arquivados com segurança na pasta local `_FORA DO GitHub/10_LEGADO_E_DESENVOLVIMENTO_PRE_MASTER_V2/`.

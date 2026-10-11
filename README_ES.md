@@ -132,7 +132,7 @@ Dado que el **U-Boot original de Acer está 100% intacto**, el dispositivo nunca
 6. En la página web de emergencia de Acer (U-Boot Web Recovery):
    * Haga clic en el campo de selección de archivo.
    * Seleccione el archivo de imagen de la ROM Stock oficial de Acer:  
-     👉 **`01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/nand-4k-ipq5332-single_101000027.img`** *(Versión v27 recomendada)*  
+     👉 **`recovery_stock/nand-4k-ipq5332-single_101000027.img`** *(Versión v27 recomendada)*  
      *(o `nand-4k-ipq5332-single_101000024.img` si desea la versión v24)*.
    * Haga clic en **Upload / Upgrade**.
    * La grabación avanzará escribiendo directamente en la memoria flash NAND. Espere a que concluya el proceso y el router reinicie por sí solo.

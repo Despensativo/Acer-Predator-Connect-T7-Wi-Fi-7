@@ -75,31 +75,15 @@ flowchart TD
 
 Com o bootloader rebaixado para `25.01.17`, force a chave seletora física da NAND diretamente para a Partição 1:
 
-1. Envie o pacote FIT oficial de chaveamento compilado para Slot 1:
+1. Envie o arquivo binário oficial de chaveamento compilado para Slot 1:
    ```text
-   01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/chaveador_slot1_acer_v2.itb
+   dev/chaveador_slot1_acer_oem.bin
    ```
-2. Comando de envio:
-   ```sh
-   python3 Scripts_Automacao/curl_upload_monitor.py "01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/chaveador_slot1_acer_v2.itb"
-   ```
-3. **O que este arquivo executa internamente na flash:**
-   ```sh
-   flashinit nand || true
-   setenv fsbootargs
-   setenv bootargs console=ttyMSM0,115200n8
-   setenv bootcmd bootipq
-   saveenv
-   imxtract 0x44000000 bootconfig 0x45000000 || exit 1
-   nand device 0 || true
-   nand erase 0x400000 0x80000 || exit 1
-   nand write 0x45000000 0x400000 0x80000 || exit 1
-   nand erase 0x480000 0x80000 || exit 1
-   nand write 0x45000000 0x480000 0x80000 || exit 1
-   reset
-   ```
+2. Envie pela interface web de emergência (`http://192.168.1.1/`).
+3. **O que este arquivo executa internamente na flash:**  
+   Ele contém exatamente os 512 KB da partição `BOOTCONFIG` (MTD 3) com o ponteiro forçado para o Slot 1 da Acer com os parâmetros padrão (`fsbootargs` limpo e `bootcmd=bootipq`).
 4. **Resultado desta etapa:**  
-   O `BOOTCONFIG` (MTD 3) e `BOOTCONFIG1` (MTD 4) são forçados a reconhecer o Slot 1 da Acer com os parâmetros padrão (`fsbootargs` limpo e `bootcmd=bootipq`).
+   O `BOOTCONFIG` (MTD 3) e `BOOTCONFIG1` (MTD 4) são forçados a reconhecer o Slot 1 da Acer.
 
 ---
 
@@ -109,8 +93,8 @@ Com o U-Boot `25.01.17` e o `BOOTCONFIG` já apontando sincronizados para o Slot
 
 1. Acesse novamente `http://192.168.1.1/` (Web Recovery).
 2. Regrave pela segunda vez a imagem oficial da v24:
-   ```sh
-   python3 Scripts_Automacao/curl_upload_monitor.py "_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/Acer_Predator_Connect_T7/nand-4k-ipq5332-single_101000024.img"
+   ```text
+   recovery_stock/nand-4k-ipq5332-single_101000024.img
    ```
 3. Aguarde o ciclo completo de gravação (cerca de 90 a 120 segundos) **sem desligar o cabo ou a energia**.
 4. **Comportamento Final:**
@@ -126,11 +110,11 @@ Com o U-Boot `25.01.17` e o `BOOTCONFIG` já apontando sincronizados para o Slot
 
 ## 📊 Tabela de Verificação de Arquivos e Checksums
 
-| Componente | Caminho do Arquivo | SHA-256 Checksum | Função no Processo |
-| :--- | :--- | :--- | :--- |
-| **ROM Oficial v24** | `_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/Acer_Predator_Connect_T7/nand-4k-ipq5332-single_101000024.img` | `5c434dc0d29188a8...` | Imagem oficial da Acer com U-Boot 25.01.17 e RootFS v24 |
-| **Chaveador Slot 1 v2** | `01_FIRMWARES_E_IMAGENS/Stock_OEM_Recovery/chaveador_slot1_acer_v2.itb` | `254a9369366a5f51...` | Pacote FIT validado que força BootConfig para Slot 1 |
-| **Script de Upload** | `Scripts_Automacao/curl_upload_monitor.py` | — | Upload throttlado (1.5 MB/s) com monitoramento |
+| Componente | Caminho do Arquivo | Função no Processo |
+| :--- | :--- | :--- |
+| **ROM Oficial v24** | `recovery_stock/nand-4k-ipq5332-single_101000024.img` | Imagem oficial da Acer com U-Boot 25.01.17 e RootFS v24 |
+| **Chaveador Slot 1** | `dev/chaveador_slot1_acer_oem.bin` | Arquivo binário de BootConfig que força inicialização no Slot 1 |
+| **ROM Oficial v27** | `recovery_stock/nand-4k-ipq5332-single_101000027.img` | Imagem oficial da Acer v27 mais recente |
 
 ---
 

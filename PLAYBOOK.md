@@ -156,4 +156,10 @@ usleep 200000          # Para 200 milissegundos (0.2s)
 * **[AutoLearn - Normalização de Criptografia no LuCI (`psk2+aes` vs `psk2`)]**:
   - O UCI armazena `encryption='psk2+aes'`. Quando os componentes `<select>` do LuCI em JavaScript só continham opções com `value: 'psk2'`, o navegador não casava o valor e exibia o seletor completamente vazio/em branco.
   - A correção homologada implementa normalização de strings antes do binding (`psk` / `psk2` -> `psk2+aes`) e disponibiliza `psk2+aes` explicitamente em todos os formulários.
+* **[AutoLearn - Perfil 5: Rede Única Tri-Band (`single_ssid`)]**:
+  - Permite configurar o mesmo SSID e senha nas 3 bandas (2.4G, 5G, 6G) mantendo criptografia cirurgicamente separada por rádio:
+    - `wifi0_ap` (2.4 GHz): `psk2+aes` (WPA2 puro) para 100% de compatibilidade e pareamento sem falhas de dispositivos IoT (Tuya, Sonoff, ESP8266/ESP32).
+    - `wifi1_ap` (5.0 GHz): `sae-mixed` (WPA2/WPA3 Misto) funcionando como ponte suave para evitar alertas de Downgrade Attack no iOS/Android.
+    - `wifi2_ap` (6.0 GHz): `sae` (WPA3-SAE Puro com PMF obrigatório).
+  - Conta com roaming 802.11k/v (BSS Transition + RRM Neighbor Reports) ativo para transição contínua dos celulares entre as 3 frequências e sincronização de 152 chaves de tradução entre `en`, `pt_br` e `es`.
 

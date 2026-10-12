@@ -196,4 +196,14 @@ usleep 200000          # Para 200 milissegundos (0.2s)
        - IPv6: `ip6tables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1433:1536 -j TCPMSS --set-mss 1432`
     2. `/etc/config/dhcp`: Adicionar `option ra_mtu '1492'` e `list dhcp_option '26,1492'` nas seções `lan`, `guest` e `iot`, instruindo o `odhcpd` (IPv6 RA) e o `dnsmasq` (DHCPv4) a informarem nativamente aos dispositivos clientes que o MTU do caminho é 1492.
     3. `/etc/config/firewall`: Inclusão de `list network 'wan_6'` na zona `wan` para garantir que a interface virtual dinâmica de IPv6 criada sobre o PPPoE herde todas as políticas de MTU fix e encaminhamento.
+* **[AutoLearn - Limitação de Silício Qualcomm IPQ5332 (mlo_mbssid disabled) e Blindagem de Redes Adicionais]**:
+  - **Limitação de Hardware**: O driver Qualcomm SPF-12.2 acusa explicitamente `mlo_mbssid disabled in lower band radios` ao criar VAPs secundários com MLD nas bandas baixas (2.4 GHz e 5 GHz). Criar uma segunda rede com MLO enquanto a principal já existe causa falha no hardware (`MLO peer create failed`), gerando um enlace zumbi onde dispositivos (ex: iPad) desconectam continuamente e perdem pacotes de dados.
+  - **Arquitetura Homologada**: O recurso Wi-Fi 7 MLO (Multi-Link Operation) deve ser ativado exclusivamente na **Rede Principal** (através do **Perfil 4: MLO Turbo** ou **Perfil 3: Tri-Band MLO** no topo do painel), onde opera com 100% de estabilidade e suporte direto de silício.
+  - **Blindagem em 3 Camadas**:
+    1. No painel LuCI (`predator_wifi.js`), o checkbox de agrupar em MLO foi removido do modal "Criar Nova Rede" e substituído por uma caixa informativa direcionando para o Perfil 4;
+    2. O modal valida ativamente tamanho mínimo de 8 caracteres para senhas de redes protegidas;
+    3. O backend `/usr/libexec/rpcd/predator` (`do_add_vif`) opera defensivamente tratando todas as redes adicionais como VAPs multi-banda padrão (`wds '1'`, `rrm '1'`, `bss_transition '1'`), garantindo bridging correto na `br-lan` e escrita mandatória de chaves de criptografia (`psk2+aes` e `sae`).
+* **[AutoLearn - Gerador Inteligente de Restauração Personalizada (`dev/gerar_cfg_personalizado.py`)]**:
+  - Restaurar backups legados/brutos de outros usuários (ex: `backup-PREDATOR-*.tar.gz`) sobrescreve e destrói 100% das otimizações homologadas (MSS clamping, debloat, Anycast DNS, coldboot bringup, roaming k/v) e reintroduz centenas de arquivos de telemetria da Acer.
+  - O procedimento homologado é utilizar `dev/gerar_cfg_personalizado.py`, que extrai automaticamente do backup antigo do usuário os parâmetros estritamente pessoais (MACs de hardware dos rádios, IP de LAN, SSIDs, senhas Wi-Fi e hash de root) e os mescla na base ouro `cfg_restauracao_master_v2.cfg`. O arquivo gerado (~33 KB) sobe pronto para restauração no LuCI preservando toda a suíte de otimizações do projeto.
 

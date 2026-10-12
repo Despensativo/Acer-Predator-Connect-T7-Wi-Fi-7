@@ -188,3 +188,12 @@ usleep 200000          # Para 200 milissegundos (0.2s)
 * **[AutoLearn - Auto-Bringup Resiliente do Wi-Fi 7 no Boot a Frio (`predator_rf` + `rc.local`)]**:
   - Na inicialização a frio, o chip PCIe QCN9224 (6 GHz) leva ~25–30 segundos para calibrar o firmware (`cnss2`). Como o `/etc/init.d/network` roda prematuramente aos 18 segundos, os VAPs não subiam sozinhos após a remoção dos daemons proprietários da Acer (`wifi_status`).
   - O `/etc/init.d/predator_rf` (`START=99`) e a seção 7 do `/etc/rc.local` agora realizam verificação ativa (`[ -d /sys/class/net/ath2 ] && [ -d /sys/class/net/ath0 ]`): se as interfaces não estiverem no ar após a janela de calibragem, executam automaticamente `/sbin/wifi up`, garantindo que todos os 3 rádios subam 100% no ar em qualquer reboot a frio.
+* **[AutoLearn - Resolução Definitiva de Falha em Fast.com / Waveform / CDNs (TCP MSS Clamping & PMTUD Blackhole em PPPoE)]**:
+  - **Causa Raiz**: O link PPPoE possui MTU física de **1492** bytes. Clientes LAN/Wi-Fi (smartphones, PCs, Macs) conectam por padrão com MTU **1500** (MSS 1460 em IPv4 e 1440 em IPv6). Em sites com tráfego massivo e CDN Dual-Stack como `Fast.com` (Akamai IPv6) e `Waveform.com` (Cloudflare IPv4), os servidores enviam segmentos TCP de tamanho máximo com a flag DF (*Don't Fragment*). Como o BRAS/provedor descarta pacotes > 1492 bytes e o IPv6 não permite fragmentação intermediária por roteadores, conexões entravam em *PMTUD Blackhole* e congelavam indefinidamente.
+  - **Solução Homologada em 3 Camadas**:
+    1. `/etc/firewall.user`: Injeção de clamping explícito no mangle:
+       - IPv4: `iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1453:1536 -j TCPMSS --set-mss 1452`
+       - IPv6: `ip6tables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1433:1536 -j TCPMSS --set-mss 1432`
+    2. `/etc/config/dhcp`: Adicionar `option ra_mtu '1492'` e `list dhcp_option '26,1492'` nas seções `lan`, `guest` e `iot`, instruindo o `odhcpd` (IPv6 RA) e o `dnsmasq` (DHCPv4) a informarem nativamente aos dispositivos clientes que o MTU do caminho é 1492.
+    3. `/etc/config/firewall`: Inclusão de `list network 'wan_6'` na zona `wan` para garantir que a interface virtual dinâmica de IPv6 criada sobre o PPPoE herde todas as políticas de MTU fix e encaminhamento.
+

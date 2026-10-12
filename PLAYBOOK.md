@@ -137,3 +137,13 @@ usleep 200000          # Para 200 milissegundos (0.2s)
     - No `/etc/config/dhcp` (`dnsmasq`): Configurar `option noresolv '1'` (ignora `/tmp/resolv.conf.auto` da operadora), `option allservers '1'` (passa `--all-servers` para o daemon, disparando as consultas recursivas em paralelo a todos os servidores e entregando o primeiro a responder em 1-5 ms) e cadastrar as listas de servidores IPv4 e IPv6: `1.1.1.1`, `1.0.0.1`, `8.8.8.8`, `8.8.4.4`, `2606:4700:4700::1111`, `2606:4700:4700::1001`, `2001:4860:4860::8888`, `2001:4860:4860::8844`.
     - No `/etc/config/network` (`wan`): Configurar `option peerdns '0'` e replicar os servidores nas listas `dns`.
     - Isso mantém o cache local ultra veloz de 10.000 entradas do roteador, preserva a resolução de nomes locais da LAN (`.lan`) e distribui via DHCPv4 (`192.168.76.1`) e RDNSS IPv6 (`fdf3:6c8d:fbf3::1`) a rota mais rápida possível para todos os clientes.
+* **[AutoLearn - Eliminação do Loop de Reinicialização de Interface CLAT (`wan_6_4` / 464xlat)]**:
+  - Em conexões dual-stack nativas (IPv4 via PPPoE e IPv6 via DHCPv6-PD), a presença do pacote `464xlat` faz com que o script `/lib/netifd/dhcpv6.script` tente instanciar automaticamente a interface virtual `wan_6_4` (CLAT RFC 6877). Como o provedor não anuncia prefixo NAT64 (PLAT), o `464xlatcfg` falha com `CLAT_CONFIG_FAILED`, entrando em loop infinito de subida/descida a cada 3 segundos e inundando o `logread`.
+  - A solução homologada consiste na remoção do script/pacote (`opkg remove 464xlat` e inclusão de `rm -f /lib/netifd/proto/464xlat.sh` no `/etc/rc.local`), garantindo que o `netifd` e `odhcp6c` operem em modo dual-stack nativo puro com logs 100% limpos.
+* **[AutoLearn - UX e Polling Inteligente na Central Predator (`predator_wifi.js`)]**:
+  - O status badge do cabeçalho agora reflete com precisão os estados de transição do roteador:
+    - `"⏳ Inicializando / Calibrando..."` (âmbar suave) durante o boot a frio da placa PCIe QCN9224 (60-90s) ou recargas de driver.
+    - `"⚠️ Travado (/var/run/wifilock)"` (vermelho) apenas em casos reais de deadlock do netifd.
+    - `"✅ Operacional"` (verde brilhante) quando todos os 3 rádios estão ativos.
+  - O polling é executado a cada 2 segundos via LuCI Poll API (`poll.add(..., 2)`), pausando automaticamente via `document.hidden` para economizar ciclos de CPU do navegador e do roteador quando a aba não estiver visível.
+

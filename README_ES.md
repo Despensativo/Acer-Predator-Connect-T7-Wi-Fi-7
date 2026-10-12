@@ -151,8 +151,15 @@ El Acer Predator Connect T7 cuenta con particionamiento A/B dual en la memoria N
 
 ### Cambio de Slots mediante U-Boot Web Failsafe (`http://192.168.1.1`):
 En el modo de recuperación U-Boot (manteniendo presionado WPS al encender), acceda a `http://192.168.1.1` en una ventana de incógnito y suba el archivo binario deseado de la carpeta `dev/`:
+
+#### Opción 1: Conmutadores Rápidos V1 (512 KB):
 * **Para forzar el arranque en el Slot 1 (OEM de Fábrica):** Suba 👉 **`dev/chaveador_slot1_acer_oem.bin`**
 * **Para forzar el arranque en el Slot 2 (OpenWrt Custom):** Suba 👉 **`dev/chaveador_slot2_openwrt.bin`**
+
+#### Opción 2: Conmutadores Avanzados V2 Seguros con Verificación SHA (`dev/Alternador_Boot_T7_V2/`):
+* **Para forzar el arranque en el Slot 1 (OEM de Fábrica):** Suba 👉 **`dev/Alternador_Boot_T7_V2/selecionar_slot1_V2_CANDIDATO.bin`**
+* **Para forzar el arranque en el Slot 2 (OpenWrt Custom):** Suba 👉 **`dev/Alternador_Boot_T7_V2/selecionar_slot2_V2_CANDIDATO.bin`**
+*(Los archivos V2 son imágenes FIT de U-Boot de 2.6 MB que inicializan la NAND, graban de forma segura ambas particiones `0:BOOTCONFIG` y `0:BOOTCONFIG1`, comprueban la integridad checksum y reinician sin alterar el entorno `APPSBLENV`).*
 
 ### Cuando el router ya esté desbloqueado (SSH / Telnet):
 No es necesario subir archivos ni introducir comandos complejos de partición. Al estar conectado mediante SSH (`puerto 22`) o Telnet (`puerto 23`), simplemente ejecute los comandos nativos integrados en el sistema:

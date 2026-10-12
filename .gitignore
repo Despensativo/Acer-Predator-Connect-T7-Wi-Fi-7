@@ -35,6 +35,6 @@ auditoria_*
 *.png
 !assets/**
 TASK.md
-etc/
+/etc/
 clean_*.py
 patch_wireless.py

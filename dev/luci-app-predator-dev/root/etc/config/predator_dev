@@ -1,0 +1,13 @@
+config dev 'general'
+	option enabled '1'
+
+config failsafe 'failsafe'
+	option enabled '1'
+	option max_retries '3'
+	option safe_uptime '75'
+
+config logging 'logging'
+	option enabled '1'
+	option retention_days '7'
+	option compress '1'
+	option log_dir '/data/boot_logs'

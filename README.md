@@ -139,8 +139,15 @@ Because the **stock U-Boot is 100% intact**, the device is unbrickable:
 
 ### Slot Switching via U-Boot Web Failsafe (`http://192.168.1.1`):
 In U-Boot recovery mode (holding WPS during boot), access `http://192.168.1.1` in an incognito window and upload the desired `.bin` file from the `dev/` directory:
+
+#### Option 1: Fast V1 Switchers (512 KB):
 * **To force boot into Slot 1 (Stock OEM):** Upload 👉 **`dev/chaveador_slot1_acer_oem.bin`**
 * **To force boot into Slot 2 (OpenWrt Custom):** Upload 👉 **`dev/chaveador_slot2_openwrt.bin`**
+
+#### Option 2: Advanced V2 Safe FIT Switchers with SHA Verification (`dev/Alternador_Boot_T7_V2/`):
+* **To force boot into Slot 1 (Stock OEM):** Upload 👉 **`dev/Alternador_Boot_T7_V2/selecionar_slot1_V2_CANDIDATO.bin`**
+* **To force boot into Slot 2 (OpenWrt Custom):** Upload 👉 **`dev/Alternador_Boot_T7_V2/selecionar_slot2_V2_CANDIDATO.bin`**
+*(V2 files are 2.6 MB U-Boot FIT images that initialize NAND, safely flash both `0:BOOTCONFIG` and `0:BOOTCONFIG1`, verify checksum integrity, and reboot without touching `APPSBLENV`).*
 
 ### When Router is Unlocked (SSH / Telnet):
 No file uploading or complex partition commands required. Once logged in via SSH (`port 22`) or Telnet (`port 23`), simply run the built-in system commands:

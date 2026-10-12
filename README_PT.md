@@ -153,8 +153,15 @@ O Acer Predator Connect T7 conta com particionamento A/B duplo na memória NAND:
 
 ### Alternância pelo U-Boot Web Failsafe (`http://192.168.1.1`):
 No modo de emergência U-Boot (pressionando WPS ao ligar), basta acessar `http://192.168.1.1` no navegador em modo anônimo e fazer o upload do arquivo binário desejado da pasta `dev/`:
+
+#### Opção 1: Chaveadores Rápidos V1 (512 KB):
 * **Para forçar o boot no Slot 1 (OEM de Fábrica):** Faça upload de 👉 **`dev/chaveador_slot1_acer_oem.bin`**
 * **Para forçar o boot no Slot 2 (OpenWrt Custom):** Faça upload de 👉 **`dev/chaveador_slot2_openwrt.bin`**
+
+#### Opção 2: Alternadores Avançados V2 com Verificação SHA e FIT Seguro (`dev/Alternador_Boot_T7_V2/`):
+* **Para forçar o boot no Slot 1 (OEM de Fábrica):** Faça upload de 👉 **`dev/Alternador_Boot_T7_V2/selecionar_slot1_V2_CANDIDATO.bin`**
+* **Para forçar o boot no Slot 2 (OpenWrt Custom):** Faça upload de 👉 **`dev/Alternador_Boot_T7_V2/selecionar_slot2_V2_CANDIDATO.bin`**
+*(Os arquivos V2 são imagens FIT de U-Boot de 2.6 MB que inicializam a NAND, gravam ambas as partições `0:BOOTCONFIG` e `0:BOOTCONFIG1`, realizam checksum de integridade e reiniciam com segurança sem tocar no ambiente `APPSBLENV`).*
 
 ### Quando o roteador estiver desbloqueado (SSH / Telnet):
 Não é necessário enviar arquivos nem comandos complexos de partição. Estando conectado via SSH (`porta 22`) ou Telnet (`porta 23`), basta executar os comandos nativos já integrados no sistema:

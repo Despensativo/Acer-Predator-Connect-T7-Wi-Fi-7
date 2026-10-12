@@ -58,6 +58,14 @@ return view.extend({
 				'<button type="button" id="btn-reset-counter" class="cbi-button cbi-button-neutral">🔄 Zerar Contador de Falhas</button>' +
 				'<button type="button" id="btn-switch-slot" class="cbi-button cbi-button-reset" style="background:#e0a800; color:#fff;">🔀 Alternar Partição Agora</button>' +
 				'</div>' +
+				'<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:12px; margin-bottom:15px;">' +
+				'<strong style="color:#333;">🛠️ Imagens FIT do Alternador de Boot V2 (Web Recovery U-Boot):</strong>' +
+				'<p style="font-size:12px; color:#666; margin:6px 0 10px;">Para recuperação física se o roteador não subir o sistema: ligue segurando o botão WPS para entrar no Web Recovery (192.168.1.1) e faça upload da imagem FIT para alternar a partição na NAND:</p>' +
+				'<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
+				'<a href="/cgi-bin/predator-dev?action=download_slot1" class="cbi-button" style="text-decoration:none; background:#007bff; color:#fff;">💾 Baixar FIT Slot 1 (OEM v24)</a>' +
+				'<a href="/cgi-bin/predator-dev?action=download_slot2" class="cbi-button" style="text-decoration:none; background:#28a745; color:#fff;">💾 Baixar FIT Slot 2 (OpenWrt)</a>' +
+				'</div>' +
+				'</div>' +
 				'<div id="log-view-box" style="display:none; margin-top:15px;">' +
 				'<h4>Último Log de Inicialização Completo:</h4>' +
 				'<textarea id="log-content" style="width:100%; height:300px; font-family:monospace; font-size:12px; background:#1e1e1e; color:#00ff66; padding:10px; border-radius:4px; box-sizing:border-box;" readonly></textarea>' +

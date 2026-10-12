@@ -30,6 +30,36 @@ case "$ACTION" in
 		fi
 		;;
 
+	download_slot1)
+		bin_file="/data/alternador_boot/selecionar_slot1_V2.bin"
+		if [ -f "$bin_file" ]; then
+			echo "Content-Type: application/octet-stream"
+			echo "Content-Disposition: attachment; filename=\"selecionar_slot1_V2.bin\""
+			echo "Cache-Control: no-cache"
+			echo ""
+			cat "$bin_file"
+		else
+			echo "Content-Type: text/plain"
+			echo ""
+			echo "Erro: Arquivo $bin_file nao encontrado."
+		fi
+		;;
+
+	download_slot2)
+		bin_file="/data/alternador_boot/selecionar_slot2_V2.bin"
+		if [ -f "$bin_file" ]; then
+			echo "Content-Type: application/octet-stream"
+			echo "Content-Disposition: attachment; filename=\"selecionar_slot2_V2.bin\""
+			echo "Cache-Control: no-cache"
+			echo ""
+			cat "$bin_file"
+		else
+			echo "Content-Type: text/plain"
+			echo ""
+			echo "Erro: Arquivo $bin_file nao encontrado."
+		fi
+		;;
+
 	latest)
 		echo "Content-Type: text/plain; charset=utf-8"
 		echo "Cache-Control: no-cache"

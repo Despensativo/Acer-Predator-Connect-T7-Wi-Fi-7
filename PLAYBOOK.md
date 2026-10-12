@@ -97,4 +97,8 @@ usleep 200000          # Para 200 milissegundos (0.2s)
   - No script oficial `/lib/wifi/hostapd.sh` para o modo `*bea:HT160` (Wi-Fi 7), a Qualcomm/Acer adicionou apenas a tag `eht_oper_chwidth=2`.
   - Dispositivos Wi-Fi 6 (802.11ax) e Wi-Fi 5 (802.11ac) não interpretam elementos EHT de Wi-Fi 7. Sem `he_oper_chwidth=2` e `vht_oper_chwidth=2` nos beacons gerados pelo hostapd, os clientes Wi-Fi 6 caíam em fallback de 80 MHz e limitavam a conexão em 1201 Mbps.
   - Com a injeção de `vht_oper_chwidth=2`, `he_oper_chwidth=2` e `centr_freq_seg0_idx=50`, os beacons transmitem a operação de 160 MHz para todas as gerações (Wi-Fi 5, Wi-Fi 6 e Wi-Fi 7), liberando a negociação em 2.402 Mbps (2.4 Gbps).
+* **[AutoLearn - Suporte a 320 MHz no Roteador vs 160 MHz em Smartphones (Ex: iPhone)]**:
+  - O roteador transmite nativamente em **320 MHz** no rádio de 6 GHz (`ath2`, Canal 33 / U-NII-5, `eht_oper_chwidth=4`).
+  - Dispositivos como o Apple iPhone (iPhone 15 Pro com Wi-Fi 6E e iPhone 16/16 Pro com Wi-Fi 7) possuem chipsets com limitação de silício/antena de fábrica para no máximo **160 MHz** (`IEEE80211_MODE_11BEA_EHT160`), negociando no seu teto físico de 2.402 / 2.882 Mbps.
+  - Clientes com placas Wi-Fi 7 completas de 320 MHz (ex: Intel BE200 em PCs ou Snapdragon FastConnect 7800) negociam os 320 MHz completos com link de até 5.760 Mbps.
 

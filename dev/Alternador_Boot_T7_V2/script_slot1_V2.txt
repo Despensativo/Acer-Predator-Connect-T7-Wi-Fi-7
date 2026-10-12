@@ -1,0 +1,12 @@
+echo T7 V2: selecionando slot 1 sem alterar APPSBLENV
+flashinit nand || exit 1
+imxtract $imgaddr bootconfig 0x45000000 || exit 1
+flash 0:BOOTCONFIG 0x45000000 0x80000 || exit 1
+nand device 0 || exit 1
+nand read 0x45100000 0x400000 0x80000 || exit 1
+cmp.b 0x45000000 0x45100000 0x80000 || exit 1
+flash 0:BOOTCONFIG1 0x45000000 0x80000 || exit 1
+nand read 0x45100000 0x480000 0x80000 || exit 1
+cmp.b 0x45000000 0x45100000 0x80000 || exit 1
+echo T7 V2: BOOTCONFIG e BOOTCONFIG1 conferidos; reiniciando no slot 1
+reset

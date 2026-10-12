@@ -1,0 +1,115 @@
+#!/bin/sh
+# /www/cgi-bin/predator-dev - CGI Web API para download e leitura de logs de boot
+# Copyright (c) 2026 Predator Connect T7 Custom Tools
+
+LOG_DIR="/data/boot_logs"
+FAIL_COUNT_FILE="/data/boot_fail_count"
+
+# Parse query string
+ACTION=$(echo "$QUERY_STRING" | sed -n 's/^.*action=\([^&]*\).*$/\1/p')
+
+get_active_slot() {
+	local mtd_num=$(cat /sys/class/ubi/ubi0/mtd_num 2>/dev/null)
+	if [ "$mtd_num" = "20" ] || grep -q "rootfs_1" /proc/cmdline 2>/dev/null; then
+		echo 2
+	else
+		echo 1
+	fi
+}
+
+case "$ACTION" in
+	download)
+		echo "Content-Type: application/gzip"
+		echo "Content-Disposition: attachment; filename=\"predator_boot_logs_7days.tar.gz\""
+		echo "Cache-Control: no-cache"
+		echo ""
+		if [ -d "$LOG_DIR" ] && [ -n "$(ls -A "$LOG_DIR" 2>/dev/null)" ]; then
+			tar -cz -C "$LOG_DIR" . 2>/dev/null
+		else
+			echo "Nenhum log de boot disponivel." | gzip -c
+		fi
+		;;
+
+	latest)
+		echo "Content-Type: text/plain; charset=utf-8"
+		echo "Cache-Control: no-cache"
+		echo ""
+		latest_file=$(ls -t "$LOG_DIR"/boot_*.log* 2>/dev/null | head -n 1)
+		if [ -n "$latest_file" ] && [ -f "$latest_file" ]; then
+			case "$latest_file" in
+				*.gz) gzip -dc "$latest_file" 2>/dev/null ;;
+				*) cat "$latest_file" 2>/dev/null ;;
+			esac
+		else
+			echo "Nenhum log de boot encontrado em $LOG_DIR."
+		fi
+		;;
+
+	status)
+		echo "Content-Type: application/json; charset=utf-8"
+		echo "Cache-Control: no-cache"
+		echo ""
+
+		cur_slot=$(get_active_slot)
+		failsafe_en=$(uci -q get predator_dev.failsafe.enabled || echo 1)
+		max_retries=$(uci -q get predator_dev.failsafe.max_retries || echo 3)
+		safe_up=$(uci -q get predator_dev.failsafe.safe_uptime || echo 75)
+		log_en=$(uci -q get predator_dev.logging.enabled || echo 1)
+		retention=$(uci -q get predator_dev.logging.retention_days || echo 7)
+		cur_fails=$(cat "$FAIL_COUNT_FILE" 2>/dev/null || echo 0)
+
+		# Build file list JSON
+		files_json="["
+		if [ -d "$LOG_DIR" ]; then
+			first=1
+			for f in $(ls -t "$LOG_DIR"/boot_*.log* 2>/dev/null); do
+				[ -f "$f" ] || continue
+				fname=$(basename "$f")
+				fsize=$(ls -lh "$f" | awk '{print $5}')
+				[ "$first" -eq 1 ] && first=0 || files_json="${files_json},"
+				files_json="${files_json}{\"name\":\"$fname\",\"size\":\"$fsize\"}"
+			done
+		fi
+		files_json="${files_json}]"
+
+		cat <<EOF
+{
+  "active_slot": $cur_slot,
+  "failsafe_enabled": $([ "$failsafe_en" = "1" ] && echo "true" || echo "false"),
+  "boot_fail_count": $cur_fails,
+  "max_retries": $max_retries,
+  "safe_uptime": $safe_up,
+  "logging_enabled": $([ "$log_en" = "1" ] && echo "true" || echo "false"),
+  "retention_days": $retention,
+  "log_files": $files_json
+}
+EOF
+		;;
+
+	reset)
+		echo "Content-Type: application/json"
+		echo ""
+		echo 0 > "$FAIL_COUNT_FILE"
+		sync
+		echo '{"success": true, "message": "Contador de falhas zerado com sucesso."}'
+		;;
+
+	switch)
+		echo "Content-Type: application/json"
+		echo ""
+		cur_slot=$(get_active_slot)
+		if [ "$cur_slot" -eq 1 ]; then
+			(/usr/sbin/boot-openwrt >/dev/null 2>&1) &
+			echo '{"success": true, "message": "Chaveando para o Slot 2 e reiniciando..."}'
+		else
+			(/usr/sbin/boot-acer >/dev/null 2>&1) &
+			echo '{"success": true, "message": "Chaveando para o Slot 1 e reiniciando..."}'
+		fi
+		;;
+
+	*)
+		echo "Content-Type: text/plain"
+		echo ""
+		echo "Predator DEV CGI API. Parametros suportados: ?action=status | latest | download | reset | switch"
+		;;
+esac

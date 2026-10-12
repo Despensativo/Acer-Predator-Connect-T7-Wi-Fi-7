@@ -1,0 +1,15 @@
+{
+	"luci-app-predator-dev": {
+		"description": "Grant access to Predator DEV and Fail-Safe controls",
+		"read": {
+			"uci": [ "predator_dev" ],
+			"file": {
+				"/cgi-bin/predator-dev": [ "exec" ],
+				"/data/boot_logs/*": [ "read" ]
+			}
+		},
+		"write": {
+			"uci": [ "predator_dev" ]
+		}
+	}
+}

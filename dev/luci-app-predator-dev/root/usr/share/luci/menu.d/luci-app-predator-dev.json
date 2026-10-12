@@ -1,0 +1,13 @@
+{
+	"admin/system/predator_dev": {
+		"title": "Modo DEV & Fail-Safe",
+		"action": {
+			"type": "view",
+			"path": "predator_dev"
+		},
+		"depends": {
+			"acl": [ "luci-app-predator-dev" ]
+		},
+		"order": 90
+	}
+}

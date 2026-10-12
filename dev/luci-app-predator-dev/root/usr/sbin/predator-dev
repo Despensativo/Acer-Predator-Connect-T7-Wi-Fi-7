@@ -1,0 +1,107 @@
+#!/bin/sh
+# /usr/sbin/predator-dev - CLI Helper para Addon Modo DEV do Predator Connect T7
+# Copyright (c) 2026 Predator Connect T7 Custom Tools
+
+FAIL_COUNT_FILE="/data/boot_fail_count"
+LOG_DIR=$(uci -q get predator_dev.logging.log_dir || echo "/data/boot_logs")
+
+get_active_slot() {
+	local mtd_num=$(cat /sys/class/ubi/ubi0/mtd_num 2>/dev/null)
+	if [ "$mtd_num" = "20" ] || grep -q "rootfs_1" /proc/cmdline 2>/dev/null; then
+		echo 2
+	else
+		echo 1
+	fi
+}
+
+case "$1" in
+	status)
+		cur_slot=$(get_active_slot)
+		failsafe_en=$(uci -q get predator_dev.failsafe.enabled || echo 1)
+		max_retries=$(uci -q get predator_dev.failsafe.max_retries || echo 3)
+		safe_up=$(uci -q get predator_dev.failsafe.safe_uptime || echo 75)
+		log_en=$(uci -q get predator_dev.logging.enabled || echo 1)
+		retention=$(uci -q get predator_dev.logging.retention_days || echo 7)
+		cur_fails=$(cat "$FAIL_COUNT_FILE" 2>/dev/null || echo 0)
+
+		echo "========================================================"
+		echo " PREDATOR CONNECT T7 - STATUS MODO DEV"
+		echo "========================================================"
+		echo "Slot Ativo Atual     : Slot $cur_slot"
+		echo "Cmdline              : $(cat /proc/cmdline)"
+		echo "Uptime Atual         : $(uptime)"
+		echo "--------------------------------------------------------"
+		echo "Fail-Safe Anti-Loop  : $([ "$failsafe_en" = "1" ] && echo 'ATIVO' || echo 'DESATIVADO')"
+		echo "Contador de Falhas   : $cur_fails / $max_retries (Limite)"
+		echo "Janela de Seguranca  : ${safe_up}s"
+		echo "--------------------------------------------------------"
+		echo "Registro de Boot (7d): $([ "$log_en" = "1" ] && echo 'ATIVO' || echo 'DESATIVADO')"
+		echo "Periodo de Retencao  : ${retention} dias"
+		echo "Diretorio de Logs    : $LOG_DIR"
+		if [ -d "$LOG_DIR" ]; then
+			total_logs=$(ls -1 "$LOG_DIR"/boot_*.log* 2>/dev/null | wc -l)
+			total_size=$(du -sh "$LOG_DIR" 2>/dev/null | awk '{print $1}')
+			echo "Total de Logs Salvos : $total_logs arquivo(s) ($total_size)"
+			echo "Arquivos recentes:"
+			ls -lh "$LOG_DIR"/boot_*.log* 2>/dev/null | tail -n 5 | awk '{print "  " $9 " (" $5 ")"}'
+		else
+			echo "Total de Logs Salvos : Nenhum (diretorio ainda nao criado)"
+		fi
+		echo "========================================================"
+		;;
+
+	view)
+		target="$2"
+		if [ -z "$target" ] || [ "$target" = "latest" ]; then
+			target=$(ls -t "$LOG_DIR"/boot_*.log* 2>/dev/null | head -n 1)
+		fi
+
+		if [ -z "$target" ] || [ ! -f "$target" ]; then
+			echo "Erro: Nenhum log de boot encontrado em $LOG_DIR"
+			exit 1
+		fi
+
+		echo "=== Exibindo: $target ==="
+		case "$target" in
+			*.gz) gzip -dc "$target" | ${PAGER:-cat} ;;
+			*) cat "$target" | ${PAGER:-cat} ;;
+		esac
+		;;
+
+	pack)
+		dest="${2:-/tmp/predator_boot_logs_$(date +%Y%m%d_%H%M%S).tar.gz}"
+		if [ ! -d "$LOG_DIR" ] || [ -z "$(ls -A "$LOG_DIR" 2>/dev/null)" ]; then
+			echo "Erro: Diretorio de logs vazio ou inexistente ($LOG_DIR)"
+			exit 1
+		fi
+		tar -czf "$dest" -C "$LOG_DIR" .
+		echo "[OK] Pacote de logs gerado em: $dest ($(ls -lh "$dest" | awk '{print $5}'))"
+		;;
+
+	reset)
+		echo 0 > "$FAIL_COUNT_FILE"
+		sync
+		echo "[OK] Contador de falhas de boot zerado com sucesso."
+		;;
+
+	switch)
+		cur_slot=$(get_active_slot)
+		if [ "$cur_slot" -eq 1 ]; then
+			echo "Chaveando do Slot 1 para o Slot 2..."
+			/usr/sbin/boot-openwrt
+		else
+			echo "Chaveando do Slot 2 para o Slot 1..."
+			/usr/sbin/boot-acer
+		fi
+		;;
+
+	clean)
+		rm -rf "$LOG_DIR"/*
+		echo "[OK] Todos os logs de boot foram removidos."
+		;;
+
+	*)
+		echo "Uso: predator-dev {status|view [latest|<arquivo>]|pack [destino.tar.gz]|reset|switch|clean}"
+		exit 1
+		;;
+esac

@@ -146,4 +146,14 @@ usleep 200000          # Para 200 milissegundos (0.2s)
     - `"⚠️ Travado (/var/run/wifilock)"` (vermelho) apenas em casos reais de deadlock do netifd.
     - `"✅ Operacional"` (verde brilhante) quando todos os 3 rádios estão ativos.
   - O polling é executado a cada 2 segundos via LuCI Poll API (`poll.add(..., 2)`), pausando automaticamente via `document.hidden` para economizar ciclos de CPU do navegador e do roteador quando a aba não estiver visível.
+* **[AutoLearn - Roaming 802.11k/v em Rádios QCA (BSS Transition & Neighbor Reports)]**:
+  - Por padrão, o OpenWrt/QSDK gerava `/etc/config/wireless` sem `bss_transition` nem `rrm_neighbor_report`. Com isso, o `hostapd` nunca anunciava capacidade de roaming aos clientes nem enviava quadros BTM.
+  - O padrão homologado agora injeta `option bss_transition '1'`, `option rrm_neighbor_report '1'`, `option rrm_beacon_report '1'` e `option wnm_sleep_mode '1'` em todos os VAPs. Isso ativa a assistência nativa por hardware para troca transparente entre 2.4 GHz e 5 GHz (160 MHz) sem queda de conexão ou congelamento de VoIP/jogos.
+* **[AutoLearn - Arquitetura Padrão Ouro de Wi-Fi 7 vs Armadilha do Tri-Band MLO]**:
+  - O padrão IEEE 802.11be impõe WPA3-SAE obrigatório com PMF (`ieee80211w=2`) em todas as frequências agregadas em um grupo MLD.
+  - Incluir a banda 2.4 GHz no MLD força o rádio 2.4 GHz para WPA3 puro, desconectando 99% das lâmpadas, tomadas e sensores IoT (Tuya, Sonoff, Shelly).
+  - O perfil homologado definitivo é o **MLO Turbo**: 5 GHz (160 MHz) + 6 GHz (320 MHz) agregados sob MLD com WPA3-SAE para velocidades gigabit e latência zero, enquanto a banda de 2.4 GHz permanece totalmente independente em WPA2 puro (`psk2+aes`) para automação residencial.
+* **[AutoLearn - Normalização de Criptografia no LuCI (`psk2+aes` vs `psk2`)]**:
+  - O UCI armazena `encryption='psk2+aes'`. Quando os componentes `<select>` do LuCI em JavaScript só continham opções com `value: 'psk2'`, o navegador não casava o valor e exibia o seletor completamente vazio/em branco.
+  - A correção homologada implementa normalização de strings antes do binding (`psk` / `psk2` -> `psk2+aes`) e disponibiliza `psk2+aes` explicitamente em todos os formulários.
 

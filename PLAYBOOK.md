@@ -101,4 +101,26 @@ usleep 200000          # Para 200 milissegundos (0.2s)
   - O roteador transmite nativamente em **320 MHz** no rádio de 6 GHz (`ath2`, Canal 33 / U-NII-5, `eht_oper_chwidth=4`).
   - Dispositivos como o Apple iPhone (iPhone 15 Pro com Wi-Fi 6E e iPhone 16/16 Pro com Wi-Fi 7) possuem chipsets com limitação de silício/antena de fábrica para no máximo **160 MHz** (`IEEE80211_MODE_11BEA_EHT160`), negociando no seu teto físico de 2.402 / 2.882 Mbps.
   - Clientes com placas Wi-Fi 7 completas de 320 MHz (ex: Intel BE200 em PCs ou Snapdragon FastConnect 7800) negociam os 320 MHz completos com link de até 5.760 Mbps.
-
+* **[AutoLearn - Configuração Homologada WAN PPPoE com Host-Uniq e Clonagem de MAC]**:
+  - Para conexões PPPoE de provedores de fibra que exigem autenticação casada (Host-Uniq e MAC da ONT de fábrica):
+    - No `/etc/config/network`, configurar `config device 'wan_dev'` com `option name 'eth0'` e `option macaddr '<MAC>'` para cravar o MAC spoofing na camada física netifd.
+    - Na interface `wan`, utilizar `option proto 'pppoe'`, `option ifname 'eth0'`, `option macaddr '<MAC>'`, `option host_uniq '<MAC_SEM_DOIS_PONTOS>'`, `option mtu '1492'` e `option ipv6 'auto'`.
+    - Com `ipv6 'auto'`, o netifd e o script `/lib/netifd/ppp6-up` inicializam a interface virtual dinâmica `wan_6` sobre `@wan` (`pppoe-wan`) com `dhcpv6` para delegação de prefixo IPv6 (`/60` ou `/64`), dispensando a interface estática `wan6` na porta `eth0` física.
+* **[AutoLearn - Calibração dos Seletores de Potência RF (Zero Divergência)]**:
+  - Os seletores de potência tanto na Central Predator (`predator_wifi.js`) quanto na página padrão do LuCI (`wireless.js`) foram calibrados para refletir fielmente a **potência conduzida real** enviada aos conectores das antenas, casando 100% com a telemetria ao vivo:
+    - **2.4 GHz (IPQ5332)**: Máx Real = `22 dBm` (158 mW conduzido / 708 mW EIRP c/ ganho de 6.5 dBi).
+    - **5.0 GHz (IPQ5332)**: Em 160 MHz = `23 dBm` (200 mW conduzido / 2.180 mW EIRP c/ ganho de 10.38 dBi); em 80 MHz Ch 149+ = `26 dBm` (398 mW conduzido / 5.495 mW EIRP).
+    - **6.0 GHz (QCN9224 Wi-Fi 7)**: Máx Real Desbloqueado (BDF Default) em 320 MHz = `20 dBm` (100 mW conduzido / ~1.000 mW EIRP c/ ganho de 9.62 dBi).
+* **[AutoLearn - Recarga do Wi-Fi na Página Padrão do LuCI e Correções no Driver QCA]**:
+  - **`ucitrack` e `/sbin/luci-reload`**: O script `/sbin/luci-reload` do LuCI não percorre listas de dependência `affects`. Para que o botão "Salvar e Aplicar" da página padrão do LuCI (`/admin/network/wireless`) efetivamente recarregue o Wi-Fi, `/etc/config/ucitrack` deve conter `option exec '/sbin/wifi reload'` no bloco `config wireless`.
+  - **Correção de Sintaxe no `/lib/wifi/qcawificfg80211.sh`**:
+    - Linha 2843: `$device_if` era invocado antes de ser inicializado (`eval: line 2843: : Permission denied`). A inicialização foi antecipada para antes do bloco `case "$board_name"`.
+    - Linhas 7360/7375/7378: Substituída a sintaxe malformada `[[ -z ... ] -o [ ... ]]` por `[ ... ] || [ ... ]` e adicionadas aspas em `"$mld_netdev"`, eliminando erros fatais de `sh: missing ]` e `unknown operand`.
+    - Linha 7578: Corrigido teste de RTS sem aspas `[ $rts == "off" ]` para `[ "$rts" = "off" ]`.
+    - Linhas 7706-7740: Adicionadas verificações defensivas de variáveis vazias em `$vif_txpower` e `$txpower`, e implementado tratamento para `txpower="auto"` (chamando `iw dev set txpower auto` em vez de `fixed auto`).
+    - Linha 4109: Injetadas as chamadas a `/lib/wifi_hardware_tune.sh` e `/etc/init.d/predator_rf start` no hook `post_common_qcawificfg80211()`, garantindo que toda e qualquer alteração de Wi-Fi feita pelo sistema (LuCI padrão, Central Predator, CLI ou hotplug) restaure automaticamente o Tx Beamforming Sounding (100ms), Preamble Puncturing estrito e Gaming Mode no silício de hardware.
+  - **Auto-Canal em 320 MHz no `/lib/wifi/hostapd.sh`**:
+    - Adicionado fallback `*) idx=31;;` no bloco `*bea:HT320`. Quando `channel=auto` era configurado em 6 GHz, o script deixava o índice de frequência central vazio, forçando o hostapd a rebaixar o rádio de 320 MHz para 160 MHz. Com o fallback no canal central 31, o auto-canal opera em 320 MHz plenos.
+  - **Monitoramento Confiável de Trava e Telemetria no `/usr/libexec/rpcd/predator`**:
+    - O verificador de lock foi restrito aos arquivos de lock específicos do Wi-Fi (`/var/run/wifilock`, `/var/run/wifi_global_lock`, etc.), eliminando falsos positivos causados por locks de outros serviços do roteador (como `mwan3.lock`).
+    - Leitura precisa do canal ativo e largura de banda reais via `hostapd_cli status`, evitando discrepâncias do utilitário `iw`.

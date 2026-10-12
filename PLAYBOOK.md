@@ -162,4 +162,13 @@ usleep 200000          # Para 200 milissegundos (0.2s)
     - `wifi1_ap` (5.0 GHz): `sae-mixed` (WPA2/WPA3 Misto) funcionando como ponte suave para evitar alertas de Downgrade Attack no iOS/Android.
     - `wifi2_ap` (6.0 GHz): `sae` (WPA3-SAE Puro com PMF obrigatório).
   - Conta com roaming 802.11k/v (BSS Transition + RRM Neighbor Reports) ativo para transição contínua dos celulares entre as 3 frequências e sincronização de 152 chaves de tradução entre `en`, `pt_br` e `es`.
-
+* **[AutoLearn - Rollback Inteligente Dinâmico por Contexto no LuCI Nativo (`uci.lua` + `ui.js`)]**:
+  - Em vez de um timeout estático exagerado (ex: 300s para tudo), o LuCI nativo (`/usr/lib/lua/luci/model/uci.lua`, `/usr/lib/lua/luci/controller/admin/uci.lua` e `/www/luci-static/resources/ui.js`) inspeciona automaticamente `ubus call uci changes` antes de aplicar:
+    - **Alterações comuns (LAN, Firewall, DHCP, DNS, Sistema)**: mantém **`90s`**, garantindo recuperação rápida caso o usuário erre um IP ou regra de firewall.
+    - **Alterações de Wireless padrão (80 MHz / 2.4G / 6G sem DFS)**: eleva dinamicamente para **`140s`**, cobrindo com folga os ~30s de reinício dos 3 rádios Qualcomm e reconexão Wi-Fi.
+    - **Alterações de Wireless com 5 GHz em 160 MHz (`HT160`) ou Canal DFS (`52–144` / `auto`)**: eleva dinamicamente para **`210s`**, absorvendo os 60s obrigatórios de escuta de radar CAC + ~30s de reinício do driver sem falso rollback.
+* **[AutoLearn - Suporte a Repetidores Universais (WDS 4-Address) e Leases DHCP Persistentes]**:
+  - Todos os VAPs AP (`wifi0_ap`, `wifi1_ap`, `wifi2_ap` e novos VAPs criados no daemon `predator`) possuem `option wds '1'` (e `cfg80211tool athX wds 1` no `predator_rf`), habilitando quadros 4-address na camada 2 para repetidores universais (ex: Intelbras RG 1200).
+  - O `dnsmasq` utiliza `/etc/dnsmasq.conf` com `dhcp-broadcast` ativo e `option leasefile '/etc/dhcp.leases'` (com symlink `/tmp/dhcp.leases -> /etc/dhcp.leases` no `/etc/rc.local`), garantindo que impressoras 3D (Creality) e dispositivos IoT nunca sumam da lista de leases após reboot.
+* **[AutoLearn - Permissões KSMBD USB Plug-and-Play (`0777` + `root`)]**:
+  - Removido o atributo inválido `option force_user 'Admin'` (que sobrescrevia `force user = root` com um usuário inexistente no `/etc/passwd`) e adicionados `option force_create_mode '0777'` e `option force_directory_mode '0777'` em `/etc/config/ksmbd`, liberando leitura/escrita imediata sem intervenção manual.

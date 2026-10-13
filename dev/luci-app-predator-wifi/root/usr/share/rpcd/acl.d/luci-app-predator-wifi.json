@@ -1,0 +1,17 @@
+{
+	"luci-app-predator-wifi": {
+		"description": "Grant access to Predator Wi-Fi full control",
+		"read": {
+			"ubus": {
+				"predator": [ "get_status", "get_guard_status" ],
+				"uci": [ "get", "get_all" ]
+			}
+		},
+		"write": {
+			"ubus": {
+				"predator": [ "apply_topology", "set_radio", "set_all_radios", "edit_vif", "add_vif", "del_vif", "toggle_vif", "restart_wifi", "toggle_radio", "toggle_feature", "ack_guard" ],
+				"uci": [ "set", "commit", "apply" ]
+			}
+		}
+	}
+}

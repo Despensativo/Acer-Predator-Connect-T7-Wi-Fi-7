@@ -1,0 +1,312 @@
+#!/bin/sh
+# predator-wifi-guard - Blindagem anti-erro do Wi-Fi (Acer Predator Connect T7 / IPQ5332)
+#
+#   fix     Valida e corrige /etc/config/wireless ANTES de aplicar.
+#           Chamado automaticamente pelo /sbin/wifi (cobre Central Predator, LuCI nativo e CLI).
+#   verify  DEPOIS de aplicar, confere se os radios subiram de verdade (hostapd state=ENABLED).
+#           Se nao subirem e a config for diferente da ultima boa, restaura a ultima boa.
+#           Se a config for a mesma (ex: boot lento), faz um reinicio limpo do hostapd.
+#   health  Imprime "ok" ou o motivo da falha.
+#   status  JSON para o painel (rollback + correcoes recentes).
+#   ack     Limpa os avisos exibidos no painel.
+
+LASTGOOD=/etc/predator/wireless.lastgood
+FAILED=/etc/predator/wireless.failed
+FIXLOG=/tmp/predator_guard_fixes
+RBFILE=/tmp/predator_guard_rollback
+PIDF=/tmp/predator_guard_verify.pid
+TAG=predator-guard
+
+log() { logger -t "$TAG" "$*"; }
+
+note_fix() {
+	log "corrigido: $*"
+	echo "$(date +%s)|$*" >> "$FIXLOG"
+	CHANGED=1
+}
+
+is_core() { case "$1" in wifi0_ap|wifi1_ap|wifi2_ap) return 0 ;; esac; return 1; }
+bytes() { printf '%s' "$1" | wc -c | tr -d ' '; }
+band_of() { case "$1" in wifi0) echo "2.4 GHz" ;; wifi1) echo "5 GHz" ;; wifi2) echo "6 GHz" ;; *) echo "$1" ;; esac; }
+json_esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\n\r\t'; }
+ifaces() { uci -q show wireless | sed -n "s/^wireless\.\([^.=]*\)=wifi-iface$/\1/p"; }
+
+disable_iface() {
+	uci set wireless.$1.disabled='1'
+	note_fix "$2"
+}
+
+# ---------------------------------------------------------------- fix
+do_fix() {
+	CHANGED=0
+
+	# --- Radio 2.4 GHz: no maximo 40 MHz, canais 1-13
+	local h c
+	h=$(uci -q get wireless.wifi0.htmode)
+	case "$h" in HT80|HT160|HT320)
+		uci set wireless.wifi0.htmode='HT40'
+		note_fix "2.4 GHz nao suporta $h -> HT40" ;;
+	esac
+	c=$(uci -q get wireless.wifi0.channel)
+	if [ -n "$c" ] && [ "$c" != "auto" ]; then
+		if ! [ "$c" -ge 1 -a "$c" -le 13 ] 2>/dev/null; then
+			uci set wireless.wifi0.channel='auto'
+			note_fix "2.4 GHz canal invalido ($c) -> auto"
+		fi
+	fi
+
+	# --- Radio 5 GHz: no maximo 160 MHz; 160 MHz so nos blocos 36-64 e 100-128
+	h=$(uci -q get wireless.wifi1.htmode)
+	c=$(uci -q get wireless.wifi1.channel)
+	if [ "$h" = "HT320" ]; then
+		uci set wireless.wifi1.htmode='HT160'; h="HT160"
+		note_fix "5 GHz nao suporta 320 MHz -> 160 MHz"
+	fi
+	if [ -n "$c" ] && [ "$c" != "auto" ]; then
+		case " 36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165 " in
+			*" $c "*) ;;
+			*) uci set wireless.wifi1.channel='36'; note_fix "5 GHz canal invalido ($c) -> 36"; c=36 ;;
+		esac
+		if [ "$h" = "HT160" ] && [ "$c" -ge 132 ] 2>/dev/null; then
+			uci set wireless.wifi1.htmode='HT80'; h="HT80"
+			note_fix "5 GHz canal $c nao comporta 160 MHz -> 80 MHz"
+		fi
+		if [ "$c" = "165" ] && { [ "$h" = "HT40" ] || [ "$h" = "HT80" ]; }; then
+			uci set wireless.wifi1.htmode='HT20'
+			note_fix "5 GHz canal 165 so opera em 20 MHz -> HT20"
+		fi
+	fi
+
+	# --- Radio 6 GHz: 320 MHz exige Wi-Fi 7 (11bea); canais validos = 1,5,9..233
+	h=$(uci -q get wireless.wifi2.htmode)
+	local hw=$(uci -q get wireless.wifi2.hwmode)
+	if [ "$h" = "HT320" ] && { [ "$hw" = "11axa" ] || [ "$hw" = "11ax" ]; }; then
+		uci set wireless.wifi2.htmode='HT160'
+		note_fix "6 GHz em modo Wi-Fi 6E nao suporta 320 MHz -> 160 MHz"
+	fi
+	c=$(uci -q get wireless.wifi2.channel)
+	if [ -n "$c" ] && [ "$c" != "auto" ]; then
+		if ! { [ "$c" -ge 1 -a "$c" -le 233 ] 2>/dev/null && [ $(( (c - 1) % 4 )) -eq 0 ]; }; then
+			uci set wireless.wifi2.channel='37'
+			note_fix "6 GHz canal invalido ($c) -> 37 (PSC)"
+		fi
+	fi
+
+	# --- Redes (VAPs)
+	local seen=" " s dev mode dis ssid enc key sp band w
+	for s in $(ifaces); do
+		dev=$(uci -q get wireless.$s.device)
+		mode=$(uci -q get wireless.$s.mode)
+		[ -z "$mode" ] || [ "$mode" = "ap" ] || continue
+		dis=$(uci -q get wireless.$s.disabled)
+		[ "$dis" = "1" ] && continue
+		ssid=$(uci -q get wireless.$s.ssid)
+		enc=$(uci -q get wireless.$s.encryption)
+		key=$(uci -q get wireless.$s.key)
+		sp=$(uci -q get wireless.$s.sae_password)
+		band=$(band_of "$dev")
+
+		# SSID obrigatorio e com no maximo 32 bytes (limite do padrao 802.11)
+		if [ -z "$ssid" ]; then
+			disable_iface "$s" "rede sem nome em $band -> NAO aplicada (desativada)"; continue
+		fi
+		if [ "$(bytes "$ssid")" -gt 32 ]; then
+			disable_iface "$s" "$ssid ($band): nome passa de 32 bytes -> NAO aplicada (desativada)"; continue
+		fi
+
+		# Mesmo nome duas vezes no mesmo radio
+		case "$seen" in *" $dev|$ssid "*)
+			disable_iface "$s" "$ssid ($band): rede duplicada no mesmo radio -> copia desativada"; continue ;;
+		esac
+		seen="$seen$dev|$ssid "
+
+		# MLO somente na rede principal (limitacao IPQ5332: mlo_mbssid disabled)
+		if ! is_core "$s" && [ -n "$(uci -q get wireless.$s.mld)" ]; then
+			uci -q delete wireless.$s.mld
+			note_fix "$ssid ($band): MLO nao e suportado em rede adicional -> MLO removido"
+		fi
+
+		# 6 GHz exige WPA3-SAE (ou OWE para rede aberta)
+		if [ "$dev" = "wifi2" ]; then
+			case "$enc" in
+				sae|owe) ;;
+				none|"")
+					uci set wireless.$s.encryption='owe'; uci set wireless.$s.owe='1'; uci set wireless.$s.ieee80211w='2'
+					enc=owe; note_fix "$ssid (6 GHz): rede aberta proibida em 6 GHz -> OWE" ;;
+				*)
+					uci set wireless.$s.encryption='sae'; uci set wireless.$s.sae='1'; uci set wireless.$s.ieee80211w='2'
+					note_fix "$ssid (6 GHz): $enc nao e permitido em 6 GHz -> WPA3-SAE"; enc=sae ;;
+			esac
+		fi
+		# Rede em grupo MLO exige WPA3-SAE
+		if [ -n "$(uci -q get wireless.$s.mld)" ] && [ "$enc" != "sae" ]; then
+			uci set wireless.$s.encryption='sae'; uci set wireless.$s.sae='1'; uci set wireless.$s.ieee80211w='2'
+			note_fix "$ssid ($band): grupo MLO exige WPA3-SAE -> WPA3-SAE"; enc=sae
+		fi
+
+		# Coerencia SAE / PMF
+		case "$enc" in
+			sae)
+				[ "$(uci -q get wireless.$s.sae)" = "1" ] || uci set wireless.$s.sae='1'
+				[ "$(uci -q get wireless.$s.ieee80211w)" = "2" ] || { uci set wireless.$s.ieee80211w='2'; CHANGED=1; } ;;
+			sae-mixed)
+				[ "$(uci -q get wireless.$s.sae)" = "1" ] || { uci set wireless.$s.sae='1'; CHANGED=1; }
+				w=$(uci -q get wireless.$s.ieee80211w)
+				[ "$w" = "1" ] || [ "$w" = "2" ] || { uci set wireless.$s.ieee80211w='1'; CHANGED=1; } ;;
+		esac
+
+		# Senha obrigatoria para rede com criptografia
+		case "$enc" in none|owe) continue ;; esac
+		if [ -z "$key" ] && [ -n "$sp" ]; then
+			uci set wireless.$s.key="$sp"; key="$sp"
+			note_fix "$ssid ($band): senha recuperada de sae_password"
+		fi
+		if [ -z "$key" ]; then
+			disable_iface "$s" "$ssid ($band): criptografia $enc sem senha -> NAO aplicada (desativada)"; continue
+		fi
+		if [ "$(bytes "$key")" -lt 8 ]; then
+			disable_iface "$s" "$ssid ($band): senha com menos de 8 caracteres -> NAO aplicada (desativada)"; continue
+		fi
+		if [ "$(bytes "$key")" -gt 63 ]; then
+			disable_iface "$s" "$ssid ($band): senha com mais de 63 caracteres -> NAO aplicada (desativada)"; continue
+		fi
+		# WPA3 usa sae_password: se divergir da senha (ex: alterada no LuCI nativo), o iPhone/iPad
+		# entra com uma senha e o notebook com outra. A senha (key) e a referencia.
+		case "$enc" in sae|sae-mixed)
+			if [ "$sp" != "$key" ]; then
+				uci set wireless.$s.sae_password="$key"
+				note_fix "$ssid ($band): senha WPA3 sincronizada com a senha principal"
+			fi ;;
+		esac
+	done
+
+	if [ "$CHANGED" = "1" ]; then
+		uci commit wireless
+		# mantem o arquivo de correcoes curto
+		[ -f "$FIXLOG" ] && tail -n 20 "$FIXLOG" > "$FIXLOG.tmp" && mv "$FIXLOG.tmp" "$FIXLOG"
+	fi
+	return 0
+}
+
+# ---------------------------------------------------------------- health
+do_health() {
+	[ -S /var/run/hostapd/global ] || { echo "processo global do hostapd ausente"; return 0; }
+	local n s has okr sock ifn st
+	for n in 0 1 2; do
+		[ "$(uci -q get wireless.wifi$n.disabled)" = "1" ] && continue
+		has=0
+		for s in $(ifaces); do
+			[ "$(uci -q get wireless.$s.device)" = "wifi$n" ] || continue
+			[ "$(uci -q get wireless.$s.disabled)" = "1" ] && continue
+			has=1; break
+		done
+		[ "$has" = "1" ] || continue
+		okr=0
+		for sock in /var/run/hostapd-wifi$n/*; do
+			[ -S "$sock" ] || continue
+			ifn=${sock##*/}
+			[ -d "/sys/class/net/$ifn" ] || continue
+			st=$(hostapd_cli -p "/var/run/hostapd-wifi$n" -i "$ifn" status 2>/dev/null | sed -n 's/^state=//p')
+			case "$st" in ENABLED|DFS) okr=1; break ;; esac
+		done
+		[ "$okr" = "1" ] || { echo "radio $(band_of wifi$n) nao esta transmitindo"; return 0; }
+	done
+	echo "ok"
+}
+
+clean_restart() {
+	killall -9 lock 2>/dev/null
+	rm -f /var/run/wifilock /var/run/wifi_global_lock /var/run/load_qcawificfg80211_lock /var/run/pre_qcawificfg80211_lock 2>/dev/null
+	rm -f /var/run/hostapd-ath*.pid 2>/dev/null
+	/etc/init.d/qca-hostapd restart >/dev/null 2>&1
+	sleep 1
+	PREDATOR_GUARD_INTERNAL=1 /sbin/wifi up >/dev/null 2>&1
+	[ -x /lib/wifi_hardware_tune.sh ] && /lib/wifi_hardware_tune.sh >/dev/null 2>&1
+	/etc/init.d/predator_rf start >/dev/null 2>&1
+}
+
+wait_healthy() {
+	# $1 = tentativas (5s cada). Ecoa o ultimo resultado.
+	local i=0 r
+	while [ "$i" -lt "$1" ]; do
+		r=$(do_health)
+		[ "$r" = "ok" ] && { echo ok; return 0; }
+		sleep 5; i=$((i + 1))
+	done
+	echo "$r"
+}
+
+# ---------------------------------------------------------------- verify
+do_verify() {
+	if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null; then
+		return 0
+	fi
+	echo $$ > "$PIDF"
+	trap 'rm -f "$PIDF"' EXIT INT TERM
+
+	sleep 15
+	local reason
+	reason=$(wait_healthy 15)
+	mkdir -p /etc/predator
+	if [ "$reason" = "ok" ]; then
+		cmp -s /etc/config/wireless "$LASTGOOD" || cp -f /etc/config/wireless "$LASTGOOD"
+		return 0
+	fi
+
+	log "Wi-Fi NAO subiu apos aplicar: $reason"
+	local action="heal"
+	if [ -f "$LASTGOOD" ] && ! cmp -s /etc/config/wireless "$LASTGOOD"; then
+		cp -f /etc/config/wireless "$FAILED"
+		cp -f "$LASTGOOD" /etc/config/wireless
+		action="rollback"
+		log "ROLLBACK: restaurada a ultima configuracao de Wi-Fi que funcionava (falha salva em $FAILED)"
+	else
+		log "config igual a ultima boa: tentando reinicio limpo do hostapd"
+	fi
+
+	clean_restart
+	sleep 15
+	local r2
+	r2=$(wait_healthy 12)
+	if [ "$action" = "rollback" ]; then
+		echo "$(date +%s)|rollback|$reason|$r2" > "$RBFILE"
+	elif [ "$r2" = "ok" ]; then
+		echo "$(date +%s)|O Wi-Fi travou ao subir ($reason) e foi recuperado com reinicio limpo" >> "$FIXLOG"
+		log "recuperado com reinicio limpo"
+	else
+		echo "$(date +%s)|fail|$reason|$r2" > "$RBFILE"
+		log "falha persistente: $r2"
+	fi
+	[ "$r2" = "ok" ] && cp -f /etc/config/wireless "$LASTGOOD"
+	return 0
+}
+
+# ---------------------------------------------------------------- status (JSON)
+do_status() {
+	local rb_ts="" rb_kind="" rb_reason="" first=1 line ts msg
+	if [ -f "$RBFILE" ]; then
+		IFS='|' read -r rb_ts rb_kind rb_reason _rest < "$RBFILE"
+	fi
+	printf '{"rollback_ts":"%s","rollback_kind":"%s","rollback_reason":"%s","fixes":[' \
+		"$(json_esc "$rb_ts")" "$(json_esc "$rb_kind")" "$(json_esc "$rb_reason")"
+	if [ -f "$FIXLOG" ]; then
+		tail -n 8 "$FIXLOG" | while IFS= read -r line; do
+			[ -n "$line" ] || continue
+			ts=${line%%|*}; msg=${line#*|}
+			[ "$first" = "1" ] || printf ','
+			first=0
+			printf '{"ts":"%s","msg":"%s"}' "$(json_esc "$ts")" "$(json_esc "$msg")"
+		done
+	fi
+	printf ']}'
+}
+
+case "$1" in
+	fix) do_fix ;;
+	health) do_health ;;
+	verify) do_verify ;;
+	status) do_status ;;
+	ack) rm -f "$RBFILE" "$FIXLOG" ;;
+	*) echo "uso: $0 {fix|verify|health|status|ack}"; exit 1 ;;
+esac
+exit 0

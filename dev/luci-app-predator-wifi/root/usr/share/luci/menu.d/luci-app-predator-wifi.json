@@ -1,0 +1,13 @@
+{
+	"admin/network/predator_wifi": {
+		"title": "Predator Wi-Fi 7",
+		"action": {
+			"type": "view",
+			"path": "predator_wifi"
+		},
+		"depends": {
+			"acl": [ "luci-app-predator-wifi" ]
+		},
+		"order": 15
+	}
+}

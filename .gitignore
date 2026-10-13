@@ -12,6 +12,7 @@ node_modules_mac/
 node_modules_win/
 __pycache__/
 *.pyc
+*.bak*
 
 # Backups Privados e Pessoais (Protegidos)
 Meus_Backups_Pessoais/

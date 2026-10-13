@@ -33,8 +33,11 @@ get_radios_json() {
 	echo "$st0" | grep -qE '^secondary_channel=[1-]' && real_w0="40"
 	local real_p0=$(iw dev ath0 info 2>/dev/null | grep txpower | awk '{print $2}')
 	[ -z "$real_p0" ] || [ "$real_p0" = "0.00" ] || [ "$(echo $real_p0 | cut -d. -f1)" -gt 30 ] 2>/dev/null && real_p0="${def_p0}.00"
-	local t0=$(thermaltool -i wifi0 -get -g 2>/dev/null | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo 0)
-	[ -n "$t0" ] && [ "$t0" -gt 0 ] 2>/dev/null && [ "$t0" -lt 125 ] 2>/dev/null || t0=0
+	local th0=$(thermaltool -i wifi0 -get -g 2>/dev/null)
+	local t0=$(echo "$th0" | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo "")
+	local lvl0=$(echo "$th0" | grep 'current level' | awk -F'current level: ' '{print $2}' | awk '{print $1}' || echo "0")
+	[ -n "$t0" ] && [ "$t0" -gt 0 ] 2>/dev/null && [ "$t0" -lt 125 ] 2>/dev/null || t0=""
+	[ -n "$lvl0" ] 2>/dev/null || lvl0="0"
 
 	local c1=$(uci -q get wireless.wifi1.channel || echo "auto")
 	local h1=$(uci -q get wireless.wifi1.htmode || echo "HT160")
@@ -65,8 +68,11 @@ get_radios_json() {
 	fi
 	local real_p1=$(iw dev ath1 info 2>/dev/null | grep txpower | awk '{print $2}')
 	[ -z "$real_p1" ] || [ "$real_p1" = "0.00" ] || [ "$(echo $real_p1 | cut -d. -f1)" -gt 30 ] 2>/dev/null && real_p1="${def_p1}.00"
-	local t1=$(thermaltool -i wifi1 -get -g 2>/dev/null | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo 0)
-	[ -n "$t1" ] && [ "$t1" -gt 0 ] 2>/dev/null && [ "$t1" -lt 125 ] 2>/dev/null || t1=0
+	local th1=$(thermaltool -i wifi1 -get -g 2>/dev/null)
+	local t1=$(echo "$th1" | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo "")
+	local lvl1=$(echo "$th1" | grep 'current level' | awk -F'current level: ' '{print $2}' | awk '{print $1}' || echo "0")
+	[ -n "$t1" ] && [ "$t1" -gt 0 ] 2>/dev/null && [ "$t1" -lt 125 ] 2>/dev/null || t1=""
+	[ -n "$lvl1" ] 2>/dev/null || lvl1="0"
 
 	local c2=$(uci -q get wireless.wifi2.channel || echo "37")
 	local h2=$(uci -q get wireless.wifi2.htmode || echo "HT320")
@@ -83,8 +89,11 @@ get_radios_json() {
 	[ "$h2" = "HT80" ] && real_w2="80"
 	local real_p2=$(iw dev ath2 info 2>/dev/null | grep txpower | awk '{print $2}')
 	[ -z "$real_p2" ] || [ "$real_p2" = "0.00" ] || [ "$(echo $real_p2 | cut -d. -f1)" -gt 30 ] 2>/dev/null && real_p2="${def_p2}.00"
-	local t2=$(thermaltool -i wifi2 -get -g 2>/dev/null | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo 0)
-	[ -n "$t2" ] && [ "$t2" -gt 0 ] 2>/dev/null && [ "$t2" -lt 125 ] 2>/dev/null || t2=0
+	local th2=$(thermaltool -i wifi2 -get -g 2>/dev/null)
+	local t2=$(echo "$th2" | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo "")
+	local lvl2=$(echo "$th2" | grep 'current level' | awk -F'current level: ' '{print $2}' | awk '{print $1}' || echo "0")
+	[ -n "$t2" ] && [ "$t2" -gt 0 ] 2>/dev/null && [ "$t2" -lt 125 ] 2>/dev/null || t2=""
+	[ -n "$lvl2" ] 2>/dev/null || lvl2="0"
 
 	local bdf_name=$(ls -l /lib/firmware/qcn9224/bdwlan.b1015 2>/dev/null | awk -F'/' '{print $NF}')
 
@@ -98,9 +107,9 @@ get_radios_json() {
 		fi
 	done
 
-	printf '{"wifi0":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s"},' "$c0" "$h0" "$p0" "$d0" "$s0" "${real_ch0:-$c0}" "${real_w0:-40}" "$real_p0" "$t0"
-	printf '"wifi1":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s"},' "$c1" "$h1" "$p1" "$d1" "$s1" "${real_ch1:-$c1}" "${real_w1:-160}" "$real_p1" "$t1"
-	printf '"wifi2":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","bdf":"%s"},' "$c2" "$h2" "$p2" "$d2" "$s2" "${real_ch2:-$c2}" "${real_w2:-320}" "$real_p2" "$t2" "$bdf_name"
+	printf '{"wifi0":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","level":"%s"},' "$c0" "$h0" "$p0" "$d0" "$s0" "${real_ch0:-$c0}" "${real_w0:-40}" "$real_p0" "$t0" "$lvl0"
+	printf '"wifi1":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","level":"%s"},' "$c1" "$h1" "$p1" "$d1" "$s1" "${real_ch1:-$c1}" "${real_w1:-160}" "$real_p1" "$t1" "$lvl1"
+	printf '"wifi2":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","level":"%s","bdf":"%s"},' "$c2" "$h2" "$p2" "$d2" "$s2" "${real_ch2:-$c2}" "${real_w2:-320}" "$real_p2" "$t2" "$lvl2" "$bdf_name"
 	printf '"lock_status":"%s"}' "$lock_status"
 }
 
@@ -556,7 +565,8 @@ do_set_radio() {
 		if [ "$TX" = "auto" ] || [ -z "$TX" ]; then
 			[ -n "$VAP" ] && iw dev "$VAP" set txpower auto 2>/dev/null || true
 		elif [ -n "$VAP" ]; then
-			iw dev "$VAP" set txpower fixed "$TX" 2>/dev/null || true
+			local tx_mbm=$(( ${TX%%.*} * 100 ))
+			[ -n "$tx_mbm" ] && [ "$tx_mbm" -gt 0 ] 2>/dev/null && iw dev "$VAP" set txpower fixed "$tx_mbm" 2>/dev/null || iw dev "$VAP" set txpower fixed "$TX" 2>/dev/null || true
 		fi
 		[ -x /lib/wifi_hardware_tune.sh ] && /lib/wifi_hardware_tune.sh
 		/etc/init.d/predator_rf start 2>/dev/null
@@ -615,9 +625,9 @@ do_set_all_radios() {
 		sleep 1
 		/sbin/wifi up 2>/dev/null
 		sleep 3
-		[ "$P0" = "auto" ] || [ -z "$P0" ] && iw dev ath0 set txpower auto 2>/dev/null || iw dev ath0 set txpower fixed "$P0" 2>/dev/null || true
-		[ "$P1" = "auto" ] || [ -z "$P1" ] && iw dev ath1 set txpower auto 2>/dev/null || iw dev ath1 set txpower fixed "$P1" 2>/dev/null || true
-		[ "$P2" = "auto" ] || [ -z "$P2" ] && iw dev ath2 set txpower auto 2>/dev/null || iw dev ath2 set txpower fixed "$P2" 2>/dev/null || true
+		[ "$P0" = "auto" ] || [ -z "$P0" ] && iw dev ath0 set txpower auto 2>/dev/null || { local p0_m=$(( ${P0%%.*} * 100 )); iw dev ath0 set txpower fixed "$p0_m" 2>/dev/null || iw dev ath0 set txpower fixed "$P0" 2>/dev/null || true; }
+		[ "$P1" = "auto" ] || [ -z "$P1" ] && iw dev ath1 set txpower auto 2>/dev/null || { local p1_m=$(( ${P1%%.*} * 100 )); iw dev ath1 set txpower fixed "$p1_m" 2>/dev/null || iw dev ath1 set txpower fixed "$P1" 2>/dev/null || true; }
+		[ "$P2" = "auto" ] || [ -z "$P2" ] && iw dev ath2 set txpower auto 2>/dev/null || { local p2_m=$(( ${P2%%.*} * 100 )); iw dev ath2 set txpower fixed "$p2_m" 2>/dev/null || iw dev ath2 set txpower fixed "$P2" 2>/dev/null || true; }
 		[ -x /lib/wifi_hardware_tune.sh ] && /lib/wifi_hardware_tune.sh
 		/etc/init.d/predator_rf start 2>/dev/null
 		killall -9 lock 2>/dev/null
@@ -721,6 +731,8 @@ do_add_vif() {
 	B5G=$(echo "$input" | jsonfilter -e '@.band_5g')
 	B6G=$(echo "$input" | jsonfilter -e '@.band_6g')
 	GUEST=$(echo "$input" | jsonfilter -e '@.is_guest')
+	IOT=$(echo "$input" | jsonfilter -e '@.is_iot')
+	ZONE=$(echo "$input" | jsonfilter -e '@.zone')
 	IS_MLD=$(echo "$input" | jsonfilter -e '@.is_mld')
 
 	[ -z "$SSID" ] && { echo '{"success":false,"error":"ssid_empty"}'; exit 0; }
@@ -740,14 +752,17 @@ do_add_vif() {
 
 	net_zone="lan"
 	isolate_val="0"
-	if [ "$GUEST" = "true" ] || [ "$GUEST" = "1" ]; then
+	if [ "$ZONE" = "iot" ] || [ "$IOT" = "true" ] || [ "$IOT" = "1" ]; then
+		net_zone="iot"
+		isolate_val="1"
+	elif [ "$ZONE" = "guest" ] || [ "$GUEST" = "true" ] || [ "$GUEST" = "1" ]; then
 		net_zone="guest"
 		isolate_val="1"
 	fi
 
 	# VAPs adicionais (redes secundarias) operam com maxima estabilidade
-	# em modo multi-banda padrao, pois o silicio Qualcomm IPQ5332 nao suporta
-	# MBSSID concorrente com MLO nas bandas baixas (mlo_mbssid disabled).
+	# em modo multi-banda padrao (a versao atual do driver QCA SPF-12 opera com
+	# mlo_mbssid desabilitado por perfil de software, e o daemon predator administra mld0 na rede principal).
 	ts=$(date +%s)
 	if [ "$B2G" = "true" ] || [ "$B2G" = "1" ]; then
 		sid="vif_2g_${ts}"

@@ -49,7 +49,7 @@ var callEditVif = rpc.declare({
 var callAddVif = rpc.declare({
 	object: 'predator',
 	method: 'add_vif',
-	params: ['ssid', 'key', 'encryption', 'band_2g', 'band_5g', 'band_6g', 'is_guest', 'is_mld'],
+	params: ['ssid', 'key', 'encryption', 'band_2g', 'band_5g', 'band_6g', 'is_guest', 'is_mld', 'zone'],
 	expect: { success: false }
 });
 
@@ -1052,6 +1052,12 @@ return view.extend({
 			}
 		});
 
+		var zoneSelect = E('select', { 'class': 'cbi-input-select', 'style': 'width:100%;' }, [
+			E('option', { 'value': 'lan' }, '🏠 Rede Principal (LAN - Acesso Total à Rede Local e Internet)'),
+			E('option', { 'value': 'guest' }, '👥 Rede de Visitantes (Guest - Isolada na br-guest / Sem Acesso à LAN)'),
+			E('option', { 'value': 'iot' }, '🤖 Rede de Automação IoT (IoT - Isolada na br-iot / 2.4G Domótica)')
+		]);
+
 		var content = E('div', {}, [
 			E('p', { 'style': 'font-size:14px; margin-bottom:15px; color:#555;' }, t('app_descr')),
 			E('div', { 'style': 'margin-bottom:12px;' }, [
@@ -1079,12 +1085,9 @@ return view.extend({
 				E('div', { 'style': 'font-size:12px; color:#004085; line-height:1.4;' }, t('mld_group_help'))
 			]),
 			E('div', { 'style': 'margin-bottom:12px;' }, [
-				E('label', { 'style': 'font-weight:normal; cursor:pointer;' }, [
-					guestBox,
-					' ',
-					E('strong', {}, t('guest_label')),
-					' ' + t('guest_desc')
-				])
+				E('label', { 'style': 'display:block; font-weight:bold; margin-bottom:4px;' }, 'Destino / Isolamento de Rede:'),
+				zoneSelect,
+				E('div', { 'style': 'font-size:11px; color:#666; margin-top:3px;' }, 'Selecione a bridge de destino da rede. Visitantes e IoT são automaticamente isoladas das máquinas locais da LAN.')
 			])
 		]);
 
@@ -1129,7 +1132,9 @@ return view.extend({
 								return;
 							}
 						}
-						callAddVif(ssid, key, enc, b2.checked, b5.checked, b6.checked, guestBox.checked, false).then(function(res) {
+						var isGuest = (zoneSelect.value === 'guest');
+						var zone = zoneSelect.value;
+						callAddVif(ssid, key, enc, b2.checked, b5.checked, b6.checked, isGuest, false, zone).then(function(res) {
 							if (res && res.error) {
 								ui.addNotification(null, E('p', 'Erro: ' + res.error), 'danger');
 								return;
@@ -1349,50 +1354,67 @@ return view.extend({
 		var bdfName = r2.bdf || 'bdwlan_default.b1015';
 		var isBdfUnlocked = (bdfName.indexOf('default') !== -1);
 
+		var t0_val = (r0.temp && !isNaN(parseInt(r0.temp)) && parseInt(r0.temp) > 0) ? parseInt(r0.temp) : null;
+		var t1_val = (r1.temp && !isNaN(parseInt(r1.temp)) && parseInt(r1.temp) > 0) ? parseInt(r1.temp) : null;
+		var t2_val = (r2.temp && !isNaN(parseInt(r2.temp)) && parseInt(r2.temp) > 0) ? parseInt(r2.temp) : null;
+
+		var lvl0 = (r0.level !== undefined && r0.level !== null && r0.level !== '') ? parseInt(r0.level) : 0;
+		var lvl1 = (r1.level !== undefined && r1.level !== null && r1.level !== '') ? parseInt(r1.level) : 0;
+		var lvl2 = (r2.level !== undefined && r2.level !== null && r2.level !== '') ? parseInt(r2.level) : 0;
+
 		return {
 			wifi0: {
 				band: '2.4 GHz',
 				vap: 'ath0',
-				chip: 'IPQ5332',
+				chip: 'IPQ5332 (AHB)',
 				ch: (r0.real_channel || r0.channel || '1'),
 				bw: (r0.real_width || '20') + 'M',
 				cond: p0_cond.toFixed(1) + ' dBm (' + fmt(mw(p0_cond)) + ' mW)',
 				mimo: p0_mimo.toFixed(1) + ' dBm (' + fmt(mw(p0_mimo)) + ' mW)',
 				eirp: p0_eirp.toFixed(1) + ' dBm (' + fmt(mw(p0_eirp)) + ' mW)',
-				temp: parseInt(r0.temp) || 90,
-				safeMax: 110,
-				rfCutoff: 125,
-				rebootMax: 125,
+				temp: t0_val,
+				level: lvl0,
+				level0Max: 110,
+				level1Max: 115,
+				level2Max: 120,
+				level3Max: 125,
+				critTrip: 125,
 				color: '#d9534f'
 			},
 			wifi1: {
 				band: '5.0 GHz',
 				vap: 'ath1',
-				chip: 'IPQ5332',
+				chip: 'QCN9224 DualMAC (PCIe)',
 				ch: (r1.real_channel || r1.channel || '36'),
 				bw: (r1.real_width || '160') + 'M',
 				cond: p1_cond.toFixed(1) + ' dBm (' + fmt(mw(p1_cond)) + ' mW)',
 				mimo: p1_mimo.toFixed(1) + ' dBm (' + fmt(mw(p1_mimo)) + ' mW)',
 				eirp: p1_eirp.toFixed(1) + ' dBm (' + fmt(mw(p1_eirp)) + ' mW)',
-				temp: parseInt(r1.temp) || 97,
-				safeMax: 105,
-				rfCutoff: 120,
-				rebootMax: 125,
+				temp: t1_val,
+				level: lvl1,
+				level0Max: 105,
+				level1Max: 110,
+				level2Max: 115,
+				level3Max: 120,
+				critTrip: 125,
 				color: '#0275d8'
 			},
 			wifi2: {
 				band: '6.0 GHz (Wi-Fi 7)',
 				vap: 'ath2',
-				chip: 'QCN9224',
+				chip: 'QCN9224 DualMAC (PCIe)',
 				ch: (r2.real_channel || r2.channel || '37'),
 				bw: (r2.real_width || '320') + 'M',
 				cond: p2_cond.toFixed(1) + ' dBm (' + fmt(mw(p2_cond)) + ' mW)' + (p2_cond >= 18 ? ' 🚀 DESBLOQUEADO' : ''),
 				mimo: p2_mimo.toFixed(1) + ' dBm (' + fmt(mw(p2_mimo)) + ' mW)',
 				eirp: p2_eirp.toFixed(1) + ' dBm (' + fmt(mw(p2_eirp)) + ' mW' + (p2_eirp >= 29 ? ' / ~1 Watt!' : '') + ')',
-				temp: parseInt(r2.temp) || 97,
-				safeMax: 105,
-				rfCutoff: 120,
-				rebootMax: 125,
+				temp: t2_val,
+				level: lvl2,
+				level0Max: 105,
+				level1Max: 110,
+				level2Max: 115,
+				level3Max: 120,
+				critTrip: 125,
 				bdfName: bdfName,
 				isBdfUnlocked: isBdfUnlocked,
 				color: '#5cb85c'
@@ -1401,27 +1423,42 @@ return view.extend({
 	},
 
 	buildTempNode: function(r) {
+		if (r.temp === null || r.temp === undefined || isNaN(r.temp)) {
+			return E('div', { 'style': 'min-width:215px;' }, [
+				E('div', { 'style': 'display:flex; align-items:center; gap:8px;' }, [
+					E('span', { 'style': 'font-size:14px; font-weight:bold; color:#7f8c8d;' }, 'Indisponível'),
+					E('span', { 'style': 'font-size:10px; background:#e9ecef; color:#495057; padding:1px 7px; border-radius:10px; font-weight:bold;' }, '⚪ Sem leitura')
+				]),
+				E('div', { 'style': 'font-size:11px; color:#666; margin-top:4px;' }, 'Aguardando telemetria thermaltool')
+			]);
+		}
+
 		var num = r.temp;
 		var color = '#27ae60';
-		var statusText = '🟢 Normal';
+		var statusText = '🟢 Normal (Nível 0 / 0% corte)';
 		var badgeBg = '#d4edda';
 		var badgeColor = '#155724';
 
-		if (num >= r.rfCutoff) {
+		if (r.level >= 3 || num >= r.level3Max) {
 			color = '#c0392b';
-			statusText = '🛑 Corte RF Iminente';
+			statusText = '🛑 Corte RF (Nível 3 / 100% corte)';
 			badgeBg = '#f8d7da';
 			badgeColor = '#721c24';
-		} else if (num >= r.safeMax) {
-			color = '#e67e22';
-			statusText = '⚠️ Throttling Ativo';
-			badgeBg = '#fef9e7';
-			badgeColor = '#b7950b';
-		} else if (num >= (r.safeMax - 4)) {
-			color = '#f39c12';
-			statusText = '🟡 Atenção / Perto do Teto';
+		} else if (r.level === 2) {
+			color = '#d35400';
+			statusText = '⚠️ Throttling Severo (Nível 2 / 90% corte)';
 			badgeBg = '#fff3cd';
 			badgeColor = '#856404';
+		} else if (r.level === 1) {
+			color = '#e67e22';
+			statusText = '🟡 Throttling (Nível 1 / 50% corte)';
+			badgeBg = '#fef9e7';
+			badgeColor = '#b7950b';
+		} else if (num >= (r.level0Max - 4)) {
+			color = '#f39c12';
+			statusText = '🟢 Normal (Perto do teto Nível 0)';
+			badgeBg = '#e8f8f0';
+			badgeColor = '#1e8449';
 		}
 
 		return E('div', { 'style': 'min-width:215px;' }, [
@@ -1430,9 +1467,9 @@ return view.extend({
 				E('span', { 'style': 'font-size:10px; background:' + badgeBg + '; color:' + badgeColor + '; padding:1px 7px; border-radius:10px; font-weight:bold;' }, statusText)
 			]),
 			E('div', { 'style': 'font-size:11px; color:#555; margin-top:4px; line-height:1.45;' }, [
-				E('div', {}, [ '• Máx Seguro (s/ corte): ', E('strong', { 'style': 'color:#27ae60;' }, r.safeMax + '°C') ]),
-				E('div', {}, [ '• Corte de RF (FEM): ', E('strong', { 'style': 'color:#d35400;' }, r.rfCutoff + '°C') ]),
-				E('div', {}, [ '• Reboot Emergência: ', E('strong', { 'style': 'color:#c0392b;' }, r.rebootMax + '°C') ])
+				E('div', {}, [ '• Nível 0 (0% corte): ', E('strong', { 'style': 'color:#27ae60;' }, 'até ' + r.level0Max + '°C') ]),
+				E('div', {}, [ '• Nível 3 (Duty cycle 100%): ', E('strong', { 'style': 'color:#d35400;' }, r.level3Max + '°C') ]),
+				E('div', {}, [ '• Trip Crítico Linux (Kernel): ', E('strong', { 'style': 'color:#c0392b;' }, r.critTrip + '°C') ])
 			])
 		]);
 	},
@@ -1478,27 +1515,27 @@ return view.extend({
 		var thermalInfoBox = E('div', {
 			'style': 'margin-top:14px; padding:12px 16px; background:#fafbfc; border:1px solid #e1e4e8; border-left:4px solid #e67e22; border-radius:4px; font-size:12px; color:#333;'
 		}, [
-			E('div', { 'style': 'font-weight:bold; margin-bottom:6px; color:#d35400; font-size:13px;' }, '🌡️ Gestão Térmica de Hardware Qualcomm (Limites Operacionais do Silício & Proteção do Roteador):'),
+			E('div', { 'style': 'font-weight:bold; margin-bottom:6px; color:#d35400; font-size:13px;' }, '🌡️ Gestão Térmica de Hardware Qualcomm (Política de Duty Cycle do Driver & Trip Crítico):'),
 			E('div', { 'style': 'display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px; line-height:1.45;' }, [
 				E('div', { 'style': 'background:#fff; padding:8px 10px; border-radius:4px; border:1px solid #eee;' }, [
-					E('strong', { 'style': 'color:#27ae60;' }, '1. Máxima Segura Contínua: '),
-					E('span', { 'style': 'font-weight:bold;' }, '105°C (5G/6G) / 110°C (2.4G)'),
-					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Teto normal de junção Tj. Opera a 100% de rendimento físico sem qualquer corte de potência ou perda de pacotes.')
+					E('strong', { 'style': 'color:#27ae60;' }, '1. Nível 0 (Normal / 100% Rendimento): '),
+					E('span', { 'style': 'font-weight:bold;' }, 'até 105°C (5G/6G) / 110°C (2.4G)'),
+					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Teto operacional do Nível 0. O rádio opera em 100% do duty cycle sem qualquer redução ou penalidade.')
 				]),
 				E('div', { 'style': 'background:#fff; padding:8px 10px; border-radius:4px; border:1px solid #eee;' }, [
-					E('strong', { 'style': 'color:#e67e22;' }, '2. Throttling Protetivo (Level 1/2): '),
-					E('span', { 'style': 'font-weight:bold;' }, '105°C ~ 115°C'),
-					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'O driver Qualcomm aciona redução escalonada de duty cycle RF (50%) para dissipar calor sem derrubar clientes Wi-Fi conectados.')
+					E('strong', { 'style': 'color:#e67e22;' }, '2. Nível 1 & 2 (Mitigação Duty Cycle): '),
+					E('span', { 'style': 'font-weight:bold;' }, 'Nível 1 (50%) / Nível 2 (90%)'),
+					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Redução escalonada de duty cycle (dcoffpercent) gerenciada pelo driver Qualcomm para arrefecimento sem derrubar clientes.')
 				]),
 				E('div', { 'style': 'background:#fff; padding:8px 10px; border-radius:4px; border:1px solid #eee;' }, [
-					E('strong', { 'style': 'color:#d35400;' }, '3. Corte Total de Rádio RF (Level 3): '),
+					E('strong', { 'style': 'color:#d35400;' }, '3. Nível 3 (Mitigação Máxima RF): '),
 					E('span', { 'style': 'font-weight:bold;' }, '120°C (5G/6G) / 125°C (2.4G)'),
-					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Desliga 100% a transmissão de alta potência do rádio para proteger os amplificadores de potência (FEMs Skyworks) de queimar.')
+					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Duty cycle 100% desativado (dcoffpercent=100) temporariamente para proteger o silício e FEMs.')
 				]),
 				E('div', { 'style': 'background:#fff; padding:8px 10px; border-radius:4px; border:1px solid #eee;' }, [
-					E('strong', { 'style': 'color:#c0392b;' }, '4. Reinicialização Crítica (Trip Point): '),
+					E('strong', { 'style': 'color:#c0392b;' }, '4. Trip Point Crítico do Kernel Linux: '),
 					E('span', { 'style': 'font-weight:bold;' }, '125°C'),
-					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Sensor crítico de emergência no Kernel SoC: o roteador reinicia de emergência para preservar a integridade da placa-mãe.')
+					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Limite crítico de hardware do subsistema tsens do Linux: reinicialização preventiva de emergência do SoC.')
 				])
 			])
 		]);
@@ -1520,10 +1557,10 @@ return view.extend({
 							E('th', { 'style': 'padding:8px 12px;' }, 'Banda / Chip'),
 							E('th', { 'style': 'padding:8px 12px;' }, 'VAP'),
 							E('th', { 'style': 'padding:8px 12px;' }, 'Canal / Largura Real'),
-							E('th', { 'style': 'padding:8px 12px;' }, 'TxPower Conduzido (Antena)'),
-							E('th', { 'style': 'padding:8px 12px;' }, 'MIMO 2x2 (Total)'),
-							E('th', { 'style': 'padding:8px 12px;' }, 'EIRP Real no Ar (Antenas+TxBF)'),
-							E('th', { 'style': 'padding:8px 12px;' }, 'Temperatura & Limites do Silício')
+							E('th', { 'style': 'padding:8px 12px;' }, 'TxPower Conduzido [iw dev]'),
+							E('th', { 'style': 'padding:8px 12px;' }, 'MIMO 2x2 (Est. Teórica +3 dB)'),
+							E('th', { 'style': 'padding:8px 12px;' }, 'EIRP Estimado (Antena + TxBF)'),
+							E('th', { 'style': 'padding:8px 12px;' }, 'Temperatura & Mitigação RF')
 						])
 					]),
 					E('tbody', {}, tRows)
@@ -1562,11 +1599,11 @@ return view.extend({
 				id: 'qam4096',
 				key: 'qam4096',
 				icon: '⚡',
-				name: 'Modulação 4096-QAM (Wi-Fi 7 Puro)',
+				name: 'Geração Wi-Fi 7 (4096-QAM / 320 MHz)',
 				speed: '🔄 Recarrega Rádio 6G (~3s)',
-				onBenefit: 'Velocidade pico de até 5.764 Mbps (MCS 12-13)',
-				offBenefit: 'Limitado a Wi-Fi 6 1024-QAM (Até 4.800 Mbps)',
-				desc: 'Habilita modulação ultra densa de 12 bits por símbolo (11bea). Quando desligado, recua para Wi-Fi 6 (11ax) para aparelhos instáveis ou distâncias extremas.'
+				onBenefit: 'Wi-Fi 7 Pleno (11bea / 320 MHz / MCS 12-13 até 5.764 Mbps)',
+				offBenefit: 'Modo Wi-Fi 6E Legado (11axa / HT160 até 2.402 Mbps)',
+				desc: 'Alterna entre Wi-Fi 7 pleno (11bea com 320 MHz e 4096-QAM) e Wi-Fi 6E legado (11axa com 160 MHz e 1024-QAM). Desligue apenas se possuir clientes legados com incompatibilidade de handshake EHT.'
 			},
 			{
 				id: 'rnr_6g',
@@ -2053,8 +2090,9 @@ return view.extend({
 			{ val: '5', label: 'Canal 5 (2432 MHz)' }, { val: '6', label: 'Canal 6 (2437 MHz)' },
 			{ val: '7', label: 'Canal 7 (2442 MHz)' }, { val: '8', label: 'Canal 8 (2447 MHz)' },
 			{ val: '9', label: 'Canal 9 (2452 MHz)' }, { val: '10', label: 'Canal 10 (2457 MHz)' },
-			{ val: '11', label: 'Canal 11 (2462 MHz)' }, { val: '12', label: 'Canal 12 (2467 MHz)' },
-			{ val: '13', label: 'Canal 13 (2472 MHz)' }
+			{ val: '11', label: 'Canal 11 (2462 MHz)' },
+			{ val: '12', label: 'Canal 12 (2467 MHz - Não transmitido no perfil US)' },
+			{ val: '13', label: 'Canal 13 (2472 MHz - Não transmitido no perfil US)' }
 		];
 
 		var rec5 = [
@@ -2085,13 +2123,17 @@ return view.extend({
 			{ val: 'auto', label: autoPscLabel },
 			{ val: '37', label: 'Canal 37 PSC (6135 MHz)' }, { val: '53', label: 'Canal 53 PSC (6215 MHz)' },
 			{ val: '69', label: 'Canal 69 PSC (6295 MHz)' }, { val: '85', label: 'Canal 85 PSC (6375 MHz)' },
-			{ val: '101', label: 'Canal 101 PSC (6455 MHz)' }, { val: '117', label: 'Canal 117 PSC (6535 MHz)' }
+			{ val: '101', label: 'Canal 101 PSC (6455 MHz)' }, { val: '117', label: 'Canal 117 PSC (6535 MHz)' },
+			{ val: '133', label: 'Canal 133 PSC (6615 MHz)' }, { val: '149', label: 'Canal 149 PSC (6695 MHz)' },
+			{ val: '165', label: 'Canal 165 PSC (6775 MHz)' }, { val: '181', label: 'Canal 181 PSC (6855 MHz)' },
+			{ val: '197', label: 'Canal 197 PSC (6935 MHz)' }, { val: '213', label: 'Canal 213 PSC (7015 MHz)' },
+			{ val: '229', label: 'Canal 229 PSC (7095 MHz)' }
 		];
 		var all6 = [
 			{ val: 'auto', label: autoPscLabel },
-			{ val: '1', label: 'Canal 1 (5955 MHz)' }, { val: '5', label: 'Canal 5 (5975 MHz)' },
+			{ val: '1', label: 'Canal 1 (5955 MHz)' }, { val: '5', label: 'Canal 5 PSC (5975 MHz)' },
 			{ val: '9', label: 'Canal 9 (5995 MHz)' }, { val: '13', label: 'Canal 13 (6015 MHz)' },
-			{ val: '17', label: 'Canal 17 (6035 MHz)' }, { val: '21', label: 'Canal 21 (6055 MHz)' },
+			{ val: '17', label: 'Canal 17 (6035 MHz)' }, { val: '21', label: 'Canal 21 PSC (6055 MHz)' },
 			{ val: '25', label: 'Canal 25 (6075 MHz)' }, { val: '29', label: 'Canal 29 (6095 MHz)' },
 			{ val: '33', label: 'Canal 33 (6115 MHz)' }, { val: '37', label: 'Canal 37 PSC (6135 MHz)' },
 			{ val: '41', label: 'Canal 41 (6155 MHz)' }, { val: '45', label: 'Canal 45 (6175 MHz)' },
@@ -2104,7 +2146,21 @@ return view.extend({
 			{ val: '97', label: 'Canal 97 (6435 MHz)' }, { val: '101', label: 'Canal 101 PSC (6455 MHz)' },
 			{ val: '105', label: 'Canal 105 (6475 MHz)' }, { val: '109', label: 'Canal 109 (6495 MHz)' },
 			{ val: '113', label: 'Canal 113 (6515 MHz)' }, { val: '117', label: 'Canal 117 PSC (6535 MHz)' },
-			{ val: '121', label: 'Canal 121 (6555 MHz)' }, { val: '125', label: 'Canal 125 (6575 MHz)' }
+			{ val: '121', label: 'Canal 121 (6555 MHz)' }, { val: '125', label: 'Canal 125 (6575 MHz)' },
+			{ val: '129', label: 'Canal 129 (6595 MHz)' }, { val: '133', label: 'Canal 133 PSC (6615 MHz)' },
+			{ val: '137', label: 'Canal 137 (6635 MHz)' }, { val: '141', label: 'Canal 141 (6655 MHz)' },
+			{ val: '145', label: 'Canal 145 (6675 MHz)' }, { val: '149', label: 'Canal 149 PSC (6695 MHz)' },
+			{ val: '153', label: 'Canal 153 (6715 MHz)' }, { val: '157', label: 'Canal 157 (6735 MHz)' },
+			{ val: '161', label: 'Canal 161 (6755 MHz)' }, { val: '165', label: 'Canal 165 PSC (6775 MHz)' },
+			{ val: '169', label: 'Canal 169 (6795 MHz)' }, { val: '173', label: 'Canal 173 (6815 MHz)' },
+			{ val: '177', label: 'Canal 177 (6835 MHz)' }, { val: '181', label: 'Canal 181 PSC (6855 MHz)' },
+			{ val: '185', label: 'Canal 185 (6875 MHz)' }, { val: '189', label: 'Canal 189 (6895 MHz)' },
+			{ val: '193', label: 'Canal 193 (6915 MHz)' }, { val: '197', label: 'Canal 197 PSC (6935 MHz)' },
+			{ val: '201', label: 'Canal 201 (6955 MHz)' }, { val: '205', label: 'Canal 205 (6975 MHz)' },
+			{ val: '209', label: 'Canal 209 (6995 MHz)' }, { val: '213', label: 'Canal 213 PSC (7015 MHz)' },
+			{ val: '217', label: 'Canal 217 (7035 MHz)' }, { val: '221', label: 'Canal 221 (7055 MHz)' },
+			{ val: '225', label: 'Canal 225 (7075 MHz)' }, { val: '229', label: 'Canal 229 PSC (7095 MHz)' },
+			{ val: '233', label: 'Canal 233 (7115 MHz)' }
 		];
 
 		var card0 = this.renderRadioCard(

@@ -228,10 +228,12 @@ usleep 200000          # Para 200 milissegundos (0.2s)
   - **Causas Reais de Bloqueio/Congelamento no Waveform.com**:
     1. **Prefixo IPv6 Morto (`deprecated`) na `br-lan`**: Ao reiniciar a WAN PPPoE, a operadora pode delegar um novo prefixo IPv6 enquanto o kernel mantém o antigo como obsoleto. Como o Cloudflare (`challenges.cloudflare.com`) responde em IPv6, clientes nas bandas rápidas tentavam rotear pacotes pelo prefixo morto gerando timeout. Solução: limpar prefixos residuais via `ip -6 addr del <prefixo_morto> dev br-lan` e reiniciar o `odhcpd`.
     2. **Apple "Limitar Rastreamento de Endereço IP" (iCloud Private Relay)**: Ao conectar em SSIDs novos de 5 GHz ou 6 GHz, o iOS ativa por padrão a proteção de rastreamento de IP. Os proxies de saída da Apple sofrem bloqueio/desafio severo pelo Cloudflare Turnstile no Waveform.com. Solução no celular: nos Ajustes do Wi-Fi da rede conectada (ícone "i"), desligar "Limitar Rastreamento de Endereço IP".
-* **[AutoLearn - Arquitetura de Largura de Banda no MLO Turbo: 5 GHz em 80 MHz + 6 GHz em 320 MHz]**:
-  - **Limitação de Silício Qualcomm IPQ5332 (SoC vs PCIe DMA)**: No SoC IPQ5332, o rádio de 5 GHz é on-chip e o de 6 GHz é um chip discreto PCIe (QCN9224). Ao criar um grupo Multi-Link Device (MLD `mld0`), o driver `wifi_3_0.ko` realiza sincronização de tempo e buffers DMA entre o barramento interno e o PCIe.
-  - Se o 5 GHz for forçado em 160 MHz (`HT160`) com MLD ativo, o driver falha na alocação de peers (`MLO peer create failed`) e desliga o transmissor de rádio (`Tx-Power=off`, Bit Rate 0).
-  - **Configuração Homologada**: No perfil MLO Turbo, o rádio de 5 GHz opera estavelmente em **80 MHz** (`HT80` no Canal 36) transmitindo a 23 dBm (1.441 Gbps PHY), e o rádio de 6 GHz opera em **320 MHz** (`HT320` no Canal 37 PSC) a 20 dBm (5.764 Gbps PHY). Os clientes Wi-Fi 7 (ex: iPhone 16 Pro) agregam ambos simultaneamente via `MLO: Yes`, alcançando até 2.882 Mbps teóricos em 2x2 MIMO com failover de enlace contínuo e latência mínima. A banda 2.4 GHz permanece 100% independente em WPA2 puro para dispositivos IoT.
+* **[AutoLearn - Topologia Real dos Rádios no Silício (SoC AHB vs PCIe DualMAC QCN9224)]**:
+  - **Mapeamento Físico Comprovado via Sysfs**:
+    - `ath0 / phy1` (2.4 GHz): Conectado diretamente ao SoC IPQ5332 pelo barramento AHB (`/sys/devices/platform/soc/c000000.wifi`).
+    - `ath1 / phy2` (5 GHz) **E** `ath2 / phy3` (6 GHz): **Compartilham o MESMO endpoint PCIe externo (`0001:01:00.0`, PCI ID `17cb:1109`, família QCN9224/QCN6274 DualMAC, com `num_radios=2`)**.
+    - Ambos os rádios de alta frequência (5G e 6G) utilizam o firmware `amss_dualmac.bin`. Qualquer instabilidade ou crash com reinicialização de subsistema (SSR) no barramento PCIe derruba simultaneamente as bandas de 5 GHz e 6 GHz.
+  - **Limitação de Largura de Banda no MLO Turbo**: No perfil MLO Turbo, o rádio de 5 GHz opera estavelmente em **80 MHz** (`HT80` no Canal 36) e o de 6 GHz em **320 MHz** (`HT320` no Canal 37 PSC). A banda de 2.4 GHz permanece 100% independente em WPA2 puro para IoT.
 * **[AutoLearn - Compatibilidade Universal de IPv6 no iOS/Android (SLAAC `ra_management '1'` vs Stateful '2')]**:
   - **Problema**: O firmware OEM da Acer vinha com `option ra_management '2'` (Stateful DHCPv6) e `option ra 'hybrid'` com `option interface 'wan6'` (descasado da interface PPPoE dinâmica `wan_6`).
   - **Causa Raiz**: O iOS (iPhone/iPad) e o Android por especificação deliberada (RFC 4862) **NÃO implementam cliente DHCPv6 Stateful** (apenas SLAAC). Ao entrar em redes rápidas (5G/6G MLO) onde o iOS força o Happy Eyeballs para IPv6, a falta de SLAAC autônomo fazia o handshake TLS congelar, gerando timeout exibido no Safari como "Erro de Certificado SSL / Não foi possível estabelecer conexão segura" em sites como Speedtest e Waveform.
@@ -256,7 +258,29 @@ usleep 200000          # Para 200 milissegundos (0.2s)
     3. Criptografia híbrida inteligente: 2.4 GHz em WPA2 puro (`psk2+aes`) para IoT; 5.0 GHz em WPA2/WPA3 Misto (`sae-mixed`) para Wi-Fi 5/6; e 6.0 GHz em WPA3 puro (`sae`) em 320 MHz;
     4. Roaming 802.11k/v ativo para alternância transparente entre bandas;
     5. Injeção de `list dhcp_option '6,1.1.1.1,8.8.8.8'` no `/etc/config/dhcp` para entrega automática de DNS Cloudflare e Google aos clientes.
-
-
-
-
+* **[AutoLearn - Sintaxe Exata do Comando iw txpower no QSDK (Unidade Obrigatória em mBm)]**:
+  - **Causa Raiz**: O utilitário padrão `iw` do Linux Wireless (`iw dev <dev> set txpower fixed <val>`) opera estritamente em **mBm** (mili-dBm, onde 100 mBm = 1 dBm). O envio de comandos com valores puros em dBm (ex: `fixed 20`) é interpretado como 20 mBm (0.20 dBm); como 0.20 dBm está abaixo do piso mínimo de calibração do FEM, o driver descarta o comando e mantém a potência anterior inalterada.
+  - **Procedimento Homologado**: Todo comando `iw` disparado por scripts ou deamons (`rpcd/predator`, `predator_rf`) DEVE multiplicar o valor em dBm por 100 antes da execução:
+    - 20 dBm: `iw dev ath2 set txpower fixed 2000`
+    - 22 dBm: `iw dev ath0 set txpower fixed 2200`
+    - 23 dBm: `iw dev ath1 set txpower fixed 2300`
+    - 26 dBm: `iw dev ath1 set txpower fixed 2600` (U-NII-3 em 80 MHz)
+* **[AutoLearn - Termometria Real Qualcomm e Governança de Duty Cycle vs Falsos Alarmes]**:
+  - **Funcionamento Físico**: O SoC IPQ5332 e o rádio PCIe QCN9224 operam normalmente em temperaturas elevadas de junção (78–88 °C em idle ou carga moderada).
+  - **Política de Proteção**: O subsistema Qualcomm opera via mitigação por *Duty Cycle* (`dcoffpercent` configurável via `thermaltool -i wifiX -get -g`), e NÃO por desligamento abrupto de transistores:
+    - **Nível 0 (Normal / 100% Rendimento)**: até 105 °C (5G/6G) e 110 °C (2.4G) com 0% de corte.
+    - **Nível 1 (Mitigação Suave)**: 50% de redução de duty cycle (dcoff=50).
+    - **Nível 2 (Mitigação Moderada)**: 90% de redução de duty cycle (dcoff=90).
+    - **Nível 3 (Mitigação Máxima RF)**: 100% de tempo de repouso (dcoff=100) em 120 °C (5G/6G) e 125 °C (2.4G).
+    - **Trip Point Crítico do Kernel**: 125 °C no sensor tsens do SoC ativa reinicialização de segurança preventiva.
+  - **Leitura Homologada**: A verificação de throttling deve ser extraída exclusivamente do campo `current level` do comando `thermaltool -i wifiX -get -g`, sem recorrer a comparações sintéticas por constantes arbitrárias no frontend.
+* **[AutoLearn - Inviolabilidade dos Arquivos BDF de Calibração (bdwlan.b1015 e b16)]**:
+  - **Aviso Crítico de RF**: O Predator T7 utiliza tabelas de calibração RF exclusivas de sua placa e antenas (`bdwlan.b1015` para o chip PCIe e `bdwlan.b16` para o SoC).
+  - Roteadores concorrentes de mesma base (ex: Cudy WR11000) utilizam BDFs distintos (`bdwlan.b1019`).
+  - **PROIBIÇÃO ABSOLUTA**: JAMAIS sobrescrever `/lib/firmware/qcn9224/bdwlan.b1015` por arquivos BDF de outros produtos. A troca de BDF causa descasamento de impedância nos FEMs Skyworks, perda drástica de potência de recepção (RSSI), espúrios fora da máscara espectral e risco real de queima dos amplificadores.
+* **[AutoLearn - Avaliação de ABI dos Módulos do Cudy 2.5.34 vs Binários Userspace]**:
+  - **Módulos de Kernel (.ko)**: Embora os módulos do Cudy WR11000 firmware 2.5.34 sejam ELF32 ARMv7 e compartilhem o vermagic exato do T7 (`5.4.213 SMP preempt mod_unload ARMv7 p2v8`), eles chamam símbolos de kernel inexistentes na compilação da Acer (`__netdev_alloc_skb_fast` e `pcie_parf_read`). O carregamento via `insmod` falha por símbolos não resolvidos.
+  - **Binários de Espaço de Usuário (`hostapd` e `wpa_supplicant`)**: Possuem **100% de compatibilidade dinâmica (560 símbolos resolvidos)** com a `libc`/`libubox`/`libnl` do T7, constituindo o caminho seguro e homologado para atualização de rotinas MLO de userspace sem risco de instabilidade no kernel.
+* **[AutoLearn - Desmistificação de Bloqueios de Software vs Silício (mlo_mbssid)]**:
+  - A restrição documentada no log como `mlo_mbssid disabled in lower band radios` é um parâmetro de perfil de compilação da árvore QSDK SPF-12, e NÃO uma incapacidade física universal de silício do IPQ5332.
+  - O scaffolding original de `/lib/wifi/qcawificfg80211.sh` suporta até 10 MLDs (`mld0` a `mld9`). O limite de uma única rede MLO na Central decorre do escopo de gerência da aplicação `/usr/libexec/rpcd/predator`, que centraliza o controle exclusivamente no grupo `mld0`.

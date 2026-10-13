@@ -248,6 +248,14 @@ usleep 200000          # Para 200 milissegundos (0.2s)
       `iptables -I FORWARD 1 -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable`
       `ip6tables -I FORWARD 1 -p udp --dport 443 -j REJECT --reject-with icmp6-port-unreachable`
     - Com a rejeição explícita via ICMP em 0.1 ms, o Safari e o Chrome sabem instantaneamente que o HTTP/3 não está disponível e realizam fallback imediato para HTTP/2 sobre TCP (que é 100% clampado a 1452/1432 bytes), abrindo as páginas no iOS em menos de 50 ms sem qualquer erro de certificado.
+* **[AutoLearn - Padrão Ouro Definitivo: Rede Única Tri-Band (`single_ssid`) sem MLO no CFG Master]**:
+  - **Problema**: O perfil MLO Turbo (`mld0`) agrupando 5 GHz e 6 GHz causava 7.822 erros de transmissão (TX Errors) e travamento total de testes de velocidade (Speedtest) e Bufferbloat (Waveform) quando clientes Wi-Fi 5 (802.11ac) e Wi-Fi 6/6E (802.11ax, como o iPhone em modo `[HE][6GHZ]`) conectavam à rede, pois dispositivos pré-Wi-Fi 7 não suportam o protocolo MLO e a camada de tradução do driver Qualcomm descartava os quadros na ponte `mld0`.
+  - **Solução Homologada Definitiva**:
+    1. A **Rede Única Tri-Band (`single_ssid`)** foi adotada como o padrão definitivo absoluto no `cfg_restauracao_master_v2.cfg`;
+    2. A interface virtual `mld0` foi eliminada: os rádios `ath0` (2.4G), `ath1` (5G) e `ath2` (6G) conectam-se diretamente à ponte `br-lan`, eliminando 100% dos erros de TX;
+    3. Criptografia híbrida inteligente: 2.4 GHz em WPA2 puro (`psk2+aes`) para IoT; 5.0 GHz em WPA2/WPA3 Misto (`sae-mixed`) para Wi-Fi 5/6; e 6.0 GHz em WPA3 puro (`sae`) em 320 MHz;
+    4. Roaming 802.11k/v ativo para alternância transparente entre bandas;
+    5. Injeção de `list dhcp_option '6,1.1.1.1,8.8.8.8'` no `/etc/config/dhcp` para entrega automática de DNS Cloudflare e Google aos clientes.
 
 
 

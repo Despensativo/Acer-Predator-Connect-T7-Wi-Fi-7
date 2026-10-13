@@ -2310,15 +2310,15 @@ hostapd_setup_vif() {
 
 	[ "$channel" = auto ] && channel=
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
-	rm -f /var/run/hostapd-$ifname.conf
-	cat > /var/run/hostapd-$ifname.conf <<EOF
+	rm -f /var/run/hostapd-$ifname$mld_link_id.conf
+	cat > /var/run/hostapd-$ifname$mld_link_id.conf <<EOF
 driver=$driver
 interface=$ifname
 #${channel:+channel=$channel}
 $hostapd_cfg
 EOF
 	[ -z "${no_nconfig}" ] &&
-		echo ${hwmode:+hw_mode=${hwmode#11}} >> /var/run/hostapd-$ifname.conf
+		echo ${hwmode:+hw_mode=${hwmode#11}} >> /var/run/hostapd-$ifname$mld_link_id.conf
 
 	entropy_file=$WPAD_VARRUN/entropy-$ifname.bin
 
@@ -2327,7 +2327,7 @@ EOF
 	config_get_bool wps_vap_tie_dbdc qcawifi wps_vap_tie_dbdc 0
 
 	if [ $wps_vap_tie_dbdc -ne 0 ]; then
-		echo -e "/var/run/hostapd-$ifname.conf \c\h" >> /tmp/hostapd_conf_filename
+		echo -e "/var/run/hostapd-$ifname$mld_link_id.conf \c\h" >> /tmp/hostapd_conf_filename
 	else
 		[ -f /tmp/sysinfo/board_name  ] && {
 			board_name=ap$(cat /tmp/sysinfo/board_name | awk -F 'ap' '{print$2}')
@@ -2339,11 +2339,11 @@ EOF
 		# to 1. IPQ/SDX75 boards will have it set to 1 always; SDX65 boards
 		# can configure this option in the wireless file
 		if [ "$force_hostapd_attach" -eq 1  ]; then
-			[ -f "/var/run/hostapd-$ifname.lock" ] &&
-				rm /var/run/hostapd-$ifname.lock
-			wpa_cli -g $WPAD_VARRUN/hostapd/global raw ADD bss_config=$ifname:/var/run/hostapd-$ifname.conf
+			[ -f "/var/run/hostapd-$ifname$mld_link_id.lock" ] &&
+				rm /var/run/hostapd-$ifname$mld_link_id.lock
+			wpa_cli -g $WPAD_VARRUN/hostapd/global raw ADD bss_config=$ifname:/var/run/hostapd-$ifname$mld_link_id.conf
 			[ $? -eq 0 ] || return
-			touch /var/run/hostapd-$ifname.lock
+			touch /var/run/hostapd-$ifname$mld_link_id.lock
 
 			run_hostapd_cli() {
 				ifname=$1

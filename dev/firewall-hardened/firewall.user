@@ -1,0 +1,13 @@
+# Clamping explicito de TCP MSS para conexoes PPPoE (MTU 1492)
+# Evita PMTUD Blackhole em sites de teste (Fast.com, Waveform, Netflix, etc.)
+iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1453:1536 -j TCPMSS --set-mss 1452
+
+ip6tables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+ip6tables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1433:1536 -j TCPMSS --set-mss 1432
+
+# Fallback rapido de HTTP/3 (QUIC / UDP 443) para HTTP/2 (TCP)
+# Em conexoes PPPoE (MTU 1492), datagramas UDP 443 de 1500 bytes sofrem descarte silencioso (Blackhole).
+# O REJECT com port-unreachable faz o Safari/Chrome chavear para TCP em 0.1ms sem congelar a pagina.
+iptables -I FORWARD 1 -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable
+ip6tables -I FORWARD 1 -p udp --dport 443 -j REJECT --reject-with icmp6-port-unreachable

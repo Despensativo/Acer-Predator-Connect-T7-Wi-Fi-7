@@ -1,0 +1,7 @@
+#!/bin/sh
+iptables -C FORWARD -m physdev --physdev-is-bridged -j ACCEPT 2>/dev/null || iptables -A FORWARD -m physdev --physdev-is-bridged -j ACCEPT
+iptables -N RATE-LIMIT 2>/dev/null || iptables -F RATE-LIMIT
+iptables -F RATE-LIMIT
+iptables -A RATE-LIMIT -m limit --limit 1000/sec --limit-burst 1000 -j RETURN
+iptables -A RATE-LIMIT -j DROP
+iptables -C zone_wan_forward -m conntrack --ctstate NEW -j RATE-LIMIT 2>/dev/null || iptables -I zone_wan_forward 5 -m conntrack --ctstate NEW -j RATE-LIMIT

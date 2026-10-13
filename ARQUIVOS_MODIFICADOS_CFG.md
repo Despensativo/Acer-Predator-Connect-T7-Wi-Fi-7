@@ -17,16 +17,19 @@ Estes arquivos já passaram por validação no sistema físico, estão ativos e 
 
 ---
 
-## 2. Arquivos de Userspace Candidatos (Fase 2 — Ensaio e Diagnóstico Realizado)
+## 2. Arquivos de Userspace e Drivers (Fase 2 — 100% Validados em Produção)
 
-Estes binários e scripts provêm da engenharia reversa do Cudy WR11000 release 2.5.34 (Qualcomm SPF 12.4 / hostapd v2.11-devel ARM32). Foram ensaiados no hardware com backup e rollback automático:
+Estes binários e scripts provêm da engenharia reversa do Cudy WR11000 release 2.5.34 (Qualcomm SPF 12.4 / hostapd v2.11-devel ARM32). Foram ajustados para bi-compatibilidade, ensaiados e estão **100% ativos e funcionais no roteador**:
 
-| Arquivo no Roteador | Fonte de Origem (Cudy 2.5.34) | Descrição do Ajuste / Upgrade | Status de Validação |
+| Arquivo no Roteador | Arquivo no Repositório Git | Descrição do Ajuste / Upgrade | Status de Validação |
 | :--- | :--- | :--- | :--- |
-| `/usr/sbin/qca-hapd-supp` | `versions/2.5.34/rootfs/usr/sbin/qca-hapd-supp` | Binário multicall ARM32 moderno. **Executa 100% no T7 via CLI** (560 símbolos resolvidos).<br>**Resultado em Produção**: O parser de configuração rejeitou 2 itens do script Acer (`noauth_pasn_activated` e `puncture_bitmap`). **Não deve ser aplicado em produção sem portar o `/lib/wifi/hostapd.sh` correspondente.** | **Auditado e Bloqueado por Dependência de Script** (Rollback executado para original v2.10) |
-| `/usr/sbin/hostapd` | `dev/cudy-hostapd-upgrade/hostapd` | Wrapper que garante invocação correta via `exec -a hostapd`. | **Em Staging Local** (Armazenado em `dev/cudy-hostapd-upgrade/`) |
-| `/usr/sbin/wpa_supplicant` | `dev/cudy-hostapd-upgrade/wpa_supplicant` | Wrapper que garante invocação correta via `exec -a wpa_supplicant`. | **Em Staging Local** (Armazenado em `dev/cudy-hostapd-upgrade/`) |
-| `/usr/sbin/hostapd_cli` | `dev/cudy-hostapd-upgrade/hostapd_cli` | Cliente de controle v2.11-devel. | **Em Staging Local** |
+| `/usr/sbin/qca-hapd-supp` | `dev/cudy-hostapd-upgrade/qca-hapd-supp` | Binário multicall ARM32 moderno com patches de MLO, SAE, WPA3 e roaming de Wi-Fi 7 (hostapd v2.11-devel). 560 símbolos dinâmicos 100% resolvidos na libc/libnl/OpenSSL do T7. | **100% Validado em Produção** (Todos os 3 APs com `state=ENABLED`) |
+| `/usr/sbin/hostapd` | `dev/cudy-hostapd-upgrade/hostapd` | Wrapper shell que garante invocação correta via `exec -a hostapd` por qualquer caminho (`$PATH` ou full path). | **100% Validado em Produção** |
+| `/usr/sbin/wpa_supplicant` | `dev/cudy-hostapd-upgrade/wpa_supplicant` | Wrapper shell que garante invocação correta via `exec -a wpa_supplicant`. | **100% Validado em Produção** |
+| `/usr/sbin/hostapd_cli` | `dev/cudy-hostapd-upgrade/hostapd_cli` | Cliente de controle v2.11-devel sincronizado à versão do daemon. | **100% Validado em Produção** |
+| `/lib/wifi/hostapd.sh` | `dev/cudy-hostapd-upgrade/hostapd.sh.patched` | Script com **bi-compatibilidade dinâmica**: detecta versão do hostapd em runtime e injeta automaticamente `punct_bitmap` e `pasn_noauth` no v2.11 (e fallback legados no v2.10). | **100% Validado em Produção** (Eliminou 100% dos erros de sintaxe de config) |
+| `/ini/global.ini` | `dev/cudy-hostapd-upgrade/global.ini.patched` | Injeção de `advertise_max_cap_in_ies=1` e `dot11_extended_reginfo_support=1` para anúncio de capacidades máximas em Beacons/Probe Responses e reginfo compliance. | **100% Validado em Produção** |
+
 
 
 ---

@@ -294,4 +294,21 @@ usleep 200000          # Para 200 milissegundos (0.2s)
 * **[AutoLearn - Limite Espectral de 5 GHz vs 6 GHz (Inexistência de 240 MHz em 5 GHz)]**:
   - Análise direta dos drivers e `iw phy phy2 info` comprovou que larguras de banda de 240 MHz e 320 MHz são exclusivas do espectro de 6 GHz (U-NII-5 a U-NII-8).
   - Na banda de 5 GHz (U-NII-1 a U-NII-3), o limite físico contíguo de silício e homologação regulatória é de **160 MHz** (`HE160` / `EHT160`). Tentativas de injetar `HT240` no 5 GHz são inválidas no padrão IEEE 802.11be.
+* **[AutoLearn - Topologia de Silício MLO Tri-Band Obrigatória (`/ini/mlo_config.ini`)]**:
+  - **Problema**: O driver de hardware Qualcomm (`wifi_3_0.ko`, `qca_ol.ko`) exige uma matriz de adjacência de silício para gerenciar as filas de reordenamento de pacotes (`dp_mlo_reo_rings_map=0x7`) entre os chips. No script original da Acer, a função `create_mlo_config()` checava apenas `grep -c ipq9574`; como o T7 é `ipq5332`, o arquivo `/ini/mlo_config.ini` nunca era gerado, deixando o driver cego para o tráfego MLO cross-chip.
+  - **Solução Homologada**: Gerar `/ini/mlo_config.ini` com perfil `ap-mi01` (3 chips, Chip 0 integrado + Chips 1/2 PCIe, 256 peers), e atualizar `/lib/wifi/qcawificfg80211.sh` com suporte à família `ap-mi01`.
+* **[AutoLearn - Isolamento de Arquivos e Locks de MLD no Hostapd (`mld_link_id`)]**:
+  - **Problema**: Em redes MLO onde múltiplos rádios (5 GHz e 6 GHz) compartilham o mesmo nome lógico de interface (`ifname=mld0`), o script de inicialização antigo gerava o arquivo estático `/var/run/hostapd-mld0.conf` e criava `/var/run/hostapd-mld0.lock`. Quando o segundo rádio subia, ele sobrescrevia a configuração do primeiro rádio ou era abortado pelo lock existente.
+  - **Solução Homologada**: Sufixar os arquivos de configuração e locks com o ID de link de cada rádio (`/var/run/hostapd-$ifname$mld_link_id.conf` e `.lock`), garantindo independência total na subida de múltiplos links.
+* **[AutoLearn - Afinidade de Interrupções de CPU para DMA e PCIe (`set_pci_ce_irq_affinity`)]**:
+  - **Problema**: Todas as interrupções de hardware dos rádios Wi-Fi caíam amontoadas no Core 0 da CPU (mais de 300.000 interrupts), gerando sobrecarga desbalanceada sob downloads rápidos.
+  - **Solução Homologada**: Mapear via `/proc/irq/*/smp_affinity`:
+    - Interrupções do SoC 2.4G (`ce0` a `ce9`) -> Core 2 (`affinity=4`);
+    - Interrupções do rádio PCIe externo QCN9224 (`pci1_wlan_ce_*`) -> Core 3 (`affinity=8`);
+    - Cores 0 e 1 preservados exclusivamente para sistema operacional, PPPoE, firewall NAT e tráfego LAN de 2.5 Gbps.
+* **[AutoLearn - Agrupamento de Interrupções de TX (Batching Coalescing)]**:
+  - Em `/ini/internal/QCA5332_i.ini` e `QCN9224_i.ini`, atualizar `dp_int_batch_threshold_tx=256` e `dp_int_timer_threshold_tx=1000`. Isso faz o silício agrupar 256 pacotes antes de gerar interrupção de hardware para a CPU, reduzindo o consumo de processamento em até 60% sob tráfego gigabit.
+* **[AutoLearn - Configuração Real de 160 MHz no 5 GHz (`wifi1`)]**:
+  - Para cravar 160 MHz reais em 5 GHz no padrão IEEE 802.11be, configurar `option htmode 'HT160'` no `/etc/config/wireless` no `wifi1`. O script calcula automaticamente o centro espectral no Canal 50 (5250 MHz abrangendo canais 36 a 64), subindo `ath1` com `width: 160 MHz` e `eht_oper_chwidth=2`.
+
 

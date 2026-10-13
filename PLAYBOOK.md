@@ -232,6 +232,14 @@ usleep 200000          # Para 200 milissegundos (0.2s)
   - **Limitação de Silício Qualcomm IPQ5332 (SoC vs PCIe DMA)**: No SoC IPQ5332, o rádio de 5 GHz é on-chip e o de 6 GHz é um chip discreto PCIe (QCN9224). Ao criar um grupo Multi-Link Device (MLD `mld0`), o driver `wifi_3_0.ko` realiza sincronização de tempo e buffers DMA entre o barramento interno e o PCIe.
   - Se o 5 GHz for forçado em 160 MHz (`HT160`) com MLD ativo, o driver falha na alocação de peers (`MLO peer create failed`) e desliga o transmissor de rádio (`Tx-Power=off`, Bit Rate 0).
   - **Configuração Homologada**: No perfil MLO Turbo, o rádio de 5 GHz opera estavelmente em **80 MHz** (`HT80` no Canal 36) transmitindo a 23 dBm (1.441 Gbps PHY), e o rádio de 6 GHz opera em **320 MHz** (`HT320` no Canal 37 PSC) a 20 dBm (5.764 Gbps PHY). Os clientes Wi-Fi 7 (ex: iPhone 16 Pro) agregam ambos simultaneamente via `MLO: Yes`, alcançando até 2.882 Mbps teóricos em 2x2 MIMO com failover de enlace contínuo e latência mínima. A banda 2.4 GHz permanece 100% independente em WPA2 puro para dispositivos IoT.
+* **[AutoLearn - Compatibilidade Universal de IPv6 no iOS/Android (SLAAC `ra_management '1'` vs Stateful '2')]**:
+  - **Problema**: O firmware OEM da Acer vinha com `option ra_management '2'` (Stateful DHCPv6) e `option ra 'hybrid'` com `option interface 'wan6'` (descasado da interface PPPoE dinâmica `wan_6`).
+  - **Causa Raiz**: O iOS (iPhone/iPad) e o Android por especificação deliberada (RFC 4862) **NÃO implementam cliente DHCPv6 Stateful** (apenas SLAAC). Ao entrar em redes rápidas (5G/6G MLO) onde o iOS força o Happy Eyeballs para IPv6, a falta de SLAAC autônomo fazia o handshake TLS congelar, gerando timeout exibido no Safari como "Erro de Certificado SSL / Não foi possível estabelecer conexão segura" em sites como Speedtest e Waveform.
+  - **Solução Homologada**:
+    1. Configurar `ra='server'`, `dhcpv6='server'` e `ra_management='1'` (SLAAC + Stateless DHCPv6) em todas as interfaces locais (`lan`, `guest`, `iot`);
+    2. Ajustar `dhcp.wan6.interface='wan_6'` para amarrar perfeitamente a interface dinâmica do PPPoE;
+    3. Manter `ra_mtu '1492'`, `dhcp_option '26,1492'` e clamping de MSS IPv6 (`1432`);
+    4. Sincronizar as configurações de DHCP no pacote `cfg_restauracao_master_v2.cfg`.
 
 
 

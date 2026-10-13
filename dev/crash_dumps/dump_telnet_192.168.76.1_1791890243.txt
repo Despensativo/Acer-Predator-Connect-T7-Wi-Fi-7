@@ -1,0 +1,107 @@
+root0100
+/bin/ash: root0100: not found
+/ # cat /proc/cmdline; cat /sys/class/ubi/ubi0/mtd_num; dmesg | tail -n 60; stri
+ngs /dev/mtd23 | head -n 40
+console=ttyMSM0,115200n8 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait vmalloc=1G
+21
+[   28.631764] wlan: [951:I:MBSSIE] ol_ath_ema_init_ctx:  max_pp:1  max_ngroups:1 
+[   28.640952] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: max mgmt frame size :2000
+[   28.647881] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: common_part_sz      :800
+[   28.656263] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: max_non_tx_sz       :1200
+[   28.664586] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: max_non_tx_sz_limit :294
+[   28.672756] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: max_pp              :1
+[   28.681088] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: no_of_ntx_vap_in_1_bcn:   4
+[   28.689345] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: no_of_ntx_vap_in_pp_bcns: 4
+[   28.697787] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: no_of_vaps_in_1_grp:      4
+[   28.706295] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: max_ngroup:               4
+[   28.715060] wlan: [951:I:MBSSIE] ol_ath_ema_determine_max_ngroup: grp_sz:                   4
+[   28.723338] wlan: [951:I:MBSSIE] ol_ath_ema_init_ctx: rnr_6ghz_adv_override:0
+[   28.731945] wlan: [951:I:ANY] qdf_ini_section_parse: INI values parse successful read: 0 from section SINGLE_PHY_2G
+[   28.738924] wlan: [951:I:TIF] init_deinit_get_total_num_ema_vaps: num_radios: 1
+[   28.749198] wlan: [951:I:TIF] init_deinit_get_total_num_ema_vaps: ema_max_vap_cnt: 0
+[   28.756563] wlan: [951:I:TIF] init_deinit_get_total_num_vdevs_for_soc: num_vdevs: 17
+[   28.764481] wlan: [951:I:TIF] init_deinit_get_total_num_ema_vaps: num_radios: 1
+[   28.772217] wlan: [951:I:TIF] init_deinit_get_total_num_ema_vaps: ema_max_vap_cnt: 0
+[   28.779195] wlan: [951:I:TIF] init_deinit_get_total_num_vdevs_for_soc: num_vdevs: 17
+[   28.787211] wlan: [951:I:TIF] init_deinit_get_total_num_ema_vaps: num_radios: 1
+[   28.794944] wlan: [951:I:TIF] init_deinit_get_total_num_ema_vaps: ema_max_vap_cnt: 0
+[   28.801953] wlan: [951:I:TIF] init_deinit_get_total_num_vdevs_for_soc: num_vdevs: 17
+[   28.809940] wlan: [951:I:TIF] init_deinit_get_total_num_ema_vaps: num_radios: 1
+[   28.817638] wlan: [951:I:TIF] init_deinit_get_total_num_ema_vaps: ema_max_vap_cnt: 0
+[   28.824702] wlan: [951:I:TIF] init_deinit_get_total_num_vdevs_for_soc: num_vdevs: 17
+[   28.846130] wlan: [951:I:TIF] init_deinit_update_pdev_tgt_info: CDP PDEV INIT success
+[   29.154548] cnss[38]: INFO: Device memory info[0]: start = 0x10e000, size = 0x2000
+[   29.154572] cnss[38]: INFO: Device memory info[1]: start = 0x0, size = 0x0
+[   29.161181] cnss[38]: INFO: Device memory info[2]: start = 0x0, size = 0x0
+[   29.167864] cnss[38]: INFO: Device memory info[3]: start = 0x0, size = 0x0
+[   29.174883] cnss[38]: INFO: Target capability: chip_id: 0x0, chip_family: 0xb, board_id: 0xff, soc_id: 0x401a2200, fw_version: 0x110d8016, fw_build_timestamp: 2023-10-27 14:40, otp_version: 0x0 eeprom_caldata_read_timeout 0s bdf_dnld_method 1 regdb_mandatory 1 rxgainlut_support 1
+[   29.185298] cnss[38]: INFO: Downloading BDF: qcn9224/regdb.bin, size: 25656
+[   29.214725] qcom-q6-mpd d100000.remoteproc: fatal error received: err_smem_ver.2.1: 
+[   29.214725] QC Image Version : QC_IMAGE_VERSION_STRING=WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1
+[   29.214725] Image Variant : IMAGE_VARIANT_STRING=5332.wlanfw.evalQ
+[   29.214725] ar_wal_mlo_ipc.c:1065 Assertion 0 failed param0 :zero,param1 :zero,param2 :zero
+[   29.214725] Thread ID : 0x00000057 Thread name : WLAN RT0 Process ID : 0x00000002 Process name :wlan0
+[   29.214725] 
+[   29.214725] Registers:
+[   29.214725] SP : 0x4b5d7338
+[   29.214725] FP : 0x4b5d7338
+[   29.214725] PC : 0xb02f1844
+[   29.214725] SSR : 0x01970127
+[   29.214725] BADVA : 0x00000000
+[   29.214725] LR : 0xb00d1880
+[   29.214725] 
+[   29.214725] StackDump
+[   29.214725] from:0x4b5d7338
+[   29.214725] to: 0xc0103120: 
+[   29.214725] 
+[   29.263731] cnss[2]: ERR: XXX TARGET ASSERTED XXX
+[   29.285835] cnss[2]: ERR: XXX TARGET QCA5332 instance_id 0x2 plat_env idx 0 XXX
+[   29.290426] remoteproc remoteproc0: crash detected in d100000.remoteproc: type fatal error
+[   29.302409] cnss[38]: INFO: Downloading BDF: qcn9224/bdwlan.b1015, size: 161792
+[   29.383650] cnss[38]: INFO: Downloading BDF: qcn9224/caldata_2.bin, size: 184320
+[   29.579939] cnss[38]: INFO: FW ready received for device 0x1109
+[   29.581170] cnss[38]: INFO: Sending mode message, mode: COLDBOOT CALIBRATION(7), state: 0x1010f
+[   29.887670] edma_cfg_rx_rps[1591]:EDMA RPS configured to use 4 cores
+[   30.057089] S95done (5123): drop_caches: 3
+[   30.980153] cnss[38]: INFO: Coldboot Calbration wait started for Device: 0x1109, timeout: 60 seconds
+]<4>[   56.055938] 7fc0: 7efb15d4 00000041 7efb1538 0000000b 00000007 76f38f80 7efb2b88 7efb29e8
+<4>[   56.064096] 7fe0: 00000000 7efb29d4 76ef79fc 76ef7534
+<2>[   56.072251] CPU1: stopping
+<4>[   56.077286] CPU: 1 PID: 0 Comm: swapper/1 Tainted: P      D           5.4.213 #0
+<4>[   56.079892] Hardware name: Generic DT based system
+<4>[   56.087446] [<8010f5c4>] (unwind_backtrace) from [<8010b8ac>] (show_stack+0x10/0x14)
+<4>[   56.092048] [<8010b8ac>] (show_stack) from [<8076d954>] (dump_stack+0x88/0xa8)
+<4>[   56.099947] [<8076d954>] (dump_stack) from [<8010e66c>] (handle_IPI+0xd4/0x17c)
+<4>[   56.106978] [<8010e66c>] (handle_IPI) from [<803e21bc>] (gic_handle_irq+0x84/0x90)
+<4>[   56.114184] [<803e21bc>] (gic_handle_irq) from [<80101a78>] (__irq_svc+0x58/0x8c)
+<4>[   56.121820] Exception stack(0xbdcaff60 to 0xbdcaffa8)
+<4>[   56.129372] ff60: 00000000 00016838 be4c5ab4 80117cc0 00000000 ffffc000 00000000 80b06e48
+<4>[   56.134410] ff80: 00000002 80b06ea8 80a464f0 00000000 80b7a770 bdcaffb0 80108b38 80108b3c
+<4>[   56.142567] ffa0: 60000013 ffffffff
+<4>[   56.150726] [<80101a78>] (__irq_svc) from [<80108b3c>] (arch_cpu_idle+0x2c/0x38)
+<4>[   56.154032] [<80108b3c>] (arch_cpu_idle) from [<80147594>] (do_idle+0xf8/0x274)
+<4>[   56.161668] [<80147594>] (do_idle) from [<801479b8>] (cpu_startup_entry+0x18/0x1c)
+<4>[   56.168698] [<801479b8>] (cpu_startup_entry) from [<40102390>] (0x40102390)
+<2>[   56.176334] CPU2: stopping
+<4>[   56.183188] CPU: 2 PID: 0 Comm: swapper/2 Tainted: P      D           5.4.213 #0
+<4>[   56.185969] Hardware name: Generic DT based system
+<4>[   56.193522] [<8010f5c4>] (unwind_backtrace) from [<8010b8ac>] (show_stack+0x10/0x14)
+<4>[   56.198125] [<8010b8ac>] (show_stack) from [<8076d954>] (dump_stack+0x88/0xa8)
+<4>[   56.206023] [<8076d954>] (dump_stack) from [<8010e66c>] (handle_IPI+0xd4/0x17c)
+<4>[   56.213055] [<8010e66c>] (handle_IPI) from [<803e21bc>] (gic_handle_irq+0x84/0x90)
+<4>[   56.220261] [<803e21bc>] (gic_handle_irq) from [<80101a78>] (__irq_svc+0x58/0x8c)
+<4>[   56.227896] Exception stack(0xbdcb3f60 to 0xbdcb3fa8)
+<4>[   56.235448] 3f60: 00000000 00016d44 be4d4ab4 80117cc0 00000000 ffffc000 00000000 80b06e48
+<4>[   56.240486] 3f80: 00000004 80b06ea8 80a464f0 00000000 80b7a770 bdcb3fb0 80108b38 80108b3c
+<4>[   56.248644] 3fa0: 60000013 ffffffff
+<4>[   56.256801] [<80101a78>] (__irq_svc) from [<80108b3c>] (arch_cpu_idle+0x2c/0x38)
+<4>[   56.260105] [<80108b3c>] (arch_cpu_idle) from [<80147594>] (do_idle+0xf8/0x274)
+<4>[   56.267744] [<80147594>] (do_idle) from [<801479b8>] (cpu_startup_entry+0x18/0x1c)
+<4>[   56.274773] [<801479b8>] (cpu_startup_entry) from [<40102390>] (0x40102390)
+<3>[   56.282415] cnss[38]: ERR: Crash shutdown device QCN9224_PCI1 with driver_state 0x1010f
+<3>[   59.460726] mhi mhi0: CRASHED - [DID:DOMAIN:BUS:SLOT] - 1109:0001:01:00
+<3>[   59.460748] mhi mhi0: Fatal error received from wcss software!
+<3>[   59.460748] 
+<3>[   59.460748] QC Image Version: QC_IMAGE_VERSION_STRING=WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1
+<3>[   59.460748] Image Variant : IMAGE_VARIANT_STRING=9224.wlanfw.eval_v2_2macQ
+/ # 

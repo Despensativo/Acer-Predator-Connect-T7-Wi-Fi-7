@@ -310,5 +310,16 @@ usleep 200000          # Para 200 milissegundos (0.2s)
   - Em `/ini/internal/QCA5332_i.ini` e `QCN9224_i.ini`, atualizar `dp_int_batch_threshold_tx=256` e `dp_int_timer_threshold_tx=1000`. Isso faz o silício agrupar 256 pacotes antes de gerar interrupção de hardware para a CPU, reduzindo o consumo de processamento em até 60% sob tráfego gigabit.
 * **[AutoLearn - Configuração Real de 160 MHz no 5 GHz (`wifi1`)]**:
   - Para cravar 160 MHz reais em 5 GHz no padrão IEEE 802.11be, configurar `option htmode 'HT160'` no `/etc/config/wireless` no `wifi1`. O script calcula automaticamente o centro espectral no Canal 50 (5250 MHz abrangendo canais 36 a 64), subindo `ath1` com `width: 160 MHz` e `eht_oper_chwidth=2`.
+* **[AutoLearn - DNS Criptografado (DoH) Livre e Redundante via `https-dns-proxy`]**:
+  - **Arquitetura Homologada**: Daemon C `https-dns-proxy` portado do SPF 12.4 com suporte nativo `procd`. Executa duas instâncias concorrentes sob uid `nobody`:
+    - Instância Cloudflare: `127.0.0.1:5053` (`https://cloudflare-dns.com/dns-query`, bootstrap `1.1.1.1,1.0.0.1`);
+    - Instância Google: `127.0.0.1:5054` (`https://dns.google/dns-query`, bootstrap `8.8.8.8,8.8.4.4`).
+  - **Zero AdBlock / Livre de Bloqueios**: Aponta estritamente para DNS público irrestrito (Cloudflare + Google), sem filtros arbitrários, quebras de páginas bancárias ou dependência de terceiros (sem Shiild / AdGuard).
+  - **Integração com Dnsmasq e Cache em RAM**:
+    - `dnsmasq` configurado com `list server '127.0.0.1#5053'`, `list server '127.0.0.1#5054'`, `option allservers '1'` e `option noresolv '1'`.
+    - `cachesize '5000'`: Primeira consulta ~20ms (ida e volta HTTPS criptografada sobre TLS TCP 443). Consultas repetidas: **0.00s instantâneo em RAM**.
+  - **Compatibilidade com Firewall Anti-QUIC**:
+    - O DoH opera via **TCP 443**. A regra firewall de rejeição em UDP 443 (anti-QUIC) intercepta apenas tráfego UDP, mantendo o DoH 100% fluido e protegido contra vazamentos do ISP (DNS hijacking/snooping).
+
 
 

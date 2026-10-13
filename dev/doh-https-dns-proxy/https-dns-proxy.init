@@ -1,0 +1,45 @@
+#!/bin/sh /etc/rc.common
+
+START=90
+STOP=15
+USE_PROCD=1
+
+PROG=/usr/sbin/https-dns-proxy
+
+start_instance() {
+	local cfg="$1"
+	local listen_addr listen_port resolver_url bootstrap_dns user group
+
+	config_get listen_addr "$cfg" 'listen_addr' '127.0.0.1'
+	config_get listen_port "$cfg" 'listen_port' '5053'
+	config_get resolver_url "$cfg" 'resolver_url' 'https://cloudflare-dns.com/dns-query'
+	config_get bootstrap_dns "$cfg" 'bootstrap_dns' '1.1.1.1,1.0.0.1'
+	config_get user "$cfg" 'user' 'nobody'
+	config_get group "$cfg" 'group' 'nogroup'
+
+	procd_open_instance "$cfg"
+	procd_set_param command "$PROG" \
+		-a "$listen_addr" \
+		-p "$listen_port" \
+		-r "$resolver_url" \
+		-b "$bootstrap_dns" \
+		-u "$user" \
+		-g "$group"
+	procd_set_param respawn 3600 5 0
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+start_service() {
+	local enabled
+	config_load 'https-dns-proxy'
+	config_get_bool enabled 'config' 'enabled' 1
+	[ "$enabled" -eq 1 ] || return 0
+
+	config_foreach start_instance 'https-dns-proxy'
+}
+
+service_triggers() {
+	procd_add_reload_trigger 'https-dns-proxy'
+}

@@ -85,3 +85,11 @@ Quando todas as etapas forem 100% validadas e aprovadas pelo usuário:
    COPYFILE_DISABLE=1 tar --no-mac-metadata -czf /Volumes/--400GB--/FEITOS\ COM\ IA/Acer-Predator-Connect-T7/cfg_restauracao_master_v2.cfg *
    ```
 3. **Commit e Tag no Git.**
+
+### 2.4 Correção Definitiva do SQM CAKE Upload (`no-split-gso`) e Wi-Fi 7 6 GHz (`ecm front_end_stop`) (`dev/sqm-gso-ecm-fix/`)
+
+| Arquivo no Roteador | Arquivo Local no Repositório | Status | Descrição da Modificação |
+| :--- | :--- | :--- | :--- |
+| `/etc/config/sqm` | `dev/sqm-gso-ecm-fix/sqm` | **Homologado em Produção** | Adicionado `option eqdisc_opts 'no-split-gso'` e `option iqdisc_opts 'no-split-gso'` na seção `sqm.wan`, eliminando 100% do descarte de super-pacotes GSO PPPoE (`ETH_P_PPP_SES`) no upload (destravou de `0.15 Mbps` para `366.42 Mbps`). |
+| `/usr/lib/sqm/defaults.sh` | `dev/sqm-gso-ecm-fix/defaults.sh` | **Homologado em Produção** | Definido fallback padrão `no-split-gso`, `ethtool -K $IFACE gso on` e parada automática do bypass SFE (`front_end_ipv4_stop=1`, `front_end_ipv6_stop=1`, `defunct_all=1`), impedindo congelamento no pacote #25 no rádio 6 GHz (`ath2`). |
+| `/etc/rc.local` | `dev/sqm-gso-ecm-fix/rc.local` | **Homologado em Produção** | Persistência no boot de `ethtool -K eth0 gso on` e desativação de offload SFE conflitante quando `sqm.wan.enabled=1`. |

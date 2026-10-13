@@ -1,0 +1,18 @@
+
+config queue 'wan'
+	option interface 'eth0'
+	option qdisc 'cake'
+	option script 'piece_of_cake.qos'
+	option linklayer 'ethernet'
+	option overhead '44'
+	option mpu '64'
+	option enabled '1'
+	option download '800000'
+	option debug_logging '0'
+	option verbosity '5'
+	option upload '400000'
+	option qdisc_advanced '1'
+	option qdisc_really_really_advanced '1'
+	option eqdisc_opts 'no-split-gso'
+	option iqdisc_opts 'no-split-gso'
+

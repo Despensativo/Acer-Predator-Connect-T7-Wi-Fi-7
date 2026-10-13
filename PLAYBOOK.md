@@ -330,3 +330,20 @@ usleep 200000          # Para 200 milissegundos (0.2s)
 
 
 
+* **[AutoLearn - Bug do Upload `< 1 Mbps` (`0.15 Mbps`) no SQM CAKE com PPPoE (`split-gso` + `ETH_P_PPP_SES`)]**:
+  - **Causa Raiz**: No kernel Qualcomm QSDK 5.4.213, a interface `pppoe-wan` não segmenta super-pacotes GSO (`frag_list` de até `17.304 bytes` criados pelo GRO da LAN/Wi-Fi) em software, encapsulando-os diretamente com o cabeçalho PPPoE (`skb->protocol = htons(ETH_P_PPP_SES)` / `0x8864`) para que a controladora física `eth0` (`qca_nss_dp`) faça o *segmentation offload* em hardware. Porém, quando o **SQM CAKE** está anexado à `eth0` com a flag padrão **`split-gso`**, a função `cake_enqueue()` invoca `skb_gso_segment()` do kernel Linux antes do driver `qca_nss_dp`. Como o kernel Linux 5.4 não possui *offload handler* de software registrado para `ETH_P_PPP_SES` (`0x8864`), `skb_gso_segment()` retorna `-EPROTONOSUPPORT` (`ERR_PTR(-93)`) e o CAKE **descarta 100% dos super-pacotes GSO de upload**, reduzindo o upload de `400 Mbps` para `0.15 Mbps` (`~19 KB/s`).
+  - **Solução Homologada**:
+    1. Em `/etc/config/sqm` (seção `sqm.wan`), definir `option qdisc_advanced '1'`, `option qdisc_really_really_advanced '1'`, `option eqdisc_opts 'no-split-gso'` e `option iqdisc_opts 'no-split-gso'`.
+    2. Garantir `ethtool -K eth0 gso on` ativo na `eth0`.
+    3. Em `/usr/lib/sqm/defaults.sh`, definir fallback padrão `IQDISC_OPTS="no-split-gso"` e `EQDISC_OPTS="no-split-gso"`.
+* **[AutoLearn - Congelamento de Fluxos IPv4 no Wi-Fi 7 6 GHz (`ath2` / QCN9224) no Pacote #25 com SQM + ECM SFE]**:
+  - **Causa Raiz**: Quando o acelerador `qca-nss-ecm` (`sfe`) está ativo (`front_end_ipv4_stop = 0`) simultaneamente com o redirecionamento `ifb4eth0` do SQM e PPPoE, qualquer fluxo TCP IPv4 no rádio PCIe de 6 GHz (`ath2` com PPE-DS/VP) transfere exatamente **25 pacotes (`~30 KB`, gatilho `accel_delay_pkts = 25`)** e congela ao sofrer offload para o Virtual Port do PPE, além de o SFE burlar a fila `ifb4eth0` do SQM.
+  - **Solução Homologada**: Em `/usr/lib/sqm/defaults.sh` e `/etc/rc.local` (quando `sqm.wan.enabled='1'`), aplicar:
+    ```sh
+    echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop
+    echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop
+    echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
+    ```
+  - **Resultado Homologado em Produção**:
+    - **Cabo (`en10` Gigabit)**: Waveform **Nota A+** (`748.6 Mbps` Down / `356.7 Mbps` Up / `+0 ms` Down / `+0 ms` Up); Speedtest.net **`739.07 Mbps` Down / `366.42 Mbps` Up / Ping `2 ms`**.
+    - **Wi-Fi 7 6 GHz (`en0`, `802.11be`, Canal 37, `160 MHz`, PHY `2161 Mbps`)**: Waveform **Nota A** (`557.1 Mbps` Down / `305.7 Mbps` Up); Speedtest.net **`535.51 Mbps` Down / `320.27 Mbps` Up / Ping `7 ms`**.

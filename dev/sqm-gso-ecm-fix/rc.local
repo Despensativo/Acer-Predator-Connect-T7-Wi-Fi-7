@@ -1,0 +1,79 @@
+# /etc/rc.local - Inicializacao Automatica (Debloat Stock Max + Qualcomm High Performance)
+chmod -R 755 /www 2>/dev/null
+
+# 1. Manter uhttpd (LuCI) sempre ativo na porta 80 e HTTPS 443
+/etc/init.d/uhttpd start 2>/dev/null
+
+# 2. Desativar lighttpd e processos de telemetria da Acer se algo tentar subir
+killall -9 lighttpd mqttClient breakpad monitord 2>/dev/null
+
+# 3. Garantir Dropbear ativo e Telnet condicionado ao UCI do usuario
+uci -q set dropbear.@dropbear[0].enable='1' && uci -q commit dropbear 2>/dev/null || true
+DROPBEAR=$(command -v dropbear || echo "/usr/sbin/dropbear")
+/etc/init.d/dropbear restart 2>/dev/null
+
+TELNETD=$(command -v telnetd || echo "/usr/sbin/telnetd")
+[ -x "$TELNETD" ] && [ -z "$(pidof telnetd)" ] && $TELNETD -l /bin/ash &
+
+# 4. CPU Turbo Lock: Todos os 4 núcleos do Qualcomm IPQ5332 em 1.5 GHz Turbo (performance)
+for c in /sys/devices/system/cpu/cpu[0-3]; do
+    [ -d "$c/cpufreq" ] && echo "performance" > "$c/cpufreq/scaling_governor" 2>/dev/null || true
+done
+
+# 5. Otimizacoes de Rede, Acelerador PPE e Buffers do Kernel Qualcomm
+echo "16384" > /proc/net/skb_recycler/max_skbs 2>/dev/null || true
+echo 1 > /sys/sfe/ppe_rfs_feature 2>/dev/null || true
+echo 4 > /proc/sys/net/edma/rps_num_cores 2>/dev/null || true
+sysctl -w net.bridge.bridge-nf-call-iptables=0 2>/dev/null || true
+sysctl -w net.bridge.bridge-nf-call-ip6tables=0 2>/dev/null || true
+
+# 6. Receive Packet Steering (RPS) quad-core em todas as interfaces de rede e Wi-Fi
+for q in /sys/class/net/*/queues/rx-*; do
+    [ -f "$q/rps_cpus" ] && echo "f" > "$q/rps_cpus" 2>/dev/null || true
+done
+
+# 7. Gancho assincrono de estabilizacao de RF e garantia de subida do Wi-Fi 7
+(
+    sleep 8
+    if [ ! -d /sys/class/net/ath2 ] || [ ! -d /sys/class/net/ath0 ]; then
+        killall -9 lock 2>/dev/null
+        rm -f /var/run/*lock* 2>/dev/null
+        /sbin/wifi up 2>/dev/null
+    fi
+) &
+
+# 8. Modulos de mesh/plc (repacd, wsplcd) mantidos desligados por padrao (sem consumo de CPU)
+uci -q set repacd.repacd.Enable='0' && uci -q commit repacd 2>/dev/null || true
+uci -q set wsplcd.config.HyFiSecurity='0' && uci -q commit wsplcd 2>/dev/null || true
+
+# 9. Eliminar 464xlat residual (evita loop de reinicializacao de wan_6_4)
+rm -f /lib/netifd/proto/464xlat.sh 2>/dev/null
+
+# 10. Garantir DHCP Leases persistentes entre reboots (ex: Impressoras 3D / IoT) e symlink compativel
+[ -f /etc/dhcp.leases ] || touch /etc/dhcp.leases
+if [ ! -L /tmp/dhcp.leases ]; then
+    [ -s /tmp/dhcp.leases ] && [ ! -s /etc/dhcp.leases ] && cp -f /tmp/dhcp.leases /etc/dhcp.leases 2>/dev/null
+    rm -f /tmp/dhcp.leases 2>/dev/null
+    ln -sf /etc/dhcp.leases /tmp/dhcp.leases 2>/dev/null
+fi
+chown dnsmasq:dnsmasq /etc/dhcp.leases 2>/dev/null || true
+chmod 666 /etc/dhcp.leases 2>/dev/null || true
+
+# 11. Sincronizacao Inteligente de Horario (Anycast Global) e Auto-Fuso por Geo-IP
+chmod +x /etc/hotplug.d/iface/25-ntp-smart 2>/dev/null || true
+[ -x /etc/hotplug.d/iface/25-ntp-smart ] && ACTION=boot INTERFACE=boot /etc/hotplug.d/iface/25-ntp-smart
+
+# 12. Garantir patch de WPA2/WPA3 Misto (sae-mixed) no hostapd.sh da Qualcomm
+if [ -f /lib/wifi/hostapd.sh ] && ! grep -q "sae-mixed" /lib/wifi/hostapd.sh; then
+    sed -i "s/\*psk\*)/\*psk\*|\*sae-mixed\*)/g" /lib/wifi/hostapd.sh 2>/dev/null || true
+    sed -i "s/\*psk\*);;/\*psk\*|\*sae-mixed\*);;/g" /lib/wifi/hostapd.sh 2>/dev/null || true
+fi
+
+# Predator T7 SQM + Wi-Fi 7 6GHz Fix
+ethtool -K eth0 gso on 2>/dev/null || true
+if [ "$(uci -q get sqm.wan.enabled)" = "1" ]; then
+  echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null || true
+  echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null || true
+  echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all 2>/dev/null || true
+fi
+exit 0

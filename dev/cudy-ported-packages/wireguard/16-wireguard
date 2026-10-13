@@ -1,0 +1,15 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+[ "$INTERFACE" = wg -a ifup = "$ACTION" ] && {
+	uci_set_state vpn config ifname "$DEVICE"
+	ip route add default dev "$DEVICE" table vpn
+	ip route flush cache
+	fw3 -q reload
+}
+
+[ "$INTERFACE" = wg -a ifdown = "$ACTION" ] && {
+	uci_revert_state vpn config ifname
+	fw3 -q reload
+}

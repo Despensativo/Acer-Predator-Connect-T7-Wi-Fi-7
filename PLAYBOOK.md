@@ -318,8 +318,15 @@ usleep 200000          # Para 200 milissegundos (0.2s)
   - **Integração com Dnsmasq e Cache em RAM**:
     - `dnsmasq` configurado com `list server '127.0.0.1#5053'`, `list server '127.0.0.1#5054'`, `option allservers '1'` e `option noresolv '1'`.
     - `cachesize '5000'`: Primeira consulta ~20ms (ida e volta HTTPS criptografada sobre TLS TCP 443). Consultas repetidas: **0.00s instantâneo em RAM**.
-  - **Compatibilidade com Firewall Anti-QUIC**:
-    - O DoH opera via **TCP 443**. A regra firewall de rejeição em UDP 443 (anti-QUIC) intercepta apenas tráfego UDP, mantendo o DoH 100% fluido e protegido contra vazamentos do ISP (DNS hijacking/snooping).
+* **[AutoLearn - WireGuard Nativo no Kernel Linux 5.4.213 (`wireguard.ko`)]**:
+  - **Compatibilidade de Silício e ABI**: Ao contrário dos módulos Wi-Fi QCA que possuem símbolos ausentes, o módulo `wireguard.ko` portado do Cudy WR11000 possui exatamente o mesmo vermagic (`5.4.213 SMP preempt mod_unload ARMv7 p2v8`) e 100% dos símbolos dinâmicos de rede resolvidos no kernel do Predator T7.
+  - Carregamento homologado: `/lib/modules/5.4.213/wireguard.ko` via `/etc/modules.d/wireguard`.
+  - Suporte de Userspace e Netifd: `/usr/bin/wg` (wireguard-tools) e handler `/lib/netifd/proto/wireguard.sh` (com remoção de trava proprietária OEM `system.board.type`). Permite criar interfaces de alto rendimento gigabit `proto 'wireguard'`.
+* **[AutoLearn - Blindagem de Firewall para Wi-Fi Secundário (Guest / IoT) e IPv6]**:
+  - **DNS TCP 53 Obrigatório**: Regras de DNS de zonas isoladas (`guest_dns` e `iot_dns`) DEVEM conter `option proto 'tcp udp'`. Consultas com respostas grandes (>512 bytes, DNSSEC/DKIM) fazem fallback obrigatório para TCP 53; se apenas UDP estiver liberado, a consulta morre.
+  - **IPv6 Discovery em Zonas de Input REJECT**: Zonas com política de entrada `REJECT` (como `guest` e `iot`) DEVEM ter regras explícitas liberando `icmp` (tipos router-solicitation 133, neighbour-solicitation 135 e neighbour-advertisement 136) e UDP 546->547 para permitir que os clientes descubram o gateway e obtenham prefixos IPv6 do `odhcpd` sem quebrar o isolamento.
+  - **Regra WAN Allow-DHCPv6**: NUNCA colocar restrição de `src_ip 'fc00::/6'` na regra de entrada DHCPv6 da WAN. Provedores respondem a partir de `fe80::/10` (link-local), não de ULA.
+  - **Idempotência em Scripts de Firewall**: Scripts invocados via `/etc/firewall.d/` ou `/etc/firewall.user` devem SEMPRE usar verificação prévia (`iptables -C ... || iptables -A ...`) para evitar duplicação cumulativa de regras a cada recarga.
 
 
 

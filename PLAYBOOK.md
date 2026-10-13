@@ -284,3 +284,14 @@ usleep 200000          # Para 200 milissegundos (0.2s)
 * **[AutoLearn - Desmistificação de Bloqueios de Software vs Silício (mlo_mbssid)]**:
   - A restrição documentada no log como `mlo_mbssid disabled in lower band radios` é um parâmetro de perfil de compilação da árvore QSDK SPF-12, e NÃO uma incapacidade física universal de silício do IPQ5332.
   - O scaffolding original de `/lib/wifi/qcawificfg80211.sh` suporta até 10 MLDs (`mld0` a `mld9`). O limite de uma única rede MLO na Central decorre do escopo de gerência da aplicação `/usr/libexec/rpcd/predator`, que centraliza o controle exclusivamente no grupo `mld0`.
+* **[AutoLearn - Inventário Rigoroso e Incorporação ao CFG Master (`ARQUIVOS_MODIFICADOS_CFG.md`)]**:
+  - Toda modificação realizada no projeto é formalmente catalogada em `ARQUIVOS_MODIFICADOS_CFG.md` contendo caminho no roteador, arquivo Git correspondente, justificativa e status de validação.
+  - **Regra de Ouro**: Nenhum arquivo modificado deve ser inserido no arquivo de restauração mestre `cfg_restauracao_master_v2.cfg` antes de alcançar 100% de validação em produção em bancada, estabilidade térmica e aprovação expressa do usuário.
+* **[AutoLearn - Invocação do Binário Multicall QSDK (`qca-hapd-supp`) via Shell Wrapper]**:
+  - O binário `qca-hapd-supp` da Qualcomm/Cudy 2.5.34 (hostapd v2.11-devel) inspeciona diretamente `argv[0]` via `strncmp(name, argv[0], strlen(argv[0]))` para chavear internamente entre os daemons `hostapd` e `wpa_supplicant`.
+  - Quando chamado por caminho absoluto (ex: `/usr/sbin/hostapd` ou `/tmp/hostapd`), o `argv[0]` contém o prefixo de diretório e o binário aborta com `Invalid command. Usage: %s wpa_supplicant|hostapd`.
+  - **Padrão Homologado**: Criar wrappers `/usr/sbin/hostapd` e `/usr/sbin/wpa_supplicant` usando `exec -a hostapd /usr/sbin/qca-hapd-supp "$@"` e `exec -a wpa_supplicant /usr/sbin/qca-hapd-supp "$@"`. Isso garante 100% de compatibilidade em qualquer invocação do sistema (`procd`, init scripts, CLI).
+* **[AutoLearn - Limite Espectral de 5 GHz vs 6 GHz (Inexistência de 240 MHz em 5 GHz)]**:
+  - Análise direta dos drivers e `iw phy phy2 info` comprovou que larguras de banda de 240 MHz e 320 MHz são exclusivas do espectro de 6 GHz (U-NII-5 a U-NII-8).
+  - Na banda de 5 GHz (U-NII-1 a U-NII-3), o limite físico contíguo de silício e homologação regulatória é de **160 MHz** (`HE160` / `EHT160`). Tentativas de injetar `HT240` no 5 GHz são inválidas no padrão IEEE 802.11be.
+

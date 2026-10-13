@@ -1,0 +1,4 @@
+#!/bin/sh
+# Wrapper de compatibilidade multicall para Qualcomm QSDK qca-hapd-supp
+# Força argv[0] == "hostapd" para garantir seleção correta da rotina AP
+exec -a hostapd /usr/sbin/qca-hapd-supp "$@"

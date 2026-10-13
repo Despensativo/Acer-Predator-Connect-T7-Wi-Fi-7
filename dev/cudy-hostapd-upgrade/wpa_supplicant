@@ -1,0 +1,4 @@
+#!/bin/sh
+# Wrapper de compatibilidade multicall para Qualcomm QSDK qca-hapd-supp
+# Força argv[0] == "wpa_supplicant" para garantir seleção correta da rotina STA/WDS
+exec -a wpa_supplicant /usr/sbin/qca-hapd-supp "$@"

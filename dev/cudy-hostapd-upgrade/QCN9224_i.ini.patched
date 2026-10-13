@@ -49,7 +49,7 @@ dp_rx_release_ring=16384
 dp_reo_exception_ring=128
 dp_reo_dst_ring=8192
 dp_reo_status_ring=1024
-dp_rxdma_buf_ring=1024
+dp_rxdma_buf_ring=8192
 dp_rxdma_refill_ring=8192
 dp_disable_rx_buf_low_threshold=1
 dp_rxdma_monitor_buf_ring=8192
@@ -353,3 +353,4 @@ dp_reo_rings_map=0x7
 
 [SPLIT_PHY_6G_5G_HIGH]
 dp_reo_rings_map=0x7
+dp_fse_3_tuple_enable=1

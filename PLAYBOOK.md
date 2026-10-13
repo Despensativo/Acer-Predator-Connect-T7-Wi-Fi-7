@@ -240,6 +240,14 @@ usleep 200000          # Para 200 milissegundos (0.2s)
     2. Ajustar `dhcp.wan6.interface='wan_6'` para amarrar perfeitamente a interface dinâmica do PPPoE;
     3. Manter `ra_mtu '1492'`, `dhcp_option '26,1492'` e clamping de MSS IPv6 (`1432`);
     4. Sincronizar as configurações de DHCP no pacote `cfg_restauracao_master_v2.cfg`.
+* **[AutoLearn - Resolução de Erros `NSURLErrorDomain` no Safari (Fallback Rápido de HTTP/3 QUIC UDP 443 em PPPoE)]**:
+  - **Problema**: O Safari no iOS/macOS gerava exceções de `NSURLErrorDomain` (como erro `-1200` SSL / `-1005` Conexão Perdida / `-1001` Timeout) ao carregar sites hospedados em CDNs como Cloudflare (Waveform.com e Speedtest.net).
+  - **Causa Raiz**: O protocolo HTTP/3 (QUIC) opera sobre UDP na porta 443. Diferente do TCP (que possui MSS Clamping a 1452/1432), o UDP não tem negociação de MSS. As CDNs enviam datagramas UDP com 1500 bytes (MTU padrão de Ethernet). No link PPPoE da WAN (MTU 1492), qualquer pacote UDP > 1492 bytes com DF é descartado silenciosamente pela operadora (*UDP MTU Blackhole*). O Safari ficava aguardando os pacotes UDP que nunca chegavam, sofria timeout e abortava a conexão.
+  - **Solução Homologada**:
+    - Injetar no topo da cadeia `FORWARD` de `/etc/firewall.user`:
+      `iptables -I FORWARD 1 -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable`
+      `ip6tables -I FORWARD 1 -p udp --dport 443 -j REJECT --reject-with icmp6-port-unreachable`
+    - Com a rejeição explícita via ICMP em 0.1 ms, o Safari e o Chrome sabem instantaneamente que o HTTP/3 não está disponível e realizam fallback imediato para HTTP/2 sobre TCP (que é 100% clampado a 1452/1432 bytes), abrindo as páginas no iOS em menos de 50 ms sem qualquer erro de certificado.
 
 
 

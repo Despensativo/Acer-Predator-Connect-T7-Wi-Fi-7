@@ -412,9 +412,10 @@ case "$ACTION" in
                 CONFLICT_WARNING="AVISO CRÍTICO: A rede externa forneceu IP na mesma sub-rede da sua LAN ($LAN_PREFIX.x). É altamente recomendável alterar o IP da LAN para 192.168.77.1 para evitar colisão."
             fi
 
-            # Salvar perfil em histórico
+            # Salvar perfil em histórico e atualizar backup aprovado (evita rollback do predator-wifi-guard)
             mkdir -p /etc/predator
             echo "{\"ssid\":\"$SSID\",\"bssid\":\"$REQ_BSSID\",\"band\":\"$REQ_BAND\",\"encryption\":\"$ENC_UCI\",\"timestamp\":$(date +%s)}" > /etc/predator/wisp_last.json 2>/dev/null || true
+            cp -f /etc/config/wireless /etc/predator/wireless.lastgood 2>/dev/null || true
 
             CLEAN_SSID=$(echo "$SSID" | sed 's/\\/\\\\/g; s/"/\\"/g')
             
@@ -451,6 +452,7 @@ case "$ACTION" in
         uci commit wireless
         uci commit network
         uci commit firewall
+        cp -f /etc/config/wireless /etc/predator/wireless.lastgood 2>/dev/null || true
         wifi reload 2>/dev/null
         /etc/init.d/firewall reload 2>/dev/null
         echo "{\"status\":\"success\",\"message\":\"Modo Wi-Fi WAN desconectado. Acesso à internet revertido exclusivamente para cabo Ethernet.\"}"

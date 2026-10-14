@@ -1,5 +1,11 @@
 # /etc/rc.local - Inicializacao Automatica (Debloat Stock Max + Qualcomm High Performance)
-chmod -R 755 /www 2>/dev/null
+ubus call system watchdog '{"stop": false, "frequency": 5}' 2>/dev/null; sysctl -w kernel.panic=0 2>/dev/null; echo 0 > /proc/sys/kernel/panic 2>/dev/null
+echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null; echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null; echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all 2>/dev/null
+chmod -R 755 /www /usr/share/luci /usr/share/rpcd 2>/dev/null || true
+
+# Trava do firmware QCN9224 MLO IPC (Zero Crash)
+[ -f /ini/internal/QCN9224_i.ini ] && sed -i 's/dp_mlo_reo_rings_map=.*/dp_mlo_reo_rings_map=0/' /ini/internal/QCN9224_i.ini 2>/dev/null || true
+[ -f /cfg/default/ini/internal/QCN9224_i.ini ] && sed -i 's/dp_mlo_reo_rings_map=.*/dp_mlo_reo_rings_map=0/' /cfg/default/ini/internal/QCN9224_i.ini 2>/dev/null || true
 
 # 1. Manter uhttpd (LuCI) sempre ativo na porta 80 e HTTPS 443
 /etc/init.d/uhttpd start 2>/dev/null
@@ -7,13 +13,22 @@ chmod -R 755 /www 2>/dev/null
 # 2. Desativar lighttpd e processos de telemetria da Acer se algo tentar subir
 killall -9 lighttpd mqttClient breakpad monitord 2>/dev/null
 
-# 3. Garantir Dropbear ativo e Telnet condicionado ao UCI do usuario
+# 3. Garantir Dropbear (SSH) e Telnet sempre ativos e monitorados
 uci -q set dropbear.@dropbear[0].enable='1' && uci -q commit dropbear 2>/dev/null || true
-DROPBEAR=$(command -v dropbear || echo "/usr/sbin/dropbear")
+/etc/init.d/dropbear enable 2>/dev/null
 /etc/init.d/dropbear restart 2>/dev/null
 
+/etc/init.d/telnet enable 2>/dev/null
+/etc/init.d/telnet start 2>/dev/null
 TELNETD=$(command -v telnetd || echo "/usr/sbin/telnetd")
-[ -x "$TELNETD" ] && [ -z "$(pidof telnetd)" ] && $TELNETD -l /bin/ash &
+if [ -x "$TELNETD" ]; then
+    pgrep -x telnetd >/dev/null 2>&1 || $TELNETD -l /bin/ash &
+fi
+
+# 3.1 Garantir KSMBD (compartilhamento de arquivos) e ferramentas ativas
+chmod +x /usr/sbin/ksmbd-disk-tool /etc/init.d/ksmbd 2>/dev/null || true
+/etc/init.d/ksmbd enable 2>/dev/null
+/etc/init.d/ksmbd start 2>/dev/null
 
 # 4. CPU Turbo Lock: Todos os 4 núcleos do Qualcomm IPQ5332 em 1.5 GHz Turbo (performance)
 for c in /sys/devices/system/cpu/cpu[0-3]; do
@@ -32,24 +47,14 @@ for q in /sys/class/net/*/queues/rx-*; do
     [ -f "$q/rps_cpus" ] && echo "f" > "$q/rps_cpus" 2>/dev/null || true
 done
 
-# 7. Gancho assincrono de estabilizacao de RF e garantia de subida do Wi-Fi 7
-(
-    sleep 8
-    if [ ! -d /sys/class/net/ath2 ] || [ ! -d /sys/class/net/ath0 ]; then
-        killall -9 lock 2>/dev/null
-        rm -f /var/run/*lock* 2>/dev/null
-        /sbin/wifi up 2>/dev/null
-    fi
-) &
-
-# 8. Modulos de mesh/plc (repacd, wsplcd) mantidos desligados por padrao (sem consumo de CPU)
+# 7. Modulos de mesh/plc (repacd, wsplcd) mantidos desligados por padrao (sem consumo de CPU)
 uci -q set repacd.repacd.Enable='0' && uci -q commit repacd 2>/dev/null || true
 uci -q set wsplcd.config.HyFiSecurity='0' && uci -q commit wsplcd 2>/dev/null || true
 
-# 9. Eliminar 464xlat residual (evita loop de reinicializacao de wan_6_4)
+# 8. Eliminar 464xlat residual (evita loop de reinicializacao de wan_6_4)
 rm -f /lib/netifd/proto/464xlat.sh 2>/dev/null
 
-# 10. Garantir DHCP Leases persistentes entre reboots (ex: Impressoras 3D / IoT) e symlink compativel
+# 9. Garantir DHCP Leases persistentes entre reboots (ex: Impressoras 3D / IoT) e symlink compativel
 [ -f /etc/dhcp.leases ] || touch /etc/dhcp.leases
 if [ ! -L /tmp/dhcp.leases ]; then
     [ -s /tmp/dhcp.leases ] && [ ! -s /etc/dhcp.leases ] && cp -f /tmp/dhcp.leases /etc/dhcp.leases 2>/dev/null
@@ -59,21 +64,13 @@ fi
 chown dnsmasq:dnsmasq /etc/dhcp.leases 2>/dev/null || true
 chmod 666 /etc/dhcp.leases 2>/dev/null || true
 
-# 11. Sincronizacao Inteligente de Horario (Anycast Global) e Auto-Fuso por Geo-IP
+# 10. Sincronizacao Inteligente de Horario (Anycast Global) e Auto-Fuso por Geo-IP
 chmod +x /etc/hotplug.d/iface/25-ntp-smart 2>/dev/null || true
 [ -x /etc/hotplug.d/iface/25-ntp-smart ] && ACTION=boot INTERFACE=boot /etc/hotplug.d/iface/25-ntp-smart
 
-# 12. Garantir patch de WPA2/WPA3 Misto (sae-mixed) no hostapd.sh da Qualcomm
-if [ -f /lib/wifi/hostapd.sh ] && ! grep -q "sae-mixed" /lib/wifi/hostapd.sh; then
-    sed -i "s/\*psk\*)/\*psk\*|\*sae-mixed\*)/g" /lib/wifi/hostapd.sh 2>/dev/null || true
-    sed -i "s/\*psk\*);;/\*psk\*|\*sae-mixed\*);;/g" /lib/wifi/hostapd.sh 2>/dev/null || true
+# 11. Reconexao automatica pos-boot do modo WISP (Wi-Fi como WAN) se configurado
+if [ -n "$(uci -q get wireless.wwan_sta.device)" ] && [ "$(uci -q get wireless.wwan_sta.disabled)" != "1" ]; then
+    ( sleep 15 && /sbin/ifup wwan 2>/dev/null ) &
 fi
 
-# Predator T7 SQM + Wi-Fi 7 6GHz Fix
-ethtool -K eth0 gso on 2>/dev/null || true
-if [ "$(uci -q get sqm.wan.enabled)" = "1" ]; then
-  echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null || true
-  echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null || true
-  echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all 2>/dev/null || true
-fi
 exit 0

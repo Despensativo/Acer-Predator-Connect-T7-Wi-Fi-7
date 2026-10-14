@@ -281,8 +281,8 @@ No OpenWrt padrão, a tela de visão geral (`/cgi-bin/luci/admin/status/overview
 O arquivo master contendo a implementação completa de todos os 9 módulos acima foi empacotado e commitado:
 * **Arquivo**: `cfg_restauracao_master_v2.cfg`
 * **Localização**: Raiz do repositório
-* **Tamanho**: `349 KB` (357.296 bytes)
-* **SHA256**: `08d57947a52ed4b34d51f8d92b037e8c2620f5bd224a94325d399fbf62fb2e5a`
+* **Tamanho**: `349 KB` (357.390 bytes)
+* **SHA256**: `b135ced45c6d2540a39bfa74c027b0864441f503731d928a992189f17aaecfbf`
 * **Padrão de Criação**: `COPYFILE_DISABLE=1 tar --no-mac-metadata -czf`
 
 ---

@@ -1,6 +1,6 @@
 {
 	"admin/network/wifi_wisp": {
-		"title": "Wi-Fi WAN / WISP",
+		"title": "Wi-Fi como WAN (WISP)",
 		"action": {
 			"type": "view",
 			"path": "wifi_wisp"

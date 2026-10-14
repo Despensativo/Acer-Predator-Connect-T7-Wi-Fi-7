@@ -236,22 +236,22 @@ return view.extend({
 		                 _('DESCONECTADO (Internet via Cabo Ethernet ou Offline)'));
 
 		var badgeBg = '#7f8c8d';
-		var badgeText = 'OFFLINE';
+		var badgeText = _('DESCONECTADO');
 
 		if (isConnected) {
 			if (s.internet_online) {
 				badgeBg = '#27ae60';
-				badgeText = 'INTERNET ONLINE';
+				badgeText = _('INTERNET ONLINE');
 			} else if (s.captive_portal) {
 				badgeBg = '#f39c12';
-				badgeText = 'PORTAL DE ACESSO';
+				badgeText = _('PORTAL DE ACESSO');
 			} else {
 				badgeBg = '#2980b9';
-				badgeText = 'LINK ATIVO';
+				badgeText = _('LINK ATIVO');
 			}
 		} else if (isConnecting) {
 			badgeBg = '#e67e22';
-			badgeText = '⏳ CALIBRANDO';
+			badgeText = _('⏳ CALIBRANDO');
 		}
 
 		var box = E('div', {
@@ -323,7 +323,7 @@ return view.extend({
 						E('span', { 'class': 'spinning', 'style': 'margin-right:8px;' }, ''),
 						_('Hardware Qualcomm IPQ5332 / QCN9224 em calibração e sintonia...')
 					]),
-					s.device ? E('span', { 'style': 'background:#fcf3cf; color:#7d6608; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:12px;' }, 'Rádio: ' + s.device) : ''
+					s.device ? E('span', { 'style': 'background:#fcf3cf; color:#7d6608; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:12px;' }, _('Rádio: ') + s.device) : ''
 				]),
 				E('p', { 'style': 'margin:4px 0 10px 0; font-size:13px; color:#7d6608;' }, s.message || _('Sincronizando frequências de rádio e negociando concessão de IP via DHCP...')),
 				E('div', { 'style': 'font-size:12px; color:#9a7d0a; line-height:1.6; border-top:1px dashed #f9e79f; padding-top:10px;' }, [

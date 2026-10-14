@@ -606,6 +606,10 @@ var I18N = {
 };
 
 function getActiveLang() {
+	var nav = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+	if (nav.indexOf('pt') === 0) return 'pt_br';
+	if (nav.indexOf('es') === 0) return 'es';
+
 	var l = (document.documentElement.lang || '').toLowerCase();
 	if (!l && document.body) {
 		var m = document.body.className.match(/lang_([a-zA-Z_-]+)/);
@@ -613,7 +617,9 @@ function getActiveLang() {
 	}
 	if (l.indexOf('pt') === 0 || l === 'pt_br' || l === 'pt-br') return 'pt_br';
 	if (l.indexOf('es') === 0) return 'es';
-	return 'en';
+	if (nav.indexOf('en') === 0 || l.indexOf('en') === 0) return 'en';
+
+	return 'pt_br';
 }
 
 function t(key, arg1) {
@@ -780,8 +786,8 @@ return view.extend({
 		}
 
 		var ifaces = (status && status.interfaces) ? status.interfaces : [];
-		var currentKey = (ifaces.length > 0 && ifaces[0].key) ? ifaces[0].key : 'predator0100';
-		var currentSsid = (ifaces.length > 0 && ifaces[0].ssid) ? ifaces[0].ssid : 'Predator_T7';
+		var currentKey = (ifaces.length > 0 && ifaces[0].key) ? ifaces[0].key : 'Predator0@';
+		var currentSsid = (ifaces.length > 0 && ifaces[0].ssid) ? ifaces[0].ssid : 'Predator_7G';
 
 		var ssidInput = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'style': 'width:100%;', 'placeholder': t('th_ssid'), 'value': currentSsid });
 		var keyField = createPasswordInput(t('pass_placeholder'), currentKey);

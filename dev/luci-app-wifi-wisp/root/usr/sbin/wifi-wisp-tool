@@ -324,11 +324,27 @@ case "$ACTION" in
         uci -q set network.wwan.metric='20' # Prioridade 20 (Cabo Ethernet tem metrica 10 e prevalece automaticamente se plugado)
         uci -q set network.wwan.ifname="$STA_DEV"
         
-        # 7. Garantir WWAN na zona WAN do Firewall
-        CUR_WAN_NETS=$(uci -q get firewall.@zone[1].network)
+        # 7. Garantir WWAN na zona WAN do Firewall (NAT e Forwarding)
+        WAN_ZONE="wan"
+        if [ -z "$(uci -q get firewall.wan.name)" ]; then
+            i=0
+            while [ $i -lt 10 ]; do
+                ZN=$(uci -q get firewall.@zone[$i].name)
+                [ "$ZN" = "wan" ] && { WAN_ZONE="@zone[$i]"; break; }
+                [ -z "$ZN" ] && break
+                i=$((i + 1))
+            done
+        fi
+        
+        # Limpar qualquer associação incorreta anterior
+        uci -q del_list firewall.guest.network='wwan'
+        uci -q del_list firewall.lan.network='wwan'
+        uci -q del_list firewall.iot.network='wwan'
+
+        CUR_WAN_NETS=$(uci -q get firewall.${WAN_ZONE}.network)
         case " $CUR_WAN_NETS " in
             *" wwan "*) ;;
-            *) uci -q add_list firewall.@zone[1].network='wwan' ;;
+            *) uci -q add_list firewall.${WAN_ZONE}.network='wwan' ;;
         esac
 
         # 8. Criar a interface cliente STA no rádio
@@ -428,8 +444,13 @@ case "$ACTION" in
     disconnect)
         uci -q delete wireless.wwan_sta
         uci -q delete network.wwan
+        uci -q del_list firewall.wan.network='wwan'
+        uci -q del_list firewall.guest.network='wwan'
+        uci -q del_list firewall.lan.network='wwan'
+        uci -q del_list firewall.iot.network='wwan'
         uci commit wireless
         uci commit network
+        uci commit firewall
         wifi reload 2>/dev/null
         /etc/init.d/firewall reload 2>/dev/null
         echo "{\"status\":\"success\",\"message\":\"Modo Wi-Fi WAN desconectado. Acesso à internet revertido exclusivamente para cabo Ethernet.\"}"

@@ -251,8 +251,8 @@ O `dnsmasq` intercepta dinamicamente a resolução DNS dos serviços onde o QUIC
 O arquivo master contendo a implementação completa de todos os 8 módulos acima foi empacotado e commitado:
 * **Arquivo**: `cfg_restauracao_master_v2.cfg`
 * **Localização**: Raiz do repositório
-* **Tamanho**: `337 KB` (345.088 bytes)
-* **SHA256**: `77e0f9c0ae3430642edb3022917999fd9c12ef8262fc20e71bc85aebcda2fce1`
+* **Tamanho**: `341 KB` (348.672 bytes)
+* **SHA256**: `5904f9ea61543d82ecc21b80c8070ed1d86c50cc00ef48d1cbcd6f0e55b33595`
 * **Padrão de Criação**: `COPYFILE_DISABLE=1 tar --no-mac-metadata -czf`
 
 ---

@@ -243,16 +243,46 @@ O `dnsmasq` intercepta dinamicamente a resolução DNS dos serviços onde o QUIC
 * **Prioridade Automática de Roteamento (Cabo vs Wi-Fi)**: O link WWAN recebe `metric 20`, enquanto a WAN cabeada Ethernet opera em `metric 10`. Ao plugar o cabo de rede de 2.5 Gbps, o tráfego migra instantaneamente para o cabo sem precisar desativar o Wi-Fi; ao desplugar o cabo, o tráfego retorna para o Wi-Fi em milissegundos.
 * **Detecção de Captive Portal (Hotspots de Hotel/Aeroporto)**: Testa a conectividade real via ping e curl; caso o rádio esteja associado mas sem internet, alerta o usuário para abrir o navegador no smartphone e aceitar o login no portal.
 * **Suporte Completo a Redes Ocultas**: Botão dedicado `[ ➕ Conectar a Rede Oculta (Manual) ]` permitindo inserir SSID, banda, padrão de criptografia e chave.
+* **Detecção Confiável de Segurança & Multi-BSSID (Roaming vs Fixação em Ponto Específico)**:
+  * *Resolução do bug de varredura*: O script `wifi-wisp-tool` implementa a função `flush_bss()` no BusyBox awk para garantir que flags de RSN/WPA/SAE sejam computadas antes de emitir o registro da rede. Isso elimina falsos-positivos onde redes protegidas (como WPA2-PSK) eram rotuladas erroneamente como "Aberta".
+  * *Multi-BSSID e Redes de Mesmo Nome*: Em ambientes com repetidores, nós Mesh ou redes corporativas/residenciais que usam o mesmo SSID em 2.4 GHz e 5 GHz, a tabela lista cada BSSID (endereço MAC) individual com seu canal, frequência em MHz e sinal.
+  * *Controle de Roaming Inteligente*: Na janela de conexão, o usuário dispõe do seletor `[x] Fixar conexão neste ponto de acesso específico (BSSID)`.
+    * **Marcado (BSSID Lock)**: O T7 crava a conexão no rádio/MAC escolhido via `uci set wireless.wwan_sta.bssid='...'`, impedindo que o roteador caia para frequências lentas de 2.4 GHz.
+    * **Desmarcado (Roaming Dinâmico)**: O parâmetro `bssid` é omitido, permitindo que o `wpa_supplicant` transite livremente e de forma inteligente entre múltiplos nós ou bandas da mesma rede, priorizando sempre a melhor relação sinal/qualidade.
+
+---
+
+### Módulo 9: Telemetria Wi-Fi 7 Nativa no LuCI Status Overview & Padronização RFC 1123 de Hostname
+**Arquivos Alvo no ARK**:
+* `/www/luci-static/resources/view/status/include/60_wifi.js` (Widget moderno para LuCI Status -> Overview)
+* `/usr/share/rpcd/acl.d/luci-mod-status-predator.json` (Permissão de leitura para o perfil `luci-access`)
+* `/etc/config/system` e `/etc/uci-defaults/99-debloat-v2` (Padronização e persistência de Hostname RFC 1123)
+
+#### Por que o LuCI Status Overview padrão falha no Qualcomm QSDK?
+No OpenWrt padrão, a tela de visão geral (`/cgi-bin/luci/admin/status/overview`) carrega `/www/luci-static/resources/view/status/include/60_wifi.js`, que invoca `network.getWifiDevices()` e `iwinfo`. No driver QCA SPF12.2, o `iwinfo` não reconhece a topologia Wi-Fi 7 (canais de 320 MHz, 4096-QAM e dispositivos QCN9224), resultando em caixas vazias, informações corrompidas ou falha silenciosa de renderização.
+
+#### Solução Implementada e Homologada:
+1. **Widget Dedicado de Wi-Fi 7**: O arquivo `60_wifi.js` foi reescrito para consultar diretamente o orquestrador `predator.get_status` via RPCD, renderizando cards visuais de telemetria completa para as 3 bandas:
+   * **2.4 GHz**: Status Online, SSID ativo, Canal, Largura em MHz, Potência real de TX em dBm e Temperatura do SoC.
+   * **5 GHz**: Status Online, SSID ativo, Canal, Largura (160 MHz), Potência real e Temperatura.
+   * **6 GHz Wi-Fi 7**: Status Online, SSID ativo, Canal, Largura máxima de 320 MHz, Potência e Temperatura.
+   * **Tabela de Clientes Conectados**: Mostra dispositivo/host, endereço MAC, banda (2.4G / 5G / 6G Wi-Fi 7), sinal (dBm + barra de qualidade %) e tempo de conexão.
+   * **Atalho Direto**: Botão no topo levando ao painel completo `/cgi-bin/luci/admin/network/predator_wifi`.
+2. **Permissão de Acesso Global (RPCD ACL)**: O arquivo `/usr/share/rpcd/acl.d/luci-mod-status-predator.json` adiciona a permissão de leitura de `predator.get_status` ao perfil `luci-access`, garantindo que qualquer usuário autenticado no LuCI visualize os dados na tela inicial.
+3. **Hostname Padronizado RFC 1123**: O hostname de fábrica continha espaços (`Predator Connect T7`), o que quebrava conformidade com a RFC 1123, gerava falhas em leases DHCP de operadoras e erros em scripts de terminal. Foi fixado e garantido na primeira inicialização (`99-debloat-v2`) como:
+   ```sh
+   uci set system.@system[0].hostname='Predator-Connect-T7'
+   ```
 
 ---
 
 ## 4. Pacote Homologado de Restauração
 
-O arquivo master contendo a implementação completa de todos os 8 módulos acima foi empacotado e commitado:
+O arquivo master contendo a implementação completa de todos os 9 módulos acima foi empacotado e commitado:
 * **Arquivo**: `cfg_restauracao_master_v2.cfg`
 * **Localização**: Raiz do repositório
-* **Tamanho**: `341 KB` (348.672 bytes)
-* **SHA256**: `5904f9ea61543d82ecc21b80c8070ed1d86c50cc00ef48d1cbcd6f0e55b33595`
+* **Tamanho**: `348 KB` (355.982 bytes)
+* **SHA256**: `4c639cca7451c6e618c952b2a1e6ba7dddfb75e06062c84537cf8477626159fc`
 * **Padrão de Criação**: `COPYFILE_DISABLE=1 tar --no-mac-metadata -czf`
 
 ---
@@ -260,8 +290,8 @@ O arquivo master contendo a implementação completa de todos os 8 módulos acim
 ## 5. Roteiro Sugerido para Integração no Repositório ARK Router
 
 Para mesclar esta solução no código-fonte do `luci-app-ark-router`:
-1. **Adicionar arquivos estáticos web**: Copiar `/www/luci-static/resources/view/ksmbd.js`, `predator_wifi.js` e `wifi_wisp.js` para o diretório de assets do ARK.
-2. **Integrar ACLs e Menus**: Incorporar os arquivos de `/usr/share/luci/menu.d/` e `/usr/share/rpcd/acl.d/` no pacote IPK do ARK.
+1. **Adicionar arquivos estáticos web**: Copiar `/www/luci-static/resources/view/ksmbd.js`, `predator_wifi.js`, `wifi_wisp.js` e `status/include/60_wifi.js` para o diretório de assets do ARK.
+2. **Integrar ACLs e Menus**: Incorporar os arquivos de `/usr/share/luci/menu.d/` e `/usr/share/rpcd/acl.d/` (incluindo `luci-mod-status-predator.json`) no pacote IPK do ARK.
 3. **Adicionar os Scripts de Borda**:
    * Incluir `/usr/sbin/ksmbd-disk-tool`, `/usr/sbin/predator-wifi-guard` e `/usr/sbin/wifi-wisp-tool` no diretório `/usr/sbin/` do pacote.
    * Adicionar a rotina do `ipset` QUIC no template do `/etc/config/firewall` e `/etc/config/dhcp`.
@@ -269,6 +299,7 @@ Para mesclar esta solução no código-fonte do `luci-app-ark-router`:
    * Configurar o watchdog seguro (`{"stop": false, "frequency": 5}`).
    * Garantir `dp_mlo_reo_rings_map=0` nos arquivos `.ini`.
    * Habilitar o `defaults.sh` com `no-split-gso` para o SQM.
+   * Padronizar o hostname sem espaços via `uci set system.@system[0].hostname='Predator-Connect-T7'`.
 
 ---
 *Documentação gerada com base nos testes e diagnósticos homologados em hardware real do Acer Predator Connect T7.*

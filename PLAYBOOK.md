@@ -1,4 +1,22 @@
 # PLAYBOOK DE COMANDOS HOMOLOGADOS - ACER PREDATOR CONNECT T7
+
+
+## Entrada de contexto para IA
+
+Leia este índice e as regras críticas; depois busque o assunto e leia seus trechos antes de executar comandos. O registro completo abaixo fica disponível para consulta por tema.
+
+- Regras locais de investigação: [AGENTS.md](AGENTS.md).
+- Índice de referências: [docs/README.md](docs/README.md).
+- Computador, OpenWrt e critérios de evidência: [docs/IA-CONTEXTO.md](docs/IA-CONTEXTO.md).
+- Estado e pendências da tarefa: [TASK.md](TASK.md).
+- Arquivos e candidatos do CFG: [ARQUIVOS_MODIFICADOS_CFG.md](ARQUIVOS_MODIFICADOS_CFG.md).
+
+**Antes de uma intervenção:** confirme versão e estado atuais, preserve acesso e recuperação e identifique o alvo físico. Os mapas e resultados registrados abaixo têm contexto próprio; não deduza o alvo de gravação apenas de nomes lógicos `rootfs`/`rootfs_1` nem trate uma observação anterior como estado atual.
+
+**Leitura por assunto:** faça busca textual e extração limitada também em bytes/caracteres. Uma linha longa pode carregar muito contexto. Registre estado transitório no checkpoint e lições confirmadas na referência pertinente.
+
+---
+
 > **IMPORTANTE PARA AGENTES DE IA**: Consulte este arquivo antes de disparar qualquer comando SSH, Telnet ou script neste projeto. É proibido chutar comandos ou partições por tentativa e erro.
 
 ---
@@ -347,3 +365,19 @@ usleep 200000          # Para 200 milissegundos (0.2s)
   - **Resultado Homologado em Produção**:
     - **Cabo (`en10` Gigabit)**: Waveform **Nota A+** (`748.6 Mbps` Down / `356.7 Mbps` Up / `+0 ms` Down / `+0 ms` Up); Speedtest.net **`739.07 Mbps` Down / `366.42 Mbps` Up / Ping `2 ms`**.
     - **Wi-Fi 7 6 GHz (`en0`, `802.11be`, Canal 37, `160 MHz`, PHY `2161 Mbps`)**: Waveform **Nota A** (`557.1 Mbps` Down / `305.7 Mbps` Up); Speedtest.net **`535.51 Mbps` Down / `320.27 Mbps` Up / Ping `7 ms`**.
+* **[AutoLearn - Causa Raiz do Boot Loop de 60-100s na Partição 1 (`mtd21`) e Estabilização Definitiva]**:
+  - **Causa Raiz 1 (Procd Watchdog vs Hardware Watchdog)**: O `procd` abre `/dev/watchdog` no boot com timeout de 30s. Qualquer chamada de `ubus call system watchdog '{"stop":true}'` ou `{"magicclose":true}` sem manter o procd alimentando o hardware fazia o chip Qualcomm SoC resetar o roteador exatamente 30s após a parada da alimentação. O comando correto e homologado para manter a alimentação ininterrupta é `ubus call system watchdog '{"stop": false, "frequency": 5}'`.
+  - **Causa Raiz 2 (Crash MLO IPC no Q6 MPD & qca_ol.ko)**: No arquivo `/ini/internal/QCN9224_i.ini`, `dp_mlo_reo_rings_map=0x7` tentava inicializar anéis MLO entre o SoC e a placa PCIe antes da calibração a frio terminar, disparando `ar_wal_mlo_ipc.c:1065 Assertion 0 failed` no firmware `5332.wlanfw.evalQ` e `Assertion failed! 0:ol_ath_unified_event_handler` (`kernel BUG at i_qdf_trace.h:402`) no `qca_ol.ko`. A solução homologada é fixar `dp_mlo_reo_rings_map=0` em `/ini/internal/QCN9224_i.ini` e `/cfg/default/ini/internal/QCN9224_i.ini`.
+  - **Causa Raiz 3 (Deadlock State D por setCountryID Prematuro e Loops de wifi up)**: Scripts prematuros (`sleep 8` no `/etc/rc.local` e loops de `wifi up` no `/etc/init.d/predator_rf`) disparavam `wifi up` enquanto o driver ainda estava calibrando a frio (60s). Isso fazia `qcawificfg80211.sh` linha 1063 disparar `cfg80211tool wifi0 setCountryID 840`, travando `cfg80211tool.1` e `insmod wifi_3_0` em sono ininterruptível (Estado D) disputando o `probe lock`. A solução homologada foi remover os disparos prematuros de `wifi up` e substituir a chamada prematura de `setCountryID 840` na função `set_default_country()` por `:`.
+  - **Causa Raiz 4 (Failsafe predator_dev)**: O script `/etc/init.d/predator_dev` contava falhas se o uptime fosse < 75s e forçava troca de partição via U-Boot BOOTCONFIG. Foi removido e desativado com `uci set predator_dev.failsafe.enabled='0'`.
+* **[AutoLearn - Pacote Master Restaurador v2 (`cfg_restauracao_master_v2.cfg`), Painel KSMBD e Acesso Remoto Blindado]**:
+  - **Estrutura Completa do CFG (327 KB)**:
+    - **Painel KSMBD (Network Shares)**: Inclui `/www/luci-static/resources/view/ksmbd.js` (com máscaras 0777, `browseable` e `hide_dot_files`), `/usr/lib/lua/luci/controller/ksmbd.lua`, `/usr/share/luci/menu.d/luci-app-ksmbd.json`, `/usr/share/rpcd/acl.d/luci-app-ksmbd.json`, binário auxiliar de formatação/gestão `/usr/sbin/ksmbd-disk-tool`, `/etc/config/ksmbd`, `/etc/init.d/ksmbd`, `/etc/ksmbd/smb.conf.template`, senhas `/etc/ksmbd/ksmbdpwd.db` e `/etc/config/fstab` (auto-mount de pen drives/discos USB em `/mnt`).
+    - **Painel Predator Wi-Fi 7**: Inclui `/www/luci-static/resources/view/predator_wifi.js`, menu JSON `/usr/share/luci/menu.d/luci-app-predator-wifi.json`, ACLs `/usr/share/rpcd/acl.d/luci-app-predator-wifi.json`, backend rpcd `/usr/libexec/rpcd/predator` e guardião anti-erro `/usr/sbin/predator-wifi-guard`.
+    - **Acesso Remoto Blindado (SSH e Telnet)**: Dropbear configurado sem restrição de interface (ouve em todas as sub-redes locais na porta 22), senha `root0100`, chave pública em `/etc/dropbear/authorized_keys`. Telnet nativo com auto-respawn via `procd` em `/etc/init.d/telnet` e fallback no `/etc/rc.local`.
+    - **Correção Crítica no `99-debloat-v2`**: Removidas todas as ocorrências de `rm -rf /overlay/upper/ini` que deletavam o patch do `QCN9224_i.ini` em reboots após restauração, e removida a linha que desativava o telnet.
+  - **Neutralização de Erros e Estabilidade do Waveform**:
+    - O SQM CAKE está protegido por `no-split-gso` e desativação do bypass do ECM SFE em `/usr/lib/sqm/defaults.sh` e `/etc/rc.local`.
+    - Testes do Waveform em dispositivos Apple (iPhone/Mac) exigem desativar o "Limitar Rastreamento de IP" (iCloud Private Relay) nas configurações do Wi-Fi para evitar bloqueios Cloudflare nos servidores de teste.
+    - Qualquer alteração manual de Wi-Fi é vigiada pelo `predator-wifi-guard`, revertendo automaticamente para `wireless.lastgood` caso um comando inadequado desative os rádios.
+

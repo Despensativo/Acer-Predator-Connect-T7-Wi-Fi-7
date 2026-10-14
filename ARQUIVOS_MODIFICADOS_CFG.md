@@ -93,3 +93,14 @@ Quando todas as etapas forem 100% validadas e aprovadas pelo usuário:
 | `/etc/config/sqm` | `dev/sqm-gso-ecm-fix/sqm` | **Homologado em Produção** | Adicionado `option eqdisc_opts 'no-split-gso'` e `option iqdisc_opts 'no-split-gso'` na seção `sqm.wan`, eliminando 100% do descarte de super-pacotes GSO PPPoE (`ETH_P_PPP_SES`) no upload (destravou de `0.15 Mbps` para `366.42 Mbps`). |
 | `/usr/lib/sqm/defaults.sh` | `dev/sqm-gso-ecm-fix/defaults.sh` | **Homologado em Produção** | Definido fallback padrão `no-split-gso`, `ethtool -K $IFACE gso on` e parada automática do bypass SFE (`front_end_ipv4_stop=1`, `front_end_ipv6_stop=1`, `defunct_all=1`), impedindo congelamento no pacote #25 no rádio 6 GHz (`ath2`). |
 | `/etc/rc.local` | `dev/sqm-gso-ecm-fix/rc.local` | **Homologado em Produção** | Persistência no boot de `ethtool -K eth0 gso on` e desativação de offload SFE conflitante quando `sqm.wan.enabled=1`. |
+
+### 2.5 Painel Inteligente Wi-Fi como WAN / Repetidor WISP (`dev/luci-app-wifi-wisp/`)
+
+| Arquivo no Roteador | Arquivo Local no Repositório | Status | Descrição da Modificação |
+| :--- | :--- | :--- | :--- |
+| `/usr/sbin/wifi-wisp-tool` | `dev/luci-app-wifi-wisp/root/usr/sbin/wifi-wisp-tool` | **Homologado em Produção** | Motor backend de borda com suporte a escaneamento multi-banda, deduplicação BSSID/canal, auto-lock BSSID, disparo assíncrono (`connect_bg`), tracker de progresso em 4 etapas, telemetria detalhada (17 métricas: PHY rates, latência ping 1.1.1.1, bytes transferidos, uptime, DNS) e detecção/correção automática de colisão de sub-rede LAN. |
+| `/www/luci-static/resources/view/wifi_wisp.js` | `dev/luci-app-wifi-wisp/root/www/luci-static/resources/view/wifi_wisp.js` | **Homologado em Produção** | Painel visual LuCI reativo: modal interativo em 4 passos com tolerância a drops momentâneos de Wi-Fi no reload (silêncio resiliente sem erro XHR), card de status conectado com 14 métricas em tempo real e remoção da barra desnecessária "Salvar e Aplicar". |
+| `/usr/lib/lua/luci/controller/wifi_wisp.lua` | `dev/luci-app-wifi-wisp/root/usr/lib/lua/luci/controller/wifi_wisp.lua` | **Homologado em Produção** | Entrada de menu LuCI sob Rede > Wi-Fi como WAN (WISP) com suporte a view JS e fallback. |
+| `/usr/share/luci/menu.d/luci-app-wifi-wisp.json` | `dev/luci-app-wifi-wisp/root/usr/share/luci/menu.d/luci-app-wifi-wisp.json` | **Homologado em Produção** | Definição de menu LuCI moderno (OpenWrt 19.07+ client-side routing). |
+| `/usr/share/rpcd/acl.d/luci-app-wifi-wisp.json` | `dev/luci-app-wifi-wisp/root/usr/share/rpcd/acl.d/luci-app-wifi-wisp.json` | **Homologado em Produção** | Permissões ACL para o LuCI executar `/usr/sbin/wifi-wisp-tool` via ubus/rpcd. |
+

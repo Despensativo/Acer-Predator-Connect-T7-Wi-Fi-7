@@ -1,0 +1,451 @@
+#!/bin/sh
+# wifi-wisp-tool - Gerenciador Inteligente de Wi-Fi como WAN (WISP)
+# Desenvolvido para Acer Predator Connect T7 & ARK Router Suite
+# Blindado contra loops, colisoes de sub-rede, senhas invalidas, travamentos de radio e redes duplicadas.
+
+ACTION="$1"
+
+get_local_identifiers() {
+    LOCAL_SSIDS=$(uci -q show wireless | grep -E '\.ssid=' | cut -d"'" -f2 | tr '\n' ' ')
+    LOCAL_MACS=$(cat /sys/class/net/ath*/address 2>/dev/null | tr 'A-Z' 'a-z' | tr '\n' ' ')
+}
+
+is_self_network() {
+    _target_ssid="$1"
+    _target_bssid=$(echo "$2" | tr 'A-Z' 'a-z')
+    
+    for ls in $LOCAL_SSIDS; do
+        [ -n "$ls" ] && [ "$_target_ssid" = "$ls" ] && return 0
+    done
+    for lm in $LOCAL_MACS; do
+        [ -n "$lm" ] && [ -n "$_target_bssid" ] && [ "$_target_bssid" = "$lm" ] && return 0
+    done
+    return 1
+}
+
+freq_to_channel() {
+    _f="$1"
+    if [ "$_f" -ge 2412 ] && [ "$_f" -le 2484 ]; then
+        if [ "$_f" -eq 2484 ]; then echo "14"; else echo "$(( (_f - 2407) / 5 ))"; fi
+    elif [ "$_f" -ge 5000 ] && [ "$_f" -le 5900 ]; then
+        echo "$(( (_f - 5000) / 5 ))"
+    elif [ "$_f" -ge 5925 ] && [ "$_f" -le 7125 ]; then
+        echo "$(( (_f - 5940) / 5 ))"
+    else
+        echo "0"
+    fi
+}
+
+freq_to_band() {
+    _f="$1"
+    if [ "$_f" -le 2500 ]; then
+        echo "2.4 GHz"
+    elif [ "$_f" -le 5900 ]; then
+        echo "5 GHz"
+    else
+        echo "6 GHz"
+    fi
+}
+
+dbm_to_percent() {
+    _dbm="$1"
+    _val=$(echo "$_dbm" | tr -cd '0-9-')
+    [ -z "$_val" ] && { echo "0"; return; }
+    if [ "$_val" -le -100 ]; then
+        echo "0"
+    elif [ "$_val" -ge -50 ]; then
+        echo "100"
+    else
+        echo "$(( 2 * (_val + 100) ))"
+    fi
+}
+
+case "$ACTION" in
+    scan)
+        MODE="$2"
+        get_local_identifiers
+        TMP_SCAN="/tmp/wifi_wisp_scan.raw"
+
+        # Se solicitado scan ativo forçado ("force") ou se o arquivo temporário estiver vazio
+        if [ "$MODE" = "force" ] || [ ! -s "$TMP_SCAN" ]; then
+            rm -f "$TMP_SCAN"
+            for dev in ath1 ath0 ath2; do
+                if [ -d "/sys/class/net/$dev" ]; then
+                    iw dev "$dev" scan >/dev/null 2>&1 &
+                fi
+            done
+            wait
+        fi
+
+        rm -f "$TMP_SCAN"
+        # Varrer via iw dump nas interfaces de 5 GHz, 2.4 GHz e 6 GHz ativas
+        for dev in ath1 ath0 ath2; do
+            if [ -d "/sys/class/net/$dev" ]; then
+                iw dev "$dev" scan dump 2>/dev/null >> "$TMP_SCAN"
+            fi
+        done
+
+        # Parsing de saída do iw scan com suporte estrito a BusyBox awk e detecção de cada BSS
+        awk '
+        function flush_bss() {
+            if (in_bss && ssid != "") {
+                if (ssid ~ /^(\\x00)+$/ || ssid ~ /^[ \t]*$/) return
+                if (is_sae) enc = "WPA3-SAE"
+                else if (is_rsn && is_wpa) enc = "WPA2/WPA3"
+                else if (is_rsn) enc = "WPA2-PSK"
+                else if (is_wpa) enc = "WPA-PSK"
+                else enc = "Aberta"
+                print bss "|" ssid "|" freq "|" signal "|" enc
+            }
+        }
+        BEGIN { in_bss = 0 }
+        /^BSS / {
+            flush_bss()
+            in_bss = 1
+            sub(/\(.*/, "", $2)
+            bss = tolower($2)
+            ssid = ""
+            freq = 0
+            signal = -100
+            is_wpa = 0
+            is_rsn = 0
+            is_sae = 0
+        }
+        /^[ \t]*freq:/ { freq = int($2) }
+        /^[ \t]*signal:/ { signal = int($2) }
+        /^[ \t]*SSID: / {
+            sub(/^[ \t]*SSID: /, "")
+            ssid = $0
+        }
+        /^[ \t]*WPA:/ { is_wpa = 1 }
+        /^[ \t]*RSN:/ { is_rsn = 1 }
+        /Authentication suites:.*SAE/ { is_sae = 1 }
+        END { flush_bss() }
+        ' "$TMP_SCAN" 2>/dev/null | sort -t"|" -k4,4nr | sort -u -t"|" -k1,1 | while IFS='|' read -r bss ssid freq sig enc; do
+            [ -z "$ssid" ] && continue
+            
+            # Sanitizar strings para JSON seguro
+            clean_ssid=$(echo "$ssid" | sed 's/\\/\\\\/g; s/"/\\"/g')
+            channel=$(freq_to_channel "$freq")
+            band=$(freq_to_band "$freq")
+            pct=$(dbm_to_percent "$sig")
+            
+            self=false
+            if is_self_network "$ssid" "$bss"; then
+                self=true
+            fi
+
+            echo "{\"ssid\":\"$clean_ssid\",\"bssid\":\"$bss\",\"channel\":$channel,\"band\":\"$band\",\"freq\":$freq,\"signal\":$sig,\"quality\":$pct,\"encryption\":\"$enc\",\"is_self\":$self}"
+        done | awk 'BEGIN{print "{\"networks\":["} {if(NR>1)printf ","; print $0} END{print "]}"}'
+        ;;
+
+    status)
+        STA_IFACE=$(uci -q get wireless.wwan_sta.device)
+        SSID=$(uci -q get wireless.wwan_sta.ssid)
+        BSSID=$(uci -q get wireless.wwan_sta.bssid)
+        DISABLED=$(uci -q get wireless.wwan_sta.disabled || echo "0")
+        
+        if [ -z "$SSID" ] || [ "$DISABLED" = "1" ]; then
+            echo "{\"connected\":false,\"state\":\"disconnected\",\"message\":\"Modo Wi-Fi WAN Desativado (Internet via Cabo Ethernet ou Roteador Offline)\"}"
+            exit 0
+        fi
+
+        # Verificar se obteve IP na interface wwan
+        STATUS_JSON=$(ubus call network.interface.wwan status 2>/dev/null)
+        UP=$(echo "$STATUS_JSON" | grep '"up":' | grep -o 'true\|false' | head -n1)
+        IPV4=$(echo "$STATUS_JSON" | grep -A 2 '"ipv4-address"' | grep '"address"' | cut -d'"' -f4 | head -n1)
+        GATEWAY=$(echo "$STATUS_JSON" | grep -A 5 '"route"' | grep '"nexthop"' | cut -d'"' -f4 | head -n1)
+        [ -z "$GATEWAY" ] && GATEWAY=$(route -n 2>/dev/null | grep '^0.0.0.0' | grep 'wwan' | awk '{print $2}' | head -n1)
+
+        # Buscar estatísticas do link via iw
+        DEVNAME=""
+        for d in ath01 ath11 ath21 ath1 ath0 wlan0; do
+            if [ -d "/sys/class/net/$d" ]; then
+                DEVNAME="$d"
+                break
+            fi
+        done
+        [ -z "$DEVNAME" ] && DEVNAME="ath1"
+
+        IW_LINK=$(iw dev "$DEVNAME" link 2>/dev/null)
+        REAL_BSSID=$(echo "$IW_LINK" | grep 'Connected to' | awk '{print $3}')
+        [ -n "$REAL_BSSID" ] && BSSID="$REAL_BSSID"
+        FREQ=$(echo "$IW_LINK" | grep 'freq:' | awk '{print $2}')
+        [ -z "$FREQ" ] && FREQ=0
+        CHANNEL=$(freq_to_channel "$FREQ")
+        BAND=$(freq_to_band "$FREQ")
+        SIG=$(echo "$IW_LINK" | grep 'signal:' | awk '{print $2}')
+        [ -z "$SIG" ] && SIG="-60"
+        PCT=$(dbm_to_percent "$SIG")
+
+        TX_RATE=$(echo "$IW_LINK" | grep 'tx bitrate:' | sed -e 's/^[ \t]*tx bitrate:[ \t]*//' | tr -d '"')
+        RX_RATE=$(echo "$IW_LINK" | grep 'rx bitrate:' | sed -e 's/^[ \t]*rx bitrate:[ \t]*//' | tr -d '"')
+        RX_BYTES=$(echo "$IW_LINK" | grep 'RX:' | awk '{print $2}')
+        TX_BYTES=$(echo "$IW_LINK" | grep 'TX:' | awk '{print $2}')
+        [ -z "$RX_BYTES" ] && RX_BYTES="0"
+        [ -z "$TX_BYTES" ] && TX_BYTES="0"
+
+        NETMASK=$(echo "$STATUS_JSON" | grep -A 3 '"ipv4-address"' | grep '"mask"' | grep -o '[0-9]*' | head -n1)
+        [ -z "$NETMASK" ] && NETMASK="24"
+        DNS_SERVERS=$(echo "$STATUS_JSON" | grep -A 6 '"dns-server"' | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | head -n 2 | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+        [ -z "$DNS_SERVERS" ] && DNS_SERVERS="-"
+        UPTIME=$(echo "$STATUS_JSON" | grep '"uptime"' | grep -o '[0-9]*' | head -n1)
+        [ -z "$UPTIME" ] && UPTIME="0"
+
+        # Checagem de Conflito de Sub-rede
+        LAN_IP=$(uci -q get network.lan.ipaddr || echo "192.168.76.1")
+        LAN_PREFIX=$(echo "$LAN_IP" | cut -d'.' -f1-3)
+        CONFLICT=false
+        CONFLICT_MSG=""
+        if [ -n "$IPV4" ]; then
+            WAN_PREFIX=$(echo "$IPV4" | cut -d'.' -f1-3)
+            if [ "$LAN_PREFIX" = "$WAN_PREFIX" ]; then
+                CONFLICT=true
+                CONFLICT_MSG="Colisão de sub-rede detectada: a WAN recebeu $IPV4, que conflita com a rede local ($LAN_PREFIX.x)."
+            fi
+        fi
+
+        # Teste Rápido de Conectividade com a Internet (Ping 1.1.1.1 via WWAN)
+        INTERNET_ONLINE=false
+        CAPTIVE_PORTAL=false
+        PING_LAT="-"
+        if [ "$UP" = "true" ] && [ -n "$IPV4" ]; then
+            PING_LAT=$(ping -c 1 -W 1 -I "$IPV4" 1.1.1.1 2>/dev/null | grep 'time=' | sed -e 's/.*time=//' -e 's/ ms//' | awk '{printf "%.1f ms", $1}')
+            if [ -n "$PING_LAT" ] && [ "$PING_LAT" != "-" ]; then
+                INTERNET_ONLINE=true
+            else
+                CAPTIVE_PORTAL=true
+                PING_LAT="Timeout"
+            fi
+        fi
+
+        CLEAN_SSID=$(echo "$SSID" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+        if [ "$UP" = "true" ] && [ -n "$IPV4" ]; then
+            echo "{\"connected\":true,\"state\":\"connected\",\"ssid\":\"$CLEAN_SSID\",\"bssid\":\"$BSSID\",\"channel\":$CHANNEL,\"freq\":$FREQ,\"band\":\"$BAND\",\"ip\":\"$IPV4\",\"netmask\":\"$NETMASK\",\"gateway\":\"$GATEWAY\",\"dns\":\"$DNS_SERVERS\",\"uptime\":$UPTIME,\"signal\":\"$SIG dBm\",\"quality\":$PCT,\"tx_rate\":\"$TX_RATE\",\"rx_rate\":\"$RX_RATE\",\"rx_bytes\":\"$RX_BYTES\",\"tx_bytes\":\"$TX_BYTES\",\"ping\":\"$PING_LAT\",\"device\":\"$STA_IFACE\",\"sta_iface\":\"$DEVNAME\",\"internet_online\":$INTERNET_ONLINE,\"captive_portal\":$CAPTIVE_PORTAL,\"conflict_detected\":$CONFLICT,\"conflict_message\":\"$CONFLICT_MSG\",\"lan_ip\":\"$LAN_IP\"}"
+        else
+            echo "{\"connected\":false,\"state\":\"connecting\",\"ssid\":\"$CLEAN_SSID\",\"bssid\":\"$BSSID\",\"message\":\"Autenticando no rádio ou aguardando DHCP...\",\"device\":\"$STA_IFACE\"}"
+        fi
+        ;;
+
+    connect_bg)
+        SSID="$2"
+        KEY="$3"
+        ENC="$4"
+        REQ_BAND="$5"
+        REQ_BSSID="$6"
+
+        echo "{\"step\":1,\"state\":\"starting\",\"message\":\"Iniciando configuração de rede...\"}" > /tmp/wisp_progress.json
+
+        # Disparar conexão em background
+        ( /usr/sbin/wifi-wisp-tool do_connect "$SSID" "$KEY" "$ENC" "$REQ_BAND" "$REQ_BSSID" >/tmp/wisp_connect.log 2>&1 ) &
+
+        echo "{\"status\":\"initiated\",\"message\":\"Processo de conexão iniciado em segundo plano\"}"
+        exit 0
+        ;;
+
+    progress)
+        if [ -f /tmp/wisp_progress.json ]; then
+            cat /tmp/wisp_progress.json
+        else
+            echo "{\"step\":0,\"state\":\"idle\"}"
+        fi
+        exit 0
+        ;;
+
+    connect|do_connect)
+        SSID="$2"
+        KEY="$3"
+        ENC="$4"
+        REQ_BAND="$5"
+        REQ_BSSID="$6"
+
+        echo "{\"step\":1,\"state\":\"configuring\",\"message\":\"Gravando perfil de rádio, firewall e credenciais...\"}" > /tmp/wisp_progress.json
+
+        # 1. Blindagem Anti-Bobagem: Validar SSID
+        if [ -z "$SSID" ]; then
+            echo "{\"status\":\"error\",\"message\":\"O nome da rede (SSID) é obrigatório.\"}"
+            echo "{\"step\":1,\"state\":\"error\",\"message\":\"O nome da rede (SSID) é obrigatório.\"}" > /tmp/wisp_progress.json
+            exit 1
+        fi
+
+        get_local_identifiers
+        if is_self_network "$SSID" "$REQ_BSSID"; then
+            ERR_MSG="TRAVA DE SEGURANÇA: Não é permitido conectar o roteador à sua própria rede Wi-Fi ($SSID)! Isso causaria um loop de rede e broadcast storm fatal."
+            echo "{\"status\":\"error\",\"message\":\"$ERR_MSG\"}"
+            echo "{\"step\":1,\"state\":\"error\",\"message\":\"$ERR_MSG\"}" > /tmp/wisp_progress.json
+            exit 1
+        fi
+
+        # 2. Blindagem de Senha
+        if [ "$ENC" != "none" ] && [ "$ENC" != "Aberta" ] && [ -n "$ENC" ]; then
+            KEY_LEN=$(printf "%s" "$KEY" | wc -c)
+            if [ "$KEY_LEN" -lt 8 ]; then
+                ERR_MSG="TRAVA DE SEGURANÇA: Senhas de redes protegidas devem ter no mínimo 8 caracteres (você digitou $KEY_LEN)."
+                echo "{\"status\":\"error\",\"message\":\"$ERR_MSG\"}"
+                echo "{\"step\":1,\"state\":\"error\",\"message\":\"$ERR_MSG\"}" > /tmp/wisp_progress.json
+                exit 1
+            fi
+        fi
+
+        # 3. Escolha Inteligente do Rádio Físico baseada na Banda
+        RADIO="wifi1" # 5 GHz (QCN9224) - Padrão de velocidade e estabilidade
+        STA_DEV="ath11"
+        case "$REQ_BAND" in
+            *2.4*|*2G*|*24*)
+                RADIO="wifi0" # 2.4 GHz (IPQ5332)
+                STA_DEV="ath01"
+                ;;
+            *6*|*6G*)
+                RADIO="wifi2" # 6 GHz (QCN9224)
+                STA_DEV="ath21"
+                ENC="sae"     # Wi-Fi 6E/7 em 6 GHz exige WPA3-SAE
+                ;;
+            *)
+                RADIO="wifi1" # 5 GHz
+                STA_DEV="ath11"
+                ;;
+        esac
+
+        # 4. Detecção e Mapeamento de Criptografia
+        [ -z "$ENC" ] && ENC="psk2"
+        case "$ENC" in
+            *sae*|*SAE*|*WPA3*) ENC_UCI="sae" ;;
+            *none*|*open*|*Aberta*) ENC_UCI="none" ;;
+            *) ENC_UCI="psk2" ;;
+        esac
+
+        # 5. Backup preventivo do wireless antes de aplicar
+        cp -f /etc/config/wireless /tmp/wireless.backup.wisp
+
+        # 6. Criar/Atualizar interface de rede WWAN
+        uci -q set network.wwan=interface
+        uci -q set network.wwan.proto='dhcp'
+        uci -q set network.wwan.metric='20' # Prioridade 20 (Cabo Ethernet tem metrica 10 e prevalece automaticamente se plugado)
+        uci -q set network.wwan.ifname="$STA_DEV"
+        
+        # 7. Garantir WWAN na zona WAN do Firewall
+        CUR_WAN_NETS=$(uci -q get firewall.@zone[1].network)
+        case " $CUR_WAN_NETS " in
+            *" wwan "*) ;;
+            *) uci -q add_list firewall.@zone[1].network='wwan' ;;
+        esac
+
+        # 8. Criar a interface cliente STA no rádio
+        uci -q set wireless.wwan_sta=wifi-iface
+        uci -q set wireless.wwan_sta.device="$RADIO"
+        uci -q set wireless.wwan_sta.network='wwan'
+        uci -q set wireless.wwan_sta.mode='sta'
+        uci -q set wireless.wwan_sta.ssid="$SSID"
+        if [ -n "$REQ_BSSID" ]; then
+            uci -q set wireless.wwan_sta.bssid="$REQ_BSSID"
+        else
+            uci -q delete wireless.wwan_sta.bssid
+        fi
+        uci -q set wireless.wwan_sta.encryption="$ENC_UCI"
+        if [ "$ENC_UCI" = "sae" ]; then
+            uci -q set wireless.wwan_sta.sae_password="$KEY"
+            uci -q set wireless.wwan_sta.key="$KEY"
+        elif [ "$ENC_UCI" != "none" ]; then
+            uci -q set wireless.wwan_sta.key="$KEY"
+        fi
+        uci -q set wireless.wwan_sta.disabled='0'
+
+        uci commit network
+        uci commit wireless
+        uci commit firewall
+
+        echo "{\"step\":2,\"state\":\"reloading\",\"message\":\"Sincronizando frequências de rádio e associando ao ponto Wi-Fi...\"}" > /tmp/wisp_progress.json
+
+        /etc/init.d/firewall reload 2>/dev/null
+        wifi reload 2>/dev/null
+        sleep 1
+        /sbin/ifup wwan 2>/dev/null
+
+        echo "{\"step\":3,\"state\":\"dhcp\",\"message\":\"Aguardando concessão de endereço IP via DHCP...\"}" > /tmp/wisp_progress.json
+
+        # 9. Verificação ativa de link com timeout seguro de 15 segundos
+        ATTEMPTS=0
+        CONNECTED=0
+        ASSIGNED_IP=""
+
+        while [ "$ATTEMPTS" -lt 15 ]; do
+            sleep 1
+            ATTEMPTS=$((ATTEMPTS + 1))
+            
+            ASSIGNED_IP=$(ubus call network.interface.wwan status 2>/dev/null | grep -A 2 '"ipv4-address"' | grep '"address"' | cut -d'"' -f4 | head -n1)
+            if [ -n "$ASSIGNED_IP" ]; then
+                CONNECTED=1
+                break
+            fi
+        done
+
+        if [ "$CONNECTED" -eq 1 ]; then
+            echo "{\"step\":4,\"state\":\"verifying\",\"message\":\"Testando rota e latência de navegação na Internet...\"}" > /tmp/wisp_progress.json
+            sleep 1
+
+            # Blindagem contra Colisão de Sub-rede
+            LAN_IP=$(uci -q get network.lan.ipaddr || echo "192.168.76.1")
+            LAN_PREFIX=$(echo "$LAN_IP" | cut -d'.' -f1-3)
+            WAN_PREFIX=$(echo "$ASSIGNED_IP" | cut -d'.' -f1-3)
+
+            CONFLICT_WARNING=""
+            CONFLICT_BOOL=false
+            if [ "$LAN_PREFIX" = "$WAN_PREFIX" ]; then
+                CONFLICT_BOOL=true
+                CONFLICT_WARNING="AVISO CRÍTICO: A rede externa forneceu IP na mesma sub-rede da sua LAN ($LAN_PREFIX.x). É altamente recomendável alterar o IP da LAN para 192.168.77.1 para evitar colisão."
+            fi
+
+            # Salvar perfil em histórico
+            mkdir -p /etc/predator
+            echo "{\"ssid\":\"$SSID\",\"bssid\":\"$REQ_BSSID\",\"band\":\"$REQ_BAND\",\"encryption\":\"$ENC_UCI\",\"timestamp\":$(date +%s)}" > /etc/predator/wisp_last.json 2>/dev/null || true
+
+            CLEAN_SSID=$(echo "$SSID" | sed 's/\\/\\\\/g; s/"/\\"/g')
+            
+            echo "{\"step\":4,\"state\":\"success\",\"ip\":\"$ASSIGNED_IP\",\"message\":\"Conexão estabelecida com sucesso!\",\"conflict\":$CONFLICT_BOOL,\"warning\":\"$CONFLICT_WARNING\"}" > /tmp/wisp_progress.json
+            echo "{\"status\":\"success\",\"message\":\"Conectado com sucesso à rede $CLEAN_SSID!\",\"ip\":\"$ASSIGNED_IP\",\"conflict\":$CONFLICT_BOOL,\"warning\":\"$CONFLICT_WARNING\"}"
+            exit 0
+        else
+            # AUTO-ROLLBACK: Restaura wireless original para não deixar o rádio em pane ou desconfigurado
+            if [ -f /tmp/wireless.backup.wisp ]; then
+                cp -f /tmp/wireless.backup.wisp /etc/config/wireless
+            else
+                uci -q delete wireless.wwan_sta
+            fi
+            uci -q delete network.wwan
+            uci commit wireless
+            uci commit network
+            wifi reload 2>/dev/null
+
+            CLEAN_SSID=$(echo "$SSID" | sed 's/\\/\\\\/g; s/"/\\"/g')
+            ERR_MSG="Não foi possível conectar a $CLEAN_SSID dentro do tempo limite. Verifique se a senha está correta ou se o sinal está ao alcance. Sua rede local e seus pontos Wi-Fi foram mantidos 100% intactos pelo sistema de auto-cura."
+            echo "{\"step\":4,\"state\":\"error\",\"message\":\"$ERR_MSG\"}" > /tmp/wisp_progress.json
+            echo "{\"status\":\"error\",\"message\":\"$ERR_MSG\"}"
+            exit 1
+        fi
+        ;;
+
+    disconnect)
+        uci -q delete wireless.wwan_sta
+        uci -q delete network.wwan
+        uci commit wireless
+        uci commit network
+        wifi reload 2>/dev/null
+        /etc/init.d/firewall reload 2>/dev/null
+        echo "{\"status\":\"success\",\"message\":\"Modo Wi-Fi WAN desconectado. Acesso à internet revertido exclusivamente para cabo Ethernet.\"}"
+        ;;
+
+    fix_lan_conflict)
+        # Resolução com 1 clique de colisão de sub-rede
+        NEW_IP="192.168.77.1"
+        uci -q set network.lan.ipaddr="$NEW_IP"
+        uci commit network
+        /etc/init.d/network reload 2>/dev/null
+        echo "{\"status\":\"success\",\"message\":\"IP da rede local alterado com sucesso para $NEW_IP. Conflito resolvido!\",\"new_ip\":\"$NEW_IP\"}"
+        ;;
+
+    *)
+        echo "Uso: $0 {scan|status|connect <ssid> <senha> [encryption] [band] [bssid]|disconnect|fix_lan_conflict}"
+        exit 1
+        ;;
+esac

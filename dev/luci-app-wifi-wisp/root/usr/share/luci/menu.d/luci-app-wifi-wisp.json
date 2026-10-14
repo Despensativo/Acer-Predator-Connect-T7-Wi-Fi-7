@@ -1,0 +1,13 @@
+{
+	"admin/network/wifi_wisp": {
+		"title": "Wi-Fi WAN / WISP",
+		"action": {
+			"type": "view",
+			"path": "wifi_wisp"
+		},
+		"depends": {
+			"acl": [ "luci-app-wifi-wisp" ]
+		},
+		"order": 25
+	}
+}

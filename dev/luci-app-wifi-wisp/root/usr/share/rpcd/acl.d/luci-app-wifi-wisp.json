@@ -1,0 +1,20 @@
+{
+	"luci-app-wifi-wisp": {
+		"description": "Grant access to Wi-Fi WISP management",
+		"read": {
+			"file": {
+				"/usr/sbin/wifi-wisp-tool": [ "exec" ]
+			},
+			"ubus": {
+				"network.interface.wwan": [ "status" ]
+			},
+			"uci": [ "wireless", "network", "firewall" ]
+		},
+		"write": {
+			"file": {
+				"/usr/sbin/wifi-wisp-tool": [ "exec" ]
+			},
+			"uci": [ "wireless", "network", "firewall" ]
+		}
+	}
+}

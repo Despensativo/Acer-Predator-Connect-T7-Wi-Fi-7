@@ -66,7 +66,7 @@ return view.extend({
 		// Título e Introdução
 		m.appendChild(E('h2', {}, _('Wi-Fi como WAN / Repetidor Inteligente (WISP)')));
 		m.appendChild(E('div', { 'class': 'cbi-map-descr' }, 
-			_('Conecte o seu Acer Predator T7 a qualquer rede Wi-Fi externa (roteador da operadora, hotspot 4G/5G do celular ou rede de eventos) para usá-la como link de Internet. A sua rede local (GAMER_7G), o DHCP interno, o compartilhamento KSMBD e o Firewall continuam 100% protegidos e operacionais sem risco de colapso.')
+			_('Conecte o seu Acer Predator T7 a qualquer rede Wi-Fi externa (roteador da operadora, hotspot 4G/5G do celular ou rede de eventos) para usá-la como link de Internet. A sua rede local (Predator_7G), o DHCP interno, o compartilhamento KSMBD e o Firewall continuam 100% protegidos e operacionais sem risco de colapso.')
 		));
 
 		// Card de Status Ativo
@@ -229,8 +229,11 @@ return view.extend({
 		var self = this;
 
 		var isConnected = (s.connected === true);
-		var headerColor = isConnected ? '#2ecc71' : '#7f8c8d';
-		var statusText = isConnected ? _('CONECTADO (Link de Internet Ativo via Wi-Fi)') : _('DESCONECTADO (Internet via Cabo Ethernet ou Offline)');
+		var isConnecting = (!isConnected && s.state === 'connecting');
+		var headerColor = isConnected ? '#2ecc71' : (isConnecting ? '#f39c12' : '#7f8c8d');
+		var statusText = isConnected ? _('CONECTADO (Link de Internet Ativo via Wi-Fi)') : 
+		                 (isConnecting ? _('INICIALIZANDO / CALIBRANDO RÁDIO WI-FI (%s)...').format(s.ssid || 'Hotspot') : 
+		                 _('DESCONECTADO (Internet via Cabo Ethernet ou Offline)'));
 
 		var badgeBg = '#7f8c8d';
 		var badgeText = 'OFFLINE';
@@ -246,10 +249,13 @@ return view.extend({
 				badgeBg = '#2980b9';
 				badgeText = 'LINK ATIVO';
 			}
+		} else if (isConnecting) {
+			badgeBg = '#e67e22';
+			badgeText = '⏳ CALIBRANDO';
 		}
 
 		var box = E('div', {
-			'style': 'border:2px solid ' + (isConnected ? '#27ae60' : '#bdc3c7') + '; border-radius:8px; padding:18px; background: rgba(46, 204, 113, 0.04);'
+			'style': 'border:2px solid ' + (isConnected ? '#27ae60' : (isConnecting ? '#f39c12' : '#bdc3c7')) + '; border-radius:8px; padding:18px; background:' + (isConnected ? 'rgba(46, 204, 113, 0.04)' : (isConnecting ? 'rgba(243, 156, 18, 0.04)' : '#fff')) + ';'
 		}, [
 			E('div', { 'style': 'display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;' }, [
 				E('div', {}, [
@@ -308,6 +314,28 @@ return view.extend({
 				]);
 				box.appendChild(conflictBox);
 			}
+		} else if (isConnecting) {
+			var calibBox = E('div', {
+				'style': 'margin-top:14px; padding:14px; background:#fef9e7; border:1px solid #f9e79f; border-radius:6px;'
+			}, [
+				E('div', { 'style': 'display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;' }, [
+					E('strong', { 'style': 'color:#7d6608; font-size:14px;' }, [
+						E('span', { 'class': 'spinning', 'style': 'margin-right:8px;' }, ''),
+						_('Hardware Qualcomm IPQ5332 / QCN9224 em calibração e sintonia...')
+					]),
+					s.device ? E('span', { 'style': 'background:#fcf3cf; color:#7d6608; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:12px;' }, 'Rádio: ' + s.device) : ''
+				]),
+				E('p', { 'style': 'margin:4px 0 10px 0; font-size:13px; color:#7d6608;' }, s.message || _('Sincronizando frequências de rádio e negociando concessão de IP via DHCP...')),
+				E('div', { 'style': 'font-size:12px; color:#9a7d0a; line-height:1.6; border-top:1px dashed #f9e79f; padding-top:10px;' }, [
+					E('div', { 'style': 'font-weight:bold; margin-bottom:4px;' }, _('⏱️ Tempo médio de calibração por cenário:')),
+					E('div', {}, _('• 📶 2.4 GHz (wifi0): ~12s a 15s (resposta rápida)')),
+					E('div', {}, _('• ⚡ 5 GHz 80 MHz (wifi1): ~15s a 18s (padrão otimizado sem radar)')),
+					E('div', {}, _('• 📡 5 GHz 160 MHz / Canais DFS: ~60s (escuta mandatória de radar CAC)')),
+					E('div', {}, _('• 🚀 6 GHz (wifi2): ~18s a 22s (handshake WPA3-SAE obrigatório)')),
+					E('div', { 'style': 'color:#b9770e; margin-top:4px;' }, _('• 🛡️ Trava de Rollback: 15s (reversão automática para cabo se a senha falhar)'))
+				])
+			]);
+			box.appendChild(calibBox);
 		} else {
 			box.appendChild(E('p', { 'style': 'margin:12px 0 0 0; color:#666;' }, 
 				s.message || _('Nenhuma rede Wi-Fi externa conectada. Escolha uma das redes abaixo ou clique em "Conectar a Rede Oculta" para usar um hotspot como saída de internet.')
@@ -531,6 +559,45 @@ return view.extend({
 	startConnectionProgress: function(ssid, key, enc, band, bssid) {
 		var self = this;
 
+		var scenarioName = '5 GHz 80 MHz (wifi1 - QCN9224)';
+		var estSeconds = 18;
+		var bStr = (band || '').toLowerCase();
+		if (bStr.indexOf('2.4') !== -1 || bStr.indexOf('2g') !== -1) {
+			scenarioName = '2.4 GHz (wifi0 - IPQ5332)';
+			estSeconds = 14;
+		} else if (bStr.indexOf('6') !== -1) {
+			scenarioName = '6 GHz (wifi2 - QCN9224 Wi-Fi 7)';
+			estSeconds = 20;
+		} else {
+			scenarioName = '5 GHz 80 MHz (wifi1 - QCN9224)';
+			estSeconds = 18;
+		}
+
+		var timerEl = E('span', { 'style': 'font-weight:bold; font-size:14px; color:#2980b9;' }, '0s / ~' + estSeconds + 's');
+		var barEl = E('div', {
+			'style': 'background:#2980b9; height:100%; width:4%; border-radius:4px; transition:width 0.4s ease;'
+		});
+
+		var timerBox = E('div', {
+			'style': 'background:#f4f6f7; border:1px solid #d5dbdb; border-radius:6px; padding:12px; margin:14px 0;'
+		}, [
+			E('div', { 'style': 'display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;' }, [
+				E('strong', { 'style': 'font-size:13px; color:#2c3e50;' }, [
+					_('⏱️ Cenário: '), scenarioName
+				]),
+				timerEl
+			]),
+			E('div', { 'style': 'background:#eaeded; border-radius:4px; height:8px; overflow:hidden;' }, [
+				barEl
+			]),
+			E('div', { 'style': 'margin-top:10px; font-size:11px; color:#7f8c8d; line-height:1.4;' }, [
+				E('div', { 'style': 'font-weight:bold; margin-bottom:2px;' }, _('Tempo médio de calibração por cenário:')),
+				E('div', {}, _('• 📶 2.4 GHz: ~12s a 15s | • ⚡ 5 GHz 80 MHz: ~15s a 18s')),
+				E('div', {}, _('• 📡 5 GHz 160 MHz / DFS: ~60s | • 🚀 6 GHz: ~18s a 22s')),
+				E('div', { 'style': 'color:#d35400;' }, _('• 🛡️ Trava de Rollback: 15s (reversão automática para cabo se a senha falhar)'))
+			])
+		]);
+
 		var step1Node = E('li', { 'style': 'margin-bottom:10px;' }, [
 			E('span', { 'style': 'color:#27ae60; font-weight:bold; margin-right:8px;' }, '✔️'),
 			_('Passo 1/4: Perfil de rádio, segurança e firewall configurados')
@@ -556,7 +623,7 @@ return view.extend({
 		]);
 
 		var statusMsgNode = E('p', { 'style': 'color:#7f8c8d; font-size:12px; margin-top:12px; line-height:1.5;' }, 
-			_('Blindagem Ativa: Se o seu computador estiver conectado ao Wi-Fi do T7 (GAMER_7G), a rede reconecta automaticamente em segundos sem interromper a configuração.')
+			_('Blindagem Ativa: Se o seu computador estiver conectado ao Wi-Fi do T7 (Predator_7G), a rede reconecta automaticamente em segundos sem interromper a configuração.')
 		);
 
 		var modalBody = E('div', {}, [
@@ -564,11 +631,20 @@ return view.extend({
 				_('Estabelecendo conexão com a rede: '),
 				E('strong', { 'style': 'font-size:16px; color:#2980b9;' }, ssid)
 			]),
+			timerBox,
 			progressList,
 			statusMsgNode
 		]);
 
 		ui.showModal(_('Conectando ao Wi-Fi...'), modalBody);
+
+		var elapsedSec = 0;
+		var timerTicker = setInterval(function() {
+			elapsedSec++;
+			timerEl.innerText = elapsedSec + 's / ~' + estSeconds + 's';
+			var pct = Math.min(94, Math.round((elapsedSec / estSeconds) * 90));
+			barEl.style.width = Math.max(4, pct) + '%';
+		}, 1000);
 
 		// Disparo assíncrono imediato (retorna em 20ms, nunca dropa socket HTTP)
 		fs.exec('/usr/sbin/wifi-wisp-tool', ['connect_bg', ssid, key, enc, band, bssid]).then(function() {
@@ -615,6 +691,9 @@ return view.extend({
 
 					if (p.state === 'success') {
 						clearInterval(pollTimer);
+						clearInterval(timerTicker);
+						barEl.style.width = '100%';
+						barEl.style.background = '#27ae60';
 						ui.showModal(_('🎉 Conexão Estabelecida com Sucesso!'), [
 							E('p', { 'style': 'font-size:15px; color:#27ae60;' }, _('O seu Acer Predator T7 está oficialmente conectado à Internet via Wi-Fi!')),
 							E('div', { 'style': 'background:#f8f9fa; border:1px solid #e9ecef; border-radius:6px; padding:12px; margin:15px 0;' }, [
@@ -631,6 +710,7 @@ return view.extend({
 						]);
 					} else if (p.state === 'error') {
 						clearInterval(pollTimer);
+						clearInterval(timerTicker);
 						ui.showModal(_('Falha na Conexão'), [
 							E('div', { 'class': 'alert-message error' }, p.message || _('Não foi possível conectar. Verifique a senha.')),
 							E('div', { 'class': 'right' }, [
@@ -639,6 +719,7 @@ return view.extend({
 						]);
 					} else if (pollCount >= maxPolls) {
 						clearInterval(pollTimer);
+						clearInterval(timerTicker);
 						ui.showModal(_('Tempo Limite Atingido'), [
 							E('div', { 'class': 'alert-message warning' }, _('O processo demorou mais que o esperado. A página será recarregada para verificar o estado atual.')),
 							E('div', { 'class': 'right' }, [
@@ -653,6 +734,7 @@ return view.extend({
 				});
 			}, 1200);
 		}).catch(function(err) {
+			clearInterval(timerTicker);
 			ui.hideModal();
 			ui.addNotification(null, E('p', {}, _('Erro ao disparar conexão: ') + err.message), 'error');
 		});

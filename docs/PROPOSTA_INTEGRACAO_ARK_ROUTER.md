@@ -50,18 +50,18 @@ Este documento consolida todas as causas-raiz descobertas, procedimentos impleme
 ## 3. Módulos Propostos para Upstream no ARK Router
 
 ```
-                      ┌──────────────────────────────────────────────┐
-                      │          ARK ROUTER MASTER SUITE             │
-                      └──────────────────────┬───────────────────────┘
-                                             │
-      ┌──────────────────┬───────────────────┼───────────────────┬──────────────────┐
-      ▼                  ▼                   ▼                   ▼                  ▼
-┌───────────┐      ┌───────────┐       ┌───────────┐       ┌───────────┐      ┌───────────┐
-│  MÓDULO 1 │      │  MÓDULO 2 │       │  MÓDULO 3 │       │  MÓDULO 4 │      │  MÓDULO 5 │
-│ Estabiliz.│      │  Wi-Fi 7  │       │   KSMBD   │       │ QUIC IPSet│      │ SQM CAKE  │
-│ Hardware  │      │ Tri-Band  │       │  Kernel   │       │ Seletivo  │      │ Coexist.  │
-│ Watchdog  │      │ Orquestr. │       │  SMB 3.1  │       │  RFC 8899 │      │ PPPoE Fix │
-└───────────┘      └───────────┘       └───────────┘       └───────────┘      └───────────┘
+                      ┌─────────────────────────────────────────────────────────────┐
+                      │                 ARK ROUTER MASTER SUITE                     │
+                      └──────────────────────────────┬──────────────────────────────┘
+                                                     │
+       ┌──────────────┬──────────────┬───────────────┼──────────────┬──────────────┬──────────────┐
+       ▼              ▼              ▼               ▼              ▼              ▼              ▼
+ ┌───────────┐  ┌───────────┐  ┌───────────┐   ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐
+ │  MÓDULO 1 │  │  MÓDULO 2 │  │  MÓDULO 3 │   │  MÓDULO 4 │  │  MÓDULO 5 │  │  MÓDULO 6 │  │  MÓDULO 8 │
+ │ Estabiliz.│  │  Wi-Fi 7  │  │   KSMBD   │   │ QUIC IPSet│  │ SQM CAKE  │  │ DoH Cache │  │ WISP WAN  │
+ │ Hardware  │  │ Tri-Band  │  │  Kernel   │   │ Seletivo  │  │ Coexist.  │  │ Dual-DNS  │  │ Blindado  │
+ │ Watchdog  │  │ Orquestr. │  │  SMB 3.1  │   │  RFC 8899 │  │ PPPoE Fix │  │ Criptogr. │  │ Anti-Loop │
+ └───────────┘  └───────────┘  └───────────┘   └───────────┘  └───────────┘  └───────────┘  └───────────┘
 ```
 
 ---
@@ -218,13 +218,41 @@ O `dnsmasq` intercepta dinamicamente a resolução DNS dos serviços onde o QUIC
 
 ---
 
+### Módulo 8: Painel Visual Inteligente & Blindado de Wi-Fi como WAN (WISP / Repetidor)
+**Arquivos Alvo no ARK**:
+* `/www/luci-static/resources/view/wifi_wisp.js` (Interface LuCI JS com polling reativo)
+* `/usr/sbin/wifi-wisp-tool` (Motor de Borda CLI e Sanitização JSON)
+* `/usr/share/luci/menu.d/luci-app-wifi-wisp.json` (Manifesto de Menu LuCI)
+* `/usr/share/rpcd/acl.d/luci-app-wifi-wisp.json` (Permissões de Execução RPCD)
+* `/usr/lib/lua/luci/controller/wifi_wisp.lua` (Compatibilidade LuCI Legado)
+
+#### Por que o OpenWrt Padrão falha em Repetidor / WISP no Qualcomm QSDK?
+1. O LuCI padrão depende de `iwinfo`, que frequentemente entra em timeout em drivers proprietários QCA porque o subsistema SPF utiliza `cfg80211tool` e `wext` ao invés de responder instantaneamente a chamadas genéricas `nl80211`.
+2. Se o usuário digitar a senha errada ou a rede externa sair do ar, o `netifd` fica em loop contínuo de reconexão, provocando instabilidade e latência nos rádios locais (AP).
+3. Se o usuário tentar conectar o roteador à sua própria rede Wi-Fi (`GAMER_7G`), fecha-se um loop L2/L3 com tempestade de broadcast (*broadcast storm*) que satura a CPU e derruba a rede.
+4. Se o IP recebido da rede externa for idêntico à sub-rede LAN (`192.168.76.x`), o roteamento entra em colapso devido à colisão de sub-redes.
+
+#### Arquitetura e Blindagens Anti-Erro Implementadas:
+* **Detecção Dinâmica de Própria Rede (Anti-Loopback)**: O backend mapeia dinamicamente todos os SSIDs e endereços MAC (BSSIDs) de todas as interfaces físicas e virtuais (`ath0`, `ath1`, `ath2`). Na interface visual, a própria rede é sinalizada em vermelho com a etiqueta `⚠️ Própria Rede (Loop Bloqueado)` e o botão de conexão é desativado. No backend, qualquer tentativa direta é sumariamente abortada com código de erro fatal.
+* **Auto-Rollback com Guardião de 15 Segundos**: Ao disparar a conexão, o script monitora a obtenção do IP via DHCP. Se em 15 segundos a rede externa não responder (senha incorreta, filtro de MAC ou sinal insuficiente), o script aciona rollback instantâneo (`cp -f /tmp/wireless.backup.wisp /etc/config/wireless` e `wifi reload`), mantendo os rádios locais e os clientes 100% online sem travamentos.
+* **Detecção e Correção em 1 Clique de Colisão de Sub-rede**: Se a WAN Wi-Fi receber um IP na faixa `192.168.76.x`, o painel exibe um alerta de alta prioridade com o botão `[ 🛠️ Corrigir Conflito Agora ]`, que reconfigura a LAN para `192.168.77.1` automaticamente, instruindo o usuário sobre o novo endereço de acesso.
+* **Alocação Inteligente de Rádio Físico por Espectro**:
+  * 2.4 GHz -> Rádio `wifi0` (SoC IPQ5332)
+  * 5 GHz -> Rádio `wifi1` (QCN9224 PCIe)
+  * 6 GHz -> Rádio `wifi2` (QCN9224 PCIe) com imposição mandatória de `sae` (WPA3-SAE, obrigatório pela norma IEEE 802.11be em 6 GHz).
+* **Prioridade Automática de Roteamento (Cabo vs Wi-Fi)**: O link WWAN recebe `metric 20`, enquanto a WAN cabeada Ethernet opera em `metric 10`. Ao plugar o cabo de rede de 2.5 Gbps, o tráfego migra instantaneamente para o cabo sem precisar desativar o Wi-Fi; ao desplugar o cabo, o tráfego retorna para o Wi-Fi em milissegundos.
+* **Detecção de Captive Portal (Hotspots de Hotel/Aeroporto)**: Testa a conectividade real via ping e curl; caso o rádio esteja associado mas sem internet, alerta o usuário para abrir o navegador no smartphone e aceitar o login no portal.
+* **Suporte Completo a Redes Ocultas**: Botão dedicado `[ ➕ Conectar a Rede Oculta (Manual) ]` permitindo inserir SSID, banda, padrão de criptografia e chave.
+
+---
+
 ## 4. Pacote Homologado de Restauração
 
-O arquivo master contendo a implementação completa de todos os módulos acima foi empacotado e commitado:
+O arquivo master contendo a implementação completa de todos os 8 módulos acima foi empacotado e commitado:
 * **Arquivo**: `cfg_restauracao_master_v2.cfg`
 * **Localização**: Raiz do repositório
-* **Tamanho**: `328 KB` (335.630 bytes)
-* **SHA256**: `422b1cb49f8f9aef44ba56f6aae8a173ec40eb2b99c5a536dc23cd8884618c51`
+* **Tamanho**: `337 KB` (345.088 bytes)
+* **SHA256**: `77e0f9c0ae3430642edb3022917999fd9c12ef8262fc20e71bc85aebcda2fce1`
 * **Padrão de Criação**: `COPYFILE_DISABLE=1 tar --no-mac-metadata -czf`
 
 ---
@@ -232,10 +260,10 @@ O arquivo master contendo a implementação completa de todos os módulos acima 
 ## 5. Roteiro Sugerido para Integração no Repositório ARK Router
 
 Para mesclar esta solução no código-fonte do `luci-app-ark-router`:
-1. **Adicionar arquivos estáticos web**: Copiar `/www/luci-static/resources/view/ksmbd.js` e `predator_wifi.js` para o diretório de assets do ARK.
+1. **Adicionar arquivos estáticos web**: Copiar `/www/luci-static/resources/view/ksmbd.js`, `predator_wifi.js` e `wifi_wisp.js` para o diretório de assets do ARK.
 2. **Integrar ACLs e Menus**: Incorporar os arquivos de `/usr/share/luci/menu.d/` e `/usr/share/rpcd/acl.d/` no pacote IPK do ARK.
 3. **Adicionar os Scripts de Borda**:
-   * Incluir `/usr/sbin/ksmbd-disk-tool` e `/usr/sbin/predator-wifi-guard` no diretório `/usr/sbin/` do pacote.
+   * Incluir `/usr/sbin/ksmbd-disk-tool`, `/usr/sbin/predator-wifi-guard` e `/usr/sbin/wifi-wisp-tool` no diretório `/usr/sbin/` do pacote.
    * Adicionar a rotina do `ipset` QUIC no template do `/etc/config/firewall` e `/etc/config/dhcp`.
 4. **Incluir as Otimizações no Post-Install Script (`postinst`)**:
    * Configurar o watchdog seguro (`{"stop": false, "frequency": 5}`).
@@ -244,3 +272,4 @@ Para mesclar esta solução no código-fonte do `luci-app-ark-router`:
 
 ---
 *Documentação gerada com base nos testes e diagnósticos homologados em hardware real do Acer Predator Connect T7.*
+

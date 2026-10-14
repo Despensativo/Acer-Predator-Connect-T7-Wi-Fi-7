@@ -104,8 +104,10 @@ usleep 200000          # Para 200 milissegundos (0.2s)
 * **[AutoLearn - Mapeamento Físico de Portas LAN no Switch]**: O switch interno (switch1) utiliza a Porta 0 exclusivamente como tronco interno CPU (0t). As portas físicas RJ45 Gigabit são: Porta 1 = LAN 1, Porta 2 = LAN 2. A porta WAN de 2.5 Gbps (`eth0`) é um PHY PCIe dedicado fora do switch1. Qualquer leitura de link via `swconfig` para LAN 1 deve apontar para a Porta 1, e para LAN 2 deve apontar para a Porta 2; ler a Porta 0 como LAN causava o bug de exibir a porta LAN 1 conectada a 1 Gbps ininterruptamente mesmo sem cabo.
 * **[AutoLearn - Credenciais e Redes Homologadas]**:
   - Web UI (LuCI porta 80/443), SSH (porta 22) e Telnet (porta 23): Usuário `root` | Senha: `root0100`
-  - SSIDs de Fábrica: `PREDATOR T7_2.4GHz`, `PREDATOR T7_5GHz`, `PREDATOR T7_6GHz`, `PREDATOR T7_MLO`
-  - Senha Wi-Fi padrão: `123456789`
+  - SSID Homologado Unificado: `Predator_7G` (Tri-Band: 2.4 GHz, 5 GHz e 6 GHz)
+  - Senha Wi-Fi padrão: `Predator0@`
+  - Largura de Banda 5 GHz Padrão: `80 MHz` (`HT80` nos canais 36-48 non-DFS para boot instantâneo em 2s, configurável para 160 MHz no LuCI)
+  - SQM (Cake QoS): Configurado por padrão como `enabled '0'` para vazão bruta de 2.5 Gbps via PPE
 
 * **[AutoLearn - Largura de Banda 160 MHz vs 80 MHz no 5 GHz (IPQ5332)]**:
   - No **Canal 149** (faixa U-NII-3, 5735 a 5815 MHz), existem apenas 4 canais contíguos de 20 MHz (149, 153, 157, 161), totalizando exatamente 80 MHz. Portanto, no canal 149 a largura máxima física estipulada pelo padrão IEEE 802.11 é **80 MHz**.

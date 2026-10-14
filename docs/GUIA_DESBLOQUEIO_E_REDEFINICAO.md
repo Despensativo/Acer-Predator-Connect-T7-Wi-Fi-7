@@ -41,11 +41,10 @@ Este manual reúne o procedimento oficial para o **desbloqueio**, configuração
 * **IP Padrão do Roteador:** `192.168.76.1`
 * **Senha Mestra Unificada:** `root0100` *(válida para LuCI Web, SSH, Telnet, usuário `root` e `admin`)*
 * **Arquivo do Pacote Mestre:** `cfg_restauracao_master_v2.cfg` *(disponível diretamente na raiz)*
-* **Nomes das Redes Wi-Fi Ativas:**
-  * **2.4 GHz:** `PREDATOR T7_2.4GHz`
-  * **5.0 GHz:** `PREDATOR T7_5GHz`
-  * **6.0 GHz (Wi-Fi 7):** `PREDATOR T7_6GHz`
-* **Senha Padrão do Wi-Fi (todas as redes):** `123456789`
+* **Rede Wi-Fi Unificada (Tri-Band):** `Predator_7G` *(2.4 GHz, 5 GHz e 6 GHz)*
+* **Largura de Banda 5 GHz:** `80 MHz` *(boot ultrarrápido em 2s sem espera DFS; alternável para 160 MHz no LuCI)*
+* **Senha Padrão do Wi-Fi (todas as redes):** `Predator0@`
+* **SQM (Cake QoS):** Desativado por padrão *(máxima aceleração de 2.5 Gbps PPE; ativável no LuCI)*
 
 ---
 

@@ -59,10 +59,10 @@
 | **Usuário Web / SSH** | **`root`** (ou **`admin`**) |
 | **Senha Mestra Unificada** | **`root0100`** *(Web, SSH e Telnet)* |
 | **Arquivo do Pacote Mestre** | **`cfg_restauracao_master_v2.cfg`** *(na raiz do projeto)* |
-| **Rede Wi-Fi 2.4 GHz** | **`PREDATOR T7_2.4GHz`** |
-| **Rede Wi-Fi 5 GHz** | **`PREDATOR T7_5GHz`** |
-| **Rede Wi-Fi 6 GHz (Wi-Fi 7)** | **`PREDATOR T7_6GHz`** |
-| **Senha Wi-Fi (todas as redes)** | **`123456789`** |
+| **Rede Wi-Fi Unificada (Tri-Band)** | **`Predator_7G`** *(2.4 GHz, 5 GHz e 6 GHz)* |
+| **Largura de Banda 5 GHz Padrão** | **`80 MHz`** *(boot instantâneo em 2s sem espera de radar DFS; alternável para 160 MHz)* |
+| **Senha Wi-Fi (todas as redes)** | **`Predator0@`** |
+| **SQM (Cake QoS)** | **`Desativado por padrão`** *(máxima vazão de 2.5 Gbps via aceleração PPE; ativável no LuCI)* |
 
 ---
 

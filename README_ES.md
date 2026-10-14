@@ -59,10 +59,10 @@
 | **Usuario Web / SSH** | **`root`** (o **`admin`**) |
 | **Contraseña Maestra Unificada** | **`root0100`** *(Web, SSH y Telnet)* |
 | **Archivo del Paquete Maestro** | **`cfg_restauracao_master_v2.cfg`** *(en la raíz)* |
-| **Red Wi-Fi 2.4 GHz** | **`PREDATOR T7_2.4GHz`** |
-| **Red Wi-Fi 5 GHz** | **`PREDATOR T7_5GHz`** |
-| **Red Wi-Fi 6 GHz (Wi-Fi 7)** | **`PREDATOR T7_6GHz`** |
-| **Contraseña Wi-Fi (todas las redes)** | **`123456789`** |
+| **Red Wi-Fi Unificada (Tri-Banda)** | **`Predator_7G`** *(2.4 GHz, 5 GHz y 6 GHz)* |
+| **Ancho de Canal 5 GHz Predeterminado** | **`80 MHz`** *(inicio rápido en 2s sin espera de radar DFS; configurable a 160 MHz)* |
+| **Contraseña Wi-Fi (todas las redes)** | **`Predator0@`** |
+| **SQM (Cake QoS)** | **`Desactivado por defecto`** *(máximo rendimiento de 2.5 Gbps con aceleración PPE; activable en LuCI)* |
 
 ---
 

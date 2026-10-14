@@ -59,10 +59,10 @@
 | **Web / SSH Username** | **`root`** (or **`admin`**) |
 | **Unified Master Password** | **`root0100`** *(Web, SSH & Telnet)* |
 | **Master Package File** | **`cfg_restauracao_master_v2.cfg`** *(located at root)* |
-| **2.4 GHz Wi-Fi SSID** | **`PREDATOR T7_2.4GHz`** |
-| **5.0 GHz Wi-Fi SSID** | **`PREDATOR T7_5GHz`** |
-| **6.0 GHz Wi-Fi SSID (Wi-Fi 7)** | **`PREDATOR T7_6GHz`** |
-| **Wi-Fi Password (All Bands)** | **`123456789`** |
+| **Unified Wi-Fi SSID (Tri-Band)** | **`Predator_7G`** *(2.4 GHz, 5 GHz & 6 GHz)* |
+| **5 GHz Channel Width (Default)** | **`80 MHz`** *(instant 2s boot without DFS radar delay; switchable to 160 MHz)* |
+| **Wi-Fi Password (All Bands)** | **`Predator0@`** |
+| **SQM (Cake QoS)** | **`Disabled by default`** *(full 2.5 Gbps hardware acceleration; toggle in LuCI)* |
 
 ---
 

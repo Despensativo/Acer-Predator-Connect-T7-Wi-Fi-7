@@ -68,7 +68,7 @@ Caso prefira navegar visualmente pelos menus da interface Acer:
 - **Documentação de Boot e LEDs Físicos:**
   - Consulte [`docs/TEMPOS_BOOT_WIFI_E_LEDS.md`](TEMPOS_BOOT_WIFI_E_LEDS.md) para detalhes da cronometria e comportamento das luzes do equipamento.
 - **Redes Wi-Fi:**
-  - 2.4 GHz: `PREDATOR T7_2.4GHz`
-  - 5.0 GHz: `PREDATOR T7_5GHz`
-  - 6.0 GHz (Wi-Fi 7): `PREDATOR T7_6GHz`
-  - Senha Wi-Fi: `123456789`
+  - Rede Unificada (Tri-Band): `Predator_7G` (2.4 GHz, 5 GHz e 6 GHz)
+  - Largura de Banda 5 GHz Padrão: `80 MHz` (inicialização rápida em 2s, configurável para 160 MHz no LuCI)
+  - Senha Wi-Fi: `Predator0@`
+  - SQM (Cake QoS): Desativado por padrão (aceleração por hardware PPE máxima)

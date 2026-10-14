@@ -229,7 +229,7 @@ O `dnsmasq` intercepta dinamicamente a resolução DNS dos serviços onde o QUIC
 #### Por que o OpenWrt Padrão falha em Repetidor / WISP no Qualcomm QSDK?
 1. O LuCI padrão depende de `iwinfo`, que frequentemente entra em timeout em drivers proprietários QCA porque o subsistema SPF utiliza `cfg80211tool` e `wext` ao invés de responder instantaneamente a chamadas genéricas `nl80211`.
 2. Se o usuário digitar a senha errada ou a rede externa sair do ar, o `netifd` fica em loop contínuo de reconexão, provocando instabilidade e latência nos rádios locais (AP).
-3. Se o usuário tentar conectar o roteador à sua própria rede Wi-Fi (`GAMER_7G`), fecha-se um loop L2/L3 com tempestade de broadcast (*broadcast storm*) que satura a CPU e derruba a rede.
+3. Se o usuário tentar conectar o roteador à sua própria rede Wi-Fi (`Predator_7G`), fecha-se um loop L2/L3 com tempestade de broadcast (*broadcast storm*) que satura a CPU e derruba a rede.
 4. Se o IP recebido da rede externa for idêntico à sub-rede LAN (`192.168.76.x`), o roteamento entra em colapso devido à colisão de sub-redes.
 
 #### Arquitetura e Blindagens Anti-Erro Implementadas:

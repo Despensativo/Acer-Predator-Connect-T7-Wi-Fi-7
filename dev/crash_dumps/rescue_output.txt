@@ -1,105 +1,35 @@
-ÿýÿýÿûÿû
-echo V > /dev/watchdog
+
 
 
 BusyBox v1.35.0 (2025-03-11 08:57:41 UTC) built-in shell (ash)
 
-/ # echo V > /dev/watchdog
-/bin/ash: can't create /dev/watchdog: Resource busy
+/ # ubus call system watchdog '{"timeout":3600,"frequency":5}' 2>/dev/null
+{
+        "status": "stopped",
+        "timeout": 30,
+        "frequency": 5,
+        "magicclose": false
+}
 / # sysctl -w kernel.panic=0
 kernel.panic = 0
-/ # sysctl -w kernel.panic_on_oops=0
-kernel.panic_on_oops = 0
 / # echo 0 > /proc/sys/kernel/panic
-/ # killall -9 watchdog monitord breakpad
-killall: watchdog: no process killed
-killall: monitord: no process killed
-killall: breakpad: no process killed
-/ # /etc/init.d/watchdog stop
-/bin/ash: /etc/init.d/watchdog: not found
+/ # echo 0 > /proc/sys/kernel/panic_on_oops
+/ # cp -f /lib/wifi/qcawificfg80211.sh.bak.20261013 /lib/wifi/qcawificfg80211.sh
+ 2>/dev/null
+/ # rm -f /etc/rc.d/S01predator_dev /etc/init.d/predator_dev 2>/dev/null
+/ # uci -q set predator_dev.failsafe.enabled='0' && uci -q commit predator_dev
+/ # uci -q set system.@system[0].watchdog_timeout='3600' && uci -q commit system
+/ # echo 0 > /data/boot_fail_count 2>/dev/null
+/ # sed -i 's/dp_mlo_reo_rings_map=.*/dp_mlo_reo_rings_map=0/' /ini/internal/QCN
+9224_i.ini /cfg/default/ini/internal/QCN9224_i.ini 2>/dev/null
+/ # grep -q 'timeout":3600' /etc/rc.local || sed -i '2i ubus call system watchdo
+g "{\"timeout\":3600,\"frequency\":5}" 2>/dev/null; sysctl -w kernel.panic=0 2>/
+dev/null; echo 0 > /proc/sys/kernel/panic 2>/dev/null' /etc/rc.local
+/ # sync
 / # uptime
- 07:11:45 up 0 min,  load average: 1.21, 0.27, 0.09
-/ # cat /proc/cmdline
-console=ttyMSM0,115200n8 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait vmalloc=1G
+ 11:40:00 up 1 min,  load average: 0.71, 0.24, 0.08
 / # cat /sys/class/ubi/ubi0/mtd_num
 21
-/ # dmesg | grep -C 5 -i 'assertion'
-[   28.962336] cnss[38]: INFO: Downloading BDF: qcn9224/regdb.bin, size: 25656
-[   28.998780] cnss[38]: INFO: Downloading BDF: qcn9224/bdwlan.b1015, size: 161792
-[   29.002593] qcom-q6-mpd d100000.remoteproc: fatal error received: err_smem_ver.2.1: 
-[   29.002593] QC Image Version : QC_IMAGE_VERSION_STRING=WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1
-[   29.002593] Image Variant : IMAGE_VARIANT_STRING=5332.wlanfw.evalQ
-[   29.002593] ar_wal_mlo_ipc.c:1065 Assertion 0 failed param0 :zero,param1 :zero,param2 :zero
-[   29.002593] Thread ID : 0x00000057 Thread name : WLAN RT0 Process ID : 0x00000002 Process name :wlan0
-[   29.002593] 
-[   29.002593] Registers:
-[   29.002593] SP : 0x4b5d7338
-[   29.002593] FP : 0x4b5d7338
-/ # cat /etc/config/wireless | head -n 50
-
-config wifi-device 'wifi0'
-        option type 'qcawificfg80211'
-        option hwmode '11beg'
-        option disabled '0'
-        option htmode 'HT40'
-        option country 'US'
-        option channel '6'
-        option txpower '22'
-        option macaddr '70:5A:6F:5D:71:72'
-
-config wifi-iface 'wifi0_ap'
-        option device 'wifi0'
-        option network 'lan'
-        option mode 'ap'
-        option encryption 'psk2+aes'
-        option maxsta '128'
-        option disabled '0'
-        option isbasic '1'
-        option wds '1'
-        option rrm '1'
-        option bss_transition '1'
-        option rrm_neighbor_report '1'
-        option rrm_beacon_report '1'
-        option wnm_sleep_mode '1'
-        option wps_state '2'
-        option wps_pbc '1'
-        option wps_mode 'PBC'
-        option key 'Casa0100@'
-        option sae_password 'Casa0100@'
-        option ssid 'GAMER_7G'
-
-config wifi-device 'wifi1'
-        option type 'qcawificfg80211'
-        option channel '36'
-        option hwmode '11bea'
-        option disabled '0'
-        option txpower '23'
-        option blockdfslist '0'
-        option country 'US'
-        option macaddr '70:5A:6F:5D:75:31'
-        option htmode 'HT160'
-
-config wifi-iface 'wifi1_ap'
-        option device 'wifi1'
-        option network 'lan'
-        option mode 'ap'
-        option maxsta '64'
-        option disabled '0'
-        option isbasic '1'
-/ # ps | grep -iE 'wifi|hostapd|cnss'
-  666 root      2928 S    /usr/bin/cnssdaemon -s
-  759 root      1336 S    {S10qcawifi-conf} /bin/sh /etc/rc.common /etc/rc.d/S
-  857 root      3408 S    {wifi} /bin/sh /sbin/wifi config 1
-  955 root         0 IW<  [WCNSS_CNTL]
-  956 root         0 IW<  [WCNSS_DATA]
-  957 root         0 IW<  [WCNSS_CMD]
-  958 root         0 IW<  [WCNSS_DCI]
-  959 root         0 IW<  [WCNSS_DCI_CMD]
- 1070 root      1252 S    /bin/lock /var/run/wifi_global_lock
- 1080 root      3428 S    {wifi} /bin/sh /sbin/wifi config 1
- 2923 root      1252 S    /bin/lock /var/run/load_qcawificfg80211_lock
- 2935 root      2648 D    insmod wifi_3_0
- 2996 root      7580 S    {qca-hapd-supp} hostapd -g /var/run/hostapd/global -
- 3193 root         0 SW   [ECM_wifi_event]
- 5942 root      1260 S    grep -iE wifi|hostapd|cnss
+/ # cat /proc/cmdline
+console=ttyMSM0,115200n8 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait vmalloc=1G
 / # 

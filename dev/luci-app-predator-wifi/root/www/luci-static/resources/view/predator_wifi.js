@@ -49,7 +49,7 @@ var callEditVif = rpc.declare({
 var callAddVif = rpc.declare({
 	object: 'predator',
 	method: 'add_vif',
-	params: ['ssid', 'key', 'encryption', 'band_2g', 'band_5g', 'band_6g', 'is_guest', 'is_mld', 'zone'],
+	params: ['ssid', 'key', 'encryption', 'band_2g', 'band_5g', 'band_6g', 'is_guest', 'is_mld'],
 	expect: { success: false }
 });
 
@@ -91,6 +91,41 @@ var callAckGuard = rpc.declare({
 	method: 'ack_guard',
 	expect: { success: false }
 });
+
+var callWakeOnLan = rpc.declare({
+	object: 'predator',
+	method: 'wake_on_lan',
+	params: ['mac'],
+	expect: { success: false }
+});
+
+var callOptimizeChannels = rpc.declare({
+	object: 'predator',
+	method: 'optimize_channels',
+	expect: { success: false }
+});
+
+var callSetupWireguard = rpc.declare({
+	object: 'predator',
+	method: 'setup_wireguard',
+	params: ['action', 'config', 'enabled'],
+	expect: { success: false }
+});
+
+var callSetSchedule = rpc.declare({
+	object: 'predator',
+	method: 'set_schedule',
+	params: ['enabled', 'start', 'stop'],
+	expect: { success: false }
+});
+
+var callSetService = rpc.declare({
+	object: 'predator',
+	method: 'set_service',
+	params: ['service', 'enabled'],
+	expect: { success: false }
+});
+
 
 var I18N = {
 	en: {
@@ -606,10 +641,6 @@ var I18N = {
 };
 
 function getActiveLang() {
-	var nav = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
-	if (nav.indexOf('pt') === 0) return 'pt_br';
-	if (nav.indexOf('es') === 0) return 'es';
-
 	var l = (document.documentElement.lang || '').toLowerCase();
 	if (!l && document.body) {
 		var m = document.body.className.match(/lang_([a-zA-Z_-]+)/);
@@ -617,9 +648,7 @@ function getActiveLang() {
 	}
 	if (l.indexOf('pt') === 0 || l === 'pt_br' || l === 'pt-br') return 'pt_br';
 	if (l.indexOf('es') === 0) return 'es';
-	if (nav.indexOf('en') === 0 || l.indexOf('en') === 0) return 'en';
-
-	return 'pt_br';
+	return 'en';
 }
 
 function t(key, arg1) {
@@ -630,6 +659,13 @@ function t(key, arg1) {
 		str = str.replace('%s', arg1);
 	}
 	return str;
+}
+
+function tr3(ptStr, enStr, esStr) {
+	var lang = getActiveLang();
+	if (lang === 'en') return enStr || ptStr;
+	if (lang === 'es') return esStr || enStr || ptStr;
+	return ptStr;
 }
 
 function createPasswordInput(placeholder, value) {
@@ -786,8 +822,8 @@ return view.extend({
 		}
 
 		var ifaces = (status && status.interfaces) ? status.interfaces : [];
-		var currentKey = (ifaces.length > 0 && ifaces[0].key) ? ifaces[0].key : 'Predator0@';
-		var currentSsid = (ifaces.length > 0 && ifaces[0].ssid) ? ifaces[0].ssid : 'Predator_7G';
+		var currentKey = (ifaces.length > 0 && ifaces[0].key) ? ifaces[0].key : 'predator0100';
+		var currentSsid = (ifaces.length > 0 && ifaces[0].ssid) ? ifaces[0].ssid : 'Predator_T7';
 
 		var ssidInput = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'style': 'width:100%;', 'placeholder': t('th_ssid'), 'value': currentSsid });
 		var keyField = createPasswordInput(t('pass_placeholder'), currentKey);
@@ -1058,12 +1094,6 @@ return view.extend({
 			}
 		});
 
-		var zoneSelect = E('select', { 'class': 'cbi-input-select', 'style': 'width:100%;' }, [
-			E('option', { 'value': 'lan' }, '🏠 Rede Principal (LAN - Acesso Total à Rede Local e Internet)'),
-			E('option', { 'value': 'guest' }, '👥 Rede de Visitantes (Guest - Isolada na br-guest / Sem Acesso à LAN)'),
-			E('option', { 'value': 'iot' }, '🤖 Rede de Automação IoT (IoT - Isolada na br-iot / 2.4G Domótica)')
-		]);
-
 		var content = E('div', {}, [
 			E('p', { 'style': 'font-size:14px; margin-bottom:15px; color:#555;' }, t('app_descr')),
 			E('div', { 'style': 'margin-bottom:12px;' }, [
@@ -1091,9 +1121,12 @@ return view.extend({
 				E('div', { 'style': 'font-size:12px; color:#004085; line-height:1.4;' }, t('mld_group_help'))
 			]),
 			E('div', { 'style': 'margin-bottom:12px;' }, [
-				E('label', { 'style': 'display:block; font-weight:bold; margin-bottom:4px;' }, 'Destino / Isolamento de Rede:'),
-				zoneSelect,
-				E('div', { 'style': 'font-size:11px; color:#666; margin-top:3px;' }, 'Selecione a bridge de destino da rede. Visitantes e IoT são automaticamente isoladas das máquinas locais da LAN.')
+				E('label', { 'style': 'font-weight:normal; cursor:pointer;' }, [
+					guestBox,
+					' ',
+					E('strong', {}, t('guest_label')),
+					' ' + t('guest_desc')
+				])
 			])
 		]);
 
@@ -1138,9 +1171,7 @@ return view.extend({
 								return;
 							}
 						}
-						var isGuest = (zoneSelect.value === 'guest');
-						var zone = zoneSelect.value;
-						callAddVif(ssid, key, enc, b2.checked, b5.checked, b6.checked, isGuest, false, zone).then(function(res) {
+						callAddVif(ssid, key, enc, b2.checked, b5.checked, b6.checked, guestBox.checked, false).then(function(res) {
 							if (res && res.error) {
 								ui.addNotification(null, E('p', 'Erro: ' + res.error), 'danger');
 								return;
@@ -1168,14 +1199,28 @@ return view.extend({
 			while (chanSelect.firstChild) chanSelect.removeChild(chanSelect.firstChild);
 			var list = showAll ? allChannels : recChannels;
 			var selectedWidth = widthSelect.value;
-			if (devName === 'wifi1' && selectedWidth === 'HT160') {
+			if (devName === 'wifi1' && selectedWidth === 'HT240') {
+				list = allChannels.filter(function(c) {
+					var n = parseInt(c.val, 10);
+					return !isNaN(n) && n >= 100 && n <= 144;
+				});
+				if (!showAll) {
+					list = list.filter(function(c) {
+						return c.val === '100' || c.val === '116' || c.val === '132' || c.val === '140';
+					});
+				}
+				var curNum = parseInt(curVal, 10);
+				if (isNaN(curNum) || curNum < 100 || curNum > 144) {
+					curVal = '100';
+				}
+			} else if (devName === 'wifi1' && selectedWidth === 'HT160') {
 				list = list.filter(function(c) {
 					return c.val === 'auto' || c.val === '36' || c.val === '100';
 				});
 				if (curVal !== 'auto' && curVal !== '36' && curVal !== '100') {
 					curVal = '36';
 				}
-			} else if (devName === 'wifi2' && selectedWidth === 'HT320') {
+			} else if (devName === 'wifi2' && (selectedWidth === 'HT320' || selectedWidth === 'HT240')) {
 				if (!showAll) {
 					list = list.filter(function(c) {
 						return c.val === 'auto' || c.val === '37' || c.val === '53' || c.val === '69' || c.val === '85' || c.val === '101' || c.val === '117';
@@ -1211,7 +1256,7 @@ return view.extend({
 
 		function updateDfsNotice() {
 			if (devName === 'wifi1') {
-				dfsAlertBox.style.display = (widthSelect.value === 'HT160') ? 'block' : 'none';
+				dfsAlertBox.style.display = (widthSelect.value === 'HT160' || widthSelect.value === 'HT240') ? 'block' : 'none';
 			} else {
 				dfsAlertBox.style.display = 'none';
 			}
@@ -1343,7 +1388,7 @@ return view.extend({
 		var p2_cond = parseFloat(r2.real_txpower || r2.txpower || '20.0');
 
 		if (p0_cond > 22.0) p0_cond = 22.0;
-		if (r1.htmode === 'HT160' && p1_cond > 23.0) p1_cond = 23.0;
+		if ((r1.htmode === 'HT160' || r1.htmode === 'HT240') && p1_cond > 23.0) p1_cond = 23.0;
 		if (p2_cond > 20.0) p2_cond = 20.0;
 
 		function mw(dbm) { return Math.round(Math.pow(10, dbm / 10)); }
@@ -1360,67 +1405,71 @@ return view.extend({
 		var bdfName = r2.bdf || 'bdwlan_default.b1015';
 		var isBdfUnlocked = (bdfName.indexOf('default') !== -1);
 
-		var t0_val = (r0.temp && !isNaN(parseInt(r0.temp)) && parseInt(r0.temp) > 0) ? parseInt(r0.temp) : null;
-		var t1_val = (r1.temp && !isNaN(parseInt(r1.temp)) && parseInt(r1.temp) > 0) ? parseInt(r1.temp) : null;
-		var t2_val = (r2.temp && !isNaN(parseInt(r2.temp)) && parseInt(r2.temp) > 0) ? parseInt(r2.temp) : null;
-
-		var lvl0 = (r0.level !== undefined && r0.level !== null && r0.level !== '') ? parseInt(r0.level) : 0;
-		var lvl1 = (r1.level !== undefined && r1.level !== null && r1.level !== '') ? parseInt(r1.level) : 0;
-		var lvl2 = (r2.level !== undefined && r2.level !== null && r2.level !== '') ? parseInt(r2.level) : 0;
-
 		return {
 			wifi0: {
-				band: '2.4 GHz',
+				band: '2.4 GHz (Wi-Fi 7)',
 				vap: 'ath0',
-				chip: 'IPQ5332 (AHB)',
+				chip: 'IPQ5332',
 				ch: (r0.real_channel || r0.channel || '1'),
 				bw: (r0.real_width || '20') + 'M',
 				cond: p0_cond.toFixed(1) + ' dBm (' + fmt(mw(p0_cond)) + ' mW)',
 				mimo: p0_mimo.toFixed(1) + ' dBm (' + fmt(mw(p0_mimo)) + ' mW)',
 				eirp: p0_eirp.toFixed(1) + ' dBm (' + fmt(mw(p0_eirp)) + ' mW)',
-				temp: t0_val,
-				level: lvl0,
-				level0Max: 110,
-				level1Max: 115,
-				level2Max: 120,
-				level3Max: 125,
-				critTrip: 125,
+				nf: parseInt(r0.nf) || -93,
+				chutil: parseInt(r0.chutil) || 0,
+				util_tx: parseInt(r0.util_tx) || 0,
+				util_rx: parseInt(r0.util_rx) || 0,
+				util_obss: parseInt(r0.util_obss) || 0,
+				util_nwifi: parseInt(r0.util_nwifi) || 0,
+				util_free: (r0.util_free !== undefined && r0.util_free !== '') ? parseInt(r0.util_free) : 100,
+				temp: parseInt(r0.temp) || 90,
+				safeMax: 110,
+				rfCutoff: 125,
+				rebootMax: 125,
 				color: '#d9534f'
 			},
 			wifi1: {
-				band: '5.0 GHz',
+				band: '5.0 GHz (Wi-Fi 7)',
 				vap: 'ath1',
-				chip: 'QCN9224 DualMAC (PCIe)',
+				chip: 'QCN9224',
 				ch: (r1.real_channel || r1.channel || '36'),
 				bw: (r1.real_width || '160') + 'M',
 				cond: p1_cond.toFixed(1) + ' dBm (' + fmt(mw(p1_cond)) + ' mW)',
 				mimo: p1_mimo.toFixed(1) + ' dBm (' + fmt(mw(p1_mimo)) + ' mW)',
 				eirp: p1_eirp.toFixed(1) + ' dBm (' + fmt(mw(p1_eirp)) + ' mW)',
-				temp: t1_val,
-				level: lvl1,
-				level0Max: 105,
-				level1Max: 110,
-				level2Max: 115,
-				level3Max: 120,
-				critTrip: 125,
+				nf: parseInt(r1.nf) || -105,
+				chutil: parseInt(r1.chutil) || 0,
+				util_tx: parseInt(r1.util_tx) || 0,
+				util_rx: parseInt(r1.util_rx) || 0,
+				util_obss: parseInt(r1.util_obss) || 0,
+				util_nwifi: parseInt(r1.util_nwifi) || 0,
+				util_free: (r1.util_free !== undefined && r1.util_free !== '') ? parseInt(r1.util_free) : 100,
+				temp: parseInt(r1.temp) || 97,
+				safeMax: 105,
+				rfCutoff: 120,
+				rebootMax: 125,
 				color: '#0275d8'
 			},
 			wifi2: {
 				band: '6.0 GHz (Wi-Fi 7)',
 				vap: 'ath2',
-				chip: 'QCN9224 DualMAC (PCIe)',
+				chip: 'QCN9224',
 				ch: (r2.real_channel || r2.channel || '37'),
 				bw: (r2.real_width || '320') + 'M',
 				cond: p2_cond.toFixed(1) + ' dBm (' + fmt(mw(p2_cond)) + ' mW)' + (p2_cond >= 18 ? ' 🚀 DESBLOQUEADO' : ''),
 				mimo: p2_mimo.toFixed(1) + ' dBm (' + fmt(mw(p2_mimo)) + ' mW)',
 				eirp: p2_eirp.toFixed(1) + ' dBm (' + fmt(mw(p2_eirp)) + ' mW' + (p2_eirp >= 29 ? ' / ~1 Watt!' : '') + ')',
-				temp: t2_val,
-				level: lvl2,
-				level0Max: 105,
-				level1Max: 110,
-				level2Max: 115,
-				level3Max: 120,
-				critTrip: 125,
+				nf: parseInt(r2.nf) || -99,
+				chutil: parseInt(r2.chutil) || 0,
+				util_tx: parseInt(r2.util_tx) || 0,
+				util_rx: parseInt(r2.util_rx) || 0,
+				util_obss: parseInt(r2.util_obss) || 0,
+				util_nwifi: parseInt(r2.util_nwifi) || 0,
+				util_free: (r2.util_free !== undefined && r2.util_free !== '') ? parseInt(r2.util_free) : 100,
+				temp: parseInt(r2.temp) || 97,
+				safeMax: 105,
+				rfCutoff: 120,
+				rebootMax: 125,
 				bdfName: bdfName,
 				isBdfUnlocked: isBdfUnlocked,
 				color: '#5cb85c'
@@ -1428,43 +1477,207 @@ return view.extend({
 		};
 	},
 
-	buildTempNode: function(r) {
-		if (r.temp === null || r.temp === undefined || isNaN(r.temp)) {
-			return E('div', { 'style': 'min-width:215px;' }, [
-				E('div', { 'style': 'display:flex; align-items:center; gap:8px;' }, [
-					E('span', { 'style': 'font-size:14px; font-weight:bold; color:#7f8c8d;' }, 'Indisponível'),
-					E('span', { 'style': 'font-size:10px; background:#e9ecef; color:#495057; padding:1px 7px; border-radius:10px; font-weight:bold;' }, '⚪ Sem leitura')
-				]),
-				E('div', { 'style': 'font-size:11px; color:#666; margin-top:4px;' }, 'Aguardando telemetria thermaltool')
-			]);
+	buildSpectrumNode: function(r) {
+		var free = Math.max(0, Math.min(100, r.util_free));
+		var own = Math.max(0, Math.min(100, (r.util_tx || 0) + (r.util_rx || 0)));
+		var obss = Math.max(0, Math.min(100, r.util_obss || 0));
+		var nwifi = Math.max(0, Math.min(100, r.util_nwifi || 0));
+
+		var badgeBg = '#d4edda';
+		var badgeColor = '#155724';
+		var statusIcon = '🟢';
+		if (free < 35) {
+			badgeBg = '#f8d7da';
+			badgeColor = '#721c24';
+			statusIcon = '🔴';
+		} else if (free < 65) {
+			badgeBg = '#fff3cd';
+			badgeColor = '#856404';
+			statusIcon = '🟡';
 		}
 
+		return E('div', { 'style': 'min-width:215px;' }, [
+			E('div', { 'style': 'display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:4px;' }, [
+				E('span', { 'style': 'font-size:13px; font-weight:bold; color:#2c3e50;' }, tr3('Ruído: ', 'Noise: ', 'Ruido: ') + r.nf + ' dBm'),
+				E('span', { 'style': 'font-size:10px; background:' + badgeBg + '; color:' + badgeColor + '; padding:1px 7px; border-radius:10px; font-weight:bold;' }, statusIcon + ' ' + free + tr3('% Livre', '% Free', '% Libre'))
+			]),
+			E('div', { 'style': 'width:100%; height:6px; background:#e9ecef; border-radius:3px; overflow:hidden; display:flex; margin-bottom:5px;' }, [
+				E('div', { 'title': tr3('Nosso Tráfego TX/RX: ', 'Own TX/RX Traffic: ', 'Tráfico TX/RX Propio: ') + own + '%', 'style': 'width:' + own + '%; background:#2980b9; height:100%;' }),
+				E('div', { 'title': tr3('Vizinhos OBSS: ', 'Neighbor OBSS: ', 'Vecinos OBSS: ') + obss + '%', 'style': 'width:' + obss + '%; background:#f39c12; height:100%;' }),
+				E('div', { 'title': tr3('Interferência Não-Wi-Fi: ', 'Non-Wi-Fi Interference: ', 'Interferencia No-Wi-Fi: ') + nwifi + '%', 'style': 'width:' + nwifi + '%; background:#e74c3c; height:100%;' })
+			]),
+			E('div', { 'style': 'font-size:11px; color:#555; line-height:1.4;' }, [
+				E('div', {}, [ tr3('• TX/RX Próprio: ', '• Own TX/RX: ', '• TX/RX Propio: '), E('strong', { 'style': 'color:#2980b9;' }, own + '%'), ' (TX ' + r.util_tx + '% / RX ' + r.util_rx + '%)' ]),
+				E('div', {}, [ tr3('• Vizinhos (OBSS): ', '• Neighbors (OBSS): ', '• Vecinos (OBSS): '), E('strong', { 'style': 'color:#d35400;' }, obss + '%'), tr3(' | Não-Wi-Fi: ', ' | Non-Wi-Fi: ', ' | No-Wi-Fi: '), E('strong', { 'style': 'color:#c0392b;' }, nwifi + '%') ])
+			])
+		]);
+	},
+
+	buildSiliconBar: function(silicon) {
+		var s = silicon || {};
+		var sqmOn = (s.sqm_enabled === '1' || s.sfe_stopped === '1');
+		function pill(label, ok, warn) {
+			var isOk = (ok !== '0' && ok !== false);
+			var styleStr = isOk
+				? (warn ? 'background:#fff8e6; color:#856404; border:1px solid #ffeeba;' : 'background:#e8f4fd; color:#0b5394; border:1px solid #b6d7a8;')
+				: 'background:#f5f5f5; color:#777; border:1px solid #ddd;';
+			return E('span', {
+				'style': 'font-size:11px; font-weight:bold; padding:3px 9px; border-radius:12px; display:inline-flex; align-items:center; gap:4px; ' + styleStr
+			}, (isOk ? (warn ? '🛡️ ' : '⚡ ') : '○ ') + label);
+		}
+		return E('div', {
+			'id': 'rf-silicon-bar',
+			'style': 'margin-top:14px; padding:10px 14px; background:#f4f9fd; border:1px solid #cfe2f3; border-left:4px solid #0275d8; border-radius:4px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;'
+		}, [
+			E('div', { 'style': 'font-size:12px; font-weight:bold; color:#0b5394;' }, tr3(
+				'🧠 Status dos Motores de Silício Qualcomm & Backports X7 v1.01.000050:',
+				'🧠 Qualcomm Silicon Engines & X7 v1.01.000050 Backports Status:',
+				'🧠 Estado de Motores de Silicio Qualcomm y Backports X7 v1.01.000050:'
+			)),
+			E('div', { 'style': 'display:flex; flex-wrap:wrap; gap:6px;' }, [
+				pill('PPE-DS Direct Switch (5G/6G)', '1'),
+				sqmOn
+					? pill(tr3('WAN: SQM CAKE Ativo (SFE Pausado)', 'WAN: SQM CAKE Active (SFE Paused)', 'WAN: SQM CAKE Activo (SFE Pausado)'), '1', true)
+					: pill(tr3('WAN: SFE Fast-Path 2.5G (' + (s.sfe_ipv4 || '0') + ' fluxos)', 'WAN: SFE Fast-Path 2.5G (' + (s.sfe_ipv4 || '0') + ' flows)', 'WAN: SFE Fast-Path 2.5G (' + (s.sfe_ipv4 || '0') + ' flujos)'), '1'),
+				pill(tr3('802.11be MSCS + SCS (ACK Seguro)', '802.11be MSCS + SCS (Safe ACK)', '802.11be MSCS + SCS (ACK Seguro)'), s.mscs || '1'),
+				pill('Restricted TWT (r-TWT)', s.rtwt || '1'),
+				pill(tr3('Filtro CCA Anti-OBSS', 'CCA Anti-OBSS Filter', 'Filtro CCA Anti-OBSS'), s.cca_mitigation || '1'),
+				pill('Fix X7 ap_isbasic IoT', s.compat_iot || '1'),
+				pill('DMA Rings 1GB-Tier (16K Descriptors)', '1')
+			])
+		]);
+	},
+
+	buildConflictsNode: function(statusObj) {
+		var self = this;
+		var s = (statusObj && statusObj.silicon) ? statusObj.silicon : {};
+		var radios = (statusObj && statusObj.radios) ? statusObj.radios : {};
+		var r0 = radios.wifi0 || {};
+		var r1 = radios.wifi1 || {};
+		var alerts = [];
+
+		// 1. Conflito WISP no 5 GHz (wwan_sta forçando canal/largura do wifi1)
+		if (s.wisp_en === '1') {
+			var cfgCh1 = r1.channel || '36';
+			var cfgBw1 = (r1.htmode || 'HT80').replace('HT', '');
+			var realCh1 = r1.real_channel || cfgCh1;
+			var realBw1 = r1.real_width || cfgBw1;
+			var isOverridden = (String(cfgCh1) !== String(realCh1) || String(cfgBw1) !== String(realBw1));
+
+			var wispBtn = E('button', {
+				'class': 'cbi-button cbi-button-negative',
+				'style': 'font-size:12px; font-weight:bold; padding:5px 12px; cursor:pointer; white-space:nowrap;',
+				'click': function(ev) {
+					var btn = ev.currentTarget;
+					btn.disabled = true;
+					btn.textContent = tr3('⏳ Destravando 5 GHz...', '⏳ Unlocking 5 GHz...', '⏳ Desbloqueando 5 GHz...');
+					ui.showModal(tr3('Desativando WISP e Restaurando 5 GHz...', 'Disabling WISP & Restoring 5 GHz...', 'Desactivando WISP y Restaurando 5 GHz...'), [
+						E('p', { 'class': 'spinning' }, tr3(
+							'Desligando o cliente WISP (wwan_sta) e restaurando o rádio de 5 GHz para Canal ' + cfgCh1 + ' (' + cfgBw1 + ' MHz)... Aguarde ~4 segundos.',
+							'Disabling WISP client (wwan_sta) and restoring 5 GHz radio to Channel ' + cfgCh1 + ' (' + cfgBw1 + ' MHz)... Please wait ~4 seconds.',
+							'Desactivando cliente WISP (wwan_sta) y restaurando la radio de 5 GHz al Canal ' + cfgCh1 + ' (' + cfgBw1 + ' MHz)... Espere ~4 segundos.'
+						))
+					]);
+					callToggleFeature('wisp_sta', '0').then(function() {
+						setTimeout(function() { window.location.reload(); }, 4000);
+					});
+				}
+			}, tr3('🔓 Desativar WISP e Restaurar ' + cfgBw1 + ' MHz no 5 GHz', '🔓 Disable WISP & Restore ' + cfgBw1 + ' MHz on 5 GHz', '🔓 Desactivar WISP y Restaurar ' + cfgBw1 + ' MHz en 5 GHz'));
+
+			alerts.push(E('div', {
+				'style': 'padding:12px 16px; background:#fff5f5; border:1px solid #f5c6cb; border-left:4px solid #e74c3c; border-radius:4px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;'
+			}, [
+				E('div', { 'style': 'flex:1; min-width:260px;' }, [
+					E('div', { 'style': 'font-weight:bold; color:#c0392b; font-size:13px; margin-bottom:3px;' },
+						tr3(
+							'⚠️ Conflito de Canal/Largura no 5 GHz: Repetidor WISP Ativo ("' + (s.wisp_ssid || 'WWAN') + '")',
+							'⚠️ 5 GHz Channel/Width Conflict: WISP Repeater Active ("' + (s.wisp_ssid || 'WWAN') + '")',
+							'⚠️ Conflicto de Canal/Ancho en 5 GHz: Repetidor WISP Activo ("' + (s.wisp_ssid || 'WWAN') + '")'
+						)
+					),
+					E('div', { 'style': 'font-size:12px; color:#555; line-height:1.45;' },
+						isOverridden
+							? tr3(
+								'Seu 5 GHz está configurado para Canal ' + cfgCh1 + ' (' + cfgBw1 + ' MHz), mas está operando fisicamente em Canal ' + realCh1 + ' (' + realBw1 + ' MHz) porque o cliente WISP compartilha o mesmo rádio físico e acompanha a largura do roteador pai.',
+								'Your 5 GHz radio is configured for Channel ' + cfgCh1 + ' (' + cfgBw1 + ' MHz), but is physically locked to Channel ' + realCh1 + ' (' + realBw1 + ' MHz) because the WISP client shares the same PLL and follows the upstream router.',
+								'Su radio de 5 GHz está configurada en el Canal ' + cfgCh1 + ' (' + cfgBw1 + ' MHz), pero opera físicamente en el Canal ' + realCh1 + ' (' + realBw1 + ' MHz) porque el cliente WISP comparte el mismo radio físico y sigue al router principal.'
+							)
+							: tr3(
+								'O cliente WISP está ativo no rádio ' + (s.wisp_dev || 'wifi1') + ', vinculando o canal e a largura da banda de 5 GHz ao roteador superior.',
+								'WISP client is active on radio ' + (s.wisp_dev || 'wifi1') + ', locking the 5 GHz channel and bandwidth to the upstream router.',
+								'El cliente WISP está activo en la radio ' + (s.wisp_dev || 'wifi1') + ', vinculando el canal y el ancho de banda de 5 GHz al router superior.'
+							)
+					)
+				]),
+				wispBtn
+			]));
+		}
+
+		// 2. Coordenação SQM CAKE vs SFE Fast-Path
+		if (s.sqm_enabled === '1' || s.sfe_stopped === '1') {
+			alerts.push(E('div', {
+				'style': 'padding:10px 14px; background:#fffdf5; border:1px solid #ffeeba; border-left:4px solid #f39c12; border-radius:4px; font-size:12px; color:#555;'
+			}, [
+				E('strong', { 'style': 'color:#856404;' }, tr3(
+					'🛡️ Coordenação Anti-Conflito Ativa (SQM CAKE ↔ SFE Fast-Path): ',
+					'🛡️ Active Anti-Conflict Coordination (SQM CAKE ↔ SFE Fast-Path): ',
+					'🛡️ Coordinación Anti-Conflicto Activa (SQM CAKE ↔ SFE Fast-Path): '
+				)),
+				tr3(
+					'O motor SQM CAKE está ativo na WAN com no-split-gso. O bypass SFE Fast-Path foi pausado automaticamente (front_end_ipv4_stop=1) para evitar o congelamento do pacote #25 em 6 GHz. Para vazão bruta de 2.5 Gbps (0% CPU), desligue o SQM CAKE no menu de Silício abaixo.',
+					'SQM CAKE is active on WAN with no-split-gso. SFE Fast-Path bypass is automatically paused (front_end_ipv4_stop=1) to prevent the 6 GHz packet-#25 freeze. For raw 2.5 Gbps line-rate (0% CPU), disable SQM CAKE in the Silicon menu below.',
+					'El motor SQM CAKE está activo en la WAN con no-split-gso. El bypass SFE Fast-Path fue pausado automáticamente (front_end_ipv4_stop=1) para evitar el bloqueo del paquete #25 en 6 GHz. Para velocidad pura de 2.5 Gbps (0% CPU), desactive SQM CAKE en el menú inferior.'
+				)
+			]));
+		}
+
+		// 3. Recomendação de Filtro CCA quando OBSS > 30% e CCA desligado
+		var maxObss = Math.max(parseInt(r0.util_obss) || 0, parseInt(r1.util_obss) || 0);
+		if (maxObss >= 30 && s.cca_mitigation === '0') {
+			alerts.push(E('div', {
+				'style': 'padding:10px 14px; background:#f4f9fd; border:1px solid #cfe2f3; border-left:4px solid #0275d8; border-radius:4px; font-size:12px; color:#333;'
+			}, [
+				E('strong', { 'style': 'color:#0b5394;' }, tr3(
+					'📡 Dica de Espectro RF (' + maxObss + '% de Interferência Vizinha OBSS): ',
+					'📡 RF Spectrum Tip (' + maxObss + '% Neighbor OBSS Interference): ',
+					'📡 Consejo de Espectro RF (' + maxObss + '% de Interferencia Vecina OBSS): '
+				)),
+				tr3(
+					'Detectamos alta ocupação do canal por roteadores vizinhos. Ative o "Filtro Anti-Vizinhos CCA Threshold" no menu abaixo para ignorar sinais fracos externos.',
+					'High channel occupancy from neighbor routers detected. Enable the "CCA Threshold Anti-OBSS Filter" in the menu below to ignore weak external signals.',
+					'Se detectó alta ocupación del canal por routers vecinos. Active el "Filtro Anti-Vecinos CCA Threshold" en el menú inferior para ignorar señales débiles externas.'
+				)
+			]));
+		}
+
+		return E('div', {
+			'id': 'rf-conflicts-box',
+			'style': alerts.length > 0 ? 'margin-top:12px; display:flex; flex-direction:column; gap:8px;' : 'display:none;'
+		}, alerts);
+	},
+
+	buildTempNode: function(r) {
 		var num = r.temp;
 		var color = '#27ae60';
-		var statusText = '🟢 Normal (Nível 0 / 0% corte)';
+		var statusText = '🟢 Normal';
 		var badgeBg = '#d4edda';
 		var badgeColor = '#155724';
 
-		if (r.level >= 3 || num >= r.level3Max) {
+		if (num >= r.rfCutoff) {
 			color = '#c0392b';
-			statusText = '🛑 Corte RF (Nível 3 / 100% corte)';
+			statusText = '🛑 Corte RF Iminente';
 			badgeBg = '#f8d7da';
 			badgeColor = '#721c24';
-		} else if (r.level === 2) {
-			color = '#d35400';
-			statusText = '⚠️ Throttling Severo (Nível 2 / 90% corte)';
-			badgeBg = '#fff3cd';
-			badgeColor = '#856404';
-		} else if (r.level === 1) {
+		} else if (num >= r.safeMax) {
 			color = '#e67e22';
-			statusText = '🟡 Throttling (Nível 1 / 50% corte)';
+			statusText = '⚠️ Throttling Ativo';
 			badgeBg = '#fef9e7';
 			badgeColor = '#b7950b';
-		} else if (num >= (r.level0Max - 4)) {
+		} else if (num >= (r.safeMax - 4)) {
 			color = '#f39c12';
-			statusText = '🟢 Normal (Perto do teto Nível 0)';
-			badgeBg = '#e8f8f0';
-			badgeColor = '#1e8449';
+			statusText = '🟡 Atenção / Perto do Teto';
+			badgeBg = '#fff3cd';
+			badgeColor = '#856404';
 		}
 
 		return E('div', { 'style': 'min-width:215px;' }, [
@@ -1473,16 +1686,16 @@ return view.extend({
 				E('span', { 'style': 'font-size:10px; background:' + badgeBg + '; color:' + badgeColor + '; padding:1px 7px; border-radius:10px; font-weight:bold;' }, statusText)
 			]),
 			E('div', { 'style': 'font-size:11px; color:#555; margin-top:4px; line-height:1.45;' }, [
-				E('div', {}, [ '• Nível 0 (0% corte): ', E('strong', { 'style': 'color:#27ae60;' }, 'até ' + r.level0Max + '°C') ]),
-				E('div', {}, [ '• Nível 3 (Duty cycle 100%): ', E('strong', { 'style': 'color:#d35400;' }, r.level3Max + '°C') ]),
-				E('div', {}, [ '• Trip Crítico Linux (Kernel): ', E('strong', { 'style': 'color:#c0392b;' }, r.critTrip + '°C') ])
+				E('div', {}, [ '• Máx Seguro (s/ corte): ', E('strong', { 'style': 'color:#27ae60;' }, r.safeMax + '°C') ]),
+				E('div', {}, [ '• Corte de RF (FEM): ', E('strong', { 'style': 'color:#d35400;' }, r.rfCutoff + '°C') ]),
+				E('div', {}, [ '• Reboot Emergência: ', E('strong', { 'style': 'color:#c0392b;' }, r.rebootMax + '°C') ])
 			])
 		]);
 	},
 
 	renderTelemetryCard: function(statusOrRadios) {
 		var self = this;
-		var statusObj = (statusOrRadios && statusOrRadios.radios) ? statusOrRadios : { radios: statusOrRadios, features: {} };
+		var statusObj = (statusOrRadios && statusOrRadios.radios) ? statusOrRadios : { radios: statusOrRadios, features: {}, silicon: {} };
 		var radios = statusObj.radios || {};
 		var features = statusObj.features || {};
 		var data = self.formatRadioData(radios);
@@ -1502,6 +1715,7 @@ return view.extend({
 				E('td', { 'id': 'rf-cond-' + dev, 'style': 'padding:10px 12px; color:#111; font-weight:bold;' }, r.cond),
 				E('td', { 'id': 'rf-mimo-' + dev, 'style': 'padding:10px 12px; color:#2c3e50; font-weight:bold;' }, r.mimo),
 				E('td', { 'id': 'rf-eirp-' + dev, 'style': 'padding:10px 12px; color:#27ae60; font-weight:bold;' }, r.eirp),
+				E('td', { 'id': 'rf-spec-' + dev, 'style': 'padding:10px 12px;' }, self.buildSpectrumNode(r)),
 				E('td', { 'id': 'rf-temp-' + dev, 'style': 'padding:10px 12px;' }, self.buildTempNode(r))
 			]);
 		});
@@ -1519,29 +1733,29 @@ return view.extend({
 		var badgeBdf = E('span', { 'id': 'rf-bdf-badge', 'style': 'background:#d4edda; color:#155724; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold; border:1px solid #c3e6cb;' }, (bdfName.indexOf('default') !== -1) ? '🟢 BDF 6 GHz: Desbloqueada (20 dBm / ~1 W EIRP)' : '🟢 BDF 6 GHz: ' + bdfName + ' (Alta Potência Ativa)');
 
 		var thermalInfoBox = E('div', {
-			'style': 'margin-top:14px; padding:12px 16px; background:#fafbfc; border:1px solid #e1e4e8; border-left:4px solid #e67e22; border-radius:4px; font-size:12px; color:#333;'
+			'style': 'margin-top:10px; padding:12px 16px; background:#fafbfc; border:1px solid #e1e4e8; border-left:4px solid #e67e22; border-radius:4px; font-size:12px; color:#333;'
 		}, [
-			E('div', { 'style': 'font-weight:bold; margin-bottom:6px; color:#d35400; font-size:13px;' }, '🌡️ Gestão Térmica de Hardware Qualcomm (Política de Duty Cycle do Driver & Trip Crítico):'),
+			E('div', { 'style': 'font-weight:bold; margin-bottom:6px; color:#d35400; font-size:13px;' }, '🌡️ Gestão Térmica de Hardware Qualcomm (Limites Operacionais do Silício & Proteção do Roteador):'),
 			E('div', { 'style': 'display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px; line-height:1.45;' }, [
 				E('div', { 'style': 'background:#fff; padding:8px 10px; border-radius:4px; border:1px solid #eee;' }, [
-					E('strong', { 'style': 'color:#27ae60;' }, '1. Nível 0 (Normal / 100% Rendimento): '),
-					E('span', { 'style': 'font-weight:bold;' }, 'até 105°C (5G/6G) / 110°C (2.4G)'),
-					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Teto operacional do Nível 0. O rádio opera em 100% do duty cycle sem qualquer redução ou penalidade.')
+					E('strong', { 'style': 'color:#27ae60;' }, '1. Máxima Segura Contínua: '),
+					E('span', { 'style': 'font-weight:bold;' }, '105°C (5G/6G) / 110°C (2.4G)'),
+					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Teto normal de junção Tj. Opera a 100% de rendimento físico sem qualquer corte de potência ou perda de pacotes.')
 				]),
 				E('div', { 'style': 'background:#fff; padding:8px 10px; border-radius:4px; border:1px solid #eee;' }, [
-					E('strong', { 'style': 'color:#e67e22;' }, '2. Nível 1 & 2 (Mitigação Duty Cycle): '),
-					E('span', { 'style': 'font-weight:bold;' }, 'Nível 1 (50%) / Nível 2 (90%)'),
-					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Redução escalonada de duty cycle (dcoffpercent) gerenciada pelo driver Qualcomm para arrefecimento sem derrubar clientes.')
+					E('strong', { 'style': 'color:#e67e22;' }, '2. Throttling Protetivo (Level 1/2): '),
+					E('span', { 'style': 'font-weight:bold;' }, '105°C ~ 115°C'),
+					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'O driver Qualcomm aciona redução escalonada de duty cycle RF (50%) para dissipar calor sem derrubar clientes Wi-Fi conectados.')
 				]),
 				E('div', { 'style': 'background:#fff; padding:8px 10px; border-radius:4px; border:1px solid #eee;' }, [
-					E('strong', { 'style': 'color:#d35400;' }, '3. Nível 3 (Mitigação Máxima RF): '),
+					E('strong', { 'style': 'color:#d35400;' }, '3. Corte Total de Rádio RF (Level 3): '),
 					E('span', { 'style': 'font-weight:bold;' }, '120°C (5G/6G) / 125°C (2.4G)'),
-					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Duty cycle 100% desativado (dcoffpercent=100) temporariamente para proteger o silício e FEMs.')
+					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Desliga 100% a transmissão de alta potência do rádio para proteger os amplificadores de potência (FEMs Skyworks) de queimar.')
 				]),
 				E('div', { 'style': 'background:#fff; padding:8px 10px; border-radius:4px; border:1px solid #eee;' }, [
-					E('strong', { 'style': 'color:#c0392b;' }, '4. Trip Point Crítico do Kernel Linux: '),
+					E('strong', { 'style': 'color:#c0392b;' }, '4. Reinicialização Crítica (Trip Point): '),
 					E('span', { 'style': 'font-weight:bold;' }, '125°C'),
-					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Limite crítico de hardware do subsistema tsens do Linux: reinicialização preventiva de emergência do SoC.')
+					E('div', { 'style': 'font-size:11px; color:#666; margin-top:2px;' }, 'Sensor crítico de emergência no Kernel SoC: o roteador reinicia de emergência para preservar a integridade da placa-mãe.')
 				])
 			])
 		]);
@@ -1563,16 +1777,287 @@ return view.extend({
 							E('th', { 'style': 'padding:8px 12px;' }, 'Banda / Chip'),
 							E('th', { 'style': 'padding:8px 12px;' }, 'VAP'),
 							E('th', { 'style': 'padding:8px 12px;' }, 'Canal / Largura Real'),
-							E('th', { 'style': 'padding:8px 12px;' }, 'TxPower Conduzido [iw dev]'),
-							E('th', { 'style': 'padding:8px 12px;' }, 'MIMO 2x2 (Est. Teórica +3 dB)'),
-							E('th', { 'style': 'padding:8px 12px;' }, 'EIRP Estimado (Antena + TxBF)'),
-							E('th', { 'style': 'padding:8px 12px;' }, 'Temperatura & Mitigação RF')
+							E('th', { 'style': 'padding:8px 12px;' }, 'TxPower Conduzido (Antena)'),
+							E('th', { 'style': 'padding:8px 12px;' }, 'MIMO 2x2 (Total)'),
+							E('th', { 'style': 'padding:8px 12px;' }, 'EIRP Real no Ar (Antenas+TxBF)'),
+							E('th', { 'style': 'padding:8px 12px;' }, tr3('Espectro RF & Ruído (CCA)', 'RF Spectrum & Noise (CCA)', 'Espectro RF y Ruido (CCA)')),
+							E('th', { 'style': 'padding:8px 12px;' }, 'Temperatura & Limites do Silício')
 						])
 					]),
 					E('tbody', {}, tRows)
 				])
 			]),
+			self.buildConflictsNode(statusObj),
+			self.buildSiliconBar(statusObj.silicon),
 			thermalInfoBox
+		]);
+	},
+
+	renderSiliconMenuCard: function(features) {
+		var self = this;
+		var feats = features || {};
+
+		var siliconDefs = [
+			{
+				id: 'mscs_scs',
+				key: 'mscs_scs',
+				defaultVal: '1',
+				icon: '🎯',
+				name: tr3(
+					'Classificador Wi-Fi 7 MSCS + SCS + HLOS TID (ACK Seguro)',
+					'Wi-Fi 7 MSCS + SCS + HLOS TID Classifier (Safe ACK)',
+					'Clasificador Wi-Fi 7 MSCS + SCS + HLOS TID (ACK Seguro)'
+				),
+				speed: tr3('⚡ Imediato (Sem Reiniciar)', '⚡ Instant (Zero Reload)', '⚡ Inmediato (Sin Reiniciar)'),
+				conflictTag: tr3(
+					'🛡️ Blindado: Retransmissão ACK 100% Preservada (noackpolicy=0)',
+					'🛡️ Shielded: 100% Layer-2 ACK Retries Preserved (noackpolicy=0)',
+					'🛡️ Blindado: Retransmisión ACK 100% Preservada (noackpolicy=0)'
+				),
+				onBenefit: tr3(
+					'Promove Jogos, FaceTime, WhatsApp e VR p/ filas de hardware AC_VO/VI + scs_tool ativo',
+					'Promotes Gaming, FaceTime, WhatsApp & VR to hardware AC_VO/VI queues + active scs_tool',
+					'Promueve Juegos, FaceTime, WhatsApp y VR a colas de hardware AC_VO/VI + scs_tool activo'
+				),
+				offBenefit: tr3(
+					'Filas WMM padrão sem classificação dinâmica 802.11be',
+					'Standard WMM queues without dynamic 802.11be classification',
+					'Colas WMM estándar sin clasificación dinámica 802.11be'
+				),
+				desc: tr3(
+					'Ativa os classificadores qca-nss-mscs e ecm_classifier_emesh (cake_enabled=1). Separado do antigo wme_noack para impedir perda de pacotes de voz/vídeo em canais com ruído.',
+					'Enables qca-nss-mscs and ecm_classifier_emesh (cake_enabled=1) classifiers. Isolated from wme_noack to prevent voice/video packet loss on noisy channels.',
+					'Activa los clasificadores qca-nss-mscs y ecm_classifier_emesh (cake_enabled=1). Separado de wme_noack para evitar pérdida de paquetes de voz/video.'
+				)
+			},
+			{
+				id: 'twt',
+				key: 'twt',
+				defaultVal: '1',
+				icon: '🔋',
+				name: tr3(
+					'Target Wake Time Wi-Fi 7 (802.11be r-TWT & b-TWT Responder)',
+					'Wi-Fi 7 Target Wake Time (802.11be r-TWT & b-TWT Responder)',
+					'Target Wake Time Wi-Fi 7 (802.11be r-TWT y b-TWT Responder)'
+				),
+				speed: tr3('⚡ Imediato (Sem Reiniciar)', '⚡ Instant (Zero Reload)', '⚡ Inmediato (Sin Reiniciar)'),
+				conflictTag: tr3(
+					'⚖️ Trade-off: Economia de Bateria (Ligado) vs Jitter Zero / IoT Antigo (Desligado)',
+					'⚖️ Trade-off: Battery Saving (On) vs Zero Wakeup Jitter / Legacy IoT (Off)',
+					'⚖️ Trade-off: Ahorro de Batería (Activo) vs Jitter Cero / IoT Antiguo (Inactivo)'
+				),
+				onBenefit: tr3(
+					'Reduz até 30% do consumo de bateria em iPhones e Androids Wi-Fi 6/7',
+					'Saves up to 30% battery on Wi-Fi 6/7 iPhones and Androids',
+					'Reduce hasta un 30% el consumo de batería en iPhones y Androids Wi-Fi 6/7'
+				),
+				offBenefit: tr3(
+					'Elimina micro-sono (+0 ms de variação de ping e 100% compatível c/ ESP8266)',
+					'Eliminates micro-sleep (+0 ms wakeup jitter and 100% ESP8266 compatible)',
+					'Elimina el micro-sueño (+0 ms de variación de ping y 100% compatible con ESP8266)'
+				),
+				desc: tr3(
+					'Negocia janelas programadas de despertar RF com smartphones. Desligue se quiser ping estático absoluto em partidas competitivas ou se tiver tomadas IoT antigas desconectando.',
+					'Negotiates scheduled RF wake windows with smartphones. Turn off for flat competitive gaming ping or if legacy IoT plugs disconnect.',
+					'Negocia ventanas programadas de activación RF con smartphones. Desactívelo para obtener ping estático en juegos competitivos o con enchufes IoT antiguos.'
+				)
+			},
+			{
+				id: 'cca_mitigation',
+				key: 'cca_mitigation',
+				defaultVal: '1',
+				icon: '🏢',
+				name: tr3(
+					'Filtro Anti-Vizinhos CCA Threshold (Mitigação OBSS)',
+					'CCA Threshold Anti-Neighbor Filter (OBSS Mitigation)',
+					'Filtro Anti-Vecinos CCA Threshold (Mitigación OBSS)'
+				),
+				speed: tr3('⚡ Imediato (Sem Reiniciar)', '⚡ Instant (Zero Reload)', '⚡ Inmediato (Sin Reiniciar)'),
+				conflictTag: tr3(
+					'⚖️ Trade-off: Ignorar Vizinhos (Ligado) vs Alcance no Fim do Quintal (Desligado)',
+					'⚖️ Trade-off: Ignore Neighbors (On) vs Extreme Far-Edge Range (Off)',
+					'⚖️ Trade-off: Ignorar Vecinos (Activo) vs Alcance Extremo (Inactivo)'
+				),
+				onBenefit: tr3(
+					'Transmite sem esperar beacons fracos de vizinhos (Ideal p/ OBSS > 25%)',
+					'Transmits without waiting for weak neighbor beacons (Ideal for OBSS > 25%)',
+					'Transmite sin esperar balizas débiles de vecinos (Ideal para OBSS > 25%)'
+				),
+				offBenefit: tr3(
+					'Sensibilidade física máxima para clientes muito distantes (-85 dBm)',
+					'Maximum physical sensitivity for far-edge clients (-85 dBm)',
+					'Sensibilidad física máxima para clientes muy alejados (-85 dBm)'
+				),
+				desc: tr3(
+					'Ajusta os registradores de detecção de energia CCA no baseband 2.4G/5G (wifitool cmd 67) para ignorar poluição de roteadores vizinhos distantes.',
+					'Tunes 2.4G/5G baseband CCA energy detection registers (wifitool cmd 67) to ignore distant neighbor router pollution.',
+					'Ajusta los registros de detección de energía CCA en banda base 2.4G/5G (wifitool cmd 67) para ignorar interferencia de routers vecinos lejanos.'
+				)
+			},
+			{
+				id: 'compat_iot',
+				key: 'compat_iot',
+				defaultVal: '1',
+				icon: '📺',
+				name: tr3(
+					'Modo Compatibilidade Smart TV & IoT (Fix X7 v1.01.000050 ap_isbasic)',
+					'Smart TV & IoT Compatibility Mode (X7 v1.01.000050 ap_isbasic Fix)',
+					'Modo Compatibilidad Smart TV e IoT (Fix X7 v1.01.000050 ap_isbasic)'
+				),
+				speed: tr3('🔄 Recarrega Wi-Fi (~4s)', '🔄 Reloads Wi-Fi (~4s)', '🔄 Recarga Wi-Fi (~4s)'),
+				conflictTag: tr3(
+					'⚖️ Trade-off: Compatibilidade Smart TV/IoT (Ligado) vs Beacon Prot Estrito (Desligado)',
+					'⚖️ Trade-off: Smart TV/IoT Compatibility (On) vs Strict Beacon Protection (Off)',
+					'⚖️ Trade-off: Compatibilidad Smart TV/IoT (Activo) vs Beacon Prot Estricto (Inactivo)'
+				),
+				onBenefit: tr3(
+					'Smart TVs, PS4, Impressoras e IoT conectam sem falha em WPA2/WPA3-Mixed',
+					'Smart TVs, PS4, Printers & IoT connect seamlessly on WPA2/WPA3-Mixed',
+					'Smart TVs, PS4, Impresoras e IoT conectan sin fallos en WPA2/WPA3-Mixed'
+				),
+				offBenefit: tr3(
+					'Exige Beacon Protection + PSK-SHA256 estrito (Pode recusar TVs antigas)',
+					'Enforces strict Beacon Protection + PSK-SHA256 (May reject older TVs)',
+					'Exige Beacon Protection + PSK-SHA256 estricto (Puede rechazar TVs antiguas)'
+				),
+				desc: tr3(
+					'Backport oficial de Agosto/2026 do irmão Acer Predator X7 (v1.01.000050): desativa beacon_prot e add_sha256 na VAP principal para evitar erro RSN IE mismatch em aparelhos legados.',
+					'Official August/2026 backport from sibling Acer Predator X7 (v1.01.000050): disables beacon_prot and add_sha256 on main VAP to prevent RSN IE mismatch on legacy devices.',
+					'Backport oficial de Agosto/2026 del hermano Acer Predator X7 (v1.01.000050): desactiva beacon_prot y add_sha256 en la VAP principal para evitar el error RSN IE mismatch.'
+				)
+			},
+			{
+				id: 'sqm_cake',
+				key: 'sqm_cake',
+				defaultVal: '0',
+				icon: '🛡️',
+				name: tr3(
+					'Motor WAN: Anti-Bufferbloat SQM CAKE vs Hardware Puro 2.5 Gbps',
+					'WAN Engine: SQM CAKE Anti-Bufferbloat vs Pure 2.5 Gbps Hardware',
+					'Motor WAN: SQM CAKE Anti-Bufferbloat vs Hardware Puro 2.5 Gbps'
+				),
+				speed: tr3('⚡ Imediato (Sem Reiniciar Wi-Fi)', '⚡ Instant (Zero Wi-Fi Reload)', '⚡ Inmediato (Sin Reiniciar Wi-Fi)'),
+				conflictTag: tr3(
+					'🔄 Coordenação Automática: Pausa SFE Fast-Path quando Ligado (Evita Bug Pacote #25)',
+					'🔄 Auto-Coordinated: Pauses SFE Fast-Path when On (Prevents Packet-#25 Freeze)',
+					'🔄 Coordinación Automática: Pausa SFE Fast-Path al Activar (Evita Fallo Paquete #25)'
+				),
+				onBenefit: tr3(
+					'SQM CAKE Ativo c/ no-split-gso (Nota A+ Waveform / +0 ms sob carga)',
+					'SQM CAKE Active w/ no-split-gso (Waveform Grade A+ / +0 ms under load)',
+					'SQM CAKE Activo c/ no-split-gso (Nota A+ Waveform / +0 ms bajo carga)'
+				),
+				offBenefit: tr3(
+					'Hardware Puro PPE-DS + SFE Fast-Path (Até 2.5 Gbps / 0% de uso de CPU)',
+					'Pure Hardware PPE-DS + SFE Fast-Path (Up to 2.5 Gbps / 0% CPU usage)',
+					'Hardware Puro PPE-DS + SFE Fast-Path (Hasta 2.5 Gbps / 0% de uso de CPU)'
+				),
+				desc: tr3(
+					'Alterna o motor da porta WAN sem sair do painel. Quando ligado, pausa automaticamente o bypass SFE para que o CAKE controle a fila sem travar fluxos de 6 GHz.',
+					'Switches the WAN engine directly from this dashboard. When enabled, automatically pauses SFE bypass so CAKE shapes traffic without freezing 6 GHz flows.',
+					'Alterna el motor del puerto WAN desde este panel. Al activarse, pausa automáticamente el bypass SFE para que CAKE gestione la cola sin congelar flujos de 6 GHz.'
+				)
+			}
+		];
+
+		var cards = siliconDefs.map(function(feat) {
+			var rawVal = (feats[feat.key] !== undefined) ? String(feats[feat.key]) : feat.defaultVal;
+			var isEnabled = (rawVal === '1');
+
+			var badgeEl = E('span', {
+				'id': 'feat-badge-' + feat.id,
+				'style': 'font-size:11px; font-weight:bold; padding:3px 9px; border-radius:12px; display:inline-block; transition:all 0.2s;' +
+				         (isEnabled ? 'background:#e8f8f0; color:#27ae60; border:1px solid #a3e4d7;' : 'background:#fdf2f2; color:#c0392b; border:1px solid #f5b7b1;')
+			}, isEnabled ? tr3('● ATIVADO', '● ENABLED', '● ACTIVADO') : tr3('○ DESATIVADO', '○ DISABLED', '○ DESACTIVADO'));
+
+			var btnEl = E('button', {
+				'id': 'feat-btn-' + feat.id,
+				'class': isEnabled ? 'cbi-button cbi-button-reset' : 'cbi-button cbi-button-positive',
+				'style': 'font-size:12px; font-weight:bold; min-width:115px; cursor:pointer;',
+				'data-val': isEnabled ? '1' : '0',
+				'click': function() {
+					var currentVal = btnEl.getAttribute('data-val') || (isEnabled ? '1' : '0');
+					var targetVal = (currentVal === '1') ? '0' : '1';
+					btnEl.disabled = true;
+					btnEl.textContent = tr3('⏳ Aplicando...', '⏳ Applying...', '⏳ Aplicando...');
+
+					if (feat.id === 'compat_iot') {
+						ui.showModal(tr3('Aplicando Perfil de Segurança RSN (X7 Backport)...', 'Applying RSN Security Profile (X7 Backport)...', 'Aplicando Perfil de Seguridad RSN (X7 Backport)...'), [
+							E('p', { 'class': 'spinning' }, tr3(
+								'Recarregando o hostapd para atualizar os anúncios RSN IE (ap_isbasic / Beacon Protection)... Aguarde ~4 segundos.',
+								'Reloading hostapd to update RSN IE announcements (ap_isbasic / Beacon Protection)... Please wait ~4 seconds.',
+								'Recargando hostapd para actualizar los anuncios RSN IE (ap_isbasic / Beacon Protection)... Espere ~4 segundos.'
+							))
+						]);
+					}
+
+					callToggleFeature(feat.id, targetVal).then(function() {
+						if (feat.id === 'compat_iot') {
+							setTimeout(function() { window.location.reload(); }, 4000);
+							return;
+						}
+						return callGetStatus().then(function(newStatus) {
+							self.updateLiveTelemetry(newStatus);
+						});
+					}).catch(function(err) {
+						ui.addNotification(null, E('p', {}, 'Error: ' + (err.message || err)));
+					}).finally(function() {
+						if (feat.id !== 'compat_iot') {
+							btnEl.disabled = false;
+						}
+					});
+				}
+			}, isEnabled ? tr3('⏸ Desligar', '⏸ Disable', '⏸ Desactivar') : tr3('▶ Ligar', '▶ Enable', '▶ Activar'));
+
+			return E('div', {
+				'id': 'feat-card-' + feat.id,
+				'style': 'background:#fff; border:1px solid #e1e4e8; border-top:3px solid ' + (isEnabled ? '#8e44ad' : '#888') + '; border-radius:6px; padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.03);'
+			}, [
+				E('div', {}, [
+					E('div', { 'style': 'display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:8px;' }, [
+						E('div', { 'style': 'font-weight:bold; font-size:13px; color:#2c3e50; display:flex; align-items:center; gap:6px;' }, [
+							E('span', { 'style': 'font-size:16px;' }, feat.icon),
+							feat.name
+						]),
+						badgeEl
+					]),
+					E('div', { 'style': 'display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;' }, [
+						E('span', { 'style': 'font-size:10px; color:#0275d8; font-weight:bold;' }, feat.speed),
+						E('span', { 'style': 'font-size:10px; background:#f3e8ff; color:#6b21a8; padding:1px 6px; border-radius:8px; font-weight:bold;' }, feat.conflictTag)
+					]),
+					E('div', { 'style': 'font-size:12px; color:#555; margin-bottom:10px; line-height:1.45;' }, feat.desc),
+					E('div', { 'style': 'font-size:11px; background:#f8f9fa; border-radius:4px; padding:8px 10px; margin-bottom:12px; border-left:3px solid #8e44ad;' }, [
+						E('div', {}, [ E('strong', { 'style': 'color:#27ae60;' }, tr3('✓ Quando Ativo: ', '✓ When Enabled: ', '✓ Cuando Activo: ')), feat.onBenefit ]),
+						E('div', { 'style': 'margin-top:4px;' }, [ E('strong', { 'style': 'color:#c0392b;' }, tr3('✗ Quando Desligado: ', '✗ When Disabled: ', '✗ Cuando Inactivo: ')), feat.offBenefit ])
+					])
+				]),
+				E('div', { 'style': 'display:flex; justify-content:flex-end; align-items:center; border-top:1px solid #f0f0f0; padding-top:8px;' }, [
+					btnEl
+				])
+			]);
+		});
+
+		return E('div', {
+			'style': 'margin-top:25px; margin-bottom:25px; background:#fff; border:1px solid #e1e4e8; border-top:4px solid #8e44ad; border-radius:6px; padding:16px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.04);'
+		}, [
+			E('div', { 'style': 'display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;' }, [
+				E('h3', { 'style': 'margin:0; font-size:15px; color:#2c3e50; font-weight:bold;' }, tr3(
+					'🧠 Menu Dedicado: Engenharia de Silício Qualcomm, QoS Wi-Fi 7 & Controle de Conflitos (Frentes 1 & 2)',
+					'🧠 Dedicated Menu: Qualcomm Silicon Engineering, Wi-Fi 7 QoS & Conflict Control (Fronts 1 & 2)',
+					'🧠 Menú Dedicado: Ingeniería de Silicio Qualcomm, QoS Wi-Fi 7 y Control de Conflictos (Frentes 1 y 2)'
+				)),
+				E('span', { 'style': 'font-size:11px; background:#f3e8ff; color:#6b21a8; padding:3px 9px; border-radius:12px; font-weight:bold;' }, tr3(
+					'Isolamento Automático de Conflitos Ativo',
+					'Automatic Conflict Isolation Active',
+					'Aislamiento Automático de Conflictos Activo'
+				))
+			]),
+			E('div', { 'style': 'font-size:12px; color:#666; margin-bottom:14px;' }, tr3(
+				'Controle individualmente as novas otimizações de silício Qualcomm (IPQ5332 + QCN9224) e os backports do firmware Acer Predator X7 (v1.01.000050), com proteção automática contra conflitos de fila (ACK preservado) e coordenação SQM ↔ SFE.',
+				'Individually control the new Qualcomm silicon optimizations (IPQ5332 + QCN9224) and Acer Predator X7 (v1.01.000050) firmware backports, featuring automatic queue conflict protection (preserved Layer-2 ACK) and SQM ↔ SFE coordination.',
+				'Controle individualmente las nuevas optimizaciones de silicio Qualcomm (IPQ5332 + QCN9224) y los backports del firmware Acer Predator X7 (v1.01.000050), con protección automática contra conflictos de cola (ACK preservado) y coordinación SQM ↔ SFE.'
+			)),
+			E('div', { 'style': 'display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px;' }, cards)
 		]);
 	},
 
@@ -1585,11 +2070,11 @@ return view.extend({
 				id: 'gaming',
 				key: 'gaming_mode',
 				icon: '🎮',
-				name: 'Qualcomm Gaming Mode (Baixa Latência)',
+				name: 'Qualcomm Gaming Mode (Escalonador RF Low-Latency)',
 				speed: '⚡ Imediato (Sem Reiniciar)',
-				onBenefit: 'Menor ping & jitter em jogos competitivos',
-				offBenefit: 'Agregação máxima para downloads contínuos (Torrents/NAS)',
-				desc: 'Minimiza tempos de fila no kernel Qualcomm e prioriza pacotes de jogos (filas AC_VO/VI). Quando desligado, maximiza janelas de buffer para tráfego contínuo.'
+				onBenefit: 'Menor tempo de despacho de pacotes no ar (c/ ACK Seguro)',
+				offBenefit: 'Agregação máxima A-MPDU para downloads contínuos (NAS)',
+				desc: 'Ativa low_latency_mode=1 nos 3 rádios Qualcomm mantendo noackpolicy=0 (100% de retransmissão ACK preservada para não cortar voz/vídeo).'
 			},
 			{
 				id: 'ani',
@@ -1605,11 +2090,11 @@ return view.extend({
 				id: 'qam4096',
 				key: 'qam4096',
 				icon: '⚡',
-				name: 'Geração Wi-Fi 7 (4096-QAM / 320 MHz)',
+				name: 'Modulação 4096-QAM (Wi-Fi 7 Puro)',
 				speed: '🔄 Recarrega Rádio 6G (~3s)',
-				onBenefit: 'Wi-Fi 7 Pleno (11bea / 320 MHz / MCS 12-13 até 5.764 Mbps)',
-				offBenefit: 'Modo Wi-Fi 6E Legado (11axa / HT160 até 2.402 Mbps)',
-				desc: 'Alterna entre Wi-Fi 7 pleno (11bea com 320 MHz e 4096-QAM) e Wi-Fi 6E legado (11axa com 160 MHz e 1024-QAM). Desligue apenas se possuir clientes legados com incompatibilidade de handshake EHT.'
+				onBenefit: 'Velocidade pico de até 5.764 Mbps (MCS 12-13)',
+				offBenefit: 'Limitado a Wi-Fi 6 1024-QAM (Até 4.800 Mbps)',
+				desc: 'Habilita modulação ultra densa de 12 bits por símbolo (11bea). Quando desligado, recua para Wi-Fi 6 (11ax) para aparelhos instáveis ou distâncias extremas.'
 			},
 			{
 				id: 'rnr_6g',
@@ -1645,11 +2130,11 @@ return view.extend({
 				id: 'beamforming',
 				key: 'beamforming',
 				icon: '📶',
-				name: 'Tx Beamforming Sounding (TxBF)',
+				name: 'EHT SU/MU Beamformer (TxBF 802.11be)',
 				speed: '⚡ Imediato (Sem Reiniciar)',
-				onBenefit: 'Sondagem periódica a cada 100ms focando sinal no cliente',
+				onBenefit: 'Sondagem 100ms + Matrizes EHT SU/MU focadas no cliente',
 				offBenefit: 'Emissão isotrópica padrão sem sondagem ativa',
-				desc: 'Calcula matrizes de fase RF por medição de retorno (sounding) para concentrar o feixe de sinal de rádio diretamente sobre a antena do seu dispositivo.'
+				desc: 'Habilita explicitamente EHT SU/MU Beamforming e Sounding CSI a cada 100ms nas 3 bandas para concentrar o feixe RF na antena do cliente.'
 			}
 		];
 
@@ -1728,10 +2213,10 @@ return view.extend({
 			'style': 'margin-top:25px; margin-bottom:25px; background:#fff; border:1px solid #e1e4e8; border-top:4px solid #2980b9; border-radius:6px; padding:16px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.04);'
 		}, [
 			E('div', { 'style': 'display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;' }, [
-				E('h3', { 'style': 'margin:0; font-size:15px; color:#2c3e50; font-weight:bold;' }, '🎮 Interruptores de Recursos RF & Otimizações de Hardware Qualcomm'),
-				E('span', { 'style': 'font-size:11px; color:#666;' }, 'Controle em tempo real de filas, imunidade a ruído, modulações e interrupções da CPU')
+				E('h3', { 'style': 'margin:0; font-size:15px; color:#2c3e50; font-weight:bold;' }, '🎮 Interruptores Clássicos de Rádio RF & SoC'),
+				E('span', { 'style': 'font-size:11px; color:#666;' }, 'Controle em tempo real de imunidade a ruído, modulação 4096-QAM, RNR, RPS e Beamforming')
 			]),
-			E('div', { 'style': 'font-size:12px; color:#666; margin-bottom:14px;' }, 'Alterne recursos avançados do driver e do silício Qualcomm IPQ5332 / QCN9224 em tempo real. As preferências são gravadas de forma persistente e restauradas na inicialização.'),
+			E('div', { 'style': 'font-size:12px; color:#666; margin-bottom:14px;' }, 'Alterne recursos de camada física RF em tempo real. As preferências são gravadas de forma persistente e restauradas na inicialização.'),
 			E('div', { 'style': 'display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px;' }, featureCards)
 		]);
 	},
@@ -1780,6 +2265,50 @@ return view.extend({
 		]);
 	},
 
+	renderPortedAppsCard: function(appsData) {
+		var apps = appsData || {};
+		var wgUp = (apps.wg_up === '1');
+		var ovpnRun = (apps.openvpn_running === '1');
+		var dohEn = (apps.doh_enabled === '1');
+		var schEn = (apps.sched_enabled === '1');
+		var opkgOk = (apps.opkg_feeds_ok === '1');
+		var heldCnt = parseInt(apps.opkg_held_count || '0', 10);
+		var hapdVer = apps.hapd_ver || 'v2.11-devel (SPF 12.4)';
+
+		return E('div', {
+			'style': 'margin-top:25px; margin-bottom:25px; background:linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0f766e 100%); color:#fff; border-radius:10px; padding:18px 22px; box-shadow:0 4px 14px rgba(15,23,42,0.18); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;'
+		}, [
+			E('div', { 'style': 'flex:1; min-width:300px;' }, [
+				E('div', { 'style': 'font-size:11px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:4px;' },
+					'⚡ CUDY WR11000 SPF 12.4 • hostapd ' + hapdVer + ' • 240/320 MHz Ready'),
+				E('h3', { 'style': 'margin:0 0 6px 0; font-size:17px; color:#fff; font-weight:800;' }, tr3(
+					'🧰 Central de Aplicativos & Motores Nativos (Página Dedicada Completa)',
+					'🧰 Native Applications & Engines Center (Full Dedicated Page)',
+					'🧰 Central de Aplicaciones y Motores Nativos (Página Dedicada Completa)'
+				)),
+				E('div', { 'style': 'font-size:12.5px; color:#cbd5e1; line-height:1.45; margin-bottom:10px;' }, tr3(
+					'Gerencie em página dedicada com opções avançadas: WireGuard VPN Kernel-Space (formulário completo + importador .conf), OpenVPN nativo (.ovpn), Tabela Wake-on-LAN ao vivo, Agendador Eco Wi-Fi por dias da semana, IPTV Multicast + DNS DoH/Anti-QUIC e Escudo de Pacotes OPKG (19.07.10 + Hold Shield).',
+					'Manage on a dedicated page with full options: Kernel-Space WireGuard VPN (full form + .conf importer), native OpenVPN (.ovpn), live Wake-on-LAN table, weekday Wi-Fi Eco Scheduler, IPTV Multicast + DoH/Anti-QUIC DNS, and OPKG Package Shield (19.07.10 + Hold Shield).',
+					'Gestione en una página dedicada con opciones completas: WireGuard VPN Kernel-Space, OpenVPN nativo (.ovpn), tabla Wake-on-LAN en vivo, Programador Eco Wi-Fi por días, IPTV Multicast + DNS DoH/Anti-QUIC y Escudo de Paquetes OPKG.'
+				)),
+				E('div', { 'style': 'display:flex; gap:8px; flex-wrap:wrap; font-size:11px; font-weight:700;' }, [
+					E('span', { 'style': 'background:rgba(255,255,255,0.14); padding:3px 9px; border-radius:999px;' }, '🛡️ WireGuard: ' + (wgUp ? 'UP' : 'Ready')),
+					E('span', { 'style': 'background:rgba(255,255,255,0.14); padding:3px 9px; border-radius:999px;' }, '🔑 OpenVPN: ' + (ovpnRun ? 'UP' : 'Unlocked')),
+					E('span', { 'style': 'background:rgba(255,255,255,0.14); padding:3px 9px; border-radius:999px;' }, '🔒 DoH DNS: ' + (dohEn ? 'ON (:5053/:5054)' : 'OFF')),
+					E('span', { 'style': 'background:rgba(255,255,255,0.14); padding:3px 9px; border-radius:999px;' }, '⏰ Eco Cron: ' + (schEn ? 'ON' : 'OFF')),
+					E('span', { 'style': 'background:rgba(255,255,255,0.14); padding:3px 9px; border-radius:999px;' }, '📦 OPKG Hold: ' + (opkgOk ? (heldCnt + ' Pkgs') : 'Pending'))
+				])
+			]),
+			E('div', { 'style': 'display:flex; flex-direction:column; gap:8px;' }, [
+				E('a', {
+					'class': 'cbi-button cbi-button-action',
+					'style': 'background:#10b981; color:#fff !important; border:none; padding:10px 18px; border-radius:8px; font-size:13.5px; font-weight:800; text-decoration:none; text-align:center; box-shadow:0 4px 12px rgba(16,185,129,0.35);',
+					'href': L.url('admin', 'network', 'predator_apps')
+				}, tr3('🚀 Abrir Central de Aplicativos Completa ➔', '🚀 Open Full Applications Center ➔', '🚀 Abrir Central de Aplicaciones Completa ➔'))
+			])
+		]);
+	},
+
 	updateLiveTelemetry: function(status) {
 		var self = this;
 		if (!status || !status.radios) return;
@@ -1795,34 +2324,51 @@ return view.extend({
 			liveBadgeEl.textContent = '🟢 Ao Vivo (2s) • ' + timeStr;
 		}
 
+		var silEl = document.getElementById('rf-silicon-bar');
+		if (silEl && status.silicon) {
+			var newSil = self.buildSiliconBar(status.silicon);
+			silEl.parentNode.replaceChild(newSil, silEl);
+		}
+
+		var confEl = document.getElementById('rf-conflicts-box');
+		if (confEl) {
+			var newConf = self.buildConflictsNode(status);
+			confEl.parentNode.replaceChild(newConf, confEl);
+		}
+
 		if (status.features) {
 			var feats = status.features;
 			var featList = [
-				{ id: 'gaming', key: 'gaming_mode' },
-				{ id: 'ani', key: 'ani' },
-				{ id: 'qam4096', key: 'qam4096' },
-				{ id: 'rnr_6g', key: 'rnr_6g' },
-				{ id: 'rps', key: 'rps' },
-				{ id: 'puncturing', key: 'puncturing' },
-				{ id: 'beamforming', key: 'beamforming' }
+				{ id: 'mscs_scs', key: 'mscs_scs', color: '#8e44ad' },
+				{ id: 'twt', key: 'twt', color: '#8e44ad' },
+				{ id: 'cca_mitigation', key: 'cca_mitigation', color: '#8e44ad' },
+				{ id: 'compat_iot', key: 'compat_iot', color: '#8e44ad' },
+				{ id: 'sqm_cake', key: 'sqm_cake', color: '#8e44ad' },
+				{ id: 'gaming', key: 'gaming_mode', color: '#27ae60' },
+				{ id: 'ani', key: 'ani', color: '#27ae60' },
+				{ id: 'qam4096', key: 'qam4096', color: '#27ae60' },
+				{ id: 'rnr_6g', key: 'rnr_6g', color: '#27ae60' },
+				{ id: 'rps', key: 'rps', color: '#27ae60' },
+				{ id: 'puncturing', key: 'puncturing', color: '#27ae60' },
+				{ id: 'beamforming', key: 'beamforming', color: '#27ae60' }
 			];
 			featList.forEach(function(f) {
-				var val = feats[f.key] || '0';
+				var val = (feats[f.key] !== undefined) ? String(feats[f.key]) : '0';
 				var isEn = (val === '1');
 				var badgeEl = document.getElementById('feat-badge-' + f.id);
 				if (badgeEl) {
-					badgeEl.textContent = isEn ? '● ATIVADO' : '○ DESATIVADO';
+					badgeEl.textContent = isEn ? tr3('● ATIVADO', '● ENABLED', '● ACTIVADO') : tr3('○ DESATIVADO', '○ DISABLED', '○ DESACTIVADO');
 					badgeEl.style.background = isEn ? '#e8f8f0' : '#fdf2f2';
 					badgeEl.style.color = isEn ? '#27ae60' : '#c0392b';
 					badgeEl.style.border = isEn ? '1px solid #a3e4d7' : '1px solid #f5b7b1';
 				}
 				var cardEl = document.getElementById('feat-card-' + f.id);
 				if (cardEl) {
-					cardEl.style.borderTopColor = isEn ? '#27ae60' : '#888';
+					cardEl.style.borderTopColor = isEn ? f.color : '#888';
 				}
 				var btnEl = document.getElementById('feat-btn-' + f.id);
 				if (btnEl && !btnEl.disabled) {
-					btnEl.textContent = isEn ? '⏸ Desligar' : '▶ Ligar';
+					btnEl.textContent = isEn ? tr3('⏸ Desligar', '⏸ Disable', '⏸ Desactivar') : tr3('▶ Ligar', '▶ Enable', '▶ Activar');
 					btnEl.className = isEn ? 'cbi-button cbi-button-reset' : 'cbi-button cbi-button-positive';
 					btnEl.setAttribute('data-val', val);
 				}
@@ -1842,6 +2388,11 @@ return view.extend({
 
 			var eirpEl = document.getElementById('rf-eirp-' + dev);
 			if (eirpEl) eirpEl.textContent = r.eirp;
+
+			var specEl = document.getElementById('rf-spec-' + dev);
+			if (specEl) {
+				dom.content(specEl, self.buildSpectrumNode(r));
+			}
 
 			var tempEl = document.getElementById('rf-temp-' + dev);
 			if (tempEl) {
@@ -2096,15 +2647,15 @@ return view.extend({
 			{ val: '5', label: 'Canal 5 (2432 MHz)' }, { val: '6', label: 'Canal 6 (2437 MHz)' },
 			{ val: '7', label: 'Canal 7 (2442 MHz)' }, { val: '8', label: 'Canal 8 (2447 MHz)' },
 			{ val: '9', label: 'Canal 9 (2452 MHz)' }, { val: '10', label: 'Canal 10 (2457 MHz)' },
-			{ val: '11', label: 'Canal 11 (2462 MHz)' },
-			{ val: '12', label: 'Canal 12 (2467 MHz - Não transmitido no perfil US)' },
-			{ val: '13', label: 'Canal 13 (2472 MHz - Não transmitido no perfil US)' }
+			{ val: '11', label: 'Canal 11 (2462 MHz)' }, { val: '12', label: 'Canal 12 (2467 MHz)' },
+			{ val: '13', label: 'Canal 13 (2472 MHz)' }
 		];
 
 		var rec5 = [
 			{ val: 'auto', label: autoLabel },
 			{ val: '36', label: 'Canal 36 (5180 MHz)' }, { val: '40', label: 'Canal 40 (5200 MHz)' },
 			{ val: '44', label: 'Canal 44 (5220 MHz)' }, { val: '48', label: 'Canal 48 (5240 MHz)' },
+			{ val: '100', label: 'Canal 100 (5500 MHz - DFS / 160M & 240M)' },
 			{ val: '149', label: 'Canal 149 (5745 MHz)' }, { val: '153', label: 'Canal 153 (5765 MHz)' },
 			{ val: '157', label: 'Canal 157 (5785 MHz)' }, { val: '161', label: 'Canal 161 (5805 MHz)' }
 		];
@@ -2114,7 +2665,7 @@ return view.extend({
 			{ val: '44', label: 'Canal 44 (5220 MHz)' }, { val: '48', label: 'Canal 48 (5240 MHz)' },
 			{ val: '52', label: 'Canal 52 (5260 MHz - DFS)' }, { val: '56', label: 'Canal 56 (5280 MHz - DFS)' },
 			{ val: '60', label: 'Canal 60 (5300 MHz - DFS)' }, { val: '64', label: 'Canal 64 (5320 MHz - DFS)' },
-			{ val: '100', label: 'Canal 100 (5500 MHz - DFS)' }, { val: '104', label: 'Canal 104 (5520 MHz - DFS)' },
+			{ val: '100', label: 'Canal 100 (5500 MHz - DFS / 160M & 240M)' }, { val: '104', label: 'Canal 104 (5520 MHz - DFS)' },
 			{ val: '108', label: 'Canal 108 (5540 MHz - DFS)' }, { val: '112', label: 'Canal 112 (5560 MHz - DFS)' },
 			{ val: '116', label: 'Canal 116 (5580 MHz - DFS)' }, { val: '120', label: 'Canal 120 (5600 MHz - DFS)' },
 			{ val: '124', label: 'Canal 124 (5620 MHz - DFS)' }, { val: '128', label: 'Canal 128 (5640 MHz - DFS)' },
@@ -2129,17 +2680,13 @@ return view.extend({
 			{ val: 'auto', label: autoPscLabel },
 			{ val: '37', label: 'Canal 37 PSC (6135 MHz)' }, { val: '53', label: 'Canal 53 PSC (6215 MHz)' },
 			{ val: '69', label: 'Canal 69 PSC (6295 MHz)' }, { val: '85', label: 'Canal 85 PSC (6375 MHz)' },
-			{ val: '101', label: 'Canal 101 PSC (6455 MHz)' }, { val: '117', label: 'Canal 117 PSC (6535 MHz)' },
-			{ val: '133', label: 'Canal 133 PSC (6615 MHz)' }, { val: '149', label: 'Canal 149 PSC (6695 MHz)' },
-			{ val: '165', label: 'Canal 165 PSC (6775 MHz)' }, { val: '181', label: 'Canal 181 PSC (6855 MHz)' },
-			{ val: '197', label: 'Canal 197 PSC (6935 MHz)' }, { val: '213', label: 'Canal 213 PSC (7015 MHz)' },
-			{ val: '229', label: 'Canal 229 PSC (7095 MHz)' }
+			{ val: '101', label: 'Canal 101 PSC (6455 MHz)' }, { val: '117', label: 'Canal 117 PSC (6535 MHz)' }
 		];
 		var all6 = [
 			{ val: 'auto', label: autoPscLabel },
-			{ val: '1', label: 'Canal 1 (5955 MHz)' }, { val: '5', label: 'Canal 5 PSC (5975 MHz)' },
+			{ val: '1', label: 'Canal 1 (5955 MHz)' }, { val: '5', label: 'Canal 5 (5975 MHz)' },
 			{ val: '9', label: 'Canal 9 (5995 MHz)' }, { val: '13', label: 'Canal 13 (6015 MHz)' },
-			{ val: '17', label: 'Canal 17 (6035 MHz)' }, { val: '21', label: 'Canal 21 PSC (6055 MHz)' },
+			{ val: '17', label: 'Canal 17 (6035 MHz)' }, { val: '21', label: 'Canal 21 (6055 MHz)' },
 			{ val: '25', label: 'Canal 25 (6075 MHz)' }, { val: '29', label: 'Canal 29 (6095 MHz)' },
 			{ val: '33', label: 'Canal 33 (6115 MHz)' }, { val: '37', label: 'Canal 37 PSC (6135 MHz)' },
 			{ val: '41', label: 'Canal 41 (6155 MHz)' }, { val: '45', label: 'Canal 45 (6175 MHz)' },
@@ -2152,21 +2699,7 @@ return view.extend({
 			{ val: '97', label: 'Canal 97 (6435 MHz)' }, { val: '101', label: 'Canal 101 PSC (6455 MHz)' },
 			{ val: '105', label: 'Canal 105 (6475 MHz)' }, { val: '109', label: 'Canal 109 (6495 MHz)' },
 			{ val: '113', label: 'Canal 113 (6515 MHz)' }, { val: '117', label: 'Canal 117 PSC (6535 MHz)' },
-			{ val: '121', label: 'Canal 121 (6555 MHz)' }, { val: '125', label: 'Canal 125 (6575 MHz)' },
-			{ val: '129', label: 'Canal 129 (6595 MHz)' }, { val: '133', label: 'Canal 133 PSC (6615 MHz)' },
-			{ val: '137', label: 'Canal 137 (6635 MHz)' }, { val: '141', label: 'Canal 141 (6655 MHz)' },
-			{ val: '145', label: 'Canal 145 (6675 MHz)' }, { val: '149', label: 'Canal 149 PSC (6695 MHz)' },
-			{ val: '153', label: 'Canal 153 (6715 MHz)' }, { val: '157', label: 'Canal 157 (6735 MHz)' },
-			{ val: '161', label: 'Canal 161 (6755 MHz)' }, { val: '165', label: 'Canal 165 PSC (6775 MHz)' },
-			{ val: '169', label: 'Canal 169 (6795 MHz)' }, { val: '173', label: 'Canal 173 (6815 MHz)' },
-			{ val: '177', label: 'Canal 177 (6835 MHz)' }, { val: '181', label: 'Canal 181 PSC (6855 MHz)' },
-			{ val: '185', label: 'Canal 185 (6875 MHz)' }, { val: '189', label: 'Canal 189 (6895 MHz)' },
-			{ val: '193', label: 'Canal 193 (6915 MHz)' }, { val: '197', label: 'Canal 197 PSC (6935 MHz)' },
-			{ val: '201', label: 'Canal 201 (6955 MHz)' }, { val: '205', label: 'Canal 205 (6975 MHz)' },
-			{ val: '209', label: 'Canal 209 (6995 MHz)' }, { val: '213', label: 'Canal 213 PSC (7015 MHz)' },
-			{ val: '217', label: 'Canal 217 (7035 MHz)' }, { val: '221', label: 'Canal 221 (7055 MHz)' },
-			{ val: '225', label: 'Canal 225 (7075 MHz)' }, { val: '229', label: 'Canal 229 PSC (7095 MHz)' },
-			{ val: '233', label: 'Canal 233 (7115 MHz)' }
+			{ val: '121', label: 'Canal 121 (6555 MHz)' }, { val: '125', label: 'Canal 125 (6575 MHz)' }
 		];
 
 		var card0 = this.renderRadioCard(
@@ -2175,7 +2708,7 @@ return view.extend({
 			[
 				{ val: 'HT40', label: 'Auto (20/40 MHz)' },
 				{ val: 'HT20', label: '20 MHz' },
-				{ val: 'HT40', label: '40 MHz' }
+				{ val: 'HT40_FORCE', label: '40 MHz' }
 			],
 			r0,
 			t('radio0_note')
@@ -2187,6 +2720,7 @@ return view.extend({
 			[
 				{ val: 'HT80', label: t('width_80m_rec') },
 				{ val: 'HT160', label: t('width_160m_fast') },
+				{ val: 'HT240', label: tr3('240 MHz (Wi-Fi 7 Punctured • 4.32 Gbps)', '240 MHz (Wi-Fi 7 Punctured • 4.32 Gbps)', '240 MHz (Wi-Fi 7 Punctured • 4.32 Gbps)') },
 				{ val: 'HT40', label: '20/40 MHz' },
 				{ val: 'HT20', label: '20 MHz' }
 			],
@@ -2199,7 +2733,8 @@ return view.extend({
 			rec6, all6,
 			[
 				{ val: 'HT320', label: 'Auto (Máx 320 MHz)' },
-				{ val: 'HT320', label: '320 MHz (Full Width)' },
+				{ val: 'HT320', label: '320 MHz (Full Width • 5.76 Gbps)' },
+				{ val: 'HT240', label: tr3('240 MHz (Wi-Fi 7 Punctured • 4.32 Gbps)', '240 MHz (Wi-Fi 7 Punctured • 4.32 Gbps)', '240 MHz (Wi-Fi 7 Punctured • 4.32 Gbps)') },
 				{ val: 'HT160', label: '160 MHz' },
 				{ val: 'HT80', label: '80 MHz' },
 				{ val: 'HT40', label: '40 MHz' },
@@ -2347,6 +2882,37 @@ return view.extend({
 			]),
 			E('div', { 'style': 'display:flex; align-items:center; gap:10px; flex-wrap:wrap;' }, [
 				E('button', {
+					'id': 'btn-auto-optimize-rf',
+					'class': 'btn cbi-button-action',
+					'style': 'background:#0275d8; color:#fff; border:none; padding:7px 14px; font-size:13px; font-weight:bold; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.2);',
+					'title': tr3('Analisa o piso de ruído e o percentual livre CCA (qca-icm) nas 3 bandas e seleciona os melhores canais automaticamente', 'Analyzes noise floor and CCA free airtime (qca-icm) across all 3 bands and selects the cleanest channels automatically', 'Analiza el piso de ruido y el porcentaje libre CCA (qca-icm) en las 3 bandas y selecciona los mejores canales automáticamente'),
+					'click': function(ev) {
+						var btn = ev.currentTarget;
+						btn.disabled = true;
+						btn.textContent = tr3('⏳ Escaneando CCA...', '⏳ Scanning CCA...', '⏳ Escaneando CCA...');
+						callOptimizeChannels().then(function(res) {
+							if (res && res.success) {
+								ui.showModal(tr3('📡 Otimização Espectral de Canais Concluída (CCA / qca-icm)', '📡 Spectral Channel Optimization Complete (CCA / qca-icm)', '📡 Optimización Espectral de Canales Completada (CCA / qca-icm)'), [
+									E('p', {}, tr3(
+										'O analisador espectral avaliou o piso de ruído (Noise Floor) e a ocupação OBSS das 3 bandas e aplicou os canais mais limpos:',
+										'The spectral analyzer evaluated the Noise Floor and OBSS occupancy across all 3 bands and applied the cleanest channels:',
+										'El analizador espectral evaluó el piso de ruido (Noise Floor) y la ocupación OBSS de las 3 bandas y aplicó los canales más limpios:'
+									)),
+									E('ul', { 'style': 'font-size:13px; line-height:1.6;' }, [
+										E('li', {}, [ E('strong', {}, '2.4 GHz (wifi0): '), 'Canal ' + res.ch0 + ' (Ruído: ' + res.nf0 + ' dBm | ' + res.free0 + '% Livre)' ]),
+										E('li', {}, [ E('strong', {}, '5.0 GHz (wifi1): '), 'Canal ' + res.ch1 + ' (Ruído: ' + res.nf1 + ' dBm | ' + res.free1 + '% Livre)' ]),
+										E('li', {}, [ E('strong', {}, '6.0 GHz (wifi2): '), 'Canal ' + res.ch2 + ' PSC (Ruído: ' + res.nf2 + ' dBm | ' + res.free2 + '% Livre)' ])
+									]),
+									E('p', { 'class': 'spinning' }, tr3('Aplicando novos canais nos 3 rádios Qualcomm... Aguarde ~4 segundos.', 'Applying new channels to all 3 Qualcomm radios... Please wait ~4 seconds.', 'Aplicando nuevos canales en las 3 radios Qualcomm... Espere ~4 segundos.'))
+								]);
+								setTimeout(function() { window.location.reload(); }, 4000);
+							} else {
+								btn.disabled = false;
+							}
+						});
+					}
+				}, tr3('📡 Auto-Otimizar Canais RF (CCA)', '📡 Auto-Optimize RF Channels (CCA)', '📡 Auto-Optimizar Canales RF (CCA)')),
+				E('button', {
 					'id': 'btn-save-all-radios',
 					'class': 'btn cbi-button-action important',
 					'style': 'background:#27ae60; color:#fff; border:none; padding:7px 16px; font-size:13px; font-weight:bold; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.2);',
@@ -2413,6 +2979,8 @@ return view.extend({
 			radiosHeader,
 			radiosGrid,
 			self.renderTelemetryCard(status),
+			self.renderSiliconMenuCard(status.features),
+			self.renderPortedAppsCard(status.apps),
 			self.renderFeaturesCard(status.features)
 		);
 
@@ -2422,3 +2990,4 @@ return view.extend({
 	handleSave: null,
 	handleReset: null
 });
+

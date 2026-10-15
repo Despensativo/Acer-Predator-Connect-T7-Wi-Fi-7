@@ -29,11 +29,14 @@ Se o botão físico **RESET** for pressionado por 10 segundos:
 
 Se a interface web travar, mas houver resposta via Telnet/SSH:
 ```sh
-# Reiniciar o servidor web
-/etc/init.d/lighttpd/lighttpd.init restart
+# Reiniciar o servidor web LuCI (OpenWrt Custom / Master v2)
+/etc/init.d/uhttpd restart && /etc/init.d/rpcd restart
 
-# Reiniciar os subsistemas de rádio Wi-Fi
-wifi
+# (Apenas se estiver no firmware OEM original de fábrica da Acer sem LuCI):
+# /etc/init.d/lighttpd restart
+
+# Reiniciar os subsistemas de rádio Wi-Fi com o guardião anti-crash
+/sbin/wifi reload
 
 # Reiniciar com segurança
 sync && reboot
@@ -41,16 +44,16 @@ sync && reboot
 
 ---
 
-## Cenário 3: Restauração da Partição de Calibração ART (Rádio Wi-Fi)
+## Cenário 3: Restauração de Emergência da Partição de Calibração ART (Rádio Wi-Fi)
 
 > [!CAUTION]
-> A partição ART contém a calibração de fábrica e os endereços MAC exclusivos do hardware. Nunca inicialize sem conferir o tamanho da imagem antes da gravação. (Arquivo de backup preservado localmente em `_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/backup_predator_t7_art.bin`).
+> **⛔ [PROIBIDO / ARMADILHA — DNR-10]:** A partição `0:ART` (`mtd18`) contém a calibração de fábrica de radiofrequência (FEMs 2.4/5/6 GHz) e os endereços MAC exclusivos da placa física. **JAMAIS execute `mtd write` ou `dd` em `/dev/mtd18` ou `/dev/mtdblock18` durante uso ou manutenção normal!** Este procedimento existe **exclusivamente** para desastre físico extremo onde a partição `mtd18` tenha sido corrompida acidentalmente e você possua o dump original extraído **desta mesma unidade física** (preservado fora do Git em `_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/backup_predator_t7_art.bin`).
 
-1. Envie o backup de calibração para `/tmp/`:
+1. Confirme que o arquivo `backup_predator_t7_art.bin` possui exatamente `2.097.152 bytes` (2.0 MB) e pertence ao seu aparelho:
    ```sh
-   scp -O "_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/backup_predator_t7_art.bin" Admin@192.168.73.2:/tmp/art.bin
+   scp -O "_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/backup_predator_t7_art.bin" root@192.168.76.1:/tmp/art.bin
    ```
-2. No terminal do roteador, grave de volta na flash:
+2. No terminal do roteador, somente em caso de corrupção comprovada do `mtd18`, restaure o dump original:
    ```sh
    dd if=/tmp/art.bin of=/dev/mtdblock18 bs=64k
    sync

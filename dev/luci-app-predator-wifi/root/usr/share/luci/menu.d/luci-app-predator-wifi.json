@@ -9,5 +9,16 @@
 			"acl": [ "luci-app-predator-wifi" ]
 		},
 		"order": 15
+	},
+	"admin/network/predator_apps": {
+		"title": "Predator Central de Apps",
+		"action": {
+			"type": "view",
+			"path": "predator_apps"
+		},
+		"depends": {
+			"acl": [ "luci-app-predator-wifi" ]
+		},
+		"order": 16
 	}
 }

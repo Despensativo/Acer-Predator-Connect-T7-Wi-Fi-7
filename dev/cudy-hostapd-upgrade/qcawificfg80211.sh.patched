@@ -1060,7 +1060,7 @@ set_default_country() {
 		config_get mode "$vif" mode
 		case "$mode" in
 			ap|wrap|ap_monitor|ap_smart_monitor|ap_lp_iot)
-				"$device_if" "$phy" setCountryID 840
+				:
 				return 0;
 			;;
 		*) ;;
@@ -1432,22 +1432,6 @@ config_nss_wifi_radio_pri_map()
 		*) nss_wifi_radio_pri_map=$((0x1101));;
 	esac
 	update_internal_ini global_i.ini nss_wifi_radio_pri_map $nss_wifi_radio_pri_map
-}
-
-
-set_pci_ce_irq_affinity() {
-	echo "Configuring CE IRQ CPU affinities..." > /dev/console
-	# SoC 2.4G Copy Engine IRQs (ce0..ce9) -> Core 2 (smp_affinity 4)
-	local soc_ce_irqs=$(cat /proc/interrupts | grep -E '\<ce[0-9]+\>' | cut -d ':' -f 1 | tr -d ' ')
-	for irq in $soc_ce_irqs; do
-		[ -n "$irq" ] && echo 4 > /proc/irq/$irq/smp_affinity 2>/dev/null || true
-	done
-
-	# External PCIe 5G/6G QCN9224 Copy Engine IRQs (pci1_wlan_ce_*) -> Core 3 (smp_affinity 8)
-	local pci_ce_irqs=$(cat /proc/interrupts | grep 'pci1_wlan_ce_' | cut -d ':' -f 1 | tr -d ' ')
-	for irq in $pci_ce_irqs; do
-		[ -n "$irq" ] && echo 8 > /proc/irq/$irq/smp_affinity 2>/dev/null || true
-	done
 }
 
 load_qcawificfg80211() {
@@ -2269,6 +2253,7 @@ load_qcawificfg80211() {
 			};;
 
 			qdf) [ -d /sys/module/${mod} ] || { \
+				[ -d /sys/module/bonding ] || insmod_cmd bonding 2>/dev/null || modprobe bonding 2>/dev/null || true
 				insmod_cmd ${mod} "${qdf_args}" || { \
 					if [ "$recover" != "1" ]; then
 						lock -u /var/run/wifilock
@@ -2524,7 +2509,6 @@ load_qcawificfg80211() {
 	update_ini_target_dp_default_reo_reset
 
 	set_umac_reset_affinity
-	set_pci_ce_irq_affinity
 }
 
 load_qcawhunt() {
@@ -2854,6 +2838,9 @@ _disable_qcawificfg80211() {
 		done
 	fi
 
+	# in MBSS case, send notification to allow deletion of transmitting VAP
+	config_get device_if "$device" device_if "cfg80211tool"
+
 	case "$board_name" in
 		ap-hk*|ap-ac*|ap-cp*|ap-oak*|ap-mp*|*emu*|ap-al*|ap-sdx*|ap-mi*)
 		echo "Disable ol_stats for Lithium platforms"
@@ -2862,9 +2849,6 @@ _disable_qcawificfg80211() {
 		*) echo "ol_stats is disabled for non-Lithium platforms"
 	;;
 	esac
-
-	# in MBSS case, send notification to allow deletion of transmitting VAP
-	config_get device_if "$device" device_if "cfg80211tool"
 	config_get mbss_ie_enable qcawifi mbss_ie_enable
 	if [ -n "$mbss_ie_enable" ]; then
 		if [ "$mbss_ie_enable" != "0" ] && [ "$mbss_ie_enable" != "0x0" ]; then
@@ -3591,89 +3575,13 @@ mlo_usage()
 
 mlo() {
     case "$2" in
-        ap_add) reorder_ap_add $@;;
+        ap_add) mlo_ap_add $@;;
         ap_remove) mlo_ap_remove $@;;
         *) mlo_usage;;
     esac
 }
 
 #mlo_ap_add mldX athX athY .. mldY athXX athYY..
-
-#reorder_ap_add mldX athX athY .. mldY athXX athYY..
-reorder_ap_add()
-{
-    local i=3 #first interface name starts from $3
-    local j
-    local mld
-    local mbss_tx_vdev_inx
-    local arg="$1 $2"
-
-    if [ -z "$gdevice" ]; then
-        gdevice=$DEVICES
-    fi
-
-    while [ ${i} -le ${#} ]; do
-        eval "mld=\${${i}}";
-        check_if_mld=$(echo $mld | grep -c "mld")
-        [ $check_if_mld != 1 ] && break;
-        j=$((i+1))
-
-        while [ ${j} -le ${#} ]; do
-            eval "arg_ifname=\${${j}}";
-            check_if_mld=$(echo $arg_ifname | grep -c mld)
-
-            [ $check_if_mld = 1 ] && break;
-            j=$((j+1));
-
-            # Find the corresponding vif
-            for device in $gdevice; do
-                config_get disabled "$device" disabled
-                [ "$disabled" = "1" ] && {
-                    echo "'$device' is disabled"
-                    continue
-                }
-                scan_qcawificfg80211 $device
-                vifs=
-                config_get vifs "$device" vifs
-
-                for vap in $vifs; do
-                   config_get virt_if_name "$vap" ifname
-                   if [ "$virt_if_name" = "$arg_ifname" ]; then
-                       var=$(cfg80211tool $virt_if_name g_mbss_tx_vdev 2>/dev/null || true)
-                       mbss_tx_check=${var##*:}
-                       if [ "$mbss_tx_check" = "1" ]; then
-                           mbss_tx_vdev_inx="$mbss_tx_vdev_inx $((j-2)) $((j-1))";
-                           arg="$arg $mld $arg_ifname"
-                           break;
-                       fi
-                   fi
-                done;
-            done;
-        done;
-        i=$((j))
-    done;
-
-    i=3
-    while [ ${i} -le ${#} ]; do
-        match=0
-        for inx in $mbss_tx_vdev_inx; do
-            [ "$i" = "$inx" ] && {
-                match=1
-                break;
-            }
-        done
-        [ $match = 1 ] && {
-            i=$((i+1))
-            continue
-        }
-        eval "var=\${${i}}";
-        arg="$arg $var"
-        i=$((i+1))
-    done
-
-    mlo_ap_add $arg
-}
-
 mlo_ap_add() {
     local i=3 #first interface name starts from $3
     local j
@@ -4192,7 +4100,7 @@ post_common_qcawificfg80211() {
 		echo "Configure affinity for DS"
 		/etc/init.d/qca-nss-ppe-ds start
 	fi
-	if [ $skip_ezmesh_daemon_restart -eq 0 ]; then
+	if [ "${skip_ezmesh_daemon_restart:-0}" -eq 0 ]; then
 		if [ -e /tmp/bootup_completed ]; then
 			[ ! -f /etc/init.d/lbd ] || /etc/init.d/lbd start
 			[ ! -f /etc/init.d/hyfi-bridging ] || /etc/init.d/hyfi-bridging start
@@ -4200,6 +4108,8 @@ post_common_qcawificfg80211() {
 		fi
 	fi
 
+	[ -x /lib/wifi_hardware_tune.sh ] && /lib/wifi_hardware_tune.sh
+	[ -x /etc/init.d/predator_rf ] && /etc/init.d/predator_rf start 2>/dev/null
 }
 
 event_common_post_qcawificfg80211() {
@@ -4940,15 +4850,15 @@ enable_qcawificfg80211() {
 	fi
 
 	# WAR to not use chan 36 as primary channel, when using higher BW.
-#	if { [ $band -eq 0 ] || [ $band -eq 2 ]; } && [ $channel -eq 36 ]; then
-#		if [ -f /sys/class/net/${device}/edge_ch_dep_applicable ]; then
-#			edge_ch_dep_applicable=$(cat /sys/class/net/${device}/edge_ch_dep_applicable)
-#			if [ $edge_ch_dep_applicable == "1" -a $edge_channel_deprioritize -eq 1 ]; then
-#				[ HT20 != "$htmode" ] && channel=40 && echo " Primary channel is changed to 40"
-#				[ HT40+ = "$htmode" ] && htmode=HT40- && echo " Mode changed to HT40MINUS with channel 40"
-#			fi
-#		fi
-#	fi
+	if { [ "${band:-0}" = "0" ] || [ "${band:-0}" = "2" ]; } && [ "${channel:-0}" = "36" ]; then
+		if [ -f /sys/class/net/${device}/edge_ch_dep_applicable ]; then
+			edge_ch_dep_applicable=$(cat /sys/class/net/${device}/edge_ch_dep_applicable)
+			if [ "$edge_ch_dep_applicable" = "1" ] && [ "${edge_channel_deprioritize:-0}" = "1" ]; then
+				[ HT20 != "$htmode" ] && channel=40 && echo " Primary channel is changed to 40"
+				[ HT40+ = "$htmode" ] && htmode=HT40- && echo " Mode changed to HT40MINUS with channel 40"
+			fi
+		fi
+	fi
 
 	config_get_bool antdiv "$device" diversity
 	config_get antrx "$device" rxantenna
@@ -5010,8 +4920,8 @@ enable_qcawificfg80211() {
 	config_get bw_expand  "$device" bw_expand
 	[ -n "$bw_expand" ] && "$device_if" "$phy" bw_expand "$bw_expand"
 
-	config_get dfs_punctureEn  "$device" dfs_punctureEn
-	[ -n "$dfs_punctureEn" ] && "$device_if" "$phy" dfs_punctureEn "$dfs_punctureEn"
+	config_get dfs_punctureEn  "$device" dfs_punctureEn 1
+	[ -n "$dfs_punctureEn" ] && "$device_if" "$phy" dfs_puncture_en "$dfs_punctureEn"
 
 	config_get he_bsscolor "$device" he_bsscolor
 	[ -n "$he_bsscolor" ] && "$device_if" "$phy" he_bsscolor ${he_bsscolor}
@@ -5201,7 +5111,7 @@ enable_qcawificfg80211() {
 	config_get acs_dbgtrace "$device" acs_dbgtrace
 	[ -n "$acs_dbgtrace" ] && "$device_if" "$phy" acs_dbgtrace "$acs_dbgtrace"
 
-	config_get puncture_strict "$device" puncture_strict
+	config_get puncture_strict "$device" puncture_strict 0
 	[ -n "$puncture_strict" ] && "$device_if" "$phy" puncture_strict "$puncture_strict"
 
 	config_get acs_6g_only_psc "$device" acs_6g_only_psc
@@ -5729,16 +5639,16 @@ enable_vifs_qcawificfg80211() {
 		fi
 	fi
 
-#	# WAR to not use chan 36 as primary channel, when using higher BW.
-#	if { [ $band -eq 0 ] || [ $band -eq 2 ]; } && [ $channel -eq 36 ]; then
-#		if [ -f /sys/class/net/${device}/edge_ch_dep_applicable ]; then
-#			edge_ch_dep_applicable=$(cat /sys/class/net/${device}/edge_ch_dep_applicable)
-#			if [ $edge_ch_dep_applicable == "1" -a $edge_channel_deprioritize -eq 1 ]; then
-#				[ HT20 != "$htmode" ] && channel=40 && echo " Primary channel is changed to 40"
-#				[ HT40+ = "$htmode" ] && htmode=HT40- && echo " Mode changed to HT40MINUS with channel 40"
-#			fi
-#		fi
-#	fi
+	# WAR to not use chan 36 as primary channel, when using higher BW.
+	if { [ "${band:-0}" = "0" ] || [ "${band:-0}" = "2" ]; } && [ "${channel:-0}" = "36" ]; then
+		if [ -f /sys/class/net/${device}/edge_ch_dep_applicable ]; then
+			edge_ch_dep_applicable=$(cat /sys/class/net/${device}/edge_ch_dep_applicable)
+			if [ "$edge_ch_dep_applicable" = "1" ] && [ "${edge_channel_deprioritize:-0}" = "1" ]; then
+				[ HT20 != "$htmode" ] && channel=40 && echo " Primary channel is changed to 40"
+				[ HT40+ = "$htmode" ] && htmode=HT40- && echo " Mode changed to HT40MINUS with channel 40"
+			fi
+		fi
+	fi
 
 	case "$board_name" in
 		ap-hk*|ap-ac*|ap-cp*|ap-oak*|ap-mp*|ap-sdx*|ap-al*|ap-mi*)
@@ -6014,6 +5924,8 @@ enable_vifs_qcawificfg80211() {
 			*beg:HT40) "$device_if" "$ifname" mode 11GEHT40;;
 			*axa:HT40) "$device_if" "$ifname" mode 11AHE40;;
 			*bea:HT40) "$device_if" "$ifname" mode 11AEHT40;;
+			*bea:HT240) "$device_if" "$ifname" mode 11AEHT320;;
+			*bea:EHT240) "$device_if" "$ifname" mode 11AEHT320;;
 			*bea:HT320) "$device_if" "$ifname" mode 11AEHT320;;
 			*bea:EHT320) "$device_if" "$ifname" mode 11AEHT320;;
 			*bg:*) "$device_if" "$ifname" mode 11G
@@ -6067,9 +5979,9 @@ enable_vifs_qcawificfg80211() {
 			*axa:HT40-) hwmode=11AHE40MINUS;;
 			*axa:HT40) hwmode=11AHE40;;
 			*axa:HT80) hwmode=11AHE80;;
-			*axa:HT160) hwmode=11AHE160;;
+			*axa:HT160|*axa:HT320|*ax:HT160|*ax:HT320) hwmode=11AHE160;;
 			*axa:HT80_80) hwmode=11AHE80_80;;
-			*axa:*) hwmode=11AHE80
+			*axa:*|*ax:*) hwmode=11AHE80
 				if [ -f /sys/class/net/$device/5g_maxchwidth ]; then
 					maxchwidth="$(cat /sys/class/net/$device/5g_maxchwidth)"
 				   if [ $maxchwidth -gt 160 ]; then
@@ -6104,6 +6016,8 @@ enable_vifs_qcawificfg80211() {
 			*bea:EHT80) hwmode=11AEHT80;;
 			*bea:HT160) hwmode=11AEHT160;;
 			*bea:EHT160) hwmode=11AEHT160;;
+			*bea:HT240) hwmode=11AEHT320;;
+			*bea:EHT240) hwmode=11AEHT320;;
 			*bea:HT320) hwmode=11AEHT320;;
 			*bea:EHT320) hwmode=11AEHT320;;
 			*bea:*) hwmode=11AEHT320
@@ -6112,9 +6026,6 @@ enable_vifs_qcawificfg80211() {
 				fi
 				if ( [ -z $maxchwidth ] && [ -f /sys/class/net/$device/5g_maxchwidth ] ); then
 					maxchwidth="$(cat /sys/class/net/$device/5g_maxchwidth)"
-				   if ( [ $maxchwidth -gt 160 ] && [ $band -ne 3 ] ); then
-					maxchwidth=160
-				   fi
 				fi
 				[ -n "$maxchwidth" ] && hwmode=11AEHT$maxchwidth
 				;;
@@ -6151,7 +6062,13 @@ enable_vifs_qcawificfg80211() {
 			}
 		fi #end of propritery modes
 
-		[ "sta" = "$mode" ] && "$device_if" "$ifname" mode "$hwmode"
+		if [ "sta" = "$mode" ]; then
+			case "$hwmode" in
+				11AEHT*) "$device_if" "$ifname" mode 11AEHT320 ;;
+				11GEHT*) "$device_if" "$ifname" mode 11GEHT40 ;;
+				*) "$device_if" "$ifname" mode "$hwmode" ;;
+			esac
+		fi
 		[ 0 = "$channel" ] && "$device_if" "$ifname" mode "$hwmode"
 		[ "$htmode" = "HT80_80" ] && "$device_if" "$ifname" mode "$hwmode"
 
@@ -6169,6 +6086,10 @@ enable_vifs_qcawificfg80211() {
 		config_get cfreq2 "$vif" cfreq2
 		config_get ccfs "$device" ccfs 0
 		config_get puncture_bitmap "$device" puncture_bitmap 0
+		if [ "$htmode" = "HT240" -o "$htmode" = "EHT240" ]; then
+			[ "$band" -ne 3 ] && [ "$ccfs" = "0" ] && ccfs=130
+			[ "$puncture_bitmap" = "0" ] && puncture_bitmap=61440
+		fi
 		config_get standby_mode "$device" standby_mode 0
 		if [ $standby_mode == 1 ]; then
 			config_get standby_cfreq2 "$device" standby_cfreq2
@@ -6265,8 +6186,7 @@ enable_vifs_qcawificfg80211() {
 		config_get own_ie_override "$vif" own_ie_override
                 [ -n "$own_ie_override" ] && cfg80211tool "$ifname" rsn_override 1
 
-		#config_get_bool en_6g_sec_comp "$vif" en_6g_sec_comp 1
-                en_6g_sec_comp=0
+		config_get_bool en_6g_sec_comp "$vif" en_6g_sec_comp 0
 		"$device_if" "$ifname" en_6g_sec_comp "$en_6g_sec_comp"
 
 		if [ $en_6g_sec_comp -eq 0 ]
@@ -7081,7 +7001,7 @@ enable_vifs_qcawificfg80211() {
 		config_get_bool enable_lcr "$vif" enable_lcr
 		[ -n "$enable_lcr" ] && "$device_if" "$ifname" enable_lcr "$enable_lcr"
 
-		config_get_bool rrm "$vif" rrm
+		config_get_bool rrm "$vif" rrm 1
 		[ -n "$rrm" ] && "$device_if" "$ifname" rrm "$rrm"
 
 		config_get_bool rrmslwin "$vif" rrmslwin
@@ -7276,7 +7196,7 @@ enable_vifs_qcawificfg80211() {
 		[ -n "$custom_chan_list" ] && wifitool "$ifname" custom_chan_list $(printf "%s \n" $custom_chan_list)
 
 
-		config_get cactimeout  "$vif" cactimeout
+		config_get cactimeout  "$vif" cactimeout 1
 		[ -n "$cactimeout" ] && "$device_if" "$ifname" set_cactimeout "$cactimeout"
 
 		config_get meshdbg "$vif" meshdbg
@@ -7450,7 +7370,7 @@ start_vifs_qcawificfg80211() {
 	;;
 	ap-sdxpinn*)
 		net_cfg="$(find_net_config "$vif")"
-			[[ -z "$net_cfg" ] -o [ "$isolate" = 1 -a "$mode" = "wrap" ]] || {
+		[ -z "$net_cfg" ] || [ "$isolate" = "1" -a "$mode" = "wrap" ] || {
 			[ -f /sys/class/net/${ifname}/parent ] && { \
 				# In latest OpenWrt, say v21.03, ubus itself returns bridge
 				# in JSON format in addition to the output from /sbin/wifi.
@@ -7465,10 +7385,10 @@ start_vifs_qcawificfg80211() {
 	;;
 	*)
 		net_cfg="$(find_net_config "$vif")"
-			[[ -z "$net_cfg" ] -o [ "$isolate" = 1 -a "$mode" = "wrap" ]] || {
+		[ -z "$net_cfg" ] || [ "$isolate" = "1" -a "$mode" = "wrap" ] || {
 			[ -f /sys/class/net/${ifname}/parent ] && { \
 				bridge="$(bridge_interface "$net_cfg")"
-				if [ $mld_netdev == 1 ]; then
+				if [ "$mld_netdev" = "1" ]; then
 					local mldev_mode
 					local ini_path
 					ini_path=$(get_config_file_path "ini")
@@ -7668,7 +7588,7 @@ start_vifs_qcawificfg80211() {
 	# But cfg80211tool will take rts parameter as integer.
         # MAX farme size, MAX RTS Threshold i.e 2347, is set to make RTS/CTS protection off.
 	config_get rts "$vif" rts
-	if [ $rts == "off" ]; then
+	if [ "$rts" = "off" ]; then
 		"$device_if" "$ifname" rts 2347
 	else
 		[ -n "$rts" ] && "$device_if" "$ifname" rts "${rts%%.*}"
@@ -7794,15 +7714,15 @@ start_vifs_qcawificfg80211() {
 		while true
 		do
 			table_country=`cat $wifi_table | jsonfilter -e "@['wifi_info'][$wifi_table_index]['country']"`
-			if [ "$table_country" == "$country" -o "$table_country" == "" ]; then
+			if [ "$table_country" = "$country" ] || [ -z "$table_country" ]; then
 				max_txpower_2g=`cat $wifi_table | jsonfilter -e "@['wifi_info'][$wifi_table_index]['max_txpower_2g']"`
 				max_txpower_5g=`cat $wifi_table | jsonfilter -e "@['wifi_info'][$wifi_table_index]['max_txpower_5g']"`
 				max_txpower_6g=`cat $wifi_table | jsonfilter -e "@['wifi_info'][$wifi_table_index]['max_txpower_6g']"`
-				if [ "$phy" == "wifi0" ]; then
+				if [ "$phy" = "wifi0" ]; then
 					table_max_txpower=$max_txpower_2g
-				elif [ "$phy" == "wifi1" ]; then
+				elif [ "$phy" = "wifi1" ]; then
 					table_max_txpower=$max_txpower_5g
-				elif [ "$phy" == "wifi2" ]; then
+				elif [ "$phy" = "wifi2" ]; then
 					table_max_txpower=$max_txpower_6g
 				fi
 				break
@@ -7815,20 +7735,24 @@ start_vifs_qcawificfg80211() {
 	# while atheros hardware theoretically is capable of per-vif (even per-packet) txpower
 	# adjustment it does not work with the current atheros hal/madwifi driver
 	config_get vif_txpower "$vif" txpower
-	if [ $vif_txpower -gt $table_max_txpower ];then
+	if [ -n "$vif_txpower" ] && [ -n "$table_max_txpower" ] && [ "$vif_txpower" -gt "$table_max_txpower" ] 2>/dev/null; then
 		vif_txpower=$table_max_txpower
 	fi
 	config_get txpower "$device" txpower
-	if [ $txpower -gt $table_max_txpower ];then
+	if [ -n "$txpower" ] && [ -n "$table_max_txpower" ] && [ "$txpower" -gt "$table_max_txpower" ] 2>/dev/null; then
 		txpower=$table_max_txpower
 	fi
 
 	# use vif_txpower (from wifi-iface) instead of txpower (from wifi-device) if
 	# the latter doesn't exist
 	txpower="${txpower:-$vif_txpower}"
-	[ -z "$txpower" ] || iw "$ifname" set txpower fixed "${txpower%%.*}"
+	if [ "$txpower" = "auto" ] || [ -z "$txpower" ]; then
+		iw "$ifname" set txpower auto 2>/dev/null || true
+	else
+		iw "$ifname" set txpower fixed "${txpower%%.*}" 2>/dev/null || true
+	fi
 
-	if [ $enable_rps_wifi == 1 ] && [ -f "/lib/update_system_params.sh" ]; then
+	if [ "$enable_rps_wifi" = "1" ] && [ -f "/lib/update_system_params.sh" ]; then
 		. /lib/update_system_params.sh
 		enable_rps $ifname
 	fi
@@ -8088,6 +8012,7 @@ add_mld_bridge() {
 						# when added to bridge
 						sysctl inet.ipv6.conf.$mld.disable_ipv6=1
 						brctl addif $bridge $mld
+						ifconfig $mld up 2>/dev/null || true
 						mld_bridge_added=1;
 						break;
 					fi
@@ -8100,35 +8025,6 @@ add_mld_bridge() {
 	done
 }
 
-
-ubus_remove_mld_bridge()
-{
-	local mld_name="$1"
-	local vif_found=0
-
-	for ldevice in $gdevice; do
-		config_get vifs "$ldevice" vifs
-		for vif in $vifs; do
-			config_get ifmld "$vif" mld
-			if [ "$ifmld" = "$mld_name" ]; then
-				vif_found=1
-				net_cfg="$(find_net_config "$vif")"
-				json_init
-				json_add_string "name" "$mld_name"
-				json_close_object
-				remove_device_val_str=$(json_dump)
-				echo "remove $mld_name from br-$net_cfg" > /dev/console
-				ubus call network.interface.$net_cfg remove_device "$remove_device_val_str" >/dev/null 2>&1 &
-				break;
-			fi
-		done
-	done
-
-	if [ $vif_found -eq 0 ]; then
-		ip link set dev $mld_name nomaster 2>/dev/null || true
-	fi
-}
-
 remove_mld_bridge() {
 	local mld_name="$1"
 	mld_netdev=1
@@ -8137,11 +8033,11 @@ remove_mld_bridge() {
 		if [ $mld_netdev = 0 ]; then
 			break;
 		fi
-		if [ -z "$mld_name" ]; then
-			ubus_remove_mld_bridge $mld
+		if [ -z $mld_name]; then
+			ip link set dev $mld nomaster
 		else
-			if [ "$mld_name" = "$mld" ]; then
-				ubus_remove_mld_bridge $mld
+			if [ $mld_name = $mld ]; then
+				ip link set dev $mld nomaster
 			fi
 		fi
 	done
@@ -8460,6 +8356,7 @@ post_qcawificfg80211() {
 	fi
 
 
+	[ -z "$device" ] && device=$(echo ${2:-$DEVICES} | awk '{print $1}')
 	config_get type "$device" type
 	[ "$type" != "qcawificfg80211" ] && return
 
@@ -8561,13 +8458,6 @@ post_qcawificfg80211() {
 	else
 		lock -u /var/run/wifilock
 	fi
-
-	for device in $gdevice; do
-		if [ -e /lib/wifi/cca_threshold.sh ]; then
-			. /lib/wifi/cca_threshold.sh
-			ipq5322_cca_threshold ${device}
-		fi
-	done
 }
 
 unicastflood_configcfg80211() {
@@ -9235,35 +9125,10 @@ create_mlo_config() {
 		board_name=ap$(cat /tmp/sysinfo/board_name | awk -F 'ap' '{print$2}')
 	}
 
-	mlo_suppported=$(cat /tmp/sysinfo/board_name 2>/dev/null | grep -c -E 'ipq9574|ipq5332|ap-mi01')
+	mlo_suppported=$(cat /tmp/sysinfo/board_name | grep -c 'ipq9574')
 
 	if [ $mlo_suppported = 1 ]; then
 		case "$board_name" in
-		ap-mi01*|*ap-mi01*|ap-al02-c4)
-			cat > /ini/mlo_config.ini <<EOF
-mlo_max_num_groups=1
-
-[MLO_GROUP_0]
-mlo_max_num_peers=256
-mlo_num_chips=3
-mlo_soc_chip_ids=0,1,2
-
-[MLO_SOC_CHIP_0]
-mlo_chip_idx=0
-mlo_num_adj_chip=2
-mlo_adj_chip_idx=1,2
-
-[MLO_SOC_CHIP_1]
-mlo_chip_idx=1
-mlo_num_adj_chip=2
-mlo_adj_chip_idx=2,0
-
-[MLO_SOC_CHIP_2]
-mlo_chip_idx=2
-mlo_num_adj_chip=2
-mlo_adj_chip_idx=0,1
-EOF
-			;;
 		ap-al02-c20)
 			cat > /ini/mlo_config.ini <<EOF
 mlo_max_num_groups=1
@@ -9581,11 +9446,11 @@ detect_qcawificfg80211() {
 
 					if [ -f /tmp/mesh_mode ]; then
 						mesh_key=$(uci get tripleband.tripleband.mesh_key)
-						selStr="option key $mesh_key"
-						mloStr="option sae_password $mesh_key"
+						selStr="option key '$mesh_key'"
+						mloStr="option sae_password '$mesh_key'"
 					else
-						selStr="option key $ssidwpass"
-						mloStr="option sae_password $ssidwpass"
+						selStr="option key '$ssidwpass'"
+						mloStr="option sae_password '$ssidwpass'"
 						mesh_key=$ssidwpass
 					fi
 
@@ -9656,7 +9521,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         $encryStr1
         option maxsta   128
         option isbasic 1
@@ -9685,7 +9550,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -9702,7 +9567,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option maxsta   64
         option isiot 1
         option rrm      1
@@ -9732,7 +9597,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssid2gMain
+        option ssid '$ssid2gMain'
         $encryStr
         option maxsta   128
         option isbasic 1
@@ -9774,7 +9639,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         $encryStr1
         option maxsta   64
         option isbasic 1
@@ -9803,7 +9668,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -9820,7 +9685,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option maxsta   64
         option isiot 1
         option rrm      1
@@ -9850,7 +9715,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssid5gMain
+        option ssid '$ssid5gMain'
         $encryStr
         option maxsta   64
         option isbasic 1
@@ -9892,7 +9757,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         option en_6g_sec_comp 0
         option maxsta   64
         option isbasic 1
@@ -9923,7 +9788,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         option en_6g_sec_comp 0
         option encryption ccmp
         option maxsta   64
@@ -9942,7 +9807,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option en_6g_sec_comp 0
         option maxsta   64
         option isiot 1
@@ -9973,7 +9838,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssid6gMain
+        option ssid '$ssid6gMain'
         option en_6g_sec_comp 0
         option encryption ccmp
         option maxsta   64
@@ -9996,7 +9861,7 @@ config wifi-iface
         option device   wifi0
         option network  guest
         option mode     ap
-        option ssid $ssidGuest2gMain
+        option ssid '$ssidGuest2gMain'
         $encryStr
         option maxsta   64
         option disabled 1
@@ -10012,7 +9877,7 @@ config wifi-iface
         option device   wifi1
         option network  guest
         option mode     ap
-        option ssid $ssidGuest5gMain
+        option ssid '$ssidGuest5gMain'
         $encryStr
         option maxsta   64
         option disabled 1
@@ -10028,7 +9893,7 @@ config wifi-iface
         option device   wifi2
         option network  guest
         option mode     ap
-        option ssid $ssidGuest6gMain
+        option ssid '$ssidGuest6gMain'
         option en_6g_sec_comp '0'
         option encryption ccmp
         option maxsta   64
@@ -10054,17 +9919,17 @@ config qcawifi  qcawifi
 config wifi-mld mld0
         option mld_ref 0
         option role AP
-        option mld_ssid $mesh_bssid
+        option mld_ssid '$mesh_bssid'
         option mld_macaddr $base_mac
 
 config wifi-mld  mld1
         option mld_ref 1
         option role AP
-        option mld_ssid $ssidMloMain
+        option mld_ssid '$ssidMloMain'
         option mld_macaddr $mac_out1
 
 config wifi-mld  mld2
-        option mld_ssid $ssidMain
+        option mld_ssid '$ssidMain'
         option mld_ref 2
         option role AP
         option mld_macaddr $mac_out2
@@ -10088,12 +9953,12 @@ config wifi-iface
 
 config wifi-iface
         option device wifi0
-        option ssid $mesh_bssid
+        option ssid '$mesh_bssid'
         option wps_pbc_enable 0
         option wps_pbc_start_time 0
         option wps_pbc_duration 120
         option encryption ccmp
-        option key $mesh_bkey
+        option key '$mesh_bkey'
         option mode ap
         option mld mld3
         option wps_pbc 0
@@ -10109,13 +9974,13 @@ config wifi-iface
         option rrm 1
 
 config wifi-mld  mld3
-        option mld_ssid $mesh_bssid
+        option mld_ssid '$mesh_bssid'
         option mld_ref 3
         option role AP
         option mld_macaddr $mac_out3
 
 config wifi-mld  mld4
-        option mld_ssid $ssidMain
+        option mld_ssid '$ssidMain'
         option mld_ref 4
         option role AP
         option mld_macaddr $mac_out4
@@ -10139,12 +10004,12 @@ config wifi-iface
 
 config wifi-iface
         option device wifi1
-        option ssid $mesh_bssid
+        option ssid '$mesh_bssid'
         option wps_pbc_enable 0
         option wps_pbc_start_time 0
         option wps_pbc_duration 120
         option encryption ccmp
-        option key $mesh_bkey
+        option key '$mesh_bkey'
         option mode ap
         option wps_pbc 0
         option hidden 1
@@ -10160,7 +10025,7 @@ config wifi-iface
         option rrm 1
 
 config wifi-mld  mld5
-        option mld_ssid $ssidMain
+        option mld_ssid '$ssidMain'
         option mld_ref 5
         option role AP
         option mld_macaddr $mac_out5
@@ -10184,12 +10049,12 @@ config wifi-iface
 
 config wifi-iface
         option device wifi2
-        option ssid $mesh_bssid
+        option ssid '$mesh_bssid'
         option wps_pbc_enable 0
         option wps_pbc_start_time 0
         option wps_pbc_duration 120
         option encryption ccmp
-        option key $mesh_bkey
+        option key '$mesh_bkey'
         option mode ap
         option wps_pbc 0
         option hidden 1
@@ -10207,7 +10072,7 @@ config wifi-iface
         option rrm 1
 
 config wifi-mld  mld6
-        option mld_ssid $ssidMloMain
+        option mld_ssid '$ssidMloMain'
         option mld_ref 6
         option role AP
         option mld_macaddr $mac_out6
@@ -10216,7 +10081,7 @@ config wifi-iface
         option device   wifi0
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -10235,7 +10100,7 @@ config wifi-iface
         option device   wifi1
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -10254,7 +10119,7 @@ config wifi-iface
         option device   wifi2
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         option en_6g_sec_comp '0'
         option encryption ccmp
         option maxsta   64
@@ -10272,19 +10137,19 @@ config wifi-iface
         list anqp_elem 272:34108cfdf0020df1f7000000733000030101
 
 config wifi-mld  mld7
-        option mld_ssid $ssidGuestMain
+        option mld_ssid '$ssidGuestMain'
         option mld_ref 7
         option role AP
         option mld_macaddr $mac_out7
 
 config wifi-mld  mld8
-        option mld_ssid $ssidGuestMain
+        option mld_ssid '$ssidGuestMain'
         option mld_ref 8
         option role AP
         option mld_macaddr $mac_out8
 
 config wifi-mld  mld9
-        option mld_ssid $ssidGuestMain
+        option mld_ssid '$ssidGuestMain'
         option mld_ref 9
         option role AP
         option mld_macaddr $mac_out9
@@ -10357,14 +10222,14 @@ EOF
 				if [ -n "$ssidwpass" ];then
 					encryStr="option encryption psk2+aes"
 					encryStr1="option encryption psk2+ccmp"
-					selStr="option key $ssidwpass"
+					selStr="option key '$ssidwpass'"
 					selStr1=""
 					selStr2="option ieee80211w 2"
-					mloStr="option sae_password $ssidwpass"
+					mloStr="option sae_password '$ssidwpass'"
 					mloStr1="option sae 1"
 					mloStr2="option mld mld0"
-					selStr_router="option key $ssidwpass"
-					mloStr_router="option sae_password $ssidwpass"
+					selStr_router="option key '$ssidwpass'"
+					mloStr_router="option sae_password '$ssidwpass'"
 					mesh_key=$ssidwpass
 				else
 					encryStr="option encryption ccmp"
@@ -10383,8 +10248,8 @@ EOF
 					ssidMloMain=$mesh_fssid"_MLO"
 				fi
 				if [ -n "$mesh_fkey" ];then
-					selStr="option key $mesh_fkey"
-					mloStr="option sae_password $mesh_fkey"
+					selStr="option key '$mesh_fkey'"
+					mloStr="option sae_password '$mesh_fkey'"
 				fi
 
 				if [ ! -n "$mesh_bssid" ];then
@@ -10401,8 +10266,8 @@ EOF
 						ssidMain=$(echo $ssid | sed 's/_/_Mesh_/')
 					fi
 					ssidMloMain=$ssid"_MLO"
-					selStr="option key $ssidwpass"
-					mloStr="option sae_password $ssidwpass"
+					selStr="option key '$ssidwpass'"
+					mloStr="option sae_password '$ssidwpass'"
 					mesh_bssid="EasyMeshbssid-"$ssid
 					mesh_bkey="EasyMeshbkey-"$ssidwpass
 				fi
@@ -10476,7 +10341,7 @@ config wifi-iface
         option wds 1
         option interworking 1
         list anqp_elem 272:34108cfdf0020df1f7000000733000030101
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         option MapBSSType 32
         option mapVlanID 10
         option map8021qvlan 10
@@ -10489,7 +10354,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -10506,7 +10371,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssidMloMain_router
+        option ssid '$ssidMloMain_router'
         option encryption ccmp
         option maxsta   64
         option disabled 1
@@ -10525,7 +10390,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssid2gMain
+        option ssid '$ssid2gMain'
         $encryStr
         option maxsta   128
         option isbasic 1
@@ -10585,7 +10450,7 @@ config wifi-iface
         option wds 1
         option interworking 1
         list anqp_elem 272:34108cfdf0020df1f7000000733000030101
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         option MapBSSType 32
         option mld mld4
         option mapVlanID 10
@@ -10599,7 +10464,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -10616,7 +10481,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssidMloMain_router
+        option ssid '$ssidMloMain_router'
         option encryption ccmp
         option maxsta   64
         option disabled 1
@@ -10635,7 +10500,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssid5gMain
+        option ssid '$ssid5gMain'
         $encryStr
         option maxsta   64
         option isbasic 1
@@ -10697,7 +10562,7 @@ config wifi-iface
         option wds 1
         option interworking 1
         list anqp_elem 272:34108cfdf0020df1f7000000733000030101
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         option MapBSSType 32
         option mld mld7
         option mapVlanID 10
@@ -10711,7 +10576,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         option en_6g_sec_comp 0
         option encryption ccmp
         option maxsta   64
@@ -10730,7 +10595,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssidMloMain_router
+        option ssid '$ssidMloMain_router'
         option en_6g_sec_comp 0
         option encryption ccmp
         option maxsta   64
@@ -10750,7 +10615,7 @@ config wifi-iface
 config wifi-iface
         option device   wifi$devidx
         option mode     ap
-        option ssid $ssid6gMain
+        option ssid '$ssid6gMain'
         option en_6g_sec_comp 0
         option encryption ccmp
         option maxsta   64
@@ -10773,7 +10638,7 @@ config wifi-iface
         option device   wifi0
         option network  guest
         option mode     ap
-        option ssid $ssidGuest2gMain
+        option ssid '$ssidGuest2gMain'
         $encryStr
         option maxsta   64
         option disabled 1
@@ -10789,7 +10654,7 @@ config wifi-iface
         option device   wifi1
         option network  guest
         option mode     ap
-        option ssid $ssidGuest5gMain
+        option ssid '$ssidGuest5gMain'
         $encryStr
         option maxsta   64
         option disabled 1
@@ -10805,7 +10670,7 @@ config wifi-iface
         option device   wifi2
         option network  guest
         option mode     ap
-        option ssid $ssidGuest6gMain
+        option ssid '$ssidGuest6gMain'
         option en_6g_sec_comp '0'
         option encryption ccmp
         option maxsta   64
@@ -10832,13 +10697,13 @@ config wifi-mld mld0
         option mld_ref 0
         option role Non-AP
         option allow_non_ml 1
-        option mld_ssid $mesh_bssid
+        option mld_ssid '$mesh_bssid'
         option mld_macaddr $base_mac
 
 config wifi-mld  mld1
         option mld_ref 1
         option role AP
-        option mld_ssid $ssidMain
+        option mld_ssid '$ssidMain'
         option mld_macaddr $mac_out1
 
 config wifi-iface
@@ -10861,7 +10726,7 @@ config wifi-iface
 config wifi-mld  mld2
         option mld_ref 2
         option role AP
-        option mld_ssid $mesh_bssid
+        option mld_ssid '$mesh_bssid'
         option mld_macaddr $mac_out2
 
 config wifi-iface
@@ -10884,7 +10749,7 @@ config wifi-iface
 config wifi-mld  mld3
         option mld_ref 3
         option role AP
-        option mld_ssid $ssidMloMain
+        option mld_ssid '$ssidMloMain'
         option mld_macaddr $mac_out3
 
 config wifi-iface
@@ -10905,7 +10770,7 @@ config wifi-iface
         option wps_pbc 0
 
 config wifi-iface
-        option ssid $mesh_bssid
+        option ssid '$mesh_bssid'
         option disabled 0
         option device wifi0
         option network backhaul
@@ -10925,7 +10790,7 @@ config wifi-iface
         option mapVlanID 0
         option map8021qvlan 10
         option encryption ccmp
-        option key $mesh_bkey
+        option key '$mesh_bkey'
         option sae 1
         option owe 0
         option interworking 1
@@ -10933,7 +10798,7 @@ config wifi-iface
         option map_config_changed 0
 
 config wifi-iface
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option disabled 0
         option device wifi0
         option network lan1
@@ -10962,22 +10827,22 @@ config wifi-iface
         option maxsta 64
 
 config wifi-mld  mld4
-        option mld_ssid $ssidMain
+        option mld_ssid '$ssidMain'
         option role AP
         option mld_macaddr $mac_out4
 
 config wifi-mld  mld5
-        option mld_ssid $mesh_bssid
+        option mld_ssid '$mesh_bssid'
         option role AP
         option mld_macaddr $mac_out5
 
 config wifi-mld  mld6
-        option mld_ssid $ssidMloMain
+        option mld_ssid '$ssidMloMain'
         option role AP
         option mld_macaddr $mac_out6
 
 config wifi-iface
-        option ssid $mesh_bssid
+        option ssid '$mesh_bssid'
         option disabled 0
         option device wifi1
         option network backhaul
@@ -10997,7 +10862,7 @@ config wifi-iface
         option mapVlanID 0
         option map8021qvlan 10
         option encryption ccmp
-        option key $mesh_bkey
+        option key '$mesh_bkey'
         option sae 1
         option owe 0
         option interworking 1
@@ -11005,7 +10870,7 @@ config wifi-iface
         option map_config_changed 0
 
 config wifi-iface
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option disabled 0
         option device wifi1
         option network lan1
@@ -11034,12 +10899,12 @@ config wifi-iface
         option maxsta 64
 
 config wifi-mld  mld7
-        option mld_ssid $ssidMain
+        option mld_ssid '$ssidMain'
         option role AP
         option mld_macaddr $mac_out7
 
 config wifi-iface
-        option ssid $mesh_bssid
+        option ssid '$mesh_bssid'
         option disabled 0
         option device wifi2
         option network backhaul
@@ -11061,7 +10926,7 @@ config wifi-iface
         option map8021qvlan 10
         option en_6g_sec_comp 0
         option encryption ccmp
-        option key $mesh_bkey
+        option key '$mesh_bkey'
         option sae 1
         option owe 0
         option interworking 1
@@ -11069,7 +10934,7 @@ config wifi-iface
         option map_config_changed 0
 
 config wifi-iface
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option disabled 0
         option device wifi2
         option network lan1
@@ -11122,8 +10987,8 @@ config wifi-iface
         option sae 1
         option en_6g_sec_comp 0
         option wds 1
-        option key $mesh_bkey
-        option ssid $mesh_bssid
+        option key '$mesh_bkey'
+        option ssid '$mesh_bssid'
         option map_config_changed 0
         option device wifi1
         option network backhaul
@@ -11153,8 +11018,8 @@ config wifi-iface
         option sae 1
         option en_6g_sec_comp 0
         option wds 1
-        option key $mesh_bkey
-        option ssid $mesh_bssid
+        option key '$mesh_bkey'
+        option ssid '$mesh_bssid'
         option network backhaul
         option map_config_changed 0
 
@@ -11205,10 +11070,10 @@ EOF
 				if [ -n "$ssidwpass" ];then
 					encryStr="option encryption psk2+aes"
 					encryStr1="option encryption psk2+ccmp"
-					selStr="option key $ssidwpass"
+					selStr="option key '$ssidwpass'"
 					selStr1=""
 					selStr2="option ieee80211w 2"
-					mloStr="option sae_password $ssidwpass"
+					mloStr="option sae_password '$ssidwpass'"
 					mloStr1="option sae 1"
 					mloStr2="option mld mld0"
 					mesh_key=$ssidwpass
@@ -11267,7 +11132,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         $encryStr1
         option maxsta   128
         option disabled 1
@@ -11285,7 +11150,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -11301,7 +11166,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option encryption ccmp
         option maxsta   64
         option disabled 1
@@ -11319,7 +11184,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssid2gMain
+        option ssid '$ssid2gMain'
         $encryStr
         option maxsta   128
         option disabled 0
@@ -11353,7 +11218,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -11371,7 +11236,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         $encryStr1
         option maxsta   64
         option disabled 1
@@ -11387,7 +11252,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option encryption ccmp
         option maxsta   64
         option disabled 1
@@ -11405,7 +11270,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssid5gMain
+        option ssid '$ssid5gMain'
         $encryStr
         option maxsta   64
         option disabled 0
@@ -11439,7 +11304,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMain
+        option ssid '$ssidMain'
         option en_6g_sec_comp '0'
         option encryption ccmp
         option maxsta   64
@@ -11459,7 +11324,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  guest
         option mode     ap
-        option ssid $ssidGuestMain
+        option ssid '$ssidGuestMain'
         option en_6g_sec_comp '0'
         option encryption ccmp
         option maxsta   64
@@ -11477,7 +11342,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssidMloMain
+        option ssid '$ssidMloMain'
         option en_6g_sec_comp '0'
         option encryption ccmp
         option maxsta   64
@@ -11496,7 +11361,7 @@ config wifi-iface
         option device   wifi$devidx
         option network  lan
         option mode     ap
-        option ssid $ssid6gMain
+        option ssid '$ssid6gMain'
         option en_6g_sec_comp '0'
         option encryption ccmp
         option maxsta   64
@@ -11516,7 +11381,7 @@ config wifi-iface
         option device   wifi0
         option network  guest
         option mode     ap
-        option ssid $ssidGuest2gMain
+        option ssid '$ssidGuest2gMain'
         $encryStr
         option maxsta   64
         option disabled 1
@@ -11530,7 +11395,7 @@ config wifi-iface
         option device   wifi1
         option network  guest
         option mode     ap
-        option ssid $ssidGuest5gMain
+        option ssid '$ssidGuest5gMain'
         $encryStr
         option maxsta   64
         option disabled 1
@@ -11544,7 +11409,7 @@ config wifi-iface
         option device   wifi2
         option network  guest
         option mode     ap
-        option ssid $ssidGuest6gMain
+        option ssid '$ssidGuest6gMain'
         option en_6g_sec_comp '0'
         option encryption ccmp
         option maxsta   64
@@ -11560,7 +11425,7 @@ config wifi-iface
 
 config wifi-mld mld0
         option mld_macaddr 00:0A:F5:$(echo "$wifi_mac" | cut -c7-8):$(echo "$wifi_mac" | cut -c9-10):$(echo "$wifi_mac" | cut -c11-12)
-        option mld_ssid $ssidMloMain
+        option mld_ssid '$ssidMloMain'
 
 EOF
 

@@ -26,15 +26,15 @@
 
 ## 🎁 2. BENEFICIOS DEL DESBLOQUEO (¿POR QUÉ DESBLOQUEAR?)
 
-1. 🔓 **Acceso Root y SSH Nativo en la LAN:** Puertos `22` (SSH) y `23` (Telnet) liberados en la red local sin bloqueos de Acer.
-2. 🌐 **Interfaz LuCI Oficial de OpenWrt Completa:** Panel completo en el puerto 80 con control total de firewall, DHCP, rutas, VLANs y diagnósticos de procesos.
-3. 🚀 **Wi-Fi 7 Totalmente Desbloqueado:** Banda de 6 GHz con ancho de banda máximo de **320 MHz (5.76 Gbps)**, Roaming Rápido 802.11k/v y WPA3-SAE.
-4. 🎛️ **Centro de Wi-Fi Inteligente:** Exclusivo con ajustes y liberación máxima de los recursos del Wi-Fi, fácil e intuitivo. ¡Permite modificar configuraciones y guardar todas las frecuencias juntas con un solo clic!
-5. 🛡️ **Blindaje Anti-Deadlock:** Eliminación definitiva de los módulos defectuosos de Qualcomm (`whc` y `wsplc`) que provocaban concurrencia interna e inestabilidad en el Wi-Fi.
-6. 🧹 **Debloat Máximo:** Desactivación de telemetrías invasivas y servicios celulares innecesarios heredados del modelo X7, liberando **más de 50 MB de memoria RAM**.
-7. 🎮 **UPnP / NAT-PMP para Juegos:** Apertura automática de puertos para PS5, Xbox, Switch y PC con NAT Abierta/Moderada y menor latencia.
-8. 🛡️ **Seguridad Total Anti-Brick:** El Slot 1 y el U-Boot permanecen **100% de fábrica intactos**, con retorno garantizado en cualquier momento: ¡haciendo el reset desde OpenWrt o mediante el botón físico vuelve de inmediato al estado de fábrica!
-9. 🌐 **Idiomas 100% Organizados:** Interfaz LuCI y todos los nuevos menús personalizados del Centro de Wi-Fi perfectamente localizados y alineados en **Portugués (Brasil)**, **Inglés** y **Español**, sin textos cortados ni confusos.
+1. 🔓 **Acceso Root y SSH Nativo en la LAN:** Puertos `22` (SSH) y `23` (Telnet con auto-respawn vía `procd`) liberados en la red local sin bloqueos de Acer.
+2. 🌐 **Interfaz LuCI Oficial de OpenWrt Completa:** Panel completo en el puerto 80 con widget de telemetría Wi-Fi 7 nativa en Status Overview y control total de firewall, DHCP, rutas y VLANs.
+3. 🚀 **Wi-Fi 7 Totalmente Desbloqueado y Panel de Ingeniería de Silicio:** Banda de 6 GHz con ancho de banda máximo de **320 MHz (5.76 Gbps)**, 5 GHz en 80/160 MHz con `sae-mixed` nativo, Roaming Rápido 802.11k/v, guardián anti-crash PCIe DualMAC, **Anillos DMA Nivel 1 GB (`16K Descriptors`)**, corrección `ap_isbasic` WDS y **Panel de Ingeniería de Silicio Qualcomm QSDK 12.x** (Aceleración NSS/PPE, Bloqueo de Potencia TX, Inmunidad AniPoll y Modo Juego Zero-Penalty `txqueuelen=10000`).
+4. 🎛️ **Centro de Wi-Fi Inteligente y Panel WISP (Wi-Fi como WAN):** ¡Exclusivos e intuitivos! Permite guardar todas las bandas con un clic o usar el router como repetidor/cliente WISP blindado contra bucles, colisión de subred y errores de contraseña (auto-rollback de 15s).
+5. 💾 **Servidor NAS USB 3.0 en Kernel (`ksmbd` SMB 3.1.1):** Compartición de archivos de alta velocidad con gestor visual de discos (Formatear EXT4, Extracción Segura y Restablecer Contraseña).
+6. 🔒 **DNS Cifrado (DoH), Filtro QUIC Selectivo, SQM CAKE (en MB/Mbps) y WireGuard:** Privacidad vía Cloudflare/Google DoH con caché RAM instantánea (`0.00ms`), bloqueo selectivo UDP 443 por `ipset`, QoS CAKE configurado directamente en **MB / Mbps (`800` Down / `400` Up)** con `no-split-gso` + coordinación automática SFE, y soporte nativo VPN WireGuard en kernel.
+7. 🛡️ **Blindaje Anti-Deadlock y Debloat Máximo:** Eliminación definitiva de demonios conflictivos (`whc`, `wsplc`, `acd`) y servicios celulares inactivos heredados del modelo X7, liberando **más de 50 MB de memoria RAM**.
+8. 🎮 **UPnP / NAT-PMP para Juegos:** Apertura automática de puertos para PS5, Xbox, Switch y PC con NAT Abierta/Moderada y menor latencia.
+9. 🛡️ **Seguridad Total Anti-Brick y 3 Idiomas:** El Slot 1 y el U-Boot permanecen **100% de fábrica intactos** (el reset físico o por software restaura el estado de fábrica), y toda la interfaz está localizada en **Portugués (Brasil)**, **Inglés** y **Español**.
 
 ---
 
@@ -46,7 +46,7 @@
 > Si restaura una copia de seguridad antigua de la interfaz oficial de Acer, se **sobrescribirá la configuración, se borrarán los módulos de LuCI, se eliminará el panel de Wi-Fi y se volverán a bloquear los puertos SSH y Telnet**.  
 >  
 > 👉 **Cómo personalizar su red:**  
-> Si desea cambiar el nombre del Wi-Fi, poner su propia contraseña o cambiar rangos de IP, **hágalo siempre manualmente desde la pantalla de LuCI después del desbloqueo**.
+> Si desea cambiar el nombre del Wi-Fi, poner su propia contraseña o cambiar rangos de IP, **hágalo siempre manualmente desde la pantalla de LuCI después del desbloqueo** (o utilice `dev/gerar_cfg_personalizado.py`).
 
 ---
 
@@ -60,9 +60,9 @@
 | **Contraseña Maestra Unificada** | **`root0100`** *(Web, SSH y Telnet)* |
 | **Archivo del Paquete Maestro** | **`cfg_restauracao_master_v2.cfg`** *(en la raíz)* |
 | **Red Wi-Fi Unificada (Tri-Banda)** | **`Predator_7G`** *(2.4 GHz, 5 GHz y 6 GHz)* |
-| **Ancho de Canal 5 GHz Predeterminado** | **`80 MHz`** *(inicio rápido en 2s sin espera de radar DFS; configurable a 160 MHz)* |
+| **Ancho de Canal 5 GHz Predeterminado** | **`80 MHz`** *(Canal 36 non-DFS: inicio rápido en ~40s sin espera de radar DFS; configurable a 160 MHz)* |
 | **Contraseña Wi-Fi (todas las redes)** | **`Predator0@`** |
-| **SQM (Cake QoS)** | **`Desactivado por defecto`** *(máximo rendimiento de 2.5 Gbps con aceleración PPE; activable en LuCI)* |
+| **SQM (Cake QoS en MB/Mbps)** | **`Activo (800 MB Down / 400 MB Up)`** *(o desactívelo en LuCI para 2.5 Gbps con aceleración PPE)* |
 
 ---
 
@@ -82,7 +82,7 @@
      `cfg_restauracao_master_v2.cfg`
    * Haga clic en el botón **`Restore`**.
 3. **Observe las Luces LED Durante el Arranque:**
-   * 🔴 **LED Frontal Rojo:** ¡Es **normal** en el primer arranque! El chip Qualcomm calibra las radios y cumple los **60 segundos obligatorios de escucha de radar DFS (CAC)** en la banda de 5 GHz. Espere aproximadamente **2 minutos y 25 segundos**.
+   * 🔴 **LED Frontal Rojo:** ¡Es **normal** mientras inician las radios! Con el valor predeterminado de **80 MHz (Canal 36 non-DFS)** en 5 GHz, el arranque completo tarda entre **40 y 60 segundos** *(si cambia 5 GHz a **160 MHz**, el chip cumplirá 60 segundos obligatorios de escucha de radar DFS CAC, tardando ~2m25s)*.
    * 🔵 **LED Frontal Azul:** Tan pronto como las 3 radios estén activas, la luz frontal cambia a **Azul**. ¡El Wi-Fi está listo para usar!
    * 🌐 **LED Superior Mayor:** Solo se enciende cuando conecta el cable de internet al puerto **WAN 2.5G**.
 4. **Entre a la Nueva Interfaz LuCI:**  

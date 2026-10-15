@@ -3,13 +3,13 @@
 		"description": "Grant access to Predator Wi-Fi full control",
 		"read": {
 			"ubus": {
-				"predator": [ "get_status", "get_guard_status" ],
+				"predator": [ "get_status", "get_guard_status", "get_luci_wireless", "luci_wifi_assoclist", "luci_wifi_scan", "run_net_diag" ],
 				"uci": [ "get", "get_all" ]
 			}
 		},
 		"write": {
 			"ubus": {
-				"predator": [ "apply_topology", "set_radio", "set_all_radios", "edit_vif", "add_vif", "del_vif", "toggle_vif", "restart_wifi", "toggle_radio", "toggle_feature", "ack_guard" ],
+				"predator": [ "apply_topology", "set_radio", "set_all_radios", "edit_vif", "add_vif", "del_vif", "toggle_vif", "restart_wifi", "toggle_radio", "toggle_feature", "ack_guard", "set_telnet", "wake_on_lan", "optimize_channels", "setup_wireguard", "set_schedule", "set_service", "luci_wifi_action", "run_net_diag" ],
 				"uci": [ "set", "commit", "apply" ]
 			}
 		}

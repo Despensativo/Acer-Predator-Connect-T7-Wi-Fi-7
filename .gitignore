@@ -39,3 +39,4 @@ TASK.md
 /etc/
 clean_*.py
 patch_wireless.py
+dev/crash_dumps/

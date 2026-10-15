@@ -1,6 +1,11 @@
 # Addon LuCI Modo DEV & Fail-Safe Dual-Boot (Acer Predator Connect T7)
 
-Este pacote adiciona salvaguardas profissionais de desenvolvimento, proteção contra bootloop entre partições e telemetria forense completa ao Acer Predator Connect T7.
+> [!CAUTION]
+> **⛔ [PROIBIDO EM PRODUÇÃO — ARMADILHA DNR-04 (`PLAYBOOK.md`)]:**  
+> Este pacote experimental encontra-se preservado em `dev/luci-app-predator-dev/` **exclusivamente para estudo de código e referência histórica**.  
+> **JAMAIS habilite ou injete o script `S99predator-dev` (auto-failover de boot) no pacote mestre de produção (`cfg_restauracao_master_v2.cfg`)!** Em testes de bancada, o auto-failover em background provocou efeito *ping-pong* (alternando sozinho entre Slot 1 e Slot 2 caso um boot demore mais que 75s por escuta de radar DFS CAC). Para alternar de partição com segurança, utilize sempre os comandos manuais explícitos `/usr/sbin/boot-acer` e `/usr/sbin/boot-openwrt`.
+
+Este pacote documenta o protótipo de telemetria forense e dual-boot desenvolvido durante a fase de engenharia reversa do Acer Predator Connect T7.
 
 ---
 

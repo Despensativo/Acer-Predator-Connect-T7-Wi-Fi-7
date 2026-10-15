@@ -123,3 +123,5 @@ A integridade do arquivo de senhas e autenticação foi conferida e validada:
 - **Módulos WHC e WSPLC Eliminados:**
   - Controladores Qualcomm Mesh (`whc.lua`) e PLC HomePlug (`wsplc.lua`) foram substituídos por stubs inofensivos.
   - Rotas retornam **404** e não sobrecarregam mais a CPU nem geram concorrência nos rádios Wi-Fi.
+
+> **🔄 [ATUALIZAÇÃO MASTER V2 — 14/10/2026 (Padronização RFC 1123)]**: Embora o LuCI tenha sido patcheado para não travar a interface caso o usuário digite espaços, no pacote `cfg_restauracao_master_v2.cfg` o hostname oficial foi padronizado com hifens como **`Predator-Connect-T7`** (`uci set system.@system[0].hostname='Predator-Connect-T7'`), garantindo 100% de conformidade com a RFC 1123 em servidores DHCP de operadoras e scripts POSIX.

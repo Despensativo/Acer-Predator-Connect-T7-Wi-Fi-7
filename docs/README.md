@@ -17,7 +17,10 @@ Consultar os documentos pertinentes à tarefa; este índice não valida automati
 | Boot, Wi-Fi e LEDs | [TEMPOS_BOOT_WIFI_E_LEDS.md](TEMPOS_BOOT_WIFI_E_LEDS.md) |
 | Feedback e correções registrados | [RELATORIO_FEEDBACKS_E_CORRECOES.md](RELATORIO_FEEDBACKS_E_CORRECOES.md) |
 | Proposta de integração ARK Router | [PROPOSTA_INTEGRACAO_ARK_ROUTER.md](PROPOSTA_INTEGRACAO_ARK_ROUTER.md) |
+| Auditoria e Prova de Fogo do CFG Master v2 | [TASK.md (Prova de Fogo 0km + Restore Master)](../TASK.md) |
 | Imagens e recuperação stock | [recovery_stock/README.md](../recovery_stock/README.md) |
+| Engenharia reversa comparativa multi-vendor (IPQ5332 + QCN9224: Velop Pro 7, UniFi U7 Pro, JDCloud BE6500 e ImmortalWrt) | [ENGENHARIA_REVERSA_COMPARATIVA_IPQ5332.md](ENGENHARIA_REVERSA_COMPARATIVA_IPQ5332.md) |
+| Enciclopédia de Engenharia Reversa e Extração de Dados (U-Boot, MIBIB, 328 Drivers, Scripts e Firmwares) | [ENCICLOPEDIA_ENGENHARIA_REVERSA_E_EXTRACAO_DADOS.md](ENCICLOPEDIA_ENGENHARIA_REVERSA_E_EXTRACAO_DADOS.md) |
 
 ## Antes de seguir uma referência
 

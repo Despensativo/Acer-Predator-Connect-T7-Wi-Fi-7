@@ -26,15 +26,15 @@
 
 ## 🎁 2. UNLOCK BENEFITS (WHY UNLOCK?)
 
-1. 🔓 **Native Root & SSH Access on LAN:** Ports `22` (SSH) and `23` (Telnet) unlocked on the local network without OEM barriers.
-2. 🌐 **Full Official OpenWrt LuCI Interface:** Full management interface on port 80 with complete control over firewall rules, DHCP, routing, VLANs, and system processes.
-3. 🚀 **Fully Unlocked Wi-Fi 7:** 6 GHz band operating at maximum channel width of **320 MHz (5.76 Gbps)**, 802.11k/v Fast Roaming, and WPA3-SAE.
-4. 🎛️ **Smart Wi-Fi Center:** Exclusive, intuitive dashboard allowing easy Wi-Fi tuning and a one-click button to save all radio bands together!
-5. 🛡️ **Anti-Deadlock Shield:** Elimination of defunct Qualcomm Mesh (`whc`) and HomePlug PLC (`wsplc`) services that caused internal race conditions and Wi-Fi drops.
-6. 🧹 **Maximum Debloat:** Inactive cellular services inherited from the X7 model and invasive OEM telemetry disabled, freeing up **over 50 MB of RAM**.
-7. 🎮 **Gaming UPnP / NAT-PMP:** Automatic port mapping for PS5, Xbox, Nintendo Switch, and PC with Open/Moderate NAT and low latency.
-8. 🛡️ **100% Anti-Brick Protection:** Slot 1 and U-Boot remain **100% factory original**: resetting via OpenWrt or using the physical reset button instantly restores factory stock defaults!
-9. 🌐 **100% Localized & Organized Languages:** LuCI interface and all custom Wi-Fi menus fully translated and aligned in **Portuguese (Brazil)**, **English**, and **Spanish**.
+1. 🔓 **Native Root & SSH Access on LAN:** Ports `22` (SSH) and `23` (Telnet with `procd` auto-respawn) unlocked on the local network without OEM barriers.
+2. 🌐 **Full Official OpenWrt LuCI Interface:** Full management interface on port 80 with native Wi-Fi 7 telemetry widget on Status Overview and complete control over firewall, DHCP, routing, and VLANs.
+3. 🚀 **Fully Unlocked Wi-Fi 7 & Silicon Engineering Panel:** 6 GHz band operating at maximum channel width of **320 MHz (5.76 Gbps)**, 5 GHz at 80/160 MHz with native `sae-mixed`, 802.11k/v Fast Roaming, DualMAC PCIe anti-crash guardian, **1GB-Tier DMA Rings (`16K Descriptors`)**, `ap_isbasic` WDS bridge fix, and live **Qualcomm QSDK 12.x Silicon Engineering Panel** (NSS/PPE Offload, TX Power Lock, AniPoll Immunity, and Zero-Penalty `txqueuelen=10000` Gaming Mode).
+4. 🎛️ **Smart Wi-Fi Center & WISP (Wi-Fi as WAN) Panel:** Exclusive, intuitive dashboards allowing one-click tri-band tuning and a bullet-proof WISP/Repeater mode with anti-loopback protection, 1-click subnet collision fix, and 15s auto-rollback.
+5. 💾 **In-Kernel USB 3.0 NAS (`ksmbd` SMB 3.1.1):** High-speed file sharing with a visual disk manager (EXT4 format, Safe Eject, and Password Reset).
+6. 🔒 **Encrypted DNS (DoH), Selective QUIC Filter, SQM CAKE (in MB/Mbps) & WireGuard:** Cloudflare/Google DoH with instant RAM cache (`0.00ms`), selective UDP 443 `ipset` filtering, CAKE QoS configured directly in **MB / Mbps (`800` Down / `400` Up)** with `no-split-gso` + automatic SFE coordination, and native in-kernel WireGuard VPN support.
+7. 🛡️ **Anti-Deadlock Shield & Maximum Debloat:** Elimination of conflicting Qualcomm daemons (`whc`, `wsplc`, `acd`) and inactive cellular services inherited from the X7 model, freeing up **over 50 MB of RAM**.
+8. 🎮 **Gaming UPnP / NAT-PMP:** Automatic port mapping for PS5, Xbox, Nintendo Switch, and PC with Open/Moderate NAT and low latency.
+9. 🛡️ **100% Anti-Brick Protection & 3 Languages:** Slot 1 and U-Boot remain **100% factory original** (software or physical reset button restores factory stock defaults), with full localization in **Portuguese (Brazil)**, **English**, and **Spanish**.
 
 ---
 
@@ -46,7 +46,7 @@
 > Restoring a stock pre-unlock backup will overwrite your system, erase LuCI modules, delete the Wi-Fi dashboard, and lock SSH access again.  
 >  
 > 👉 **How to customize your network:**  
-> If you wish to change your Wi-Fi SSID, password, or IP subnet, **always do so manually through the LuCI interface after unlocking**.
+> If you wish to change your Wi-Fi SSID, password, or IP subnet, **always do so manually through the LuCI interface after unlocking** (or use `dev/gerar_cfg_personalizado.py`).
 
 ---
 
@@ -60,9 +60,9 @@
 | **Unified Master Password** | **`root0100`** *(Web, SSH & Telnet)* |
 | **Master Package File** | **`cfg_restauracao_master_v2.cfg`** *(located at root)* |
 | **Unified Wi-Fi SSID (Tri-Band)** | **`Predator_7G`** *(2.4 GHz, 5 GHz & 6 GHz)* |
-| **5 GHz Channel Width (Default)** | **`80 MHz`** *(instant 2s boot without DFS radar delay; switchable to 160 MHz)* |
+| **5 GHz Channel Width (Default)** | **`80 MHz`** *(non-DFS Channel 36: fast ~40s boot without DFS radar delay; switchable to 160 MHz)* |
 | **Wi-Fi Password (All Bands)** | **`Predator0@`** |
-| **SQM (Cake QoS)** | **`Disabled by default`** *(full 2.5 Gbps hardware acceleration; toggle in LuCI)* |
+| **SQM (Cake QoS in MB/Mbps)** | **`Active (800 MB Down / 400 MB Up)`** *(or disable in LuCI for full 2.5 Gbps PPE offload)* |
 
 ---
 
@@ -82,7 +82,7 @@
      `cfg_restauracao_master_v2.cfg`
    * Click the **`Restore`** button.
 3. **Observe the LEDs During Boot:**
-   * 🔴 **Front Red LED:** Completely **normal** on first boot! The Qualcomm driver calibrates RF and undergoes a **mandatory 60-second DFS radar check (CAC)** on 5 GHz. Wait approximately **2 minutes and 25 seconds**.
+   * 🔴 **Front Red LED:** Completely **normal** while the radios initialize! With the default **80 MHz (non-DFS Channel 36)** on 5 GHz, full boot takes about **40 to 60 seconds** *(if you later switch 5 GHz to **160 MHz**, the radio undergoes a mandatory 60-second DFS radar check, taking ~2m25s)*.
    * 🔵 **Front Blue LED:** Once all 3 radios are online, the front LED switches to **Blue**. Wi-Fi is ready!
    * 🌐 **Top Large LED:** Only turns on when an active Ethernet cable is plugged into the **WAN 2.5G** port.
 4. **Log in to LuCI:**  

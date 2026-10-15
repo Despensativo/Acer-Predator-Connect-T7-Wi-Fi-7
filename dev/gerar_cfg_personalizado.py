@@ -258,8 +258,8 @@ def build_custom_cfg(
                         if key_5g:
                             set_uci_option(sec, "key", key_5g)
                             set_uci_option(sec, "sae_password", key_5g)
-                        set_uci_option(sec, "encryption", "psk2+aes")
-                        log(f"5.0 GHz SSID: {ssid_5g or 'Inalterado'} (WPA2-PSK puro)", "📶")
+                        set_uci_option(sec, "encryption", "sae-mixed")
+                        log(f"5.0 GHz SSID: {ssid_5g or 'Inalterado'} (WPA2/WPA3 Misto)", "📶")
                     elif sname == "wifi2_ap":
                         if ssid_6g:
                             set_uci_option(sec, "ssid", ssid_6g)
@@ -271,32 +271,40 @@ def build_custom_cfg(
                         set_uci_option(sec, "ieee80211w", "2")
                         log(f"6.0 GHz SSID: {ssid_6g or 'Inalterado'} (WPA3-SAE puro)", "📶")
 
-            wl_path.write_text(serialize_uci(wl_sections), encoding="utf-8")
+            serialized_wl = serialize_uci(wl_sections)
+            wl_path.write_text(serialized_wl, encoding="utf-8")
 
-        # 3. Customizar etc/shadow (Senha do Root)
+            # Sincroniza wireless.lastgood para evitar rollback para SSID padrão pelo predator-wifi-guard
+            lastgood_path = staging_p / "etc" / "predator" / "wireless.lastgood"
+            if lastgood_path.parent.exists():
+                lastgood_path.write_text(serialized_wl, encoding="utf-8")
+                log("Baseline wireless.lastgood sincronizado com a configuração personalizada", "🛡️")
+
+        # 3. Customizar etc/shadow (Senha unificada para root, admin e Admin)
         if root_shadow:
             shadow_path = staging_p / "etc" / "shadow"
             if shadow_path.exists():
                 lines = shadow_path.read_text(encoding="utf-8", errors="ignore").splitlines()
                 new_lines = []
                 for line in lines:
-                    if line.startswith("root:"):
+                    if line.startswith(("root:", "admin:", "Admin:")):
                         parts = line.split(":")
                         parts[1] = root_shadow
                         new_lines.append(":".join(parts))
-                        log("Hash de senha do root sincronizado", "🔑")
                     else:
                         new_lines.append(line)
                 shadow_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+                log("Hash de senha sincronizado em root, admin e Admin", "🔑")
 
-        # 4. Empacotar o novo tarball .cfg sem metadados Apple
+        # 4. Empacotar o novo tarball .cfg com todas as árvores da suíte Master v2 e sem metadados Apple
         log(f"Empacotando arquivo de restauração: {output_cfg_path}", "⚙️")
+        top_entries = [p.name for p in sorted(staging_p.iterdir()) if not p.name.startswith(".")]
         tar_cmd = [
             "tar",
             "--no-mac-metadata",
             "-czf",
             str(output_cfg_path.resolve()),
-            "etc",
+            *top_entries,
         ]
         env = os.environ.copy()
         env["COPYFILE_DISABLE"] = "1"
@@ -373,9 +381,9 @@ def main():
         if not ssid_2g:
             ssid_2g = args.ssid_base
         if not ssid_5g:
-            ssid_5g = f"{args.ssid_base}_5G"
+            ssid_5g = args.ssid_base
         if not ssid_6g:
-            ssid_6g = f"{args.ssid_base}_6G"
+            ssid_6g = args.ssid_base
 
     # Se fornecido backup de origem, lê os dados
     if args.from_backup:
@@ -410,10 +418,10 @@ def main():
     log("GERADOR DE RESTAURAÇÃO PERSONALIZADA - ACER PREDATOR CONNECT T7", "🚀")
     log("=" * 60, "🛠️")
     log(f"IP LAN de Destino : {lan_ip or '192.168.76.1 (Padrão Master)'}")
-    log(f"SSID 2.4 GHz      : {ssid_2g or 'PREDATOR T7_2.4GHz'}")
-    log(f"SSID 5.0 GHz      : {ssid_5g or 'PREDATOR T7_5GHz'}")
-    log(f"SSID 6.0 GHz      : {ssid_6g or 'PREDATOR T7_6GHz'}")
-    log(f"Senha Wi-Fi       : {'*' * len(key_2g) if key_2g else '123456789 (Padrão)'}")
+    log(f"SSID 2.4 GHz      : {ssid_2g or 'Predator_7G'}")
+    log(f"SSID 5.0 GHz      : {ssid_5g or 'Predator_7G'}")
+    log(f"SSID 6.0 GHz      : {ssid_6g or 'Predator_7G'}")
+    log(f"Senha Wi-Fi       : {'*' * len(key_2g) if key_2g else 'Predator0@ (Padrão)'}")
     log(f"MACs de Hardware  : wifi0={wifi0_mac or 'Stock'} | wifi1={wifi1_mac or 'Stock'} | wifi2={wifi2_mac or 'Stock'}")
     log("-" * 60, "🛠️")
 

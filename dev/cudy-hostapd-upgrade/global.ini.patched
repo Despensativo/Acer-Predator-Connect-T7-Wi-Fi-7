@@ -111,7 +111,7 @@ sa_validate_sw=0
 # NSS Offload Configuration
 nss_wifi_ol_skip_nw_process=0
 nss_wifi_nxthop_cfg=0
-nss_wifi_olcfg=0
+nss_wifi_olcfg=0x00
 nss_wifili_olcfg=0x00
 
 # PPEDS per WLAN SoC configuration
@@ -122,8 +122,8 @@ spectral_disable=0
 
 #TWT configuration
 twt_enable=1
-b_twt_enable=0
-r_twt_enable=0
+b_twt_enable=1
+r_twt_enable=1
 
 # MBSS IE config
 mbss_ie_enable=0
@@ -132,10 +132,10 @@ mbss_ie_enable=0
 cohosted_bss_ind_enable=0
 
 # PEER extended rate stats enable
-enable_peer_extended_rate_stats=0
+enable_peer_extended_rate_stats=1
 
 # PEER extended link stats enable
-enable_peer_extended_link_stats=0
+enable_peer_extended_link_stats=1
 
 # Enable SNR monitoring
 gEnableSNRMonitoring=1
@@ -183,7 +183,7 @@ rnr_selective_nontx_add=1
 externalacs_enable=0
 
 # Enable NSS Wi-Fi radio scheme
-nss_wifi_radio_scheme_enable=1
+nss_wifi_radio_scheme_enable=0
 
 # Enable carrier_vow_optimization
 carrier_vow_optimization=0
@@ -243,7 +243,7 @@ allow_non_t2lm_sta_assoc=1
 # enable_mloadvert_degrade_on_cac:
 # value 0 - MLO advertisement degradation on CAC is disable
 # value 1 - MLO advertisement degradation on CAC is enable
-enable_mloadvert_degrade_on_cac=0
+enable_mloadvert_degrade_on_cac=1
 
 #Buffer time to check if umac reset was in progress during this window,
 #configured time is in milliseconds
@@ -252,8 +252,16 @@ umac_reset_buffer_window=1000
 #Support for link add for client
 #value 0: link add is disabled
 #value 1: link add is enabled
-mlme_mlo_reconfig_reassoc_enable=0
+mlme_mlo_reconfig_reassoc_enable=1
 # Enable non MLO 11be AP operation
 non_mlo_11be_ap_operation_enable=1
+
+# Predator Wi-Fi 7 & 6 GHz Silicon Unlocks
+ap_bss_color_collision_detection=1
+enable_6ghz_sp_pwrmode_supp=1
+afc_disable_timer_check=1
+afc_disable_request_id_check=1
+afc_reg_no_action=1
 wds_ext=1
 dp_rx_hash=1
+

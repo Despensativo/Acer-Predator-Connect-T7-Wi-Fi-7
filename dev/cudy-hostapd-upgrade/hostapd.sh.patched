@@ -16,15 +16,7 @@ config_methods=
 wps_dual_band=
 mld_netdev=0
 
-hostapd_punct_key="puncture_bitmap="
-hostapd_pasn_key="noauth_pasn_activated"
-if /usr/sbin/hostapd -v 2>&1 | grep -q 'v2.11'; then
-	hostapd_punct_key="punct_bitmap="
-	hostapd_pasn_key="pasn_noauth"
-fi
-
 WPAD_VARRUN="$(get_wpad_var_run)"
-
 
 hostapd_set_extra_cred() {
 	local var="$1"
@@ -299,6 +291,7 @@ hostapd_set_bss_options() {
 	config_get wpa_pair_rekey   "$vif" wpa_pair_rekey   # 300
 	config_get wpa_master_rekey "$vif" wpa_master_rekey # 640
 	config_get_bool ap_isolate "$vif" isolate 0
+	config_get_bool ap_isbasic "$vif" isbasic 0
 	config_get_bool ieee80211r "$vif" ieee80211r 0
 	config_get_bool ieee80211ai "$vif" ieee80211ai 0
 	config_get_bool hidden "$vif" hidden 0
@@ -330,8 +323,7 @@ hostapd_set_bss_options() {
 	config_get mld_reconfig "$vif" mld_reconfig
 	[ -n "$mld_reconfig" ] && append hostapd_cfg "reconfig=$mld_reconfig" "$N"
 
-	append hostapd_cfg "${hostapd_pasn_key}=$noauth_pasn_activated" "$N"
-
+	append hostapd_cfg "noauth_pasn_activated=$noauth_pasn_activated" "$N"
 
 	config_get  sae_reflection_attack  "$vif" sae_reflection_attack
 	config_get  sae_commit_override  "$vif" sae_commit_override
@@ -828,6 +820,14 @@ hostapd_set_bss_options() {
 			add_sha256=1
 		fi
 
+		local compat_iot=$(uci -q get tripleband.tripleband.compat_iot || echo "1")
+		if [ "$ap_isbasic" == "1" ] && [ "$compat_iot" != "0" ]; then
+			beacon_prot=0
+			add_sha256=0
+		elif [ "$compat_iot" = "0" ] && [ "${ieee80211w}" -gt 0 ]; then
+			beacon_prot=1
+			add_sha256=1
+		fi
 
 		if [ "${ieee80211r}" -gt 0 ]
 		then
@@ -2127,7 +2127,7 @@ hostapd_setup_vif() {
 
 				append hostapd_cfg "eht_oper_chwidth=0" "$N"
 				append hostapd_cfg "eht_oper_centr_freq_seg0_idx=$idx" "$N"
-				append hostapd_cfg "${hostapd_punct_key} $puncture_bitmap" "$N"
+				append hostapd_cfg "puncture_bitmap= $puncture_bitmap" "$N"
 				;;
 			*bea:HT80|*bea:EHT80)
 				nl_hwmode=a
@@ -2159,7 +2159,7 @@ hostapd_setup_vif() {
 				fi
 				append hostapd_cfg "eht_oper_chwidth=1" "$N"
 				append hostapd_cfg "eht_oper_centr_freq_seg0_idx=$idx" "$N"
-				append hostapd_cfg "${hostapd_punct_key} $puncture_bitmap" "$N"
+				append hostapd_cfg "puncture_bitmap= $puncture_bitmap" "$N"
 				;;
 			*bea:HT160|*bea:EHT160)
 				nl_hwmode=a
@@ -2205,9 +2205,9 @@ hostapd_setup_vif() {
 					append hostapd_cfg "eht_oper_chwidth=2" "$N"
 				fi
 				append hostapd_cfg "eht_oper_centr_freq_seg0_idx=$idx" "$N"
-				append hostapd_cfg "${hostapd_punct_key} $puncture_bitmap" "$N"
+				append hostapd_cfg "puncture_bitmap= $puncture_bitmap" "$N"
 				;;
-			*bea:HT320|*bea:EHT320)
+			*bea:HT240|*bea:EHT240|*bea:HT320|*bea:EHT320)
 				nl_hwmode=a
 				append hostapd_cfg "ieee80211ac=1" "$N"
 				append hostapd_cfg "ieee80211n=1" "$N"
@@ -2220,22 +2220,20 @@ hostapd_setup_vif() {
 					esac
 					[ "$shortgi" != "0" ] &&  append ht_capab "[SHORT-GI-40]"
 					case "$channel" in
-						36|40|44|48|52|56|60|64) idx=50;;
-						100|104|108|112|116|120|124|128) idx=114;;
-						149|153|157|161|165|169|173|177) idx=163;;
-					esac
-
-					append hostapd_cfg "eht_oper_chwidth=2" "$N"
-
-					case "$channel" in
-						132|136|140|144)
-							case "$(( ($channel / 4) % 4 ))" in
-								0) idx=$(($channel - 6));;
-								1) idx=$(($channel + 6));;
-								2) idx=$(($channel + 2));;
-								3) idx=$(($channel - 2));;
-							esac
-						append hostapd_cfg "eht_oper_chwidth=1" "$N";;
+						36|40|44|48|52|56|60|64)
+							idx=50
+							append hostapd_cfg "eht_oper_chwidth=2" "$N"
+							;;
+						100|104|108|112|116|120|124|128|132|136|140|144)
+							idx=130
+							ccfs=130
+							[ "$puncture_bitmap" = "0xffff" -o "$puncture_bitmap" = "0" -o -z "$puncture_bitmap" ] && puncture_bitmap=61440
+							append hostapd_cfg "eht_oper_chwidth=4" "$N"
+							;;
+						149|153|157|161|165|169|173|177)
+							idx=163
+							append hostapd_cfg "eht_oper_chwidth=2" "$N"
+							;;
 					esac
 				else
 					append hostapd_cfg "op_class=137" "$N"
@@ -2248,11 +2246,14 @@ hostapd_setup_vif() {
 						161|165|169|173|177|181|185|189) idx=159;;
 						193|197|201|205|209|213|217|221) idx=191;;
 					esac
+					if [ "$htmode" = "HT240" -o "$htmode" = "EHT240" ]; then
+						[ "$puncture_bitmap" = "0xffff" -o "$puncture_bitmap" = "0" -o -z "$puncture_bitmap" ] && puncture_bitmap=61440
+					fi
 					append hostapd_cfg "eht_oper_chwidth=4" "$N"
 				fi
 				[ "$ccfs" != "0" ] &&  append hostapd_cfg "eht_oper_centr_freq_seg0_idx=$ccfs" "$N"
 				[ "$ccfs" == "0" ] &&  append hostapd_cfg "eht_oper_centr_freq_seg0_idx=$idx" "$N"
-				append hostapd_cfg "${hostapd_punct_key} $puncture_bitmap" "$N"
+				append hostapd_cfg "puncture_bitmap= $puncture_bitmap" "$N"
 				;;
 
 			*bea:*) nl_hwmode=a
@@ -2265,7 +2266,7 @@ hostapd_setup_vif() {
 					append hostapd_cfg "op_class=132" "$N"
 				fi
 				append hostapd_cfg "eht_oper_chwidth=0" "$N"
-				append hostapd_cfg "${hostapd_punct_key} $puncture_bitmap" "$N"
+				append hostapd_cfg "puncture_bitmap= $puncture_bitmap" "$N"
 				;;
 			*bg:*)
 				nl_hwmode=g
@@ -2310,15 +2311,15 @@ hostapd_setup_vif() {
 
 	[ "$channel" = auto ] && channel=
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
-	rm -f /var/run/hostapd-$ifname$mld_link_id.conf
-	cat > /var/run/hostapd-$ifname$mld_link_id.conf <<EOF
+	rm -f /var/run/hostapd-$ifname.conf
+	cat > /var/run/hostapd-$ifname.conf <<EOF
 driver=$driver
 interface=$ifname
 #${channel:+channel=$channel}
 $hostapd_cfg
 EOF
 	[ -z "${no_nconfig}" ] &&
-		echo ${hwmode:+hw_mode=${hwmode#11}} >> /var/run/hostapd-$ifname$mld_link_id.conf
+		echo ${hwmode:+hw_mode=${hwmode#11}} >> /var/run/hostapd-$ifname.conf
 
 	entropy_file=$WPAD_VARRUN/entropy-$ifname.bin
 
@@ -2327,7 +2328,7 @@ EOF
 	config_get_bool wps_vap_tie_dbdc qcawifi wps_vap_tie_dbdc 0
 
 	if [ $wps_vap_tie_dbdc -ne 0 ]; then
-		echo -e "/var/run/hostapd-$ifname$mld_link_id.conf \c\h" >> /tmp/hostapd_conf_filename
+		echo -e "/var/run/hostapd-$ifname.conf \c\h" >> /tmp/hostapd_conf_filename
 	else
 		[ -f /tmp/sysinfo/board_name  ] && {
 			board_name=ap$(cat /tmp/sysinfo/board_name | awk -F 'ap' '{print$2}')
@@ -2339,11 +2340,11 @@ EOF
 		# to 1. IPQ/SDX75 boards will have it set to 1 always; SDX65 boards
 		# can configure this option in the wireless file
 		if [ "$force_hostapd_attach" -eq 1  ]; then
-			[ -f "/var/run/hostapd-$ifname$mld_link_id.lock" ] &&
-				rm /var/run/hostapd-$ifname$mld_link_id.lock
-			wpa_cli -g $WPAD_VARRUN/hostapd/global raw ADD bss_config=$ifname:/var/run/hostapd-$ifname$mld_link_id.conf
+			[ -f "/var/run/hostapd-$ifname.lock" ] &&
+				rm /var/run/hostapd-$ifname.lock
+			wpa_cli -g $WPAD_VARRUN/hostapd/global raw ADD bss_config=$ifname:/var/run/hostapd-$ifname.conf
 			[ $? -eq 0 ] || return
-			touch /var/run/hostapd-$ifname$mld_link_id.lock
+			touch /var/run/hostapd-$ifname.lock
 
 			run_hostapd_cli() {
 				ifname=$1

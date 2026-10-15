@@ -24,10 +24,10 @@ O **Acer Predator Connect T7** é construído sobre a plataforma de referência 
              |                                                           |
              v                                                           v
 +---------------------------+                               +---------------------------+
-|  Qualcomm IPQ5322 SoC     |                               |   Qualcomm QCN6274        |
-|  - 4x Cortex-A53 @ 1.5GHz |<====== PCIe Gen3 x1 =========>|   - Wi-Fi 7 6 GHz Dedicado|
-|  - NSS Acceleration Core  |        (pcie@18000000)        |   - 320 MHz (EHT320)      |
-|  - 2.4 GHz & 5 GHz Radio  |                               |   - Até 5764 Mbps (2T2R)  |
+|  Qualcomm IPQ5322 SoC     |                               | Qualcomm QCN6274/QCN9224  |
+|  - 4x Cortex-A53 @ 1.5GHz |<====== PCIe Gen3 x2 =========>| - DualMAC 5 GHz + 6 GHz   |
+|  - NSS / PPE Accel Core   |     (0001:01:00.0 PCIe)       | - 5G (160MHz) + 6G (320M) |
+|  - 2.4 GHz Radio (wifi0)  |                               | - wifi1 (5G) & wifi2 (6G) |
 +-------------+-------------+                               +---------------------------+
               |
       +-------+-------+--------------------+--------------------+
@@ -44,17 +44,17 @@ O **Acer Predator Connect T7** é construído sobre a plataforma de referência 
 
 ## 2. Inventário Detalhado dos Circuitos Integrados (Chips)
 
-Através da extração direta e análise fotográfica em alta definição dos 31 relatórios da FCC (`EP-2311H013-1`), todos os chips sob as blindagens de RF (RF Shields) foram identificados e confrontados com os dumps de memória do sistema:
+Através da extração direta e análise fotográfica em alta definição dos 31 relatórios da FCC (`EP-2311H013-1`), todos os chips sob as blindagens de RF (RF Shields) foram identificados e confrontados com os dumps de memória e o barramento `sysfs` real do sistema:
 
 ### 2.1 Processador Central (SoC)
-- **Marca/Modelo:** **Qualcomm IPQ5322 003**
+- **Marca/Modelo:** **Qualcomm IPQ5322 003** (reportado pelo kernel QSDK como `IPQ5332`)
 - **Marcação Física no Die:** `IPQ-5322 / 003 / FK3225LV`
 - **Arquitetura:** Quad-Core ARM Cortex-A53 (ARMv8-A, compatível com 32-bit e 64-bit) operando a até 1.5 GHz.
 - **Processo Litográfico:** 14nm FinFET.
 - **Recursos Integrados:**
-  - Coprocessador de aceleração de rede NSS (Network Subsystem / NPU).
+  - Coprocessador de aceleração de rede NSS / PPE (Packet Processing Engine).
   - Controlador de memória DDR4 com barramento de 16/32 bits.
-  - Bloco de rádio integrado para bandas 2.4 GHz e 5 GHz 802.11be (2x2).
+  - Bloco de rádio integrado no barramento interno AHB (`soc@0/c000000.wifi`) dedicado exclusivamente à banda de **2.4 GHz (`wifi0` / `ath0`)** 802.11be (2x2).
   - Interface QSPI / SPI NAND dedicada para inicialização de alta velocidade.
 
 ### 2.2 Memória RAM
@@ -72,10 +72,10 @@ Através da extração direta e análise fotográfica em alta definição dos 31
   - Tamanho da Página: 2048 bytes (+ 64 bytes OOB/Spare).
   - Tamanho do Bloco de Apagamento (Eraseblock): 128 KB (131.072 bytes).
   - ECC Interno (On-Die ECC): 4-bit ou 8-bit ECC por 512 bytes.
-- **Distribuição de Partições MTD (Conforme extraído no dump):**
-  - `rootfs` (Slot 1 Primário de Fábrica): 240 MB (`mtd21`)
-  - `rootfs_1` (Slot 2 Secundário de Recuperação): 240 MB (`mtd23`)
-  - Partições de Boot/Calibração (`0:SBL1`, `0:MIBIB`, `0:ART`, `0:BOOTCONFIG`): 32 MB combinados.
+- **Distribuição de Partições MTD (Conforme confirmado em `/proc/mtd`):**
+  - `rootfs` (Slot 1 Primário de Fábrica): 233 MB (`mtd21`)
+  - `rootfs_1` (Slot 2 Secundário / OpenWrt Custom): 233 MB (`mtd20`)
+  - Partições de Boot/Calibração (`0:SBL1`, `0:MIBIB`, `0:ART` em `mtd18`, `0:BOOTCONFIG` em `mtd8`/`mtd9`): ~46 MB combinados.
 
 ### 2.4 Controlador de Switch e Rede Física (Ethernet)
 - **Marca/Modelo:** **Qualcomm QCA8384 000**
@@ -86,16 +86,18 @@ Através da extração direta e análise fotográfica em alta definição dos 31
   - `FLY_CORE FC1504GY` (Semana 28 de 2023)
   - `FLY_CORE FC5433` (Semana 11 de 2023)
 
-### 2.5 Transceiver Wi-Fi 7 de 6 GHz (Rádio Dedicado)
-- **Marca/Modelo:** **Qualcomm QCN6274 001**
+### 2.5 Transceiver Wi-Fi 7 DualMAC de 5 GHz + 6 GHz (Rádio PCIe Compartilhado)
+- **Marca/Modelo:** **Qualcomm QCN6274 001** (arquitetura de driver **QCN9224 DualMAC** no QSDK)
 - **Marcação Física:** `QCN-6274 / 001 / JK303C48`
-- **Interface de Barramento:** PCIe Gen3 x1 conectado à porta PCIe 1 do IPQ5322 (`pcie@18000000`).
+- **Interface de Barramento:** PCIe conectado ao endereço `soc@0/18000000.pci/pci0001:00/0001:00:00.0/0001:01:00.0`.
+- **Topologia DualMAC Verificada em `sysfs` (`[AL-T7-008]`):**
+  - Diferente da suposição inicial pré-sysfs, este único chip PCIe hospeda **simultaneamente os rádios de 5 GHz (`wifi1` / `ath1`, até 160 MHz `EHT160`) e 6 GHz (`wifi2` / `ath2`, até 320 MHz `EHT320`)**.
+  - Ambos os rádios compartilham o mesmo pool de anéis de DMA/REO no PCIe, exigindo `dp_mlo_reo_rings_map=0` e controle sequencial de `hostapd_cli` (`predator-wifi-guard`) para evitar esgotamento de anéis durante reloads.
 - **Recursos Principais:**
-  - Banda U-NII-5 até U-NII-8 (5925 MHz a 7125 MHz).
-  - Suporte completo a canais ultra-largos de **320 MHz (`EHT320`)**.
-  - Modulação 4096-QAM (4K-QAM).
-  - Taxa física teórica de até **5764 Mbps** em configuração 2x2 MIMO.
-  - Multi-Link Operation (MLO) suportando agregação e switching transparente simultâneo com as bandas de 2.4 GHz e 5 GHz.
+  - Banda 5 GHz (`wifi1`): U-NII-1 a U-NII-3 (5180 MHz a 5825 MHz), largura de 80 MHz ou 160 MHz (`EHT160`).
+  - Banda 6 GHz (`wifi2`): U-NII-5 a U-NII-8 (5925 MHz a 7125 MHz), largura ultra-larga de **320 MHz (`EHT320`)**.
+  - Modulação 4096-QAM (4K-QAM) e taxa física teórica de até **5764 Mbps** em 6 GHz (2x2 MIMO).
+  - Multi-Link Operation (MLO) suportando agregação e switching transparente simultâneo entre as bandas.
 
 ---
 

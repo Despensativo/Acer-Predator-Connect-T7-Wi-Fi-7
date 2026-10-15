@@ -7,10 +7,9 @@ Este documento registra o caminho exato e as instruções para restaurar pacotes
 ## 📸 Tela Oficial de Backup & Restauração (OEM)
 
 A captura de tela da interface oficial da Acer foi preservada no repositório em:
-- Arquivo: [`assets/tela_carregamento_backup_oem.png`](file:///Volumes/--400GB--/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/assets/tela_carregamento_backup_oem.png)
-- Cópia de auditoria: [`audit/tela_carregamento_backup_oem.png`](file:///Volumes/--400GB--/FEITOS%20COM%20IA/Acer-Predator-Connect-T7/audit/tela_carregamento_backup_oem.png)
+- Arquivo no repositório: [`assets/tela_carregamento_backup_oem.png`](../assets/tela_carregamento_backup_oem.png)
 
-![Tela de Backup & Restore OEM](assets/tela_carregamento_backup_oem.png)
+![Tela de Backup & Restore OEM](../assets/tela_carregamento_backup_oem.png)
 
 ---
 
@@ -50,8 +49,8 @@ Caso prefira navegar visualmente pelos menus da interface Acer:
      cfg_restauracao_master_v2.cfg (na raiz do repositório)
      ```
 2. Clique no botão cinza/azul **`Restore`**.
-3. Uma barra de progresso será exibida. Aguarde cerca de **1 a 2 minutos**.
-4. O roteador aplicará todas as configurações, liberará o acesso LuCI na porta 80 e 443, reativará o SSH (porta 22) na LAN, subirá a Central Wi-Fi com blindagem de deadlocks, e reiniciará os serviços automaticamente.
+3. Uma barra de progresso será exibida. Aguarde cerca de **40 a 60 segundos** (no padrão de 80 MHz non-DFS).
+4. O roteador aplicará todas as configurações, liberará o acesso LuCI na porta 80 e 443, reativará o SSH (porta 22) e Telnet (porta 23) na LAN, subirá a Central Wi-Fi com blindagem de deadlocks (`predator-wifi-guard`), e reiniciará os serviços automaticamente.
 
 ---
 
@@ -59,16 +58,16 @@ Caso prefira navegar visualmente pelos menus da interface Acer:
 
 - **Interface LuCI (OpenWrt):** `http://192.168.76.1` ou `https://192.168.76.1`
   - Usuário: `root` (ou `admin`)
-  - Senha: `root0100` (ou `password` em caso de fallback)
+  - Senha: `root0100`
 - **Terminal SSH (Dropbear - restrito à LAN):**
   - Host: `192.168.76.1`
   - Porta: `22`
-  - Usuário: `root` (ou `admin`)
-  - Senha: `root0100` (ou chave SSH `~/.ssh/id_rsa_antigravity`)
+  - Usuário: `root` (ou `admin` / `Admin`)
+  - Senha: `root0100`
 - **Documentação de Boot e LEDs Físicos:**
   - Consulte [`docs/TEMPOS_BOOT_WIFI_E_LEDS.md`](TEMPOS_BOOT_WIFI_E_LEDS.md) para detalhes da cronometria e comportamento das luzes do equipamento.
 - **Redes Wi-Fi:**
   - Rede Unificada (Tri-Band): `Predator_7G` (2.4 GHz, 5 GHz e 6 GHz)
-  - Largura de Banda 5 GHz Padrão: `80 MHz` (inicialização rápida em 2s, configurável para 160 MHz no LuCI)
+  - Largura de Banda 5 GHz Padrão: `80 MHz` (Canal 36 non-DFS: inicialização rápida sem espera de radar DFS, configurável para 160 MHz no LuCI)
   - Senha Wi-Fi: `Predator0@`
   - SQM (Cake QoS): Desativado por padrão (aceleração por hardware PPE máxima)

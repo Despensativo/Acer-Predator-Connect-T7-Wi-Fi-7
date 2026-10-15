@@ -6,11 +6,11 @@
 #ppeds not supported
 ppe_ds_enable=0
 dp_rx_flow_tag_enable=1
-dp_rx_flow_search_table_size=2048
+dp_rx_flow_search_table_size=4096
 dp_htt_packet_type=2
 dp_int_batch_threshold_other=1
 dp_int_batch_threshold_mon_dest=4
-dp_int_batch_threshold_rx=64
+dp_int_batch_threshold_rx=128
 dp_int_batch_threshold_tx=256
 dp_int_timer_threshold_other=256
 dp_int_timer_threshold_mon_dest=512
@@ -52,12 +52,12 @@ dp_reo_dst_ring=8192
 dp_reo_status_ring=1024
 dp_rxdma_buf_ring=1024
 dp_rxdma_refill_ring=8192
-dp_rxdma_monitor_buf_ring=8192
-dp_rxdma_monitor_dst_ring=8192
-dp_tx_monitor_buf_ring=8192
-dp_tx_monitor_dst_ring=8192
+dp_rxdma_monitor_buf_ring=4096
+dp_rxdma_monitor_dst_ring=4096
+dp_tx_monitor_buf_ring=4096
+dp_tx_monitor_dst_ring=4096
 dp_rxdma_monitor_status_ring=2048
-dp_rxdma_monitor_desc_ring=8192
+dp_rxdma_monitor_desc_ring=4096
 dp_rxdma_err_dst_ring=4096
 dp_sg_support=1
 dp_offload_tx_csum_support=1
@@ -150,12 +150,12 @@ dp_tx_compl_ring_size=0x2000
 dp_tx_ext_desc=0x1000
 
 [512M-P]
-dp_rxdma_monitor_buf_ring=8192
-dp_rxdma_monitor_dst_ring=8192
-dp_tx_monitor_buf_ring=8192
-dp_tx_monitor_dst_ring=8192
+dp_rxdma_monitor_buf_ring=4096
+dp_rxdma_monitor_dst_ring=4096
+dp_tx_monitor_buf_ring=4096
+dp_tx_monitor_dst_ring=4096
 dp_rxdma_monitor_status_ring=2048
-dp_rxdma_monitor_desc_ring=8192
+dp_rxdma_monitor_desc_ring=4096
 
 [2G-512M-P]
 num_vdevs=9
@@ -168,20 +168,20 @@ num_peers=128
 num_monitor_vaps=1
 
 [DP_MON_2CHAIN]
-dp_rxdma_monitor_buf_ring=8192
-dp_rxdma_monitor_dst_ring=8192
-dp_tx_monitor_buf_ring=8192
-dp_tx_monitor_dst_ring=8192
+dp_rxdma_monitor_buf_ring=4096
+dp_rxdma_monitor_dst_ring=4096
+dp_tx_monitor_buf_ring=4096
+dp_tx_monitor_dst_ring=4096
 dp_rxdma_monitor_status_ring=2048
-dp_rxdma_monitor_desc_ring=8192
+dp_rxdma_monitor_desc_ring=4096
 
 [512M_OR_DP_MON_4CHAIN]
-dp_rxdma_monitor_buf_ring=8192
-dp_rxdma_monitor_dst_ring=8192
-dp_tx_monitor_buf_ring=8192
-dp_tx_monitor_dst_ring=8192
+dp_rxdma_monitor_buf_ring=4096
+dp_rxdma_monitor_dst_ring=4096
+dp_tx_monitor_buf_ring=4096
+dp_tx_monitor_dst_ring=4096
 dp_rxdma_monitor_status_ring=2048
-dp_rxdma_monitor_desc_ring=8192
+dp_rxdma_monitor_desc_ring=4096
 
 [1G-2G]
 num_vdevs=9

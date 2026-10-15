@@ -14,7 +14,7 @@ Este documento descreve as especificações de hardware de baixo nível, a tabel
 | **Armazenamento Flash** | SPI NAND Flash com sistema UBI / OverlayFS (153.3 MB graváveis em `/overlay`) |
 | **Controlador Ethernet 2.5G** | Aquantia / Qualcomm PHY dedicado (porta WAN `eth0`) |
 | **Switch Gigabit Integrado** | QCA NSS DP Switch (`eth1.1` Game Port, `eth1.2` LAN 1) |
-| **Rádios Wi-Fi** | Tri-Band Wi-Fi 7 (802.11be): 2.4 GHz (2x2), 5 GHz (2x2), 6 GHz (2x2) |
+| **Rádios Wi-Fi** | Tri-Band Wi-Fi 7 (802.11be): `wifi0` 2.4 GHz (SoC AHB `c000000.wifi`) + `wifi1` 5 GHz & `wifi2` 6 GHz DualMAC (PCIe `0001:01:00.0` QCN6274/QCN9224) |
 
 ---
 
@@ -42,10 +42,10 @@ mtd14: 00180000 00040000 "0:APPSBL_1"     -> U-Boot Bootloader (Slot B) [DUMP CO
 mtd15: 00180000 00040000 "0:APPSBL"       -> U-Boot Bootloader (Slot A) [DUMP COMPLETO]
 mtd16: 00100000 00040000 "0:ETHPHYFW"     -> Firmware do chip 2.5 Gbps Ethernet [DUMP COMPLETO]
 mtd17: 00080000 00040000 "0:TRAINING"     -> Dados de Treinamento de Memória DDR
-mtd18: 00200000 00040000 "0:ART"          -> Atheros Radio Test (Calibração Wi-Fi) [CRÍTICO - DUMP COMPLETO]
+mtd18: 00200000 00040000 "0:ART"          -> Atheros Radio Test (Calibração Wi-Fi) [⛔ DNR-10: INTOCÁVEL]
 mtd19: 00040000 00040000 "0:LICENSE"      -> Licenças e números de série [DUMP COMPLETO]
-mtd20: 0f000000 00040000 "rootfs_1"       -> Imagem do Sistema Operacional (Slot B - 240 MB)
-mtd21: 0f000000 00040000 "rootfs"         -> Imagem do Sistema Operacional (Slot A - 240 MB)
+mtd20: 0e900000 00020000 "rootfs_1"       -> Imagem do Sistema Operacional (Slot 2 / OpenWrt Custom - ~233 MB)
+mtd21: 0e900000 00020000 "rootfs"         -> Imagem do Sistema Operacional (Slot 1 / Stock OEM - ~233 MB)
 mtd22: 00600000 00040000 "0:TRAFFIC"      -> Dados de Estatísticas de Tráfego
 mtd23: 00080000 00040000 "0:SYSTRACE"     -> Rastreamento de Sistema
 mtd24: 00300000 00040000 "0:TRAFFIC_DAY"  -> Histórico Diário de Tráfego
@@ -81,15 +81,18 @@ fdtcontroladdr=4a4f4004
 
 ---
 
-## 4. Arquivos de Backup Preservados na Pasta `Backups_MTD/`
+## 4. Arquivos de Backup Físico (Preservados no Acervo Offline `_FORA DO GitHub/`)
+
+> [!NOTE]
+> Os dumps binários exclusivos da unidade de bancada são mantidos fora da árvore pública do Git (em `_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/`) por conterem números de série, endereços MAC e calibrações individuais:
 
 1. **`backup_predator_t7_art.bin` (2.0 MB)**:
-   * Contém a calibração física dos amplificadores de potência (FEMs) dos rádios de 2.4 GHz, 5 GHz e 6 GHz. Este arquivo é único por placa física e insubstituível.
+   * Contém a calibração física dos amplificadores de potência (FEMs) dos rádios de 2.4 GHz, 5 GHz e 6 GHz (`mtd18` / `0:ART`). Este arquivo é único por placa física e insubstituível (`⛔ DNR-10`).
 2. **`backup_predator_t7_uboot_env.bin` (512 KB)**:
-   * As variáveis de inicialização para emergência via TFTP.
+   * As variáveis de inicialização (`0:APPSBLENV`).
 3. **`backup_predator_t7_ethphy_fw.bin` (1.0 MB)**:
-   * O microcódigo da porta física 2.5 Gbps.
+   * O microcódigo da porta física 2.5 Gbps (`0:ETHPHYFW`).
 4. **`backup_predator_t7_license.bin` (256 KB)**:
-   * Registro de licença original do equipamento.
+   * Registro de licença original do equipamento (`0:LICENSE`).
 5. **`backup_predator_t7_devcfg.bin` (512 KB)** & **`backup_predator_t7_cdt.bin` (512 KB)**:
    * Parâmetros de clock, voltagem e barramentos da placa-mãe.

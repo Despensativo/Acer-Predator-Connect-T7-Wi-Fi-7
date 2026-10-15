@@ -182,11 +182,13 @@ O `dnsmasq` intercepta dinamicamente a resolução DNS dos serviços onde o QUIC
    * **Ajuste Homologado**: Forçar `IQDISC_OPTS="no-split-gso"` e `EQDISC_OPTS="no-split-gso"` em `/usr/lib/sqm/defaults.sh` e `/etc/config/sqm`.
 2. **Neutralização do Congelamento no Pacote #25**:
    * O acelerador `qca-nss-ecm` (`sfe`), ao tentar desviar o fluxo do rádio de 6 GHz (`ath2` com Virtual Port PPE), causava congelamento TCP de fluxos IPv4 exatamente na marca de 25 pacotes transferidos.
-   * **Ajuste Homologado**: No `/usr/lib/sqm/defaults.sh` e `/etc/rc.local`:
+   * **Ajuste Homologado**: No `/usr/lib/sqm/defaults.sh` (sempre que o SQM iniciar) e condicionalmente no `/etc/rc.local` (apenas se `uci -q get sqm.wan.enabled` for `'1'`, preservando aceleração PPE de 2.5 Gbps quando o SQM estiver desativado):
      ```sh
-     echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop
-     echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop
-     echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
+     if [ "$(uci -q get sqm.wan.enabled)" = "1" ]; then
+         echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop
+         echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop
+         echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
+     fi
      ```
    * **Performance Validada**: Waveform **Nota A+** (Cabo: 748 Mbps Down / 356 Mbps Up / +0ms) e **Nota A** (Wi-Fi 7 6 GHz: 557 Mbps Down / 305 Mbps Up).
 
@@ -264,7 +266,7 @@ No OpenWrt padrão, a tela de visão geral (`/cgi-bin/luci/admin/status/overview
 #### Solução Implementada e Homologada:
 1. **Widget Dedicado de Wi-Fi 7**: O arquivo `60_wifi.js` foi reescrito para consultar diretamente o orquestrador `predator.get_status` via RPCD, renderizando cards visuais de telemetria completa para as 3 bandas:
    * **2.4 GHz**: Status Online, SSID ativo, Canal, Largura em MHz, Potência real de TX em dBm e Temperatura do SoC.
-   * **5 GHz**: Status Online, SSID ativo, Canal, Largura (160 MHz), Potência real e Temperatura.
+   * **5 GHz**: Status Online, SSID ativo, Canal, Largura (80 / 160 MHz), Potência real e Temperatura.
    * **6 GHz Wi-Fi 7**: Status Online, SSID ativo, Canal, Largura máxima de 320 MHz, Potência e Temperatura.
    * **Tabela de Clientes Conectados**: Mostra dispositivo/host, endereço MAC, banda (2.4G / 5G / 6G Wi-Fi 7), sinal (dBm + barra de qualidade %) e tempo de conexão.
    * **Atalho Direto**: Botão no topo levando ao painel completo `/cgi-bin/luci/admin/network/predator_wifi`.
@@ -278,11 +280,11 @@ No OpenWrt padrão, a tela de visão geral (`/cgi-bin/luci/admin/status/overview
 
 ## 4. Pacote Homologado de Restauração
 
-O arquivo master contendo a implementação completa de todos os 9 módulos acima foi empacotado e commitado:
+O arquivo master contendo a implementação completa de todos os 9 módulos acima foi empacotado e auditado:
 * **Arquivo**: `cfg_restauracao_master_v2.cfg`
 * **Localização**: Raiz do repositório
-* **Tamanho**: `351 KB` (359.846 bytes)
-* **SHA256**: `e5608ff74f43daa3bda8c34c207a8f91405ecc729de12f1ad8b063900f24ca11`
+* **Tamanho**: `356 KB` (364.312 bytes)
+* **SHA256**: `82e77ac839d45d28056b155a380fd99f3a70be2537c8ab4494d1ee36799dbae9`
 * **Padrão de Criação**: `COPYFILE_DISABLE=1 tar --no-mac-metadata -czf`
 
 ---

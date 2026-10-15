@@ -1,0 +1,195 @@
+/dts-v1/;
+
+/*
+ * Device Tree Source para Acer Predator Connect T7 (Placa Qualcomm AP-MI01.6)
+ * Alvo: ImmortalWrt Qualcommax / Linux 6.6 LTS AArch64 (ARM64 Nativo)
+ * Memória RAM: 1.0 GB DDR4 Físico (Sem restrição MP_512)
+ * Armazenamento: SPI NAND 512 MB QPIC (Slot B / rootfs_1)
+ */
+
+/ {
+	model = "Acer Predator Connect T7";
+	compatible = "acer,predator-t7", "qcom,ipq5332-ap-mi01.6", "qcom,ipq5332";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		serial0 = "/soc/serial@78af000";
+		ethernet0 = "/soc/ess-instance/port@2"; /* WAN 2.5G */
+		ethernet1 = "/soc/ess-instance/port@1"; /* LAN Game Port */
+	};
+
+	chosen {
+		bootargs = "console=ttyMSM0,115200n8 ubi.mtd=rootfs_1 root=mtd:ubi_rootfs rootfstype=squashfs rootwait";
+		stdout-path = "/soc/serial@78af000:115200n8";
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		/* 1.0 GB DDR4 Físico do Acer T7: Base 0x40000000, Tamanho 1024 MB (0x40000000) */
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		/* Região reservada para SBL1 e SMEM */
+		smem@4a800000 {
+			reg = <0x0 0x4a800000 0x0 0x00100000>;
+			no-map;
+		};
+
+		/* Região reservada para TrustZone / QSEE */
+		qsee@4b000000 {
+			reg = <0x0 0x4b000000 0x0 0x03800000>;
+			no-map;
+		};
+
+		/* Buffer DMA Contíguo para o coprocessador Wi-Fi 7 QCN9224 */
+		qcn9224_cma: qcn9224-cma@78000000 {
+			compatible = "shared-dma-pool";
+			reg = <0x0 0x78000000 0x0 0x07000000>;
+			reusable;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset-button {
+			label = "reset";
+			linux,code = <0x198>; /* KEY_RESTART */
+			gpios = <&tlmm 49 1>; /* GPIO 49, Active Low */
+			debounce-interval = <60>;
+		};
+
+		wps-button {
+			label = "wps";
+			linux,code = <0x211>; /* KEY_WPS_BUTTON */
+			gpios = <&tlmm 35 1>; /* GPIO 35, Active Low */
+			debounce-interval = <60>;
+		};
+	};
+
+	soc: soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x0 0x0 0xffffffff>;
+		compatible = "simple-bus";
+
+		tlmm: pinctrl@1000000 {
+			compatible = "qcom,ipq5332-pinctrl";
+			reg = <0x01000000 0x300000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		serial@78af000 {
+			compatible = "qcom,msm-uart";
+			reg = <0x078af000 0x200>;
+			interrupts = <0 107 4>;
+			clocks = <&gcc 21>, <&gcc 10>;
+			clock-names = "core", "iface";
+			status = "okay";
+		};
+
+		gcc: clock-controller@1800000 {
+			compatible = "qcom,ipq5332-gcc";
+			reg = <0x01800000 0x80000>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+		};
+
+		/* Controlador de Barramento PCIe para o Rádio QCN9224 (Wi-Fi 7 5G/6G) */
+		pcie1: pci@18000000 {
+			compatible = "qcom,pcie-ipq5332";
+			reg = <0x18000000 0xf1d>,
+			      <0x18000f20 0xa8>,
+			      <0x004b0000 0x2000>,
+			      <0x18100000 0x1000>;
+			reg-names = "dbi", "elbi", "parf", "config";
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x81000000 0 0x18100000 0x18100000 0 0x100000>,
+			         <0x82000000 0 0x18200000 0x18200000 0 0x0e00000>;
+			bus-range = <0x00 0xff>;
+			status = "okay";
+
+			reset-gpios = <&tlmm 47 1>; /* PERST GPIO 47, Active Low */
+			wake-gpios = <&tlmm 48 1>;  /* WAKE GPIO 48, Active Low */
+
+			wifi@1,0 {
+				compatible = "pci17cb,1109";
+				reg = <0x00010000 0 0 0 0>;
+				qcom,ath12k-board-id = <4117>; /* 0x1015 = bdwlan.b1015 */
+				memory-region = <&qcn9224_cma>;
+			};
+		};
+
+		/* Rádio Integrado 2.4 GHz do SoC IPQ5332 */
+		wifi0: wifi@c000000 {
+			compatible = "qcom,ipq5332-wifi";
+			reg = <0x0c000000 0x1000000>;
+			status = "okay";
+		};
+
+		/* Motor de Aceleração de Pacotes (PPE) e Switch Integrado */
+		qcom_ppe: ess-instance {
+			compatible = "qcom,ess-instance";
+			status = "okay";
+
+			/* Porta 1: LAN Gigabit / Game Port (NSS-DP) */
+			port@1 {
+				reg = <1>;
+				label = "lan";
+				phy-mode = "2500basex";
+				status = "okay";
+			};
+
+			/* Porta 2: WAN 2.5 Gbps (PHY Externo MaxLinear/Qualcomm) */
+			port@2 {
+				reg = <2>;
+				label = "wan";
+				phy-mode = "2500basex";
+				phy-handle = <&phy4>;
+				status = "okay";
+			};
+		};
+
+		/* Controlador MDIO para Gerenciamento do PHY WAN 2.5G */
+		mdio: mdio@90000 {
+			compatible = "qcom,ipq5332-mdio";
+			reg = <0x00090000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			phy4: ethernet-phy@4 {
+				compatible = "ethernet-phy-id004d.d180";
+				reg = <4>;
+				reset-gpios = <&tlmm 51 1>; /* Reset do PHY 2.5G no GPIO 51 */
+			};
+		};
+
+		/* Controlador de Flash SPI-NAND (QPIC) */
+		qpic_nand: nand-controller@79b0000 {
+			compatible = "qcom,ipq5332-qpic-nand";
+			reg = <0x079b0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			nand@0 {
+				reg = <0>;
+				nand-ecc-strength = <8>;
+				nand-ecc-step-size = <512>;
+				nand-bus-width = <8>;
+			};
+		};
+	};
+};

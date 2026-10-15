@@ -18,3 +18,10 @@
 - Para uma gravação, confirme sistema ativo, alvo físico, cópia preservada, rollback e seletor final. Não deduza partição física apenas de `rootfs`, `rootfs_1` ou um exemplo antigo.
 - Confirme inicialização, rádios, associação, tráfego e logs conforme a mudança. Retorno zero de `wifi reload` ou presença de um processo não comprova funcionamento.
 - Compare desempenho com o mesmo cliente, associação/link e carga; não conclua ganho apenas de PHY rate, largura ou potência configurada.
+
+## Protocolo Anti-Regressão e Ciclo de Aprendizado
+
+- **Consulta Obrigatória ao Topo do Playbook**: Antes de executar qualquer comando SSH/Telnet ou alterar configs UCI/QSDK, leia a seção `🛑 0. Armadilhas e Comandos Proibidos (DO-NOT-REPEAT)` em [PLAYBOOK.md](PLAYBOOK.md).
+- **Respeito às Tags de Ciclo de Vida**: Entradas marcadas com `🔄 [SUPERADO POR #ID]` no `PLAYBOOK.md` ou `ARQUIVOS_MODIFICADOS_CFG.md` são registros históricos de evolução; aplique exclusivamente as soluções marcadas como `✅ [ATIVO]`.
+- **Artefato Master Oficial**: `cfg_restauracao_master_v2.cfg` (`739.007 bytes`, SHA-256 `2d438a2ac5ecca12dd099bef6e380a7b03b599e6a21b46d70e86b5b7640970c1`), gerado sempre com `GZIP=-9 COPYFILE_DISABLE=1 tar --no-mac-metadata --uid 0 --gid 0 --uname root --gname root -czf`.
+

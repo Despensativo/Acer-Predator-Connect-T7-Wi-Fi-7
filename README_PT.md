@@ -26,15 +26,15 @@
 
 ## 🎁 2. BENEFÍCIOS DO DESBLOQUEIO (POR QUE DESBLOQUEAR?)
 
-1. 🔓 **Acesso Root e SSH Nativo na LAN:** Portas `22` (SSH) e `23` (Telnet) liberadas na rede local sem travas da Acer.
-2. 🌐 **Interface LuCI Oficial OpenWrt:** Painel completo na porta 80 com controle total de firewall, DHCP, rotas, VLANs e diagnósticos de processos.
-3. 🚀 **Wi-Fi 7 Destravado:** Banda de 6 GHz com largura máxima de **320 MHz (5.76 Gbps)**, Roaming Rápido 802.11k/v e WPA3-SAE.
-4. 🎛️ **Central de Wi-Fi Inteligente:** Exclusiva com ajustes e liberação máxima dos recursos do Wi-Fi, fácil e intuitiva. Permite alterar configurações e salvar todas as frequências juntas!
-5. 🛡️ **Anti-Deadlock:** Eliminação definitiva dos módulos quebrados da Qualcomm (`whc` e `wsplc`) que causavam concorrência interna e instabilidade no Wi-Fi.
-6. 🧹 **Debloat Máximo:** Desativação de telemetrias invasivas e serviços celulares inúteis herdados do modelo X7, liberando **mais de 50 MB de memória RAM**.
-7. 🎮 **UPnP / NAT-PMP para Jogos:** Abertura automática de portas para PS5, Xbox, Switch e PC com NAT Aberto/Moderado e menor latência.
-8. 🛡️ **Segurança Total Anti-Brick:** O Slot 1 e o U-Boot permanecem **100% de fábrica intactos**, com retorno garantido a qualquer momento: fez o reset pelo OpenWrt ou pelo botão físico já volta ao padrão de fábrica!
-9. 🌐 **Idiomas 100% Organizados:** Interface LuCI e todos os novos menus customizados da Central de Wi-Fi perfeitamente localizados e alinhados em **Português (Brasil)**, **Inglês** e **Espanhol**, sem textos cortados ou confusos.
+1. 🔓 **Acesso Root e SSH Nativo na LAN:** Portas `22` (SSH) e `23` (Telnet com auto-respawn via `procd`) liberadas na rede local sem travas da Acer.
+2. 🌐 **Interface LuCI Oficial OpenWrt:** Painel completo na porta 80 com widget de telemetria Wi-Fi 7 nativa no Status Overview e controle total de firewall, DHCP, rotas e VLANs.
+3. 🚀 **Wi-Fi 7 Destravado & Painel de Engenharia de Silício:** Banda de 6 GHz com largura máxima de **320 MHz (5.76 Gbps)**, 5 GHz em 80/160 MHz com `sae-mixed` nativo, Roaming Rápido 802.11k/v, guardião anti-crash PCIe DualMAC, **Anéis DMA Tier 1 GB (`16K Descriptors`)**, correção `ap_isbasic` WDS e **Painel de Engenharia de Silício Qualcomm QSDK 12.x** (Aceleração NSS/PPE, Trava de Potência TX, Imunidade AniPoll e Modo Jogo Zero-Penalty `txqueuelen=10000`).
+4. 🎛️ **Central de Wi-Fi Inteligente & Painel WISP (Wi-Fi como WAN):** Exclusivos e intuitivos! Ajuste e salve todas as bandas juntas, ou use o roteador como repetidor/cliente WISP blindado contra loop, colisão de sub-rede e senha incorreta (auto-rollback de 15s).
+5. 💾 **Servidor NAS USB 3.0 em Kernel (`ksmbd` SMB 3.1.1):** Compartilhamento de arquivos em alta velocidade com gerenciador visual de discos (Formatar EXT4, Remover com Segurança e Resetar Senha).
+6. 🔒 **DNS Criptografado (DoH), Filtro QUIC Seletivo, SQM CAKE (em MB/Mbps) & WireGuard:** Privacidade via Cloudflare/Google DoH com cache RAM instantâneo (`0.00ms`), bloqueio seletivo de UDP 443 por `ipset`, QoS CAKE configurado diretamente em **MB / Mega (`800` Down / `400` Up)** com `no-split-gso` + coordenação automática SFE, e suporte nativo a VPN WireGuard em kernel.
+7. 🛡️ **Anti-Deadlock & Debloat Máximo:** Eliminação definitiva dos daemons conflitantes (`whc`, `wsplc`, `acd`) e serviços celulares inativos herdados do X7, liberando **mais de 50 MB de RAM**.
+8. 🎮 **UPnP / NAT-PMP para Jogos:** Abertura automática de portas para PS5, Xbox, Switch e PC com NAT Aberto/Moderado e menor latência.
+9. 🛡️ **Segurança Total Anti-Brick & 3 Idiomas:** O Slot 1 e o U-Boot permanecem **100% de fábrica intactos** (reset físico ou via software restaura o estado de loja), e toda a interface está localizada em **Português (Brasil)**, **Inglês** e **Espanhol**.
 
 ---
 
@@ -46,7 +46,7 @@
 > Se você restaurar um backup antigo da interface de fábrica da Acer, ele vai **sobrescrever as configurações, apagar os arquivos de ajuste, deletar a interface LuCI e bloquear o SSH novamente**.  
 >  
 > 👉 **Como personalizar sua rede:**  
-> Se você quiser mudar o nome do Wi-Fi, colocar sua própria senha ou alterar faixas de IP, **faça sempre manualmente pela tela da LuCI após o desbloqueio**.
+> Se você quiser mudar o nome do Wi-Fi, colocar sua própria senha ou alterar faixas de IP, **faça sempre manualmente pela tela da LuCI após o desbloqueio** (ou use o gerador `dev/gerar_cfg_personalizado.py`).
 
 ---
 
@@ -60,9 +60,9 @@
 | **Senha Mestra Unificada** | **`root0100`** *(Web, SSH e Telnet)* |
 | **Arquivo do Pacote Mestre** | **`cfg_restauracao_master_v2.cfg`** *(na raiz do projeto)* |
 | **Rede Wi-Fi Unificada (Tri-Band)** | **`Predator_7G`** *(2.4 GHz, 5 GHz e 6 GHz)* |
-| **Largura de Banda 5 GHz Padrão** | **`80 MHz`** *(boot instantâneo em 2s sem espera de radar DFS; alternável para 160 MHz)* |
+| **Largura de Banda 5 GHz Padrão** | **`80 MHz`** *(Canal 36 non-DFS: boot rápido em ~40s sem espera de radar DFS; alternável para 160 MHz)* |
 | **Senha Wi-Fi (todas as redes)** | **`Predator0@`** |
-| **SQM (Cake QoS)** | **`Desativado por padrão`** *(máxima vazão de 2.5 Gbps via aceleração PPE; ativável no LuCI)* |
+| **SQM (Cake QoS em MB/Mega)** | **`Ativo (800 MB Down / 400 MB Up)`** *(ou desative no LuCI para 2.5 Gbps via aceleração PPE)* |
 
 ---
 
@@ -82,7 +82,7 @@
      `cfg_restauracao_master_v2.cfg`
    * Clique no botão **`Restore`**.
 3. **Observe os LEDs durante o Boot:**
-   * 🔴 **LED Frontal Vermelho:** É **normal** no 1º boot! O chip Qualcomm calibra os rádios e cumpre **60 segundos obrigatórios de escuta de radar (DFS CAC)** na faixa de 5 GHz. Aguarde cerca de **2 minutos e 25 segundos**.
+   * 🔴 **LED Frontal Vermelho:** É **normal** durante a subida dos rádios! Com o padrão de **80 MHz (Canal 36 non-DFS)** na banda de 5 GHz, o boot completo leva cerca de **40 a 60 segundos** *(caso você altere o 5 GHz para **160 MHz**, o chip cumprirá 60 segundos obrigatórios de escuta de radar DFS CAC, levando ~2m25s)*.
    * 🔵 **LED Frontal Azul:** Assim que os 3 rádios subirem, a luz frontal comuta para **Azul**. O Wi-Fi está pronto para uso!
    * 🌐 **LED Superior Maior:** Só acende quando você conectar o cabo da internet na porta **WAN 2.5G**.
 4. **Entre na Nova Interface LuCI:**  

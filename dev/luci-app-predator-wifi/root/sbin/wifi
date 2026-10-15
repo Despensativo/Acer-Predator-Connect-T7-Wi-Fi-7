@@ -347,10 +347,22 @@ case "$1" in
 	status) ubus_wifi_cmd "status" "$2";;
 	reload)
 		[ -x /usr/sbin/predator-wifi-guard ] && [ -z "$PREDATOR_GUARD_INTERNAL" ] && /usr/sbin/predator-wifi-guard fix
-		wifi_reload "$2" "wifi_reload"
+		if [ ! -d /sys/module/qca_ol ] || [ ! -d /sys/class/net/wifi0 ]; then
+			[ -d /sys/module/bonding ] || insmod /lib/modules/*/bonding.ko 2>/dev/null || modprobe bonding 2>/dev/null || true
+			wifi_load "$2" "wifi_load"
+		else
+			wifi_reload "$2" "wifi_reload"
+		fi
 		[ -x /usr/sbin/predator-wifi-guard ] && [ -z "$PREDATOR_GUARD_INTERNAL" ] && ( /usr/sbin/predator-wifi-guard verify >/dev/null 2>&1 ) &
 		;;
-	reload_legacy) wifi_reload_legacy "$2" "" "$1" "$3";;
+	reload_legacy)
+		if [ ! -d /sys/module/qca_ol ] || [ ! -d /sys/class/net/wifi0 ]; then
+			[ -d /sys/module/bonding ] || insmod /lib/modules/*/bonding.ko 2>/dev/null || modprobe bonding 2>/dev/null || true
+			wifi_load "$2" "wifi_load"
+		else
+			wifi_reload_legacy "$2" "" "$1" "$3"
+		fi
+		;;
 	event_reload_legacy) event_wifi_updown "enable" "$2";;
 	load) wifi_load "$2" "wifi_load";;
 	unload) wifi_unload "$2";;
@@ -363,7 +375,12 @@ case "$1" in
 	''|up)
 		[ -x /usr/sbin/predator-wifi-guard ] && [ -z "$PREDATOR_GUARD_INTERNAL" ] && /usr/sbin/predator-wifi-guard fix
 		ubus call network reload
-		wifi_updown "enable" "$2" "$3" "wifi_up"
+		if [ ! -d /sys/module/qca_ol ] || [ ! -d /sys/class/net/wifi0 ]; then
+			[ -d /sys/module/bonding ] || insmod /lib/modules/*/bonding.ko 2>/dev/null || modprobe bonding 2>/dev/null || true
+			wifi_load "$2" "wifi_load"
+		else
+			wifi_updown "enable" "$2" "$3" "wifi_up"
+		fi
 		[ -x /usr/sbin/predator-wifi-guard ] && [ -z "$PREDATOR_GUARD_INTERNAL" ] && ( /usr/sbin/predator-wifi-guard verify >/dev/null 2>&1 ) &
 		;;
 	*) usage; exit 1;;

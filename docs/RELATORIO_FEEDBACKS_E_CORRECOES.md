@@ -4,7 +4,15 @@
 **Data:** 12 de Outubro de 2026  
 **Total de Áudios Analisados:** 36 áudios (Verificados por Hash SHA-256: 36 arquivos únicos, 0 duplicados binários)  
 **Arquivo de Backup Recebido:** `backup-Predator Connect T7-2026-10-12.tar.gz`  
-**Status do Documento:** [PRONTO PARA IMPLEMENTAÇÃO / ROADMAP v2.1]
+**Status do Documento:** `🔄 [HISTÓRICO DE AUDITORIA — RESOLVIDO E INTEGRADO AO MASTER V2]`
+
+> [!IMPORTANT]
+> **Nota de Ciclo de Vida (Outubro / 2026):** Este relatório preserva na íntegra a transcrição dos 36 áudios de testes de bancada de 12/10/2026 que originaram as melhorias da versão final do [`cfg_restauracao_master_v2.cfg`](../cfg_restauracao_master_v2.cfg). Todos os pontos levantados abaixo já foram **definitivamente solucionados e homologados** no pacote Master v2 atual (consulte [`PLAYBOOK.md`](../PLAYBOOK.md)):
+> - **"Red Light" ao Salvar e Aplicar Wi-Fi (`[AL-T7-001]` / `[AL-T7-008]`):** Resolvido via `dp_mlo_reo_rings_map=0` nos arquivos `.ini` da QCA e pelo orquestrador `/usr/sbin/predator-wifi-guard` (reload sequencial via `hostapd_cli` sem derrubar o PCIe DualMAC e com auto-rollback `wireless.lastgood`).
+> - **Criptografia 2.4 GHz / 5 GHz (`[AL-T7-002]`):** 2.4 GHz fixado em `psk2+ccmp` (máxima compatibilidade IoT/impressoras) e 5 GHz com patch nativo `sae-mixed` no `/lib/wifi/hostapd.sh` (`ieee80211w=1`, `sae_require_mfp=1` e `sae_password` sincronizado).
+> - **Proteção de 320 MHz / `11bea` no 6 GHz e Timeouts (`[AL-T7-007]`):** Validado na Central Wi-Fi (`predator_wifi.js`) e no guardião `/usr/sbin/predator-wifi-guard`.
+> - **Repetidor / WISP Nativo (`[AL-T7-006]`):** Implementado painel completo de **Wi-Fi como WAN (WISP)** (`wifi_wisp.js` + `/usr/sbin/wifi-wisp-tool`) com anti-loopback, auto-rollback de 15s e correção em 1 clique de colisão de sub-rede.
+> - **Permissões USB NAS (`[AL-T7-005]`):** `ksmbd` configurado com `create_mask '0777'`, `dir_mask '0777'` e gerenciador visual de discos (`ksmbd.js`).
 
 ---
 

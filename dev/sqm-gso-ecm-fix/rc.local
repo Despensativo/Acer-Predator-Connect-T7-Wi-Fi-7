@@ -1,14 +1,18 @@
 # /etc/rc.local - Inicializacao Automatica (Debloat Stock Max + Qualcomm High Performance)
 ubus call system watchdog '{"stop": false, "frequency": 5}' 2>/dev/null; sysctl -w kernel.panic=0 2>/dev/null; echo 0 > /proc/sys/kernel/panic 2>/dev/null
-echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null; echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null; echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all 2>/dev/null
 chmod -R 755 /www /usr/share/luci /usr/share/rpcd 2>/dev/null || true
 
-# Trava do firmware QCN9224 MLO IPC (Zero Crash)
+# Trava do firmware QCN9224 MLO IPC (Zero Crash) e sincronizacao de INIs Qualcomm (/ini <-> /cfg/default/ini)
 [ -f /ini/internal/QCN9224_i.ini ] && sed -i 's/dp_mlo_reo_rings_map=.*/dp_mlo_reo_rings_map=0/' /ini/internal/QCN9224_i.ini 2>/dev/null || true
-[ -f /cfg/default/ini/internal/QCN9224_i.ini ] && sed -i 's/dp_mlo_reo_rings_map=.*/dp_mlo_reo_rings_map=0/' /cfg/default/ini/internal/QCN9224_i.ini 2>/dev/null || true
+if [ -d /cfg/default/ini ]; then
+    cp -f /ini/global.ini /cfg/default/ini/global.ini 2>/dev/null || true
+    cp -f /ini/internal/QCN9224_i.ini /cfg/default/ini/internal/QCN9224_i.ini 2>/dev/null || true
+    cp -f /ini/internal/QCA5332_i.ini /cfg/default/ini/internal/QCA5332_i.ini 2>/dev/null || true
+fi
 
-# 1. Manter uhttpd (LuCI) sempre ativo na porta 80 e HTTPS 443
+# 1. Manter uhttpd (LuCI) e DoH (https-dns-proxy) sempre ativos
 /etc/init.d/uhttpd start 2>/dev/null
+/etc/init.d/https-dns-proxy start 2>/dev/null
 
 # 2. Desativar lighttpd e processos de telemetria da Acer se algo tentar subir
 killall -9 lighttpd mqttClient breakpad monitord 2>/dev/null
@@ -73,4 +77,24 @@ if [ -n "$(uci -q get wireless.wwan_sta.device)" ] && [ "$(uci -q get wireless.w
     ( sleep 15 && /sbin/ifup wwan 2>/dev/null ) &
 fi
 
+# 12. Garantir patch de WPA2/WPA3 Misto (sae-mixed) no hostapd.sh da Qualcomm
+if [ -f /lib/wifi/hostapd.sh ] && ! grep -q "sae-mixed" /lib/wifi/hostapd.sh; then
+    sed -i "s/\*psk\*)/\*psk\*|\*sae-mixed\*)/g" /lib/wifi/hostapd.sh 2>/dev/null || true
+    sed -i "s/\*psk\*);;/\*psk\*|\*sae-mixed\*);;/g" /lib/wifi/hostapd.sh 2>/dev/null || true
+fi
+
+# 13. Predator T7 SQM CAKE + Wi-Fi 7 6GHz Fix (GSO na eth0 + pausa SFE apenas se SQM ativo)
+ethtool -K eth0 gso on 2>/dev/null || true
+if [ "$(uci -q get sqm.wan.enabled)" = "1" ]; then
+    echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null || true
+    echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null || true
+    echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all 2>/dev/null || true
+fi
+
+# 14. Garantir servico Predator RF & Silicon QoS ativo (Gaming/MSCS/SCS/TxBF/RNR)
+chmod +x /etc/init.d/predator_rf 2>/dev/null || true
+/etc/init.d/predator_rf enable 2>/dev/null || true
+/etc/init.d/predator_rf start 2>/dev/null || true
+
 exit 0
+

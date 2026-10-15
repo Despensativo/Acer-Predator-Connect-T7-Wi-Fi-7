@@ -6,7 +6,7 @@
 ACTION="$1"
 
 get_local_identifiers() {
-    LOCAL_SSIDS=$(uci -q show wireless | grep -E '\.ssid=' | cut -d"'" -f2 | tr '\n' ' ')
+    LOCAL_SSIDS=$(uci -q show wireless | grep -E '\.ssid=' | cut -d"'" -f2 | tr '\n' '|')
     LOCAL_MACS=$(cat /sys/class/net/ath*/address 2>/dev/null | tr 'A-Z' 'a-z' | tr '\n' ' ')
 }
 
@@ -14,9 +14,15 @@ is_self_network() {
     _target_ssid="$1"
     _target_bssid=$(echo "$2" | tr 'A-Z' 'a-z')
     
+    _old_ifs="$IFS"
+    IFS='|'
     for ls in $LOCAL_SSIDS; do
-        [ -n "$ls" ] && [ "$_target_ssid" = "$ls" ] && return 0
+        if [ -n "$ls" ] && [ "$_target_ssid" = "$ls" ]; then
+            IFS="$_old_ifs"
+            return 0
+        fi
     done
+    IFS="$_old_ifs"
     for lm in $LOCAL_MACS; do
         [ -n "$lm" ] && [ -n "$_target_bssid" ] && [ "$_target_bssid" = "$lm" ] && return 0
     done
@@ -66,39 +72,118 @@ case "$ACTION" in
         get_local_identifiers
         TMP_SCAN="/tmp/wifi_wisp_scan.raw"
 
-        # Se solicitado scan ativo forçado ("force") ou se o arquivo temporário estiver vazio
-        if [ "$MODE" = "force" ] || [ ! -s "$TMP_SCAN" ]; then
-            rm -f "$TMP_SCAN"
+        # Se solicitado scan ativo ("force") ou se o cache ainda nao tiver nenhuma rede
+        if [ "$MODE" = "force" ] || ! grep -q "^BSS " "$TMP_SCAN" 2>/dev/null; then
+            TMP_NEW="/tmp/wifi_wisp_new.$$"
+            rm -f "$TMP_NEW" /tmp/wifi_wisp_ath0.$$ /tmp/wifi_wisp_ath1.$$ /tmp/wifi_wisp_ath2.$$
+
+            # 1. Escanear ath0 (PSOC_0 2.4G) e ath1 (PSOC_1 5G) em paralelo com ap-force
+            # (Nunca disparar ath1 e ath2 simultaneamente pois dividem o mesmo chip QCN9224 PSOC_1)
+            PID0=""
+            PID1=""
+            if [ -d "/sys/class/net/ath0" ]; then
+                iw dev ath0 scan ap-force >/tmp/wifi_wisp_ath0.$$ 2>/dev/null &
+                PID0=$!
+            fi
+            if [ -d "/sys/class/net/ath1" ]; then
+                iw dev ath1 scan ap-force >/tmp/wifi_wisp_ath1.$$ 2>/dev/null &
+                PID1=$!
+            fi
+
+            # Aguardar ate 6s por ath0 e ath1
+            w=0
+            while [ $w -lt 12 ]; do
+                alive=0
+                [ -n "$PID0" ] && kill -0 "$PID0" 2>/dev/null && alive=1
+                [ -n "$PID1" ] && kill -0 "$PID1" 2>/dev/null && alive=1
+                [ $alive -eq 0 ] && break
+                sleep 1
+                w=$((w + 2))
+            done
+            [ -n "$PID0" ] && kill -9 "$PID0" 2>/dev/null
+            [ -n "$PID1" ] && kill -9 "$PID1" 2>/dev/null
+
+            # 2. Escanear canais PSC de 6 GHz em ath2 (PSOC_1) apos ath1 concluir
+            if [ -d "/sys/class/net/ath2" ]; then
+                iw dev ath2 scan ap-force freq 5975 6055 6135 6215 6295 6375 6455 6535 6615 6695 6775 6855 6935 7015 >/tmp/wifi_wisp_ath2.$$ 2>/dev/null &
+                PID2=$!
+                w=0
+                while [ $w -lt 4 ]; do
+                    kill -0 "$PID2" 2>/dev/null || break
+                    sleep 1
+                    w=$((w + 1))
+                done
+                kill -9 "$PID2" 2>/dev/null
+            fi
+
+            cat /tmp/wifi_wisp_ath1.$$ /tmp/wifi_wisp_ath0.$$ /tmp/wifi_wisp_ath2.$$ >> "$TMP_NEW" 2>/dev/null
+            rm -f /tmp/wifi_wisp_ath0.$$ /tmp/wifi_wisp_ath1.$$ /tmp/wifi_wisp_ath2.$$
+
+            # Complementar com scan dump do kernel de todas as interfaces
             for dev in ath1 ath0 ath2; do
                 if [ -d "/sys/class/net/$dev" ]; then
-                    iw dev "$dev" scan >/dev/null 2>&1 &
+                    iw dev "$dev" scan dump 2>/dev/null >> "$TMP_NEW"
                 fi
             done
-            wait
+
+            if grep -q "^BSS " "$TMP_NEW" 2>/dev/null; then
+                mv -f "$TMP_NEW" "$TMP_SCAN"
+            else
+                rm -f "$TMP_NEW"
+            fi
         fi
 
-        rm -f "$TMP_SCAN"
-        # Varrer via iw dump nas interfaces de 5 GHz, 2.4 GHz e 6 GHz ativas
-        for dev in ath1 ath0 ath2; do
-            if [ -d "/sys/class/net/$dev" ]; then
-                iw dev "$dev" scan dump 2>/dev/null >> "$TMP_SCAN"
-            fi
-        done
-
-        # Parsing de saída do iw scan com suporte estrito a BusyBox awk e detecção de cada BSS
-        awk '
-        function flush_bss() {
+        # Parsing ultra-rápido da saída do iw scan em BusyBox awk (~20ms para 100+ redes)
+        awk -v local_ssids="$LOCAL_SSIDS" -v local_macs="$LOCAL_MACS" '
+        BEGIN {
+            in_bss = 0
+            n_ssids = split(local_ssids, arr_ssids, "|")
+            n_macs = split(tolower(local_macs), arr_macs, " ")
+        }
+        function is_self_net(s, b,   i) {
+            for (i = 1; i <= n_ssids; i++) {
+                if (arr_ssids[i] != "" && s == arr_ssids[i]) return "true"
+            }
+            for (i = 1; i <= n_macs; i++) {
+                if (arr_macs[i] != "" && b == arr_macs[i]) return "true"
+            }
+            return "false"
+        }
+        function flush_bss(   ch, band, pct, self_flag, clean_ssid) {
             if (in_bss && ssid != "") {
                 if (ssid ~ /^(\\x00)+$/ || ssid ~ /^[ \t]*$/) return
+                if ((bss in best_sig) && signal <= best_sig[bss]) return
                 if (is_sae) enc = "WPA3-SAE"
                 else if (is_rsn && is_wpa) enc = "WPA2/WPA3"
                 else if (is_rsn) enc = "WPA2-PSK"
                 else if (is_wpa) enc = "WPA-PSK"
                 else enc = "Aberta"
-                print bss "|" ssid "|" freq "|" signal "|" enc
+                if (freq > 5900 && gen == "Wi-Fi 6") gen = "Wi-Fi 6E"
+
+                if (freq == 2484) ch = 14
+                else if (freq >= 2412 && freq <= 2484) ch = int((freq - 2407) / 5)
+                else if (freq >= 5000 && freq <= 5900) ch = int((freq - 5000) / 5)
+                else if (freq >= 5925 && freq <= 7125) ch = int((freq - 5940) / 5)
+                else ch = 0
+
+                if (freq <= 2500) band = "2.4 GHz"
+                else if (freq <= 5900) band = "5 GHz"
+                else band = "6 GHz"
+
+                if (signal <= -100) pct = 0
+                else if (signal >= -50) pct = 100
+                else pct = 2 * (signal + 100)
+
+                clean_ssid = ssid
+                gsub(/\\/, "\\\\", clean_ssid)
+                gsub(/"/, "\\\"", clean_ssid)
+                gsub(/[\r\n\t]/, " ", clean_ssid)
+
+                self_flag = is_self_net(ssid, bss)
+                best_sig[bss] = signal
+                best_json[bss] = sprintf("{\"ssid\":\"%s\",\"bssid\":\"%s\",\"channel\":%d,\"band\":\"%s\",\"freq\":%d,\"bw\":\"%s\",\"gen\":\"%s\",\"signal\":%d,\"quality\":%d,\"encryption\":\"%s\",\"is_self\":%s}", clean_ssid, bss, ch, band, freq, bw, gen, signal, pct, enc, self_flag)
             }
         }
-        BEGIN { in_bss = 0 }
         /^BSS / {
             flush_bss()
             in_bss = 1
@@ -110,6 +195,8 @@ case "$ACTION" in
             is_wpa = 0
             is_rsn = 0
             is_sae = 0
+            bw = "20 MHz"
+            gen = "Wi-Fi 4"
         }
         /^[ \t]*freq:/ { freq = int($2) }
         /^[ \t]*signal:/ { signal = int($2) }
@@ -120,23 +207,37 @@ case "$ACTION" in
         /^[ \t]*WPA:/ { is_wpa = 1 }
         /^[ \t]*RSN:/ { is_rsn = 1 }
         /Authentication suites:.*SAE/ { is_sae = 1 }
-        END { flush_bss() }
-        ' "$TMP_SCAN" 2>/dev/null | sort -t"|" -k4,4nr | sort -u -t"|" -k1,1 | while IFS='|' read -r bss ssid freq sig enc; do
-            [ -z "$ssid" ] && continue
-            
-            # Sanitizar strings para JSON seguro
-            clean_ssid=$(echo "$ssid" | sed 's/\\/\\\\/g; s/"/\\"/g')
-            channel=$(freq_to_channel "$freq")
-            band=$(freq_to_band "$freq")
-            pct=$(dbm_to_percent "$sig")
-            
-            self=false
-            if is_self_network "$ssid" "$bss"; then
-                self=true
-            fi
-
-            echo "{\"ssid\":\"$clean_ssid\",\"bssid\":\"$bss\",\"channel\":$channel,\"band\":\"$band\",\"freq\":$freq,\"signal\":$sig,\"quality\":$pct,\"encryption\":\"$enc\",\"is_self\":$self}"
-        done | awk 'BEGIN{print "{\"networks\":["} {if(NR>1)printf ","; print $0} END{print "]}"}'
+        /secondary channel offset: (above|below)/ {
+            if (bw == "20 MHz") bw = "40 MHz"
+        }
+        /VHT capabilities:/ {
+            if (gen == "Wi-Fi 4") gen = "Wi-Fi 5"
+        }
+        /channel width: 1 \(80 MHz\)/ {
+            if (freq >= 5000 && (bw == "20 MHz" || bw == "40 MHz")) bw = "80 MHz"
+        }
+        /channel width: [23] \((160|80\+80)/ {
+            if (freq >= 5000) bw = "160 MHz"
+        }
+        /center freq segment 2: [1-9]/ {
+            if (freq >= 5000 && bw == "80 MHz") bw = "160 MHz"
+        }
+        /HE capabilities:|HE MAC Capabilities/ {
+            if (gen != "Wi-Fi 7") gen = "Wi-Fi 6"
+        }
+        /EHT capabilities:|EHT MAC Capabilities/ {
+            gen = "Wi-Fi 7"
+        }
+        /320 MHz/ {
+            if (in_bss && freq >= 5000) bw = "320 MHz"
+        }
+        END {
+            flush_bss()
+            for (b in best_json) {
+                printf "%d|%s\n", best_sig[b], best_json[b]
+            }
+        }
+        ' "$TMP_SCAN" 2>/dev/null | sort -t"|" -k1,1nr | cut -d"|" -f2- | awk 'BEGIN{print "{\"networks\":["} {if(NR>1)printf ","; print $0} END{print "]}"}'
         ;;
 
     status)
@@ -168,6 +269,9 @@ case "$ACTION" in
         [ -z "$DEVNAME" ] && DEVNAME="ath1"
 
         IW_LINK=$(iw dev "$DEVNAME" link 2>/dev/null)
+        IW_INFO=$(iw dev "$DEVNAME" info 2>/dev/null)
+        BW_LINK=$(echo "$IW_INFO" | grep -o 'width: [0-9]* MHz' | sed 's/width: //' | head -n1)
+        [ -z "$BW_LINK" ] && BW_LINK="40 MHz"
         REAL_BSSID=$(echo "$IW_LINK" | grep 'Connected to' | awk '{print $3}')
         [ -n "$REAL_BSSID" ] && BSSID="$REAL_BSSID"
         FREQ=$(echo "$IW_LINK" | grep 'freq:' | awk '{print $2}')
@@ -222,7 +326,7 @@ case "$ACTION" in
         CLEAN_SSID=$(echo "$SSID" | sed 's/\\/\\\\/g; s/"/\\"/g')
 
         if [ "$UP" = "true" ] && [ -n "$IPV4" ]; then
-            echo "{\"connected\":true,\"state\":\"connected\",\"ssid\":\"$CLEAN_SSID\",\"bssid\":\"$BSSID\",\"channel\":$CHANNEL,\"freq\":$FREQ,\"band\":\"$BAND\",\"ip\":\"$IPV4\",\"netmask\":\"$NETMASK\",\"gateway\":\"$GATEWAY\",\"dns\":\"$DNS_SERVERS\",\"uptime\":$UPTIME,\"signal\":\"$SIG dBm\",\"quality\":$PCT,\"tx_rate\":\"$TX_RATE\",\"rx_rate\":\"$RX_RATE\",\"rx_bytes\":\"$RX_BYTES\",\"tx_bytes\":\"$TX_BYTES\",\"ping\":\"$PING_LAT\",\"device\":\"$STA_IFACE\",\"sta_iface\":\"$DEVNAME\",\"internet_online\":$INTERNET_ONLINE,\"captive_portal\":$CAPTIVE_PORTAL,\"conflict_detected\":$CONFLICT,\"conflict_message\":\"$CONFLICT_MSG\",\"lan_ip\":\"$LAN_IP\"}"
+            echo "{\"connected\":true,\"state\":\"connected\",\"ssid\":\"$CLEAN_SSID\",\"bssid\":\"$BSSID\",\"channel\":$CHANNEL,\"freq\":$FREQ,\"bw\":\"$BW_LINK\",\"band\":\"$BAND\",\"ip\":\"$IPV4\",\"netmask\":\"$NETMASK\",\"gateway\":\"$GATEWAY\",\"dns\":\"$DNS_SERVERS\",\"uptime\":$UPTIME,\"signal\":\"$SIG dBm\",\"quality\":$PCT,\"tx_rate\":\"$TX_RATE\",\"rx_rate\":\"$RX_RATE\",\"rx_bytes\":\"$RX_BYTES\",\"tx_bytes\":\"$TX_BYTES\",\"ping\":\"$PING_LAT\",\"device\":\"$STA_IFACE\",\"sta_iface\":\"$DEVNAME\",\"internet_online\":$INTERNET_ONLINE,\"captive_portal\":$CAPTIVE_PORTAL,\"conflict_detected\":$CONFLICT,\"conflict_message\":\"$CONFLICT_MSG\",\"lan_ip\":\"$LAN_IP\"}"
         else
             echo "{\"connected\":false,\"state\":\"connecting\",\"ssid\":\"$CLEAN_SSID\",\"bssid\":\"$BSSID\",\"message\":\"Autenticando no rádio ou aguardando DHCP...\",\"device\":\"$STA_IFACE\"}"
         fi
@@ -366,6 +470,8 @@ case "$ACTION" in
             uci -q set wireless.wwan_sta.key="$KEY"
         fi
         uci -q set wireless.wwan_sta.disabled='0'
+        uci -q set wireless.wwan_sta.vap_diff_mode='1'
+        uci -q set wireless.${RADIO}_ap.vap_diff_mode='1'
 
         uci commit network
         uci commit wireless

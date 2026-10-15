@@ -1,0 +1,213 @@
+#!/bin/sh /etc/rc.common
+# Predator RF Hardware & Driver Optimizations Init Script
+START=99
+
+boot() {
+	start
+}
+
+start() {
+	(
+		local rf_lock="/var/run/predator_rf.lock"
+		if ! mkdir "$rf_lock" 2>/dev/null; then
+			exit 0
+		fi
+		trap 'rm -rf "$rf_lock"' EXIT INT TERM
+
+		# Aguardar qualquer execucao concorrente do /sbin/wifi em andamento no boot (ate 90s)
+		sleep 2
+		local w_wait=0
+		while pgrep -f "/sbin/wifi|qcawificfg80211" >/dev/null 2>&1 && [ $w_wait -lt 45 ]; do
+			sleep 2
+			w_wait=$((w_wait + 1))
+		done
+		sleep 2
+		while pgrep -f "/sbin/wifi|qcawificfg80211" >/dev/null 2>&1 && [ $w_wait -lt 45 ]; do
+			sleep 2
+			w_wait=$((w_wait + 1))
+		done
+
+		# 0. Garantir BDF 6 GHz Desbloqueada (sem aviso amarelo e com teto de 21 dBm)
+		if [ -f /lib/firmware/IPQ5332/WIFI_FW/qcn9224/bdwlan_default.b1015 ]; then
+			local cur_bdf=$(ls -l /lib/firmware/qcn9224/bdwlan.b1015 2>/dev/null | awk -F'/' '{print $NF}')
+			if [ "$cur_bdf" != "bdwlan_default.b1015" ]; then
+				ln -fs /lib/firmware/IPQ5332/WIFI_FW/qcn9224/bdwlan_default.b1015 /lib/firmware/qcn9224/bdwlan.b1015 2>/dev/null || true
+			fi
+		fi
+
+		# Garantir que os modulos QCA Wi-Fi 7 (bonding + qdf + umac + qca_ol + wifi_3_0) estejam carregados
+		if [ ! -d /sys/module/qca_ol ] || [ ! -d /sys/class/net/wifi0 ]; then
+			[ -d /sys/module/bonding ] || insmod /lib/modules/*/bonding.ko 2>/dev/null || modprobe bonding 2>/dev/null || true
+			/sbin/wifi load >/dev/null 2>&1 || true
+		fi
+
+		# Wait for wifi interfaces ath0, ath1, ath2 to be up (up to 30s)
+		local retry=0
+		while [ $retry -lt 15 ]; do
+			if [ -d /sys/class/net/ath2 ] && [ -d /sys/class/net/ath0 ]; then
+				break
+			fi
+			sleep 2
+			retry=$((retry + 1))
+		done
+
+		# Garante que as 3 instancias do hostapd estejam associadas ao daemon global sem conflito
+		for idx in 0 1 2; do
+			local vap="ath${idx}"
+			local wdev="wifi${idx}"
+			if [ -d "/sys/class/net/$vap" ] && [ -f "/var/run/hostapd-${vap}.conf" ]; then
+				if [ ! -S "/var/run/hostapd-${wdev}/${vap}" ] || iwconfig "$vap" 2>/dev/null | grep -q "Not-Associated"; then
+					if [ -S /var/run/hostapd/global ]; then
+						hostapd_cli -i global -p /var/run/hostapd raw REMOVE "$vap" >/dev/null 2>&1 || true
+						hostapd_cli -i global -p /var/run/hostapd raw ADD "bss_config=${vap}:/var/run/hostapd-${vap}.conf" >/dev/null 2>&1 || true
+					else
+						hostapd -B -P "/var/run/hostapd-${vap}.pid" "/var/run/hostapd-${vap}.conf" 2>/dev/null || true
+					fi
+				fi
+			fi
+		done
+
+		local gaming=$(uci -q get tripleband.tripleband.gaming_mode || echo "1")
+		local mscs_scs=$(uci -q get tripleband.tripleband.mscs_scs || echo "1")
+		local twt=$(uci -q get tripleband.tripleband.twt_enable || echo "1")
+		local cca=$(uci -q get tripleband.tripleband.cca_mitigation || echo "1")
+		local ani=$(uci -q get tripleband.tripleband.ani_enable || echo "1")
+		local rnr=$(uci -q get tripleband.tripleband.rnr_colocated || echo "1")
+		local rps=$(uci -q get tripleband.tripleband.rps_quadcore || echo "1")
+		local punct=$(uci -q get tripleband.tripleband.puncturing || echo "1")
+		local bf=$(uci -q get tripleband.tripleband.beamforming || echo "1")
+
+		# 1. Gaming Mode (Low Latency Mode c/ Retransmissao ACK preservada) & 2. ANI + Zero-Wait DFS / PSC
+		for w in wifi0 wifi1 wifi2; do
+			cfg80211tool "$w" low_latency_mode "$gaming" 2>/dev/null || true
+			cfg80211tool "$w" ani_enable "$ani" 2>/dev/null || true
+			[ "$ani" = "1" ] && cfg80211tool "$w" ani_ofdm_level 0x80 2>/dev/null || true
+		done
+		cfg80211tool wifi1 preCACEn 1 2>/dev/null || true
+		cfg80211tool wifi1 rCACEn 1 2>/dev/null || true
+		cfg80211tool wifi2 acs_6g_only_psc 1 2>/dev/null || true
+		for a in ath0 ath1 ath11 ath2; do
+			if [ -d "/sys/class/net/$a" ]; then
+				# Garante noackpolicy=0 para NUNCA descartar retries em fluxos de voz/video/jogos promovidos pelo MSCS/SCS
+				cfg80211tool "$a" noackpolicy 0 0 2>/dev/null || true
+				cfg80211tool "$a" noackpolicy 6 0 2>/dev/null || true
+			fi
+		done
+
+		# 1b. Classificador Wi-Fi 7 MSCS + SCS + HLOS TID Override & ECM CAKE Offload (Separado de wme_noack)
+		insmod qca-nss-mscs 2>/dev/null || true
+		insmod ecm-wifi-plugin 2>/dev/null || true
+		for a in ath0 ath1 ath11 ath2; do
+			if [ -d "/sys/class/net/$a" ]; then
+				cfg80211tool "$a" hlos_tidoverride "$mscs_scs" 2>/dev/null || true
+				cfg80211tool "$a" mscs "$mscs_scs" 2>/dev/null || true
+				cfg80211tool "$a" scs "$mscs_scs" 2>/dev/null || true
+			fi
+		done
+		echo "$mscs_scs" > /sys/kernel/debug/ecm/ecm_classifier_mscs/enabled 2>/dev/null || true
+		echo "$mscs_scs" > /sys/kernel/debug/ecm/ecm_classifier_mscs/scs_enabled 2>/dev/null || true
+		echo 5200 > /sys/kernel/debug/ecm/ecm_classifier_mscs/udp_ipsec_port 2>/dev/null || true
+		echo 1 > /sys/kernel/debug/ecm/ecm_classifier_emesh/enabled 2>/dev/null || true
+		echo "$mscs_scs" > /sys/kernel/debug/ecm/ecm_classifier_emesh/latency_config_enabled 2>/dev/null || true
+		echo 1 > /sys/kernel/debug/ecm/ecm_classifier_emesh/cake_enabled 2>/dev/null || true
+		echo 5200 > /sys/kernel/debug/ecm/ecm_classifier_emesh/udp_ipsec_port 2>/dev/null || true
+		echo 1 > /sys/kernel/debug/ecm/ecm_classifier_dscp/enabled 2>/dev/null || true
+		[ -e /proc/sys/ppe/bridge_mgr/fdb_disabled ] && echo 0 > /proc/sys/ppe/bridge_mgr/fdb_disabled 2>/dev/null || true
+		for df in /proc/sys/net/ecm/ecm_db/defunct_all /sys/kernel/debug/ecm/ecm_db/defunct_all; do
+			[ -w "$df" ] && echo 1 > "$df" 2>/dev/null || true
+		done
+		sysctl -w net.ipv4.tcp_thin_linear_timeouts=1 net.ipv4.tcp_mtu_probing=1 net.ipv4.tcp_base_mss=1024 net.ipv4.tcp_notsent_lowat=131072 >/dev/null 2>&1 || true
+		if [ "$mscs_scs" = "1" ]; then
+			pgrep -x "scs_tool" >/dev/null 2>&1 || /usr/sbin/scs_tool >/dev/null 2>&1 &
+		else
+			killall scs_tool 2>/dev/null || true
+		fi
+
+		# 1c. Target Wake Time (802.11ax/be TWT & Restricted TWT Responder)
+		for a in ath0 ath1 ath2; do
+			[ -d "/sys/class/net/$a" ] && cfg80211tool "$a" twt_responder "$twt" 2>/dev/null || true
+		done
+
+		# 1d. Filtro Anti-Vizinhos CCA Threshold (High-Density OBSS Mitigation)
+		wifitool ath0 setUnitTestCmd 67 3 16 0 "$cca" 2>/dev/null || true
+		wifitool ath1 setUnitTestCmd 67 3 16 1 "$cca" 2>/dev/null || true
+
+		# 3. RNR 6 GHz Co-located (Anuncia 6G nos beacons 2.4G e 5G)
+		if [ "$rnr" = "1" ]; then
+			cfg80211tool wifi0 rnr_6ghz_colocated 1 7 2>/dev/null || true
+			cfg80211tool wifi1 rnr_6ghz_colocated 1 7 2>/dev/null || true
+			cfg80211tool wifi2 rnr_member_ess_colocated_en 1 2>/dev/null || true
+			cfg80211tool ath2 enable_fils 1 20 2>/dev/null || true
+		else
+			cfg80211tool wifi0 rnr_6ghz_colocated 0 7 2>/dev/null || true
+			cfg80211tool wifi1 rnr_6ghz_colocated 0 7 2>/dev/null || true
+			cfg80211tool wifi2 rnr_member_ess_colocated_en 0 2>/dev/null || true
+			cfg80211tool ath2 enable_fils 0 20 2>/dev/null || true
+		fi
+
+		# 4. RPS Quad-Core & Balanceamento de IRQs PCIe QCN9224 (ap-mi01.6)
+		local mask="f"
+		[ "$rps" = "0" ] && mask="1"
+		for q in /sys/class/net/*/queues/rx-*/rps_cpus; do
+			[ -f "$q" ] && echo "$mask" > "$q" 2>/dev/null || true
+		done
+		for pair in "pci1_wlan_ce_1:2" "pci1_wlan_ce_2:4" "pci1_wlan_grp_dp_8:8" "pci1_wlan_grp_dp_9:2" "pci1_wlan_grp_dp_11:4"; do
+			local iname="${pair%:*}" icpu="${pair#*:}" inum
+			inum=$(grep -w -m1 "$iname" /proc/interrupts 2>/dev/null | cut -d: -f1 | tr -d ' ')
+			[ -n "$inum" ] && [ -w "/proc/irq/$inum/smp_affinity" ] && echo "$icpu" > "/proc/irq/$inum/smp_affinity" 2>/dev/null || true
+		done
+
+		# 5. Preamble Puncturing
+		cfg80211tool wifi1 dfs_puncture_en "$punct" 2>/dev/null || true
+		cfg80211tool wifi1 puncture_strict 0 2>/dev/null || true
+		cfg80211tool wifi2 puncture_strict 0 2>/dev/null || true
+
+		# 6. Tx Beamforming Sounding & EHT Wi-Fi 7 Beamforming
+		local snd=100
+		[ "$bf" = "0" ] && snd=0
+		for w in wifi0 wifi1 wifi2; do
+			cfg80211tool "$w" txbf_snd_int "$snd" 2>/dev/null || true
+		done
+		for a in ath0 ath1 ath2; do
+			if [ -d "/sys/class/net/$a" ]; then
+				cfg80211tool "$a" he_subfer "$bf" 2>/dev/null || true
+				cfg80211tool "$a" he_subfee "$bf" 2>/dev/null || true
+				cfg80211tool "$a" he_mubfer "$bf" 2>/dev/null || true
+				cfg80211tool "$a" set_eht_su_bfmr "$bf" 2>/dev/null || true
+				cfg80211tool "$a" set_eht_su_bfme "$bf" 2>/dev/null || true
+				cfg80211tool "$a" set_eht_mu_bfmr "$bf" 2>/dev/null || true
+			fi
+		done
+
+		# 7. WDS 4-Address Frame & Multicast-to-Unicast (IGMP/MLD Enhancement mcastenhance=2)
+		for a in ath0 ath1 ath2; do
+			if [ -d "/sys/class/net/$a" ]; then
+				cfg80211tool "$a" wds 1 2>/dev/null || true
+				cfg80211tool "$a" mcastenhance 2 2>/dev/null || true
+			fi
+		done
+
+		# 7b. 2.4 GHz 40 MHz Lock (disablecoext=1) vs Auto 20/40 MHz (disablecoext=0)
+		local h0_mode=$(uci -q get wireless.wifi0.htmode || echo "HT40")
+		local coex0=$(uci -q get wireless.wifi0_ap.disablecoext || uci -q get wireless.wifi0.chan_coex_disable || echo "0")
+		if [ "$h0_mode" = "HT20" ]; then
+			cfg80211tool wifi0 chan_coex_disable 0 2>/dev/null || true
+			cfg80211tool ath0 disablecoext 0 2>/dev/null || true
+			cfg80211tool ath0 chwidth 0 2>/dev/null || true
+		elif [ "$coex0" = "1" ]; then
+			cfg80211tool wifi0 chan_coex_disable 1 2>/dev/null || true
+			cfg80211tool ath0 disablecoext 1 2>/dev/null || true
+			cfg80211tool ath0 chwidth 1 2>/dev/null || true
+		else
+			cfg80211tool wifi0 chan_coex_disable 0 2>/dev/null || true
+			cfg80211tool ath0 disablecoext 0 2>/dev/null || true
+		fi
+
+		# 8. Garantir mld0 na bridge br-lan e UP quando MLO estiver ativo (evita falha de DHCP 169.254.x.x)
+		if [ "$(uci -q get tripleband.tripleband.mlo_enable)" = "1" ] || [ -n "$(uci -q get wireless.mld0)" ]; then
+			[ -d /sys/class/net/mld0 ] && { brctl addif br-lan mld0 2>/dev/null; ifconfig mld0 up 2>/dev/null; }
+		fi
+
+		logger -t predator_rf "Qualcomm RF & Silicon QoS applied (Gaming:$gaming MSCS/SCS:$mscs_scs TWT:$twt CCA:$cca ANI:$ani RNR:$rnr RPS:$mask Punct:$punct BF:$snd PreCAC:1 McastEnh:2)"
+	) &
+}

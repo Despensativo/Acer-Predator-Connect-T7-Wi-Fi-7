@@ -44,7 +44,7 @@ Para concluir o downgrade com 100% de sucesso e inicializar o sistema da v24, a 
 flowchart TD
     A["Estado Inicial: U-Boot Web Recovery (192.168.1.1)"] --> B["Etapa 1: Gravar Imagem v24 Oficial"]
     B --> C["U-Boot regride para 25.01.17<br>(Roteador reinicia no Recovery)"]
-    C --> D["Etapa 2: Forçar BootConfig para Slot 1<br>(chaveador_slot1_acer_v2.itb)"]
+    C --> D["Etapa 2: Forçar BootConfig para Slot 1<br>(dev/chaveador_slot1_acer_oem.bin)"]
     D --> E["BOOTCONFIG alinhado com Slot 1<br>fsbootargs limpo e U-Boot 25.01.17 pronto"]
     E --> F["Etapa 3: Regravar a Imagem v24 Oficial"]
     F --> G["🎉 SUCESSO TOTAL!<br>Roteador inicializa perfeitamente no IP 192.168.76.1"]
@@ -56,9 +56,9 @@ flowchart TD
 
 1. Conecte o computador via cabo de rede na porta **LAN 1** do roteador.
 2. Configure o IP da placa de rede para `192.168.1.50` (máscara `255.255.255.0`).
-3. Com o roteador no modo Web Recovery (`http://192.168.1.1/`), envie o firmware oficial da v24 com taxa controlada (~1.5 MB/s) para evitar estouro de buffer do `uIP/0.9`:
+3. Com o roteador no modo Web Recovery (`http://192.168.1.1/`), envie o firmware oficial da v24 (`recovery_stock/nand-4k-ipq5332-single_101000024.img`) pelo navegador em modo anônimo ou via `curl` com taxa controlada (~1.5 MB/s) para evitar estouro de buffer do `uIP/0.9`:
    ```sh
-   python3 Scripts_Automacao/curl_upload_monitor.py "_FORA DO GitHub/02_FIRMWARES_E_DUMPS_PESADOS/MTD_Full_Dumps/Acer_Predator_Connect_T7/nand-4k-ipq5332-single_101000024.img"
+   curl --limit-rate 1500k -F "firmware=@recovery_stock/nand-4k-ipq5332-single_101000024.img" http://192.168.1.1/
    ```
 4. **Comportamento Esperado:**
    * A transmissão conclui e o U-Boot responde `UPDATE IN PROGRESS`.
@@ -79,9 +79,10 @@ Com o bootloader rebaixado para `25.01.17`, force a chave seletora física da NA
    ```text
    dev/chaveador_slot1_acer_oem.bin
    ```
+   *(ou o pacote FIT V2 `dev/Alternador_Boot_T7_V2/selecionar_slot1_V2_CANDIDATO.bin`)*.
 2. Envie pela interface web de emergência (`http://192.168.1.1/`).
 3. **O que este arquivo executa internamente na flash:**  
-   Ele contém exatamente os 512 KB da partição `BOOTCONFIG` (MTD 3) com o ponteiro forçado para o Slot 1 da Acer com os parâmetros padrão (`fsbootargs` limpo e `bootcmd=bootipq`).
+   Ele grava os 512 KB da partição `BOOTCONFIG` (MTD 3) e `BOOTCONFIG1` (MTD 4) com o ponteiro forçado para o Slot 1 da Acer (`fsbootargs` limpo e `bootcmd=bootipq`).
 4. **Resultado desta etapa:**  
    O `BOOTCONFIG` (MTD 3) e `BOOTCONFIG1` (MTD 4) são forçados a reconhecer o Slot 1 da Acer.
 
@@ -101,10 +102,7 @@ Com o U-Boot `25.01.17` e o `BOOTCONFIG` já apontando sincronizados para o Slot
    * Os LEDs frontais do Predator Connect T7 inicializam o ciclo de autoteste.
    * O LED do escudo central muda para Azul (inicialização de rádio) ou Vermelho fixo (sistema carregado, aguardando cabo WAN).
    * O switch Ethernet 2.5G negocia o link.
-   * O roteador responde com sucesso imediato nos IPs:
-     * **`http://192.168.76.1/`** (ou `http://192.168.73.2/`)
-     * **Telnet na porta 23**
-     * **SSH na porta 22**
+   * O roteador responde com sucesso imediato no IP oficial **`http://192.168.76.1/`**.
 
 ---
 
@@ -113,7 +111,8 @@ Com o U-Boot `25.01.17` e o `BOOTCONFIG` já apontando sincronizados para o Slot
 | Componente | Caminho do Arquivo | Função no Processo |
 | :--- | :--- | :--- |
 | **ROM Oficial v24** | `recovery_stock/nand-4k-ipq5332-single_101000024.img` | Imagem oficial da Acer com U-Boot 25.01.17 e RootFS v24 |
-| **Chaveador Slot 1** | `dev/chaveador_slot1_acer_oem.bin` | Arquivo binário de BootConfig que força inicialização no Slot 1 |
+| **Chaveador Slot 1 (V1)** | `dev/chaveador_slot1_acer_oem.bin` | Binário de BootConfig (512 KB) que força inicialização no Slot 1 |
+| **Alternador Slot 1 (V2)** | `dev/Alternador_Boot_T7_V2/selecionar_slot1_V2_CANDIDATO.bin` | Imagem FIT U-Boot (2.6 MB) com verificação SHA e reset automático |
 | **ROM Oficial v27** | `recovery_stock/nand-4k-ipq5332-single_101000027.img` | Imagem oficial da Acer v27 mais recente |
 
 ---
@@ -123,6 +122,6 @@ Com o U-Boot `25.01.17` e o `BOOTCONFIG` já apontando sincronizados para o Slot
 1. **O U-Boot da Qualcomm tem versões atreladas aos lotes de firmware:**  
    Não basta gravar o kernel e o RootFS de uma versão diferente. O bootloader `APPSBL` precisa ser trocado na primeira passada, mas ele só consegue bootar após o `BOOTCONFIG` ser realinhado.
 2. **A importância de forçar o BootConfig:**  
-   A gravação do `chaveador_slot1_acer_v2.itb` entre os dois flashes é o elo que destrava o U-Boot para que a regravação da v24 sincronize a tabela de partições e os ponteiros de kernel.
+   A gravação do `dev/chaveador_slot1_acer_oem.bin` (ou `selecionar_slot1_V2_CANDIDATO.bin`) entre os dois flashes é o elo que destrava o U-Boot para que a regravação da v24 sincronize a tabela de partições e os ponteiros de kernel.
 3. **Segurança de Bancada:**  
    Nenhum arquivo ou procedimento coloca em risco o bootloader em hardware da Qualcomm, pois o chip IPQ5332 sempre preserva a ROM de inicialização primária (PBL/SBL) e o modo de recuperação uIP na porta 80.

@@ -55,12 +55,23 @@ do_fix() {
 		fi
 	fi
 
-	# --- Radio 5 GHz: no maximo 160 MHz; 160 MHz so nos blocos 36-64 e 100-128
+	# --- Radio 5 GHz: ate 240 MHz (HT240 = 11AEHT320 Punctured 0xf000 no bloco 100-144); 160 MHz nos blocos 36-64 e 100-128
 	h=$(uci -q get wireless.wifi1.htmode)
 	c=$(uci -q get wireless.wifi1.channel)
 	if [ "$h" = "HT320" ]; then
-		uci set wireless.wifi1.htmode='HT160'; h="HT160"
-		note_fix "5 GHz nao suporta 320 MHz -> 160 MHz"
+		uci set wireless.wifi1.htmode='HT240'; h="HT240"
+		note_fix "5 GHz 320 MHz ajustado para 240 MHz (HT240 Punctured)"
+	fi
+	if [ "$h" = "HT240" ]; then
+		case "$c" in 100|104|108|112|116|120|124|128|132|136|140|144) ;; *)
+			uci set wireless.wifi1.channel='100'; c=100
+			note_fix "5 GHz 240 MHz exige bloco UNII-2e -> canal 100" ;;
+		esac
+		[ "$(uci -q get wireless.wifi1.ccfs)" = "130" ] || { uci set wireless.wifi1.ccfs='130'; CHANGED=1; }
+		[ "$(uci -q get wireless.wifi1.puncture_bitmap)" = "61440" ] || { uci set wireless.wifi1.puncture_bitmap='61440'; CHANGED=1; }
+		[ "$(uci -q get wireless.wifi1.dfs_punctureEn)" = "1" ] || { uci set wireless.wifi1.dfs_punctureEn='1'; CHANGED=1; }
+		[ "$(uci -q get wireless.wifi1.puncture_strict)" = "0" ] || { uci set wireless.wifi1.puncture_strict='0'; CHANGED=1; }
+		[ "$(uci -q get wireless.wifi1_ap.cactimeout)" = "1" ] || { uci set wireless.wifi1_ap.cactimeout='1'; CHANGED=1; }
 	fi
 	if [ -n "$c" ] && [ "$c" != "auto" ]; then
 		case " 36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165 " in
@@ -188,6 +199,40 @@ do_fix() {
 	return 0
 }
 
+# ---------------------------------------------------------------- steer (MLO-aware 802.11v BSS Transition)
+do_steer() {
+	[ -S /var/run/hostapd-wifi0/ath0 ] && [ -S /var/run/hostapd-wifi1/ath1 ] || return 0
+	local ssid0 ssid1 st1 bssid1 chan1 width1 op_class mac sta_info rssi classes capab
+	ssid0=$(hostapd_cli -p /var/run/hostapd-wifi0 -i ath0 status 2>/dev/null | sed -n 's/^ssid\[0\]=//p')
+	st1=$(hostapd_cli -p /var/run/hostapd-wifi1 -i ath1 status 2>/dev/null)
+	[ "$(printf '%s\n' "$st1" | sed -n 's/^state=//p')" = "ENABLED" ] || return 0
+	ssid1=$(printf '%s\n' "$st1" | sed -n 's/^ssid\[0\]=//p')
+	[ -n "$ssid0" ] && [ "$ssid0" = "$ssid1" ] || return 0
+	bssid1=$(printf '%s\n' "$st1" | sed -n 's/^bssid\[0\]=//p')
+	chan1=$(printf '%s\n' "$st1" | sed -n 's/^channel=//p')
+	width1=$(printf '%s\n' "$st1" | sed -n 's/^he_oper_chwidth=//p')
+	case "$width1" in 2) op_class=129 ;; 1) op_class=128 ;; *) op_class=128 ;; esac
+	mkdir -p /tmp/predator-steer
+	for mac in $(hostapd_cli -p /var/run/hostapd-wifi0 -i ath0 all_sta 2>/dev/null | grep -E '^[0-9a-fA-F:]{17}$'); do
+		sta_info=$(hostapd_cli -p /var/run/hostapd-wifi0 -i ath0 sta "$mac" 2>/dev/null)
+		printf '%s\n' "$sta_info" | grep -q '^MLO=yes$' && continue
+		hostapd_cli -p /var/run/hostapd-wifi1 -i ath1 sta "$mac" 2>/dev/null | grep -q "^$mac$" && continue
+		[ -S /var/run/hostapd-wifi2/ath2 ] && hostapd_cli -p /var/run/hostapd-wifi2 -i ath2 sta "$mac" 2>/dev/null | grep -q "^$mac$" && continue
+		rssi=$(printf '%s\n' "$sta_info" | sed -n 's/^max_rssi=//p;s/^mgmt_signal=//p;s/^last_ack_signal=//p' | grep -E '^-[0-9]+' | head -n1)
+		[ -n "$rssi" ] && [ "$rssi" -ge -65 ] 2>/dev/null || continue
+		capab=$(printf '%s\n' "$sta_info" | sed -n 's/^ext_capab=//p' | head -n1)
+		printf '%s\n' "$capab" | awk 'length($0)>=6 && substr(tolower($0),6,1) ~ /[89a-f]/ {exit 0} {exit 1}' || continue
+		classes=$(printf '%s\n' "$sta_info" | sed -n 's/^supp_op_classes=//p' | head -n1)
+		if [ -n "$classes" ]; then
+			printf '%s\n' "$classes" | awk '{for(i=1;i+1<=length($0);i+=2){b=tolower(substr($0,i,2));if(b~/^(73|74|75|76|77|78|79|7a|7b|7c|7d|7e|7f|80|81|82)$/)exit 0}exit 1}' || continue
+		else
+			printf '%s\n' "$sta_info" | grep -q '^VHT_capability=yes$' || continue
+		fi
+		hostapd_cli -p /var/run/hostapd-wifi0 -i ath0 bss_tm_req "$mac" pref=1 abridged=1 valid_int=10 "neighbor=$bssid1,0x00000000,$op_class,$chan1,9,0301ff" >/dev/null 2>&1 && \
+			log "802.11v Band-Steer: sugerido 5 GHz ($bssid1 ch $chan1) para $mac (RSSI ${rssi} dBm, sem desconexao forcada)"
+	done
+}
+
 # ---------------------------------------------------------------- health
 do_health() {
 	[ -S /var/run/hostapd/global ] || { echo "processo global do hostapd ausente"; return 0; }
@@ -305,8 +350,9 @@ case "$1" in
 	fix) do_fix ;;
 	health) do_health ;;
 	verify) do_verify ;;
+	steer) do_steer ;;
 	status) do_status ;;
 	ack) rm -f "$RBFILE" "$FIXLOG" ;;
-	*) echo "uso: $0 {fix|verify|health|status|ack}"; exit 1 ;;
+	*) echo "uso: $0 {fix|verify|health|steer|status|ack}"; exit 1 ;;
 esac
 exit 0

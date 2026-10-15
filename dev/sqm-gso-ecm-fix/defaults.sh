@@ -1,8 +1,10 @@
 # You need to jiggle these parameters. Note limits are tuned towards a <10Mbit uplink <60Mbup down
 
 [ -z "$SCRIPT" ] && SCRIPT=
-[ -z "$UPLINK" ] && UPLINK=2302
-[ -z "$DOWNLINK" ] && DOWNLINK=14698
+[ -z "$UPLINK" ] && UPLINK=400000
+[ -z "$DOWNLINK" ] && DOWNLINK=800000
+[ -n "$DOWNLINK" ] && [ "$DOWNLINK" -gt 0 ] 2>/dev/null && [ "$DOWNLINK" -le 10000 ] 2>/dev/null && DOWNLINK=$((DOWNLINK * 1000))
+[ -n "$UPLINK" ] && [ "$UPLINK" -gt 0 ] 2>/dev/null && [ "$UPLINK" -le 10000 ] 2>/dev/null && UPLINK=$((UPLINK * 1000))
 [ -z "$IFACE" ] && IFACE=eth0
 [ -z "$QDISC" ] && QDISC=fq_codel
 [ -z "$LLAM" ] && LLAM="default"
@@ -102,6 +104,11 @@ ALL_MODULES="act_ipt sch_$QDISC sch_ingress act_mirred cls_fw cls_flow cls_u32 s
 
 # Predator T7 SQM Fix: Prevent CAKE split-gso PPPoE drop & ECM SFE 6GHz freeze/bypass
 ethtool -K $IFACE gso on 2>/dev/null || true
-echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null || true
-echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null || true
-echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all 2>/dev/null || true
+if [ "$(uci -q get sqm.wan.enabled)" = "1" ]; then
+    echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null || true
+    echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null || true
+    echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all 2>/dev/null || true
+else
+    echo 0 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null || true
+    echo 0 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null || true
+fi

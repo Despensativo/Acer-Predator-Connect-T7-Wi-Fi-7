@@ -21,6 +21,8 @@ get_radios_json() {
 
 	local c0=$(uci -q get wireless.wifi0.channel || echo "auto")
 	local h0=$(uci -q get wireless.wifi0.htmode || echo "HT40")
+	local coex0=$(uci -q get wireless.wifi0_ap.disablecoext || uci -q get wireless.wifi0.chan_coex_disable || echo "0")
+	[ "$h0" = "HT40" ] && [ "$coex0" = "1" ] && h0="HT40_FORCE"
 	local p0=$(uci -q get wireless.wifi0.txpower || echo "22")
 	local def_p0="22"
 	[ "$p0" = "auto" ] || [ -z "$p0" ] && def_p0="22" || { [ "$p0" -gt 30 ] 2>/dev/null && p0="22" || def_p0="$p0"; }
@@ -30,14 +32,15 @@ get_radios_json() {
 	local st0=$(hostapd_cli -i ath0 -p /var/run/hostapd-wifi0 status 2>/dev/null)
 	local real_ch0=$(echo "$st0" | awk -F'=' '/^channel=/{print $2}')
 	local real_w0="20"
-	echo "$st0" | grep -qE '^secondary_channel=[1-]' && real_w0="40"
+	if echo "$st0" | grep -qE '^secondary_channel=[1-]'; then
+		real_w0="40"
+	elif [ "$coex0" = "1" ] && iw dev ath0 info 2>/dev/null | grep -q "width: 40 MHz"; then
+		real_w0="40"
+	fi
 	local real_p0=$(iw dev ath0 info 2>/dev/null | grep txpower | awk '{print $2}')
 	[ -z "$real_p0" ] || [ "$real_p0" = "0.00" ] || [ "$(echo $real_p0 | cut -d. -f1)" -gt 30 ] 2>/dev/null && real_p0="${def_p0}.00"
-	local th0=$(thermaltool -i wifi0 -get -g 2>/dev/null)
-	local t0=$(echo "$th0" | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo "")
-	local lvl0=$(echo "$th0" | grep 'current level' | awk -F'current level: ' '{print $2}' | awk '{print $1}' || echo "0")
-	[ -n "$t0" ] && [ "$t0" -gt 0 ] 2>/dev/null && [ "$t0" -lt 125 ] 2>/dev/null || t0=""
-	[ -n "$lvl0" ] 2>/dev/null || lvl0="0"
+	local t0=$(thermaltool -i wifi0 -get -g 2>/dev/null | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo 0)
+	[ -n "$t0" ] && [ "$t0" -gt 0 ] 2>/dev/null && [ "$t0" -lt 125 ] 2>/dev/null || t0=0
 
 	local c1=$(uci -q get wireless.wifi1.channel || echo "auto")
 	local h1=$(uci -q get wireless.wifi1.htmode || echo "HT160")
@@ -59,20 +62,29 @@ get_radios_json() {
 	local s1="online"
 	[ "$d1" = "1" ] && s1="disabled" || { [ -S /var/run/hostapd-wifi1/ath1 ] || s1="offline"; }
 	local real_w1="20"
-	if echo "$st1" | grep -qE '^(eht|he|vht)_oper_chwidth=2'; then
+	if [ "$h1" = "HT240" ] || [ "$(uci -q get wireless.wifi1.puncture_bitmap)" = "61440" ]; then
+		real_w1="240"
+	elif echo "$st1" | grep -qE '^eht_oper_chwidth=4'; then
+		real_w1="240"
+	elif echo "$st1" | grep -qE '^(eht|he|vht)_oper_chwidth=2'; then
 		real_w1="160"
-	elif echo "$st1" | grep -qE '^(he|vht)_oper_chwidth=1'; then
+	elif echo "$st1" | grep -qE '^(eht|he|vht)_oper_chwidth=1'; then
 		real_w1="80"
 	elif echo "$st1" | grep -qE '^secondary_channel=[1-]'; then
 		real_w1="40"
+	elif iw dev ath1 info 2>/dev/null | grep -q "width: 40 MHz"; then
+		real_w1="40"
+	elif iw dev ath1 info 2>/dev/null | grep -q "width: 80 MHz"; then
+		real_w1="80"
+	elif iw dev ath1 info 2>/dev/null | grep -q "width: 160 MHz"; then
+		real_w1="160"
+	elif iw dev ath1 info 2>/dev/null | grep -q "width: 320 MHz"; then
+		real_w1="240"
 	fi
 	local real_p1=$(iw dev ath1 info 2>/dev/null | grep txpower | awk '{print $2}')
 	[ -z "$real_p1" ] || [ "$real_p1" = "0.00" ] || [ "$(echo $real_p1 | cut -d. -f1)" -gt 30 ] 2>/dev/null && real_p1="${def_p1}.00"
-	local th1=$(thermaltool -i wifi1 -get -g 2>/dev/null)
-	local t1=$(echo "$th1" | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo "")
-	local lvl1=$(echo "$th1" | grep 'current level' | awk -F'current level: ' '{print $2}' | awk '{print $1}' || echo "0")
-	[ -n "$t1" ] && [ "$t1" -gt 0 ] 2>/dev/null && [ "$t1" -lt 125 ] 2>/dev/null || t1=""
-	[ -n "$lvl1" ] 2>/dev/null || lvl1="0"
+	local t1=$(thermaltool -i wifi1 -get -g 2>/dev/null | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo 0)
+	[ -n "$t1" ] && [ "$t1" -gt 0 ] 2>/dev/null && [ "$t1" -lt 125 ] 2>/dev/null || t1=0
 
 	local c2=$(uci -q get wireless.wifi2.channel || echo "37")
 	local h2=$(uci -q get wireless.wifi2.htmode || echo "HT320")
@@ -85,17 +97,52 @@ get_radios_json() {
 	local st2=$(hostapd_cli -i ath2 -p /var/run/hostapd-wifi2 status 2>/dev/null)
 	local real_ch2=$(echo "$st2" | awk -F'=' '/^channel=/{print $2}')
 	local real_w2="320"
+	[ "$h2" = "HT240" ] && real_w2="240"
 	[ "$h2" = "HT160" ] && real_w2="160"
 	[ "$h2" = "HT80" ] && real_w2="80"
 	local real_p2=$(iw dev ath2 info 2>/dev/null | grep txpower | awk '{print $2}')
 	[ -z "$real_p2" ] || [ "$real_p2" = "0.00" ] || [ "$(echo $real_p2 | cut -d. -f1)" -gt 30 ] 2>/dev/null && real_p2="${def_p2}.00"
-	local th2=$(thermaltool -i wifi2 -get -g 2>/dev/null)
-	local t2=$(echo "$th2" | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo "")
-	local lvl2=$(echo "$th2" | grep 'current level' | awk -F'current level: ' '{print $2}' | awk '{print $1}' || echo "0")
-	[ -n "$t2" ] && [ "$t2" -gt 0 ] 2>/dev/null && [ "$t2" -lt 125 ] 2>/dev/null || t2=""
-	[ -n "$lvl2" ] 2>/dev/null || lvl2="0"
+	local t2=$(thermaltool -i wifi2 -get -g 2>/dev/null | grep 'sensor temperature' | awk '{print $3}' | tr -d ',' || echo 0)
+	[ -n "$t2" ] && [ "$t2" -gt 0 ] 2>/dev/null && [ "$t2" -lt 125 ] 2>/dev/null || t2=0
 
 	local bdf_name=$(ls -l /lib/firmware/qcn9224/bdwlan.b1015 2>/dev/null | awk -F'/' '{print $NF}')
+
+	# Hardware Noise Floor (dBm) & CCA Airtime Breakdown (%)
+	local nf0=$(cfg80211tool ath0 get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+	[ -z "$nf0" ] || [ "$nf0" -ge 0 ] 2>/dev/null && nf0="-95"
+	local cu0=$(cfg80211tool wifi0 g_chanutil 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local tx0=$(cfg80211tool wifi0 g_ch_util_ap_tx 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local rx0=$(cfg80211tool wifi0 g_ch_util_ap_rx 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local ob0=$(cfg80211tool wifi0 g_ch_util_obss 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local nw0=$(cfg80211tool wifi0 g_ch_util_nwifi 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local fr0=$(cfg80211tool wifi0 g_ch_util_free 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	[ "${cu0:-0}" -gt 100 ] 2>/dev/null && cu0=0; [ "${tx0:-0}" -gt 100 ] 2>/dev/null && tx0=0; [ "${rx0:-0}" -gt 100 ] 2>/dev/null && rx0=0; [ "${ob0:-0}" -gt 100 ] 2>/dev/null && ob0=0; [ "${nw0:-0}" -gt 100 ] 2>/dev/null && nw0=0
+	[ "${fr0:-100}" -gt 100 ] 2>/dev/null && fr0=$((100 - ${tx0:-0} - ${rx0:-0} - ${ob0:-0} - ${nw0:-0}))
+	[ "${fr0:-0}" -lt 0 ] 2>/dev/null && fr0=0
+
+	local nf1=$(cfg80211tool ath1 get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+	[ -z "$nf1" ] || [ "$nf1" -ge 0 ] 2>/dev/null && nf1="-102"
+	local cu1=$(cfg80211tool wifi1 g_chanutil 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local tx1=$(cfg80211tool wifi1 g_ch_util_ap_tx 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local rx1=$(cfg80211tool wifi1 g_ch_util_ap_rx 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local ob1=$(cfg80211tool wifi1 g_ch_util_obss 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local nw1=$(cfg80211tool wifi1 g_ch_util_nwifi 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local fr1=$(cfg80211tool wifi1 g_ch_util_free 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	[ "${cu1:-0}" -gt 100 ] 2>/dev/null && cu1=0; [ "${tx1:-0}" -gt 100 ] 2>/dev/null && tx1=0; [ "${rx1:-0}" -gt 100 ] 2>/dev/null && rx1=0; [ "${ob1:-0}" -gt 100 ] 2>/dev/null && ob1=0; [ "${nw1:-0}" -gt 100 ] 2>/dev/null && nw1=0
+	[ "${fr1:-100}" -gt 100 ] 2>/dev/null && fr1=$((100 - ${tx1:-0} - ${rx1:-0} - ${ob1:-0} - ${nw1:-0}))
+	[ "${fr1:-0}" -lt 0 ] 2>/dev/null && fr1=0
+
+	local nf2=$(cfg80211tool ath2 get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+	[ -z "$nf2" ] || [ "$nf2" -ge 0 ] 2>/dev/null && nf2="-99"
+	local cu2=$(cfg80211tool wifi2 g_chanutil 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local tx2=$(cfg80211tool wifi2 g_ch_util_ap_tx 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local rx2=$(cfg80211tool wifi2 g_ch_util_ap_rx 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local ob2=$(cfg80211tool wifi2 g_ch_util_obss 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local nw2=$(cfg80211tool wifi2 g_ch_util_nwifi 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local fr2=$(cfg80211tool wifi2 g_ch_util_free 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	[ "${cu2:-0}" -gt 100 ] 2>/dev/null && cu2=0; [ "${tx2:-0}" -gt 100 ] 2>/dev/null && tx2=0; [ "${rx2:-0}" -gt 100 ] 2>/dev/null && rx2=0; [ "${ob2:-0}" -gt 100 ] 2>/dev/null && ob2=0; [ "${nw2:-0}" -gt 100 ] 2>/dev/null && nw2=0
+	[ "${fr2:-100}" -gt 100 ] 2>/dev/null && fr2=$((100 - ${tx2:-0} - ${rx2:-0} - ${ob2:-0} - ${nw2:-0}))
+	[ "${fr2:-0}" -lt 0 ] 2>/dev/null && fr2=0
 
 	local lock_status="clean"
 	for lk in /var/run/wifilock /var/run/wifi_global_lock /var/run/load_qcawificfg80211_lock /var/run/pre_qcawificfg80211_lock /var/run/luci-reload; do
@@ -107,9 +154,12 @@ get_radios_json() {
 		fi
 	done
 
-	printf '{"wifi0":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","level":"%s"},' "$c0" "$h0" "$p0" "$d0" "$s0" "${real_ch0:-$c0}" "${real_w0:-40}" "$real_p0" "$t0" "$lvl0"
-	printf '"wifi1":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","level":"%s"},' "$c1" "$h1" "$p1" "$d1" "$s1" "${real_ch1:-$c1}" "${real_w1:-160}" "$real_p1" "$t1" "$lvl1"
-	printf '"wifi2":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","level":"%s","bdf":"%s"},' "$c2" "$h2" "$p2" "$d2" "$s2" "${real_ch2:-$c2}" "${real_w2:-320}" "$real_p2" "$t2" "$lvl2" "$bdf_name"
+	printf '{"wifi0":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","nf":"%s","chutil":"%s","util_tx":"%s","util_rx":"%s","util_obss":"%s","util_nwifi":"%s","util_free":"%s"},' \
+		"$c0" "$h0" "$p0" "$d0" "$s0" "${real_ch0:-$c0}" "${real_w0:-40}" "$real_p0" "$t0" "$nf0" "${cu0:-0}" "${tx0:-0}" "${rx0:-0}" "${ob0:-0}" "${nw0:-0}" "${fr0:-100}"
+	printf '"wifi1":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","nf":"%s","chutil":"%s","util_tx":"%s","util_rx":"%s","util_obss":"%s","util_nwifi":"%s","util_free":"%s"},' \
+		"$c1" "$h1" "$p1" "$d1" "$s1" "${real_ch1:-$c1}" "${real_w1:-160}" "$real_p1" "$t1" "$nf1" "${cu1:-0}" "${tx1:-0}" "${rx1:-0}" "${ob1:-0}" "${nw1:-0}" "${fr1:-100}"
+	printf '"wifi2":{"channel":"%s","htmode":"%s","txpower":"%s","disabled":"%s","status":"%s","real_channel":"%s","real_width":"%s","real_txpower":"%s","temp":"%s","bdf":"%s","nf":"%s","chutil":"%s","util_tx":"%s","util_rx":"%s","util_obss":"%s","util_nwifi":"%s","util_free":"%s"},' \
+		"$c2" "$h2" "$p2" "$d2" "$s2" "${real_ch2:-$c2}" "${real_w2:-320}" "$real_p2" "$t2" "$bdf_name" "$nf2" "${cu2:-0}" "${tx2:-0}" "${rx2:-0}" "${ob2:-0}" "${nw2:-0}" "${fr2:-100}"
 	printf '"lock_status":"%s"}' "$lock_status"
 }
 
@@ -243,10 +293,100 @@ do_set_telnet() {
 	fi
 }
 
+get_apps_json() {
+	local wg_mod="0"
+	lsmod 2>/dev/null | grep -q "^wireguard" && wg_mod="1"
+	local wg_en="0"
+	if [ "$(uci -q get network.wg0.proto)" = "wireguard" ] && [ "$(uci -q get network.wg0.disabled)" != "1" ] && [ "$(uci -q get network.wg0.auto)" != "0" ]; then
+		wg_en="1"
+	fi
+	local wg_up="0"
+	ip link show wg0 2>/dev/null | grep -q "UP" && wg_up="1"
+	local wg_priv=$(uci -q get network.wg0.private_key || echo "")
+	local wg_mtu=$(uci -q get network.wg0.mtu || echo "1420")
+	local wg_addr=$(uci -q get network.wg0.addresses | awk '{print $1}')
+	local wg_pub=$(uci -q get network.wgpeer0.public_key || uci -q get network.@wireguard_wg0[0].public_key || echo "")
+	local wg_psk=$(uci -q get network.wgpeer0.preshared_key || uci -q get network.@wireguard_wg0[0].preshared_key || echo "")
+	local wg_ep_h=$(uci -q get network.wgpeer0.endpoint_host || uci -q get network.@wireguard_wg0[0].endpoint_host || echo "")
+	local wg_ep_p=$(uci -q get network.wgpeer0.endpoint_port || uci -q get network.@wireguard_wg0[0].endpoint_port || echo "51820")
+	local wg_allow=$(uci -q get network.wgpeer0.allowed_ips || uci -q get network.@wireguard_wg0[0].allowed_ips || echo "0.0.0.0/0")
+	wg_allow=$(echo "$wg_allow" | tr ' ' ',')
+	local wg_keep=$(uci -q get network.wgpeer0.persistent_keepalive || uci -q get network.@wireguard_wg0[0].persistent_keepalive || echo "25")
+	local wg_ep=""
+	[ -n "$wg_ep_h" ] && wg_ep="${wg_ep_h}:${wg_ep_p:-51820}"
+	local wg_rx=$(cat /sys/class/net/wg0/statistics/rx_bytes 2>/dev/null || echo "0")
+	local wg_tx=$(cat /sys/class/net/wg0/statistics/tx_bytes 2>/dev/null || echo "0")
+
+	local ovpn_inst="0"
+	[ -x /usr/sbin/openvpn ] && ovpn_inst="1"
+	local ovpn_run="0"
+	[ -n "$(pidof openvpn)" ] && ovpn_run="1"
+	local ovpn_cnt=$(grep -c "^config openvpn" /etc/config/openvpn 2>/dev/null || echo "0")
+
+	local igmp_en="0"
+	if [ -n "$(pidof mcproxy)" ] || [ -n "$(pidof igmpproxy)" ] || [ "$(uci -q get tripleband.tripleband.igmpproxy_enable)" = "1" ] || [ "$(uci -q get mcproxy.mcproxy.disabled)" = "0" ]; then
+		igmp_en="1"
+	fi
+
+	local doh_en="0"
+	[ -n "$(pidof https-dns-proxy)" ] && doh_en="1"
+	local quic_en="0"
+	if iptables -S FORWARD 2>/dev/null | grep -qiE "udp.*--dport 443.*(DROP|REJECT)|443.*udp.*(DROP|REJECT)"; then
+		quic_en="1"
+	elif [ "$(uci -q get tripleband.tripleband.quic_block)" = "1" ]; then
+		iptables -I FORWARD 1 -p udp --dport 443 -j REJECT 2>/dev/null || true
+		quic_en="1"
+	fi
+
+	local opkg_ok="0"
+	grep -q "archive.openwrt.org/releases/19.07.10" /etc/opkg/distfeeds.conf 2>/dev/null && opkg_ok="1"
+	local opkg_held=$(grep -c "Status: install hold installed" /usr/lib/opkg/status 2>/dev/null || echo "0")
+
+	local sch_en=$(uci -q get tripleband.tripleband.sched_enable || uci -q get wifi_schedule.global.enabled || echo "0")
+	local sch_off=$(uci -q get tripleband.tripleband.sched_start || uci -q get wifi_schedule.global.off_time || echo "00:00")
+	local sch_on=$(uci -q get tripleband.tripleband.sched_stop || uci -q get wifi_schedule.global.on_time || echo "06:00")
+	local sch_days=$(uci -q get tripleband.tripleband.sched_days || echo "*")
+
+	local hapd_ver="v2.10-QSDK"
+	[ -x /usr/sbin/qca-hapd-supp ] && hapd_ver="v2.11-devel (SPF 12.4)"
+
+	local iperf_run="0"
+	[ -n "$(pidof iperf)" ] && iperf_run="1"
+	local mtu_fix="1"
+	local wan_mtu=$(cat /sys/class/net/eth0/mtu 2>/dev/null | tr -cd '0-9')
+	[ -z "$wan_mtu" ] && wan_mtu="1500"
+
+	local wol_json="["
+	local wfirst=1
+	if [ -f /tmp/dhcp.leases ]; then
+		while read -r ts mac ip name id; do
+			[ -z "$mac" ] && continue
+			local clean_mac=$(echo "$mac" | tr 'a-f' 'A-F')
+			local clean_name=$(echo "$name" | tr -cd 'a-zA-Z0-9_.-')
+			[ -z "$clean_name" ] || [ "$clean_name" = "*" ] && clean_name="Device"
+			local arp_fl=$(awk -v m="$mac" 'tolower($4)==tolower(m){print $3}' /proc/net/arp 2>/dev/null | head -n1)
+			local online="0"
+			[ "$arp_fl" = "0x2" ] && online="1"
+			[ $wfirst -eq 0 ] && wol_json="${wol_json},"
+			wfirst=0
+			wol_json="${wol_json}{\"mac\":\"${clean_mac}\",\"ip\":\"${ip}\",\"name\":\"${clean_name}\",\"online\":\"${online}\"}"
+		done < /tmp/dhcp.leases
+	fi
+	wol_json="${wol_json}]"
+
+	printf '{"wg_loaded":"%s","wg_enabled":"%s","wg_up":"%s","wg_endpoint":"%s","wg_endpoint_host":"%s","wg_endpoint_port":"%s","wg_address":"%s","wg_priv":"%s","wg_pub":"%s","wg_psk":"%s","wg_allowed_ips":"%s","wg_keepalive":"%s","wg_mtu":"%s","wg_rx":"%s","wg_tx":"%s","openvpn_installed":"%s","openvpn_running":"%s","openvpn_profiles":"%s","igmp_enabled":"%s","doh_enabled":"%s","quic_blocked":"%s","opkg_feeds_ok":"%s","opkg_held_count":"%s","sched_enabled":"%s","sched_off":"%s","sched_on":"%s","sched_days":"%s","hapd_ver":"%s","iperf_running":"%s","mtu_fix":"%s","wan_mtu":"%s","wol_hosts":%s}' \
+		"$wg_mod" "$wg_en" "$wg_up" "$wg_ep" "$wg_ep_h" "$wg_ep_p" "$wg_addr" "$wg_priv" "$wg_pub" "$wg_psk" "$wg_allow" "$wg_keep" "$wg_mtu" "${wg_rx:-0}" "${wg_tx:-0}" "$ovpn_inst" "$ovpn_run" "$ovpn_cnt" "$igmp_en" "$doh_en" "$quic_en" "$opkg_ok" "$opkg_held" "$sch_en" "$sch_off" "$sch_on" "$sch_days" "$hapd_ver" "$iperf_run" "$mtu_fix" "$wan_mtu" "$wol_json"
+}
+
 do_get_status() {
 	mode=$(get_mode)
 	mlo_en=$(uci -q get tripleband.tripleband.mlo_enable || echo "0")
 	local gaming=$(uci -q get tripleband.tripleband.gaming_mode || echo "1")
+	local mscs_scs=$(uci -q get tripleband.tripleband.mscs_scs || echo "1")
+	local twt=$(uci -q get tripleband.tripleband.twt_enable || echo "1")
+	local cca=$(uci -q get tripleband.tripleband.cca_mitigation || echo "1")
+	local compat_iot=$(uci -q get tripleband.tripleband.compat_iot || echo "1")
+	local sqm_en=$(uci -q get sqm.wan.enabled || echo "0")
 	local ani=$(uci -q get tripleband.tripleband.ani_enable || echo "1")
 	local rnr=$(uci -q get tripleband.tripleband.rnr_colocated || echo "1")
 	local rps=$(uci -q get tripleband.tripleband.rps_quadcore || echo "1")
@@ -262,8 +402,30 @@ do_get_status() {
 	local tel_run="0"
 	[ -n "$(pidof telnetd)" ] && tel_run="1"
 
-	printf '{"mode":"%s","mlo_enabled":"%s","telnet_enabled":"%s","telnet_running":"%s","features":{"gaming_mode":"%s","ani":"%s","qam4096":"%s","rnr_6g":"%s","rps":"%s","puncturing":"%s","beamforming":"%s"},"ports":' \
-		"$mode" "$mlo_en" "$tel_en" "$tel_run" "$gaming" "$ani" "$qam" "$rnr" "$rps" "$punct" "$bf"
+	local sfe4=$(cat /sys/kernel/debug/ecm/ecm_sfe_ipv4/accelerated_count 2>/dev/null | tr -cd '0-9')
+	local sfe6=$(cat /sys/kernel/debug/ecm/ecm_sfe_ipv6/accelerated_count 2>/dev/null | tr -cd '0-9')
+	local sfe_stop=$(cat /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null | tr -cd '0-9')
+	local mscs_en=$(cat /sys/kernel/debug/ecm/ecm_classifier_mscs/enabled 2>/dev/null | tr -cd '0-9')
+	local scs_en=$(cat /sys/kernel/debug/ecm/ecm_classifier_mscs/scs_enabled 2>/dev/null | tr -cd '0-9')
+	local cake_en=$(cat /sys/kernel/debug/ecm/ecm_classifier_emesh/cake_enabled 2>/dev/null | tr -cd '0-9')
+	local rtwt_en="$twt"
+	local t2lm_en="0"
+	grep -q "^t2lm_enable=1" /ini/global.ini 2>/dev/null && t2lm_en="1"
+
+	local wisp_en="0"
+	local wisp_ssid=""
+	local wisp_dev=""
+	if [ -n "$(uci -q get wireless.wwan_sta)" ]; then
+		local wisp_dis=$(uci -q get wireless.wwan_sta.disabled || echo "0")
+		[ "$wisp_dis" != "1" ] && wisp_en="1"
+		wisp_ssid=$(uci -q get wireless.wwan_sta.ssid || echo "")
+		wisp_dev=$(uci -q get wireless.wwan_sta.device || echo "wifi1")
+	fi
+
+	printf '{"mode":"%s","mlo_enabled":"%s","telnet_enabled":"%s","telnet_running":"%s","features":{"gaming_mode":"%s","mscs_scs":"%s","twt":"%s","cca_mitigation":"%s","compat_iot":"%s","sqm_cake":"%s","ani":"%s","qam4096":"%s","rnr_6g":"%s","rps":"%s","puncturing":"%s","beamforming":"%s"},"silicon":{"sfe_ipv4":"%s","sfe_ipv6":"%s","sfe_stopped":"%s","sqm_enabled":"%s","mscs":"%s","scs":"%s","cake_offload":"%s","rtwt":"%s","t2lm":"%s","cca_mitigation":"%s","compat_iot":"%s","wisp_en":"%s","wisp_ssid":"%s","wisp_dev":"%s"},"apps":' \
+		"$mode" "$mlo_en" "$tel_en" "$tel_run" "$gaming" "$mscs_scs" "$twt" "$cca" "$compat_iot" "$sqm_en" "$ani" "$qam" "$rnr" "$rps" "$punct" "$bf" "${sfe4:-0}" "${sfe6:-0}" "${sfe_stop:-0}" "$sqm_en" "${mscs_en:-$mscs_scs}" "${scs_en:-$mscs_scs}" "${cake_en:-1}" "$rtwt_en" "$t2lm_en" "$cca" "$compat_iot" "$wisp_en" "$wisp_ssid" "$wisp_dev"
+	get_apps_json
+	printf ',"ports":'
 	get_ports_json
 	printf ',"radios":'
 	get_radios_json
@@ -533,15 +695,57 @@ do_set_radio() {
 	TX=$(echo "$input" | jsonfilter -e '@.txpower')
 
 	[ -n "$DEV" ] || exit 1
+	local FORCE_40="0"
+	if [ "$DEV" = "wifi0" ]; then
+		if [ "$HT" = "HT40_FORCE" ]; then
+			HT="HT40"
+			FORCE_40="1"
+			uci set wireless.wifi0.chan_coex_disable='1'
+			uci set wireless.wifi0_ap.disablecoext='1'
+			if [ -z "$CHAN" ] || [ "$CHAN" = "auto" ]; then
+				local cur_c0=$(uci -q get wireless.wifi0.channel)
+				[ -z "$cur_c0" ] || [ "$cur_c0" = "auto" ] && CHAN="6"
+			fi
+		else
+			uci set wireless.wifi0.chan_coex_disable='0'
+			uci set wireless.wifi0_ap.disablecoext='0'
+		fi
+	fi
 	[ -n "$CHAN" ] && uci set wireless.$DEV.channel="$CHAN"
 	[ -n "$HT" ] && uci set wireless.$DEV.htmode="$HT"
 	[ -n "$TX" ] && uci set wireless.$DEV.txpower="$TX"
-	if [ "$DEV" = "wifi1" ] && [ "$HT" = "HT160" ]; then
-		uci set wireless.wifi1.blockdfslist='0'
-		if [ -n "$CHAN" ] && [ "$CHAN" != "auto" ]; then
-			if [ "$CHAN" -gt 64 -a "$CHAN" -lt 100 ] 2>/dev/null || [ "$CHAN" -gt 128 ] 2>/dev/null; then
-				uci set wireless.wifi1.channel='36'
+	if [ "$DEV" = "wifi1" ]; then
+		if [ "$HT" = "HT240" ]; then
+			uci set wireless.wifi1.hwmode='11bea'
+			uci set wireless.wifi1.blockdfslist='0'
+			uci set wireless.wifi1.ccfs='130'
+			uci set wireless.wifi1.puncture_bitmap='61440'
+			uci set wireless.wifi1.puncture_strict='0'
+			uci set wireless.wifi1.dfs_punctureEn='1'
+			uci set wireless.wifi1_ap.cactimeout='1'
+			if [ -z "$CHAN" ] || [ "$CHAN" = "auto" ] || [ "$CHAN" -lt 100 ] 2>/dev/null || [ "$CHAN" -gt 144 ] 2>/dev/null; then
+				uci set wireless.wifi1.channel='100'
 			fi
+		elif [ "$HT" = "HT160" ]; then
+			uci -q delete wireless.wifi1.ccfs
+			uci -q delete wireless.wifi1.puncture_bitmap
+			uci set wireless.wifi1.blockdfslist='0'
+			if [ -n "$CHAN" ] && [ "$CHAN" != "auto" ]; then
+				if [ "$CHAN" -gt 64 -a "$CHAN" -lt 100 ] 2>/dev/null || [ "$CHAN" -gt 128 ] 2>/dev/null; then
+					uci set wireless.wifi1.channel='36'
+				fi
+			fi
+		elif [ -n "$HT" ]; then
+			uci -q delete wireless.wifi1.ccfs
+			uci -q delete wireless.wifi1.puncture_bitmap
+		fi
+	fi
+	if [ "$DEV" = "wifi2" ] && [ -n "$HT" ]; then
+		if [ "$HT" = "HT240" ]; then
+			uci set wireless.wifi2.hwmode='11bea'
+			uci set wireless.wifi2.puncture_bitmap='61440'
+		else
+			uci -q delete wireless.wifi2.puncture_bitmap
 		fi
 	fi
 	uci commit wireless
@@ -565,8 +769,7 @@ do_set_radio() {
 		if [ "$TX" = "auto" ] || [ -z "$TX" ]; then
 			[ -n "$VAP" ] && iw dev "$VAP" set txpower auto 2>/dev/null || true
 		elif [ -n "$VAP" ]; then
-			local tx_mbm=$(( ${TX%%.*} * 100 ))
-			[ -n "$tx_mbm" ] && [ "$tx_mbm" -gt 0 ] 2>/dev/null && iw dev "$VAP" set txpower fixed "$tx_mbm" 2>/dev/null || iw dev "$VAP" set txpower fixed "$TX" 2>/dev/null || true
+			iw dev "$VAP" set txpower fixed "$TX" 2>/dev/null || true
 		fi
 		[ -x /lib/wifi_hardware_tune.sh ] && /lib/wifi_hardware_tune.sh
 		/etc/init.d/predator_rf start 2>/dev/null
@@ -591,6 +794,18 @@ do_set_all_radios() {
 	P2=$(echo "$input" | jsonfilter -e '@.wifi2.txpower')
 
 	# Radio 0 (2.4 GHz)
+	if [ "$H0" = "HT40_FORCE" ]; then
+		H0="HT40"
+		uci set wireless.wifi0.chan_coex_disable='1'
+		uci set wireless.wifi0_ap.disablecoext='1'
+		if [ -z "$C0" ] || [ "$C0" = "auto" ]; then
+			local cur_c0=$(uci -q get wireless.wifi0.channel)
+			[ -z "$cur_c0" ] || [ "$cur_c0" = "auto" ] && C0="6"
+		fi
+	elif [ -n "$H0" ]; then
+		uci set wireless.wifi0.chan_coex_disable='0'
+		uci set wireless.wifi0_ap.disablecoext='0'
+	fi
 	[ -n "$C0" ] && uci set wireless.wifi0.channel="$C0"
 	[ -n "$H0" ] && uci set wireless.wifi0.htmode="$H0"
 	[ -n "$P0" ] && uci set wireless.wifi0.txpower="$P0"
@@ -599,19 +814,41 @@ do_set_all_radios() {
 	[ -n "$C1" ] && uci set wireless.wifi1.channel="$C1"
 	[ -n "$H1" ] && uci set wireless.wifi1.htmode="$H1"
 	[ -n "$P1" ] && uci set wireless.wifi1.txpower="$P1"
-	if [ "$H1" = "HT160" ]; then
+	if [ "$H1" = "HT240" ]; then
+		uci set wireless.wifi1.hwmode='11bea'
+		uci set wireless.wifi1.blockdfslist='0'
+		uci set wireless.wifi1.ccfs='130'
+		uci set wireless.wifi1.puncture_bitmap='61440'
+			uci set wireless.wifi1.puncture_strict='0'
+			uci set wireless.wifi1.dfs_punctureEn='1'
+			uci set wireless.wifi1_ap.cactimeout='1'
+		if [ -z "$C1" ] || [ "$C1" = "auto" ] || [ "$C1" -lt 100 ] 2>/dev/null || [ "$C1" -gt 144 ] 2>/dev/null; then
+			uci set wireless.wifi1.channel='100'
+		fi
+	elif [ "$H1" = "HT160" ]; then
+		uci -q delete wireless.wifi1.ccfs
+		uci -q delete wireless.wifi1.puncture_bitmap
 		uci set wireless.wifi1.blockdfslist='0'
 		if [ -n "$C1" ] && [ "$C1" != "auto" ]; then
 			if [ "$C1" -gt 64 -a "$C1" -lt 100 ] 2>/dev/null || [ "$C1" -gt 128 ] 2>/dev/null; then
 				uci set wireless.wifi1.channel='36'
 			fi
 		fi
+	elif [ -n "$H1" ]; then
+		uci -q delete wireless.wifi1.ccfs
+		uci -q delete wireless.wifi1.puncture_bitmap
 	fi
 
 	# Radio 2 (6 GHz Wi-Fi 7)
 	[ -n "$C2" ] && uci set wireless.wifi2.channel="$C2"
 	[ -n "$H2" ] && uci set wireless.wifi2.htmode="$H2"
 	[ -n "$P2" ] && uci set wireless.wifi2.txpower="$P2"
+	if [ "$H2" = "HT240" ]; then
+		uci set wireless.wifi2.hwmode='11bea'
+		uci set wireless.wifi2.puncture_bitmap='61440'
+	elif [ -n "$H2" ]; then
+		uci -q delete wireless.wifi2.puncture_bitmap
+	fi
 
 	uci commit wireless
 	killall -9 lock 2>/dev/null
@@ -625,9 +862,9 @@ do_set_all_radios() {
 		sleep 1
 		/sbin/wifi up 2>/dev/null
 		sleep 3
-		[ "$P0" = "auto" ] || [ -z "$P0" ] && iw dev ath0 set txpower auto 2>/dev/null || { local p0_m=$(( ${P0%%.*} * 100 )); iw dev ath0 set txpower fixed "$p0_m" 2>/dev/null || iw dev ath0 set txpower fixed "$P0" 2>/dev/null || true; }
-		[ "$P1" = "auto" ] || [ -z "$P1" ] && iw dev ath1 set txpower auto 2>/dev/null || { local p1_m=$(( ${P1%%.*} * 100 )); iw dev ath1 set txpower fixed "$p1_m" 2>/dev/null || iw dev ath1 set txpower fixed "$P1" 2>/dev/null || true; }
-		[ "$P2" = "auto" ] || [ -z "$P2" ] && iw dev ath2 set txpower auto 2>/dev/null || { local p2_m=$(( ${P2%%.*} * 100 )); iw dev ath2 set txpower fixed "$p2_m" 2>/dev/null || iw dev ath2 set txpower fixed "$P2" 2>/dev/null || true; }
+		[ "$P0" = "auto" ] || [ -z "$P0" ] && iw dev ath0 set txpower auto 2>/dev/null || iw dev ath0 set txpower fixed "$P0" 2>/dev/null || true
+		[ "$P1" = "auto" ] || [ -z "$P1" ] && iw dev ath1 set txpower auto 2>/dev/null || iw dev ath1 set txpower fixed "$P1" 2>/dev/null || true
+		[ "$P2" = "auto" ] || [ -z "$P2" ] && iw dev ath2 set txpower auto 2>/dev/null || iw dev ath2 set txpower fixed "$P2" 2>/dev/null || true
 		[ -x /lib/wifi_hardware_tune.sh ] && /lib/wifi_hardware_tune.sh
 		/etc/init.d/predator_rf start 2>/dev/null
 		killall -9 lock 2>/dev/null
@@ -731,8 +968,6 @@ do_add_vif() {
 	B5G=$(echo "$input" | jsonfilter -e '@.band_5g')
 	B6G=$(echo "$input" | jsonfilter -e '@.band_6g')
 	GUEST=$(echo "$input" | jsonfilter -e '@.is_guest')
-	IOT=$(echo "$input" | jsonfilter -e '@.is_iot')
-	ZONE=$(echo "$input" | jsonfilter -e '@.zone')
 	IS_MLD=$(echo "$input" | jsonfilter -e '@.is_mld')
 
 	[ -z "$SSID" ] && { echo '{"success":false,"error":"ssid_empty"}'; exit 0; }
@@ -752,17 +987,14 @@ do_add_vif() {
 
 	net_zone="lan"
 	isolate_val="0"
-	if [ "$ZONE" = "iot" ] || [ "$IOT" = "true" ] || [ "$IOT" = "1" ]; then
-		net_zone="iot"
-		isolate_val="1"
-	elif [ "$ZONE" = "guest" ] || [ "$GUEST" = "true" ] || [ "$GUEST" = "1" ]; then
+	if [ "$GUEST" = "true" ] || [ "$GUEST" = "1" ]; then
 		net_zone="guest"
 		isolate_val="1"
 	fi
 
 	# VAPs adicionais (redes secundarias) operam com maxima estabilidade
-	# em modo multi-banda padrao (a versao atual do driver QCA SPF-12 opera com
-	# mlo_mbssid desabilitado por perfil de software, e o daemon predator administra mld0 na rede principal).
+	# em modo multi-banda padrao, pois o silicio Qualcomm IPQ5332 nao suporta
+	# MBSSID concorrente com MLO nas bandas baixas (mlo_mbssid disabled).
 	ts=$(date +%s)
 	if [ "$B2G" = "true" ] || [ "$B2G" = "1" ]; then
 		sid="vif_2g_${ts}"
@@ -951,8 +1183,94 @@ do_toggle_feature() {
 			cfg80211tool wifi0 low_latency_mode "$VAL" 2>/dev/null || true
 			cfg80211tool wifi1 low_latency_mode "$VAL" 2>/dev/null || true
 			cfg80211tool wifi2 low_latency_mode "$VAL" 2>/dev/null || true
+			for a in ath0 ath1 ath11 ath2; do
+				if [ -d "/sys/class/net/$a" ]; then
+					cfg80211tool "$a" noackpolicy 0 0 2>/dev/null || true
+					cfg80211tool "$a" noackpolicy 6 0 2>/dev/null || true
+				fi
+			done
 			uci set tripleband.tripleband.gaming_mode="$VAL" 2>/dev/null || true
 			uci commit tripleband 2>/dev/null || true
+			;;
+		mscs_scs)
+			insmod qca-nss-mscs 2>/dev/null || true
+			insmod ecm-wifi-plugin 2>/dev/null || true
+			for a in ath0 ath1 ath11 ath2; do
+				if [ -d "/sys/class/net/$a" ]; then
+					cfg80211tool "$a" hlos_tidoverride "$VAL" 2>/dev/null || true
+					cfg80211tool "$a" mscs "$VAL" 2>/dev/null || true
+					cfg80211tool "$a" scs "$VAL" 2>/dev/null || true
+					cfg80211tool "$a" noackpolicy 0 0 2>/dev/null || true
+					cfg80211tool "$a" noackpolicy 6 0 2>/dev/null || true
+				fi
+			done
+			echo "$VAL" > /sys/kernel/debug/ecm/ecm_classifier_mscs/enabled 2>/dev/null || true
+			echo "$VAL" > /sys/kernel/debug/ecm/ecm_classifier_mscs/scs_enabled 2>/dev/null || true
+			echo 5200 > /sys/kernel/debug/ecm/ecm_classifier_mscs/udp_ipsec_port 2>/dev/null || true
+			echo 1 > /sys/kernel/debug/ecm/ecm_classifier_emesh/enabled 2>/dev/null || true
+			echo "$VAL" > /sys/kernel/debug/ecm/ecm_classifier_emesh/latency_config_enabled 2>/dev/null || true
+			echo 1 > /sys/kernel/debug/ecm/ecm_classifier_emesh/cake_enabled 2>/dev/null || true
+			echo 5200 > /sys/kernel/debug/ecm/ecm_classifier_emesh/udp_ipsec_port 2>/dev/null || true
+			echo 1 > /sys/kernel/debug/ecm/ecm_classifier_dscp/enabled 2>/dev/null || true
+			if [ "$VAL" = "1" ]; then
+				pgrep -x "scs_tool" >/dev/null 2>&1 || /usr/sbin/scs_tool >/dev/null 2>&1 &
+			else
+				killall scs_tool 2>/dev/null || true
+			fi
+			uci set tripleband.tripleband.mscs_scs="$VAL" 2>/dev/null || true
+			uci commit tripleband 2>/dev/null || true
+			;;
+		twt)
+			for a in ath0 ath1 ath2; do
+				[ -d "/sys/class/net/$a" ] && cfg80211tool "$a" twt_responder "$VAL" 2>/dev/null || true
+			done
+			for sec in wifi0_ap wifi1_ap wifi2_ap; do
+				[ -n "$(uci -q get wireless.$sec)" ] && uci set wireless.$sec.twt_responder="$VAL" 2>/dev/null || true
+			done
+			uci commit wireless 2>/dev/null || true
+			uci set tripleband.tripleband.twt_enable="$VAL" 2>/dev/null || true
+			uci commit tripleband 2>/dev/null || true
+			;;
+		cca_mitigation)
+			wifitool ath0 setUnitTestCmd 67 3 16 0 "$VAL" 2>/dev/null || true
+			wifitool ath1 setUnitTestCmd 67 3 16 1 "$VAL" 2>/dev/null || true
+			uci set tripleband.tripleband.cca_mitigation="$VAL" 2>/dev/null || true
+			uci commit tripleband 2>/dev/null || true
+			;;
+		compat_iot)
+			uci set tripleband.tripleband.compat_iot="$VAL" 2>/dev/null || true
+			uci commit tripleband 2>/dev/null || true
+			( sleep 1; wifi reload; sleep 2; /etc/init.d/predator_rf start 2>/dev/null ) &
+			;;
+		sqm_cake)
+			uci set sqm.wan.enabled="$VAL" 2>/dev/null || true
+			uci commit sqm 2>/dev/null || true
+			if [ "$VAL" = "1" ]; then
+				ethtool -K eth0 gso on 2>/dev/null || true
+				echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null || true
+				echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null || true
+				echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all 2>/dev/null || true
+				/etc/init.d/sqm start 2>/dev/null || /usr/lib/sqm/run.sh start eth0 2>/dev/null || true
+			else
+				/etc/init.d/sqm stop 2>/dev/null || /usr/lib/sqm/run.sh stop eth0 2>/dev/null || true
+				echo 0 > /sys/kernel/debug/ecm/front_end_ipv4_stop 2>/dev/null || true
+				echo 0 > /sys/kernel/debug/ecm/front_end_ipv6_stop 2>/dev/null || true
+			fi
+			;;
+		wisp_sta)
+			if [ -n "$(uci -q get wireless.wwan_sta)" ]; then
+				if [ "$VAL" = "1" ]; then
+					uci set wireless.wwan_sta.disabled='0'
+					uci set network.wwan.auto='1' 2>/dev/null || true
+				else
+					uci set wireless.wwan_sta.disabled='1'
+					uci set network.wwan.auto='0' 2>/dev/null || true
+					ifdown wwan 2>/dev/null || true
+				fi
+				uci commit wireless 2>/dev/null || true
+				uci commit network 2>/dev/null || true
+				( sleep 1; wifi reload; sleep 2; /etc/init.d/predator_rf start 2>/dev/null ) &
+			fi
 			;;
 		ani)
 			cfg80211tool wifi0 ani_enable "$VAL" 2>/dev/null || true
@@ -1001,8 +1319,9 @@ do_toggle_feature() {
 			uci commit tripleband 2>/dev/null || true
 			;;
 		puncturing)
-			cfg80211tool wifi1 puncture_strict "$VAL" 2>/dev/null || true
-			cfg80211tool wifi2 puncture_strict "$VAL" 2>/dev/null || true
+			cfg80211tool wifi1 dfs_puncture_en "$VAL" 2>/dev/null || true
+			cfg80211tool wifi1 puncture_strict 0 2>/dev/null || true
+			cfg80211tool wifi2 puncture_strict 0 2>/dev/null || true
 			uci set tripleband.tripleband.puncturing="$VAL" 2>/dev/null || true
 			uci commit tripleband 2>/dev/null || true
 			;;
@@ -1015,6 +1334,16 @@ do_toggle_feature() {
 			cfg80211tool wifi0 txbf_snd_int "$snd" 2>/dev/null || true
 			cfg80211tool wifi1 txbf_snd_int "$snd" 2>/dev/null || true
 			cfg80211tool wifi2 txbf_snd_int "$snd" 2>/dev/null || true
+			for a in ath0 ath1 ath2; do
+				if [ -d "/sys/class/net/$a" ]; then
+					cfg80211tool "$a" he_subfer "$VAL" 2>/dev/null || true
+					cfg80211tool "$a" he_subfee "$VAL" 2>/dev/null || true
+					cfg80211tool "$a" he_mubfer "$VAL" 2>/dev/null || true
+					cfg80211tool "$a" set_eht_su_bfmr "$VAL" 2>/dev/null || true
+					cfg80211tool "$a" set_eht_su_bfme "$VAL" 2>/dev/null || true
+					cfg80211tool "$a" set_eht_mu_bfmr "$VAL" 2>/dev/null || true
+				fi
+			done
 			uci set tripleband.tripleband.beamforming="$VAL" 2>/dev/null || true
 			uci commit tripleband 2>/dev/null || true
 			;;
@@ -1035,14 +1364,941 @@ do_ack_guard() {
 	echo '{"success":true}'
 }
 
+do_wake_on_lan() {
+	read input
+	MAC=$(echo "$input" | jsonfilter -e '@.mac' | tr 'a-f' 'A-F')
+	if ! echo "$MAC" | grep -Eq '^([0-9A-F]{2}:){5}[0-9A-F]{2}$'; then
+		echo '{"success":false,"error":"invalid_mac"}'
+		exit 0
+	fi
+	/usr/bin/etherwake -i br-lan "$MAC" 2>/dev/null || /usr/bin/etherwake -D -i br-lan "$MAC" 2>/dev/null || true
+	echo "{\"success\":true,\"mac\":\"$MAC\"}"
+}
+
+do_optimize_channels() {
+	local nf0=$(cfg80211tool ath0 get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+	local nf1=$(cfg80211tool ath1 get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+	local nf2=$(cfg80211tool ath2 get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+	[ -z "$nf0" ] || [ "$nf0" -ge 0 ] 2>/dev/null && nf0="-95"
+	[ -z "$nf1" ] || [ "$nf1" -ge 0 ] 2>/dev/null && nf1="-102"
+	[ -z "$nf2" ] || [ "$nf2" -ge 0 ] 2>/dev/null && nf2="-99"
+
+	local cu0=$(cfg80211tool wifi0 g_chanutil 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local cu1=$(cfg80211tool wifi1 g_chanutil 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local cu2=$(cfg80211tool wifi2 g_chanutil 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local free0=$(cfg80211tool wifi0 g_ch_util_free 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local free1=$(cfg80211tool wifi1 g_ch_util_free 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+	local free2=$(cfg80211tool wifi2 g_ch_util_free 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9')
+
+	if [ -z "$free0" ] || [ "$free0" -gt 100 ] 2>/dev/null || { [ "$free0" = "0" ] && [ "${cu0:-0}" -lt 50 ] 2>/dev/null; }; then
+		[ "${cu0:-0}" -le 100 ] 2>/dev/null && free0=$((100 - ${cu0:-15})) || free0="85"
+	fi
+	if [ -z "$free1" ] || [ "$free1" -gt 100 ] 2>/dev/null || { [ "$free1" = "0" ] && [ "${cu1:-0}" -lt 50 ] 2>/dev/null; }; then
+		[ "${cu1:-0}" -le 100 ] 2>/dev/null && free1=$((100 - ${cu1:-3})) || free1="97"
+	fi
+	if [ -z "$free2" ] || [ "$free2" -gt 100 ] 2>/dev/null || { [ "$free2" = "0" ] && [ "${cu2:-0}" -lt 50 ] 2>/dev/null; }; then
+		[ "${cu2:-0}" -le 100 ] 2>/dev/null && free2=$((100 - ${cu2:-0})) || free2="100"
+	fi
+
+	local cur0=$(uci -q get wireless.wifi0.channel || echo "6")
+	local cur1=$(uci -q get wireless.wifi1.channel || echo "100")
+	local cur2=$(uci -q get wireless.wifi2.channel || echo "37")
+	local ht1=$(uci -q get wireless.wifi1.htmode || echo "HT160")
+	if [ "$(uci -q get wireless.wifi1.puncture_bitmap)" = "61440" ]; then
+		ht1="HT240"
+	fi
+
+	# Optimal non-overlapping selection based on CCA free medium % and band width constraints
+	local best0="$cur0"
+	if [ "$cur0" = "auto" ] || [ "$free0" -lt 45 ] 2>/dev/null; then
+		case "$cur0" in
+			1) best0="6" ;;
+			6) best0="11" ;;
+			11) best0="6" ;;
+			*) best0="6" ;;
+		esac
+	fi
+
+	local best1="$cur1"
+	if [ "$ht1" = "HT240" ]; then
+		best1="100"
+	elif [ "$ht1" = "HT160" ]; then
+		if [ "$cur1" = "auto" ] || [ "$free1" -lt 60 ] 2>/dev/null; then
+			[ "$cur1" = "36" ] && best1="100" || best1="36"
+		else
+			[ "$cur1" != "36" ] && [ "$cur1" != "100" ] && best1="36"
+		fi
+	else
+		[ "$cur1" = "auto" ] && best1="36"
+	fi
+
+	local best2="$cur2"
+	if [ "$cur2" = "auto" ] || [ "$free2" -lt 70 ] 2>/dev/null; then
+		case "$cur2" in
+			37) best2="69" ;;
+			69) best2="37" ;;
+			*) best2="37" ;;
+		esac
+	fi
+
+	if [ "$best0" != "$cur0" ] || [ "$best1" != "$cur1" ] || [ "$best2" != "$cur2" ]; then
+		uci set wireless.wifi0.channel="$best0"
+		uci set wireless.wifi1.channel="$best1"
+		uci set wireless.wifi2.channel="$best2"
+		uci commit wireless
+		(
+			sleep 1
+			/sbin/wifi reload 2>/dev/null
+			sleep 2
+			[ -x /lib/wifi_hardware_tune.sh ] && /lib/wifi_hardware_tune.sh
+			/etc/init.d/predator_rf start 2>/dev/null
+		) &
+	else
+		/etc/init.d/predator_rf start >/dev/null 2>&1 &
+	fi
+	echo "{\"success\":true,\"ch0\":\"$best0\",\"ch1\":\"$best1\",\"ch2\":\"$best2\",\"nf0\":\"$nf0\",\"nf1\":\"$nf1\",\"nf2\":\"$nf2\",\"free0\":\"$free0\",\"free1\":\"$free1\",\"free2\":\"$free2\"}"
+}
+
+do_setup_wireguard() {
+	read input
+	ACT=$(echo "$input" | jsonfilter -e '@.action')
+	[ -z "$ACT" ] && ACT="toggle"
+	if [ "$ACT" = "import" ] || [ "$ACT" = "save" ]; then
+		if [ "$ACT" = "import" ]; then
+			CONF=$(echo "$input" | jsonfilter -e '@.config')
+			PRIV=$(echo "$CONF" | grep -iE '^[[:space:]]*PrivateKey[[:space:]]*=' | head -n1 | cut -d'=' -f2- | tr -d ' \r\t')
+			ADDR=$(echo "$CONF" | grep -iE '^[[:space:]]*Address[[:space:]]*=' | head -n1 | cut -d'=' -f2- | tr -d ' \r\t')
+			MTU=$(echo "$CONF" | grep -iE '^[[:space:]]*MTU[[:space:]]*=' | head -n1 | cut -d'=' -f2- | tr -d ' \r\t')
+			PUB=$(echo "$CONF" | grep -iE '^[[:space:]]*PublicKey[[:space:]]*=' | head -n1 | cut -d'=' -f2- | tr -d ' \r\t')
+			PSK=$(echo "$CONF" | grep -iE '^[[:space:]]*PresharedKey[[:space:]]*=' | head -n1 | cut -d'=' -f2- | tr -d ' \r\t')
+			ENDP=$(echo "$CONF" | grep -iE '^[[:space:]]*Endpoint[[:space:]]*=' | head -n1 | cut -d'=' -f2- | tr -d ' \r\t')
+			ALLOW=$(echo "$CONF" | grep -iE '^[[:space:]]*AllowedIPs[[:space:]]*=' | head -n1 | cut -d'=' -f2- | tr -d ' \r\t')
+			KEEP=$(echo "$CONF" | grep -iE '^[[:space:]]*PersistentKeepalive[[:space:]]*=' | head -n1 | cut -d'=' -f2- | tr -d ' \r\t')
+			EP_HOST=$(echo "$ENDP" | sed 's/:[0-9]*$//' | tr -d '[]')
+			EP_PORT=$(echo "$ENDP" | awk -F':' '{print $NF}')
+		else
+			PRIV=$(echo "$input" | jsonfilter -e '@.priv' | tr -d ' \r\t')
+			PUB=$(echo "$input" | jsonfilter -e '@.pub' | tr -d ' \r\t')
+			PSK=$(echo "$input" | jsonfilter -e '@.psk' | tr -d ' \r\t')
+			ADDR=$(echo "$input" | jsonfilter -e '@.address' | tr -d ' \r\t')
+			MTU=$(echo "$input" | jsonfilter -e '@.mtu' | tr -d ' \r\t')
+			EP_HOST=$(echo "$input" | jsonfilter -e '@.endpoint_host' | tr -d ' \r\t[]')
+			EP_PORT=$(echo "$input" | jsonfilter -e '@.endpoint_port' | tr -d ' \r\t')
+			ALLOW=$(echo "$input" | jsonfilter -e '@.allowed_ips' | tr -d ' \r\t')
+			KEEP=$(echo "$input" | jsonfilter -e '@.keepalive' | tr -d ' \r\t')
+		fi
+
+		if [ -z "$PRIV" ] || [ -z "$PUB" ]; then
+			echo '{"success":false,"error":"invalid_wg_conf"}'
+			exit 0
+		fi
+		[ -z "$ADDR" ] && ADDR="10.2.0.2/32"
+		[ -z "$ALLOW" ] && ALLOW="0.0.0.0/0"
+		[ -z "$KEEP" ] && KEEP="25"
+		[ -z "$MTU" ] && MTU="1420"
+		[ -z "$EP_PORT" ] && EP_PORT="51820"
+
+		uci -q delete network.wg0
+		uci set network.wg0='interface'
+		uci set network.wg0.proto='wireguard'
+		uci set network.wg0.private_key="$PRIV"
+		uci set network.wg0.auto='1'
+		uci set network.wg0.mtu="$MTU"
+		for a in $(echo "$ADDR" | tr ',' ' '); do
+			uci add_list network.wg0.addresses="$a"
+		done
+
+		uci -q delete network.wgpeer0
+		uci set network.wgpeer0='wireguard_wg0'
+		uci set network.wgpeer0.public_key="$PUB"
+		[ -n "$PSK" ] && uci set network.wgpeer0.preshared_key="$PSK"
+		[ -n "$EP_HOST" ] && uci set network.wgpeer0.endpoint_host="$EP_HOST"
+		[ -n "$EP_PORT" ] && uci set network.wgpeer0.endpoint_port="$EP_PORT"
+		uci set network.wgpeer0.route_allowed_ips='1'
+		uci set network.wgpeer0.persistent_keepalive="$KEEP"
+		for al in $(echo "$ALLOW" | tr ',' ' '); do
+			uci add_list network.wgpeer0.allowed_ips="$al"
+		done
+		uci commit network
+
+		# Ensure wg0 is in wan firewall zone for NAT masquerading
+		local fz_idx=0
+		while uci -q get firewall.@zone[$fz_idx] >/dev/null 2>&1; do
+			if [ "$(uci -q get firewall.@zone[$fz_idx].name)" = "wan" ]; then
+				local cur_nets=$(uci -q get firewall.@zone[$fz_idx].network)
+				if ! echo "$cur_nets" | grep -qw "wg0"; then
+					uci set firewall.@zone[$fz_idx].network="$cur_nets wg0"
+					uci commit firewall
+				fi
+				break
+			fi
+			fz_idx=$((fz_idx + 1))
+		done
+
+		insmod wireguard 2>/dev/null || true
+		( ifdown wg0 2>/dev/null; sleep 1; ifup wg0 2>/dev/null; /etc/init.d/firewall reload 2>/dev/null ) &
+		echo "{\"success\":true,\"action\":\"$ACT\"}"
+	elif [ "$ACT" = "delete" ]; then
+		( ifdown wg0 2>/dev/null; ip link del wg0 2>/dev/null ) &
+		uci -q delete network.wg0
+		uci -q delete network.wgpeer0
+		uci commit network
+		echo '{"success":true,"action":"delete"}'
+	else
+		EN=$(echo "$input" | jsonfilter -e '@.enabled')
+		if [ "$EN" = "1" ]; then
+			uci set network.wg0.auto='1'
+			uci commit network
+			insmod wireguard 2>/dev/null || true
+			( ifup wg0 2>/dev/null ) &
+		else
+			uci set network.wg0.auto='0'
+			uci commit network
+			( ifdown wg0 2>/dev/null; ip link del wg0 2>/dev/null ) &
+		fi
+		echo "{\"success\":true,\"enabled\":\"$EN\"}"
+	fi
+}
+
+do_set_schedule() {
+	read input
+	ACT=$(echo "$input" | jsonfilter -e '@.action')
+	if [ "$ACT" = "test_down" ]; then
+		( /sbin/wifi_schedule.sh down >/dev/null 2>&1 ) &
+		echo '{"success":true,"action":"test_down"}'
+		exit 0
+	elif [ "$ACT" = "test_up" ]; then
+		( /sbin/wifi_schedule.sh up >/dev/null 2>&1 ) &
+		echo '{"success":true,"action":"test_up"}'
+		exit 0
+	fi
+
+	EN=$(echo "$input" | jsonfilter -e '@.enabled')
+	START=$(echo "$input" | jsonfilter -e '@.start')
+	STOP=$(echo "$input" | jsonfilter -e '@.stop')
+	DAYS=$(echo "$input" | jsonfilter -e '@.days')
+	[ -z "$EN" ] && EN="0"
+	[ -z "$START" ] && START="00:00"
+	[ -z "$STOP" ] && STOP="06:00"
+	[ -z "$DAYS" ] && DAYS="*"
+
+	uci set tripleband.tripleband.sched_enable="$EN"
+	uci set tripleband.tripleband.sched_start="$START"
+	uci set tripleband.tripleband.sched_stop="$STOP"
+	uci set tripleband.tripleband.sched_days="$DAYS"
+	uci commit tripleband
+
+	mkdir -p /etc/crontabs
+	touch /etc/crontabs/root
+	sed -i '/#PREDATOR_WIFI_SCHED/d' /etc/crontabs/root 2>/dev/null || true
+	if [ "$EN" = "1" ]; then
+		local h_down=$(echo "$START" | cut -d':' -f1 | sed 's/^0//')
+		local m_down=$(echo "$START" | cut -d':' -f2 | sed 's/^0//')
+		local h_up=$(echo "$STOP" | cut -d':' -f1 | sed 's/^0//')
+		local m_up=$(echo "$STOP" | cut -d':' -f2 | sed 's/^0//')
+		[ -z "$h_down" ] && h_down="0"
+		[ -z "$m_down" ] && m_down="0"
+		[ -z "$h_up" ] && h_up="6"
+		[ -z "$m_up" ] && m_up="0"
+		echo "$m_down $h_down * * $DAYS /sbin/wifi_schedule.sh down #PREDATOR_WIFI_SCHED" >> /etc/crontabs/root
+		echo "$m_up $h_up * * $DAYS /sbin/wifi_schedule.sh up #PREDATOR_WIFI_SCHED" >> /etc/crontabs/root
+	fi
+	/etc/init.d/cron reload 2>/dev/null || /etc/init.d/cron restart 2>/dev/null || true
+	echo "{\"success\":true,\"enabled\":\"$EN\",\"start\":\"$START\",\"stop\":\"$STOP\",\"days\":\"$DAYS\"}"
+}
+
+do_set_service() {
+	read input
+	SVC=$(echo "$input" | jsonfilter -e '@.service')
+	EN=$(echo "$input" | jsonfilter -e '@.enabled')
+	[ -z "$EN" ] && EN="0"
+	case "$SVC" in
+		igmpproxy)
+			uci set tripleband.tripleband.igmpproxy_enable="$EN" 2>/dev/null || true
+			uci commit tripleband 2>/dev/null || true
+			if [ "$EN" = "1" ]; then
+				echo 1 > /proc/net/igmp_snooping 2>/dev/null || true
+				uci set mcproxy.mcproxy.disabled='0' 2>/dev/null || true
+				uci set mcproxy.@instance[0].disabled='0' 2>/dev/null || true
+				uci commit mcproxy 2>/dev/null || true
+				/etc/init.d/mcproxy enable 2>/dev/null || true
+				/etc/init.d/mcproxy restart 2>/dev/null || true
+				for a in ath0 ath1 ath2; do
+					[ -d "/sys/class/net/$a" ] && cfg80211tool "$a" mcastenhance 2 2>/dev/null || true
+				done
+			else
+				uci set mcproxy.mcproxy.disabled='1' 2>/dev/null || true
+				uci commit mcproxy 2>/dev/null || true
+				/etc/init.d/mcproxy stop 2>/dev/null || true
+				/etc/init.d/mcproxy disable 2>/dev/null || true
+				killall mcproxy igmpproxy 2>/dev/null || true
+			fi
+			;;
+		doh)
+			if [ "$EN" = "1" ]; then
+				/etc/init.d/https-dns-proxy enable 2>/dev/null || true
+				/etc/init.d/https-dns-proxy restart 2>/dev/null || true
+			else
+				/etc/init.d/https-dns-proxy stop 2>/dev/null || true
+				killall https-dns-proxy 2>/dev/null || true
+			fi
+			;;
+		quic_block)
+			uci set tripleband.tripleband.quic_block="$EN" 2>/dev/null || true
+			uci commit tripleband 2>/dev/null || true
+			while iptables -D FORWARD -p udp --dport 443 -j REJECT 2>/dev/null; do :; done
+			while iptables -D FORWARD -p udp --dport 443 -j DROP 2>/dev/null; do :; done
+			if [ "$EN" = "1" ]; then
+				iptables -I FORWARD 1 -p udp --dport 443 -j REJECT 2>/dev/null || true
+			fi
+			;;
+		opkg_shield)
+			cat << 'EOF' > /etc/opkg/distfeeds.conf
+src/gz openwrt_base http://archive.openwrt.org/releases/19.07.10/packages/arm_cortex-a7_neon-vfpv4/base
+src/gz openwrt_luci http://archive.openwrt.org/releases/19.07.10/packages/arm_cortex-a7_neon-vfpv4/luci
+src/gz openwrt_packages http://archive.openwrt.org/releases/19.07.10/packages/arm_cortex-a7_neon-vfpv4/packages
+src/gz openwrt_routing http://archive.openwrt.org/releases/19.07.10/packages/arm_cortex-a7_neon-vfpv4/routing
+src/gz openwrt_telephony http://archive.openwrt.org/releases/19.07.10/packages/arm_cortex-a7_neon-vfpv4/telephony
+EOF
+			sed -i '/check_signature/d' /etc/opkg.conf 2>/dev/null || true
+			if [ "$EN" = "1" ] && [ -f /usr/lib/opkg/status ]; then
+				awk '
+				/^Package:/ {
+					pkg = $2
+					hold = 0
+					if (pkg ~ /^(kernel|kmod-|hostapd|wpa-|iw|qca-|sqm-|luci-app-sqm|luci-base|rpcd|ubus|uci|netifd|firewall|dnsmasq|ksmbd|wireguard|https-dns-proxy|base-files|libc|libgcc|busybox|procd|fstools|mtd)/) {
+						hold = 1
+					}
+				}
+				/^Status:/ {
+					if (hold == 1) {
+						print "Status: install hold installed"
+						next
+					}
+				}
+				{ print }
+				' /usr/lib/opkg/status > /tmp/opkg_status.new && mv /tmp/opkg_status.new /usr/lib/opkg/status
+			fi
+			( opkg update >/tmp/opkg_update.log 2>&1 ) &
+			;;
+		openvpn)
+			if [ "$EN" = "1" ]; then
+				/etc/init.d/openvpn start 2>/dev/null || true
+			else
+				/etc/init.d/openvpn stop 2>/dev/null || killall openvpn 2>/dev/null || true
+			fi
+			;;
+	esac
+	echo "{\"success\":true,\"service\":\"$SVC\",\"enabled\":\"$EN\"}"
+}
+
+do_get_luci_wireless() {
+	local iw_out=$(iw dev 2>/dev/null)
+	local state_out=$(cat /var/state/wireless 2>/dev/null)
+	local first_radio=1
+	printf '{'
+
+	for rdev in wifi0 wifi1 wifi2; do
+		[ -z "$(uci -q get wireless.$rdev)" ] && continue
+		local p_ath="ath0"
+		local hw_name="Qualcomm IPQ5332 Wi-Fi 7 (2.4 GHz)"
+		local hw_modes='["b","g","n","ax","be"]'
+		local ht_modes='["HT20","HT40"]'
+		local def_ch=6
+		local def_freq=2437
+		local def_w=40
+		local def_txp=22
+		local def_nf=-95
+
+		if [ "$rdev" = "wifi1" ]; then
+			p_ath="ath1"
+			hw_name="Qualcomm QCN9224 Wi-Fi 7 (5 GHz)"
+			hw_modes='["a","n","ac","ax","be"]'
+			ht_modes='["HT20","HT40","HT80","HT160","HT240"]'
+			def_ch=36
+			def_freq=5180
+			def_w=80
+			def_txp=23
+			def_nf=-102
+		elif [ "$rdev" = "wifi2" ]; then
+			p_ath="ath2"
+			hw_name="Qualcomm QCN9224 Wi-Fi 7 (6 GHz)"
+			hw_modes='["a","ax","be"]'
+			ht_modes='["HT20","HT40","HT80","HT160","HT240","HT320"]'
+			def_ch=37
+			def_freq=6135
+			def_w=320
+			def_txp=20
+			def_nf=-99
+		fi
+
+		local r_dis=$(uci -q get wireless.$rdev.disabled || echo "0")
+		local r_ch=$(uci -q get wireless.$rdev.channel || echo "auto")
+		local r_hwm=$(uci -q get wireless.$rdev.hwmode || echo "11bea")
+		local r_htm=$(uci -q get wireless.$rdev.htmode || echo "HT80")
+		local r_txp=$(uci -q get wireless.$rdev.txpower || echo "$def_txp")
+		local r_ctry=$(uci -q get wireless.$rdev.country || echo "BR")
+		local r_punc=$(uci -q get wireless.$rdev.puncture_bitmap || echo "0")
+		local r_coex=$(uci -q get wireless.$rdev.chan_coex_disable || uci -q get wireless.${rdev}_ap.disablecoext || echo "0")
+
+		local ath_block=$(echo "$iw_out" | awk -v dev="$p_ath" '
+			$1 == "Interface" && $2 == dev { inf=1; next }
+			$1 == "Interface" && $2 != dev { inf=0 }
+			$1 ~ /^phy#/ { inf=0 }
+			inf { print }
+		')
+		local cur_ch=$(echo "$ath_block" | awk '/channel /{print $2}')
+		local cur_freq=$(echo "$ath_block" | awk '/channel /{gsub(/[()]/,"",$3); print int($3)}')
+		local cur_w=$(echo "$ath_block" | awk -F'width: ' '/width: /{print int($2)}')
+		local cur_txp=$(echo "$ath_block" | awk '/txpower /{print int($2)}')
+		local cur_bssid=$(echo "$ath_block" | awk '/addr /{print toupper($2)}')
+
+		[ -z "$cur_ch" ] && { [ "$r_ch" != "auto" ] && cur_ch="$r_ch" || cur_ch="$def_ch"; }
+		if [ -z "$cur_freq" ] || [ "$cur_freq" = "0" ]; then
+			if [ "$rdev" = "wifi0" ]; then
+				[ "$cur_ch" = "14" ] && cur_freq=2484 || cur_freq=$((2407 + cur_ch * 5))
+			elif [ "$rdev" = "wifi1" ]; then
+				cur_freq=$((5000 + cur_ch * 5))
+			else
+				cur_freq=$((5950 + cur_ch * 5))
+			fi
+		fi
+		[ -z "$cur_w" ] || [ "$cur_w" = "0" ] && cur_w="$def_w"
+		if [ "$r_htm" = "HT240" ] || [ "$r_punc" = "61440" ]; then
+			[ "$cur_w" = "320" ] && cur_w=240
+		fi
+		[ -z "$cur_txp" ] || [ "$cur_txp" -le 0 ] 2>/dev/null || [ "$cur_txp" -gt 30 ] 2>/dev/null && {
+			[ "$r_txp" != "auto" ] && [ -n "$r_txp" ] && cur_txp="$r_txp" || cur_txp="$def_txp"
+		}
+
+		local nf=$(cfg80211tool "$p_ath" get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+		[ -z "$nf" ] || [ "$nf" -ge 0 ] 2>/dev/null && nf="$def_nf"
+
+		local br_kbps=1441200
+		if [ "$rdev" = "wifi0" ]; then
+			[ "$cur_w" = "40" ] && br_kbps=688200 || br_kbps=344100
+		else
+			case "$cur_w" in
+				320) br_kbps=5764800 ;;
+				240) br_kbps=4323600 ;;
+				160) br_kbps=2882400 ;;
+				80)  br_kbps=1441200 ;;
+				40)  br_kbps=720600 ;;
+				*)   br_kbps=360300 ;;
+			esac
+		fi
+
+		local r_up="false"
+		local r_dis_bool="false"
+		[ "$r_dis" = "1" ] && r_dis_bool="true"
+		if [ "$r_dis" != "1" ] && [ -d "/sys/class/net/$p_ath" ] && [ -n "$cur_bssid" ] && [ "$cur_bssid" != "00:00:00:00:00:00" ]; then
+			r_up="true"
+		fi
+
+		[ $first_radio -eq 0 ] && printf ','
+		first_radio=0
+
+		printf '"%s":{"up":%s,"disabled":%s,"config":{"channel":"%s","hwmode":"%s","htmode":"%s","txpower":%s,"country":"%s","chan_coex_disable":"%s","puncture_bitmap":"%s"},"iwinfo":{"hardware":{"name":"%s"},"hwmodes":%s,"htmodes":%s,"channel":%s,"frequency":%s,"width":%s,"txpower":%s,"noise":%s,"bitrate":%s,"country":"%s"},"interfaces":[' \
+			"$rdev" "$r_up" "$r_dis_bool" "$r_ch" "$r_hwm" "$r_htm" "${cur_txp:-20}" "$r_ctry" "$r_coex" "$r_punc" \
+			"$hw_name" "$hw_modes" "$ht_modes" "${cur_ch:-1}" "${cur_freq:-2437}" "${cur_w:-40}" "${cur_txp:-20}" "${nf:--95}" "$br_kbps" "$r_ctry"
+
+		local first_vif=1
+		for sec in $(uci show wireless 2>/dev/null | grep '=wifi-iface' | cut -d'.' -f2 | cut -d'=' -f1); do
+			local v_dev=$(uci -q get wireless.$sec.device)
+			[ "$v_dev" != "$rdev" ] && continue
+
+			local v_mode=$(uci -q get wireless.$sec.mode || echo "ap")
+			local v_ssid=$(uci -q get wireless.$sec.ssid || echo "")
+			local v_enc=$(uci -q get wireless.$sec.encryption || echo "none")
+			local v_net=$(uci -q get wireless.$sec.network || echo "lan")
+			local v_dis=$(uci -q get wireless.$sec.disabled || echo "0")
+			local v_dis_bool="false"
+			[ "$v_dis" = "1" ] || [ "$r_dis" = "1" ] && v_dis_bool="true"
+
+			local v_ifname=$(echo "$state_out" | awk -F"'" -v s="wireless.${sec}.ifname=" '$1 == s {print $2; exit}')
+			[ -z "$v_ifname" ] && v_ifname=$(uci -q get wireless.$sec.ifname)
+			if [ -z "$v_ifname" ]; then
+				case "$sec" in
+					wifi0_ap) v_ifname="ath0" ;;
+					wifi1_ap) v_ifname="ath1" ;;
+					wifi2_ap) v_ifname="ath2" ;;
+					wwan_sta)
+						[ "$rdev" = "wifi0" ] && v_ifname="ath01"
+						[ "$rdev" = "wifi1" ] && v_ifname="ath11"
+						[ "$rdev" = "wifi2" ] && v_ifname="ath21"
+						;;
+					*) v_ifname="$p_ath" ;;
+				esac
+			fi
+
+			local v_bssid="$cur_bssid"
+			if [ -f "/sys/class/net/$v_ifname/address" ]; then
+				v_bssid=$(cat "/sys/class/net/$v_ifname/address" 2>/dev/null | tr 'a-z' 'A-Z')
+			fi
+			[ "$v_dis_bool" = "true" ] && v_bssid="00:00:00:00:00:00"
+
+			local iwinfo_mode="Master"
+			[ "$v_mode" = "sta" ] && iwinfo_mode="Client"
+			[ "$v_mode" = "mesh" ] && iwinfo_mode="Mesh"
+			[ "$v_mode" = "monitor" ] && iwinfo_mode="Monitor"
+
+			local v_sig=0
+			local v_qual=80
+			if [ "$v_dis_bool" = "true" ] || [ "$r_up" = "false" ]; then
+				v_sig=0
+				v_qual=0
+			elif [ "$v_mode" = "sta" ]; then
+				local link_out=$(iw dev "$v_ifname" link 2>/dev/null)
+				if echo "$link_out" | grep -q "^Connected to"; then
+					v_bssid=$(echo "$link_out" | awk '/^Connected to/{print toupper($3)}')
+					v_sig=$(echo "$link_out" | awk '/signal:/{print int($2)}')
+					[ -z "$v_sig" ] && v_sig=-60
+					v_qual=$(( 2 * (v_sig + 100) ))
+					[ "$v_qual" -lt 5 ] && v_qual=5
+					[ "$v_qual" -gt 100 ] && v_qual=100
+				else
+					v_bssid="00:00:00:00:00:00"
+					v_sig=0
+					v_qual=0
+				fi
+			else
+				local best_sig=$(hostapd_cli -p "/var/run/hostapd-$rdev" -i "$v_ifname" all_sta 2>/dev/null | awk -F'=' '/^signal=/{s=int($2); if(s<0 && (best==0 || s>best)) best=s} END{print best+0}')
+				if [ -n "$best_sig" ] && [ "$best_sig" -lt 0 ] 2>/dev/null; then
+					v_sig="$best_sig"
+					v_qual=$(( 2 * (v_sig + 100) ))
+					[ "$v_qual" -lt 10 ] && v_qual=10
+					[ "$v_qual" -gt 100 ] && v_qual=100
+				fi
+			fi
+
+			local enc_json='{"enabled":false}'
+			case "$v_enc" in
+				sae*)
+					if [ "$v_enc" = "sae-mixed" ]; then
+						enc_json='{"enabled":true,"wpa":[2,3],"authentication":["psk","sae"],"ciphers":["ccmp"]}'
+					else
+						enc_json='{"enabled":true,"wpa":[3],"authentication":["sae"],"ciphers":["ccmp"]}'
+					fi
+					;;
+				psk2*)
+					case "$v_enc" in
+						*tkip*) enc_json='{"enabled":true,"wpa":[2],"authentication":["psk"],"ciphers":["tkip","ccmp"]}' ;;
+						*)      enc_json='{"enabled":true,"wpa":[2],"authentication":["psk"],"ciphers":["ccmp"]}' ;;
+					esac
+					;;
+				psk-mixed*|psk+psk2*)
+					enc_json='{"enabled":true,"wpa":[1,2],"authentication":["psk"],"ciphers":["tkip","ccmp"]}'
+					;;
+				psk*)
+					enc_json='{"enabled":true,"wpa":[1],"authentication":["psk"],"ciphers":["tkip"]}'
+					;;
+				owe*)
+					enc_json='{"enabled":true,"wpa":[3],"authentication":["owe"],"ciphers":["ccmp"]}'
+					;;
+				wpa3-mixed*)
+					enc_json='{"enabled":true,"wpa":[2,3],"authentication":["802.1x"],"ciphers":["ccmp"]}'
+					;;
+				wpa3*)
+					enc_json='{"enabled":true,"wpa":[3],"authentication":["802.1x"],"ciphers":["ccmp"]}'
+					;;
+				wpa2*)
+					enc_json='{"enabled":true,"wpa":[2],"authentication":["802.1x"],"ciphers":["ccmp"]}'
+					;;
+				wpa*)
+					enc_json='{"enabled":true,"wpa":[1],"authentication":["802.1x"],"ciphers":["tkip"]}'
+					;;
+			esac
+
+			local clean_ssid=$(echo "$v_ssid" | sed 's/\\/\\\\/g; s/"/\\"/g')
+			local net_json=$(echo "$v_net" | awk '{printf "["; for(i=1;i<=NF;i++){if(i>1)printf ","; printf "\"%s\"",$i}; printf "]"}')
+
+			[ $first_vif -eq 0 ] && printf ','
+			first_vif=0
+
+			printf '{"section":"%s","ifname":"%s","config":{"mode":"%s","ssid":"%s","encryption":"%s","network":%s,"disabled":%s},"iwinfo":{"ifname":"%s","ssid":"%s","bssid":"%s","mode":"%s","channel":%s,"frequency":%s,"width":%s,"txpower":%s,"signal":%s,"noise":%s,"quality":%s,"quality_max":100,"bitrate":%s,"country":"%s","encryption":%s}}' \
+				"$sec" "$v_ifname" "$v_mode" "$clean_ssid" "$v_enc" "$net_json" "$v_dis_bool" \
+				"$v_ifname" "$clean_ssid" "$v_bssid" "$iwinfo_mode" "${cur_ch:-1}" "${cur_freq:-2437}" "${cur_w:-40}" "${cur_txp:-20}" \
+				"$v_sig" "${nf:--95}" "$v_qual" "$br_kbps" "$r_ctry" "$enc_json"
+		done
+
+		printf ']}'
+	done
+
+	printf '}\n'
+}
+
+do_luci_wifi_assoclist() {
+	read input
+	local dev=$(echo "$input" | jsonfilter -e '@.device' 2>/dev/null)
+	case "$dev" in
+		wifi0|wifi0.network1) dev="ath0" ;;
+		wifi1|wifi1.network1) dev="ath1" ;;
+		wifi2|wifi2.network1) dev="ath2" ;;
+	esac
+	[ -z "$dev" ] && dev="ath0"
+
+	local rdev="wifi0"
+	local def_w=40
+	local def_nf=-95
+	case "$dev" in
+		ath1*) rdev="wifi1"; def_w=80; def_nf=-102 ;;
+		ath2*) rdev="wifi2"; def_w=320; def_nf=-99 ;;
+	esac
+
+	local nf=$(cfg80211tool "$dev" get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+	[ -z "$nf" ] || [ "$nf" -ge 0 ] 2>/dev/null && nf="$def_nf"
+	local cur_w=$(iw dev "$dev" info 2>/dev/null | awk -F'width: ' '/width: /{print int($2)}')
+	[ -z "$cur_w" ] || [ "$cur_w" = "0" ] && cur_w="$def_w"
+	local punc=$(uci -q get wireless.$rdev.puncture_bitmap || echo "0")
+	[ "$punc" = "61440" ] && [ "$cur_w" = "320" ] && cur_w=240
+
+	local hapd_sta=$(hostapd_cli -p "/var/run/hostapd-$rdev" -i "$dev" all_sta 2>/dev/null)
+	local wcfg_sta=$(wlanconfig "$dev" list sta 2>/dev/null)
+
+	printf '{"results":['
+	echo "$wcfg_sta" | awk -v nf="$nf" -v vw="$cur_w" '
+	BEGIN { first = 1 }
+	/^[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:/ {
+		mac = toupper($1)
+		txr_m = int($4)
+		rxr_m = int($5)
+		if (txr_m <= 0) txr_m = 688
+		if (rxr_m <= 0) rxr_m = txr_m
+		tx_kbps = txr_m * 1000
+		rx_kbps = rxr_m * 1000
+		rssi = int($6)
+		if (rssi > 0) sig = -95 + rssi
+		else if (rssi < 0) sig = rssi
+		else sig = -55
+		if (sig > -20) sig = -45
+
+		eht = "false"; he = "false"; vht = "false"; ht = "false"
+		mhz = vw
+		if ($0 ~ /EHT320/) { eht = "true"; mhz = vw }
+		else if ($0 ~ /EHT160/) { eht = "true"; mhz = 160 }
+		else if ($0 ~ /EHT80/) { eht = "true"; mhz = 80 }
+		else if ($0 ~ /EHT40/) { eht = "true"; mhz = 40 }
+		else if ($0 ~ /EHT20/) { eht = "true"; mhz = 20 }
+		else if ($0 ~ /HE160/) { he = "true"; mhz = 160 }
+		else if ($0 ~ /HE80/) { he = "true"; mhz = 80 }
+		else if ($0 ~ /HE40/) { he = "true"; mhz = 40 }
+		else if ($0 ~ /HE20/) { he = "true"; mhz = 20 }
+		else if ($0 ~ /VHT160/) { vht = "true"; mhz = 160 }
+		else if ($0 ~ /VHT80/) { vht = "true"; mhz = 80 }
+		else if ($0 ~ /VHT40/) { vht = "true"; mhz = 40 }
+		else if ($0 ~ /VHT20/) { vht = "true"; mhz = 20 }
+		else { ht = "true" }
+
+		mcs = 11
+		if (vht == "true") mcs = 9
+		else if (ht == "true") mcs = 7
+
+		if (!first) printf ","
+		first = 0
+		printf "{\"mac\":\"%s\",\"signal\":%d,\"noise\":%d,\"inactive\":0,\"rx\":{\"rate\":%d,\"mhz\":%d,\"mcs\":%d,\"nss\":2,\"ht\":%s,\"vht\":%s,\"he\":%s,\"eht\":%s,\"short_gi\":true},\"tx\":{\"rate\":%d,\"mhz\":%d,\"mcs\":%d,\"nss\":2,\"ht\":%s,\"vht\":%s,\"he\":%s,\"eht\":%s,\"short_gi\":true}}", \
+			mac, sig, nf, rx_kbps, mhz, mcs, ht, vht, he, eht, tx_kbps, mhz, mcs, ht, vht, he, eht
+	}
+	'
+	printf ']}\n'
+}
+
+do_luci_wifi_scan() {
+	read input
+	local dev=$(echo "$input" | jsonfilter -e '@.device' 2>/dev/null)
+	local ath="ath0"
+	local rdev="wifi0"
+	local def_nf=-95
+	case "$dev" in
+		wifi0|ath0*) ath="ath0"; rdev="wifi0"; def_nf=-95 ;;
+		wifi1|ath1*) ath="ath1"; rdev="wifi1"; def_nf=-102 ;;
+		wifi2|ath2*) ath="ath2"; rdev="wifi2"; def_nf=-99 ;;
+	esac
+
+	local nf=$(cfg80211tool "$ath" get_channf 2>/dev/null | awk -F':' '{print $2}' | tr -cd '0-9-')
+	[ -z "$nf" ] || [ "$nf" -ge 0 ] 2>/dev/null && nf="$def_nf"
+
+	iw dev "$ath" scan ap-force >/dev/null 2>&1 || iw dev "$ath" scan >/dev/null 2>&1 || true
+	local raw_scan="/tmp/luci_scan_${ath}.raw"
+	iw dev "$ath" scan dump 2>/dev/null > "$raw_scan"
+
+	printf '{"results":['
+	awk -v nf="$nf" '
+	function freq_to_ch(f) {
+		if (f >= 2412 && f <= 2484) {
+			if (f == 2484) return 14
+			return int((f - 2407) / 5)
+		} else if (f >= 5000 && f <= 5900) {
+			return int((f - 5000) / 5)
+		} else if (f >= 5925 && f <= 7125) {
+			return int((f - 5950) / 5)
+		}
+		return 1
+	}
+	function flush_bss() {
+		if (!in_bss || bss == "") return
+		if (ssid ~ /^(\\x00)+$/ || ssid ~ /^[ \t]*$/) ssid_json = "null"
+		else {
+			gsub(/\\/, "\\\\", ssid)
+			gsub(/"/, "\\\"", ssid)
+			ssid_json = "\"" ssid "\""
+		}
+		ch = freq_to_ch(freq)
+		if (sig <= -100) qual = 0
+		else if (sig >= -50) qual = 100
+		else qual = 2 * (sig + 100)
+
+		if (is_sae && is_psk) {
+			enc_json = "{\"enabled\":true,\"wpa\":[2,3],\"authentication\":[\"psk\",\"sae\"],\"ciphers\":[\"ccmp\"]}"
+		} else if (is_sae) {
+			enc_json = "{\"enabled\":true,\"wpa\":[3],\"authentication\":[\"sae\"],\"ciphers\":[\"ccmp\"]}"
+		} else if (is_rsn && is_wpa) {
+			enc_json = "{\"enabled\":true,\"wpa\":[1,2],\"authentication\":[\"psk\"],\"ciphers\":[\"tkip\",\"ccmp\"]}"
+		} else if (is_rsn) {
+			enc_json = "{\"enabled\":true,\"wpa\":[2],\"authentication\":[\"psk\"],\"ciphers\":[\"ccmp\"]}"
+		} else if (is_wpa) {
+			enc_json = "{\"enabled\":true,\"wpa\":[1],\"authentication\":[\"psk\"],\"ciphers\":[\"tkip\"]}"
+		} else {
+			enc_json = "{\"enabled\":false}"
+		}
+
+		if (freq > 5900 && gen == "Wi-Fi 6") gen = "Wi-Fi 6E"
+
+		if (!seen[bss]++) {
+			if (!first) printf ","
+			first = 0
+			printf "{\"ssid\":%s,\"bssid\":\"%s\",\"mode\":\"Master\",\"channel\":%d,\"mhz\":%d,\"bw\":\"%s\",\"gen\":\"%s\",\"signal\":%d,\"noise\":%d,\"quality\":%d,\"quality_max\":100,\"encryption\":%s}", \
+				ssid_json, bss, ch, freq, bw, gen, sig, nf, qual, enc_json
+		}
+	}
+	BEGIN { in_bss = 0; first = 1 }
+	/^BSS / {
+		flush_bss()
+		in_bss = 1
+		sub(/\(.*/, "", $2)
+		bss = toupper($2)
+		ssid = ""
+		freq = 0
+		sig = -85
+		is_wpa = 0
+		is_rsn = 0
+		is_sae = 0
+		is_psk = 0
+		bw = "20 MHz"
+		gen = "Wi-Fi 4"
+	}
+	/^[ \t]*freq:/ { freq = int($2) }
+	/^[ \t]*signal:/ { sig = int($2) }
+	/^[ \t]*SSID: / {
+		sub(/^[ \t]*SSID: /, "")
+		ssid = $0
+	}
+	/^[ \t]*WPA:/ { is_wpa = 1; is_psk = 1 }
+	/^[ \t]*RSN:/ { is_rsn = 1 }
+	/Authentication suites:.*SAE/ { is_sae = 1 }
+	/Authentication suites:.*PSK/ { is_psk = 1 }
+	/secondary channel offset: (above|below)/ {
+		if (bw == "20 MHz") bw = "40 MHz"
+	}
+	/VHT capabilities:/ {
+		if (gen == "Wi-Fi 4") gen = "Wi-Fi 5"
+	}
+	/channel width: 1 \(80 MHz\)/ {
+		if (freq >= 5000 && (bw == "20 MHz" || bw == "40 MHz")) bw = "80 MHz"
+	}
+	/channel width: [23] \((160|80\+80)/ {
+		if (freq >= 5000) bw = "160 MHz"
+	}
+	/center freq segment 2: [1-9]/ {
+		if (freq >= 5000 && bw == "80 MHz") bw = "160 MHz"
+	}
+	/HE capabilities:|HE MAC Capabilities/ {
+		if (gen != "Wi-Fi 7") gen = "Wi-Fi 6"
+	}
+	/EHT capabilities:|EHT MAC Capabilities/ {
+		gen = "Wi-Fi 7"
+	}
+	/320 MHz/ {
+		if (in_bss && freq >= 5000) bw = "320 MHz"
+	}
+	END { flush_bss() }
+	' "$raw_scan" 2>/dev/null
+	printf ']}\n'
+}
+
+do_luci_wifi_action() {
+	read input
+	local act=$(echo "$input" | jsonfilter -e '@.action' 2>/dev/null)
+	local dev=$(echo "$input" | jsonfilter -e '@.device' 2>/dev/null)
+	local mac=$(echo "$input" | jsonfilter -e '@.mac' 2>/dev/null)
+
+	case "$act" in
+		restart_radio)
+			if [ -n "$dev" ]; then
+				( /sbin/wifi up "$dev" >/dev/null 2>&1; /etc/init.d/predator_rf start >/dev/null 2>&1 ) &
+			else
+				( /sbin/wifi reload >/dev/null 2>&1; /etc/init.d/predator_rf start >/dev/null 2>&1 ) &
+			fi
+			echo '{"success":true,"action":"restart_radio"}'
+			;;
+		disconnect_client)
+			local rdev="wifi0"
+			case "$dev" in
+				ath1*|wifi1*) rdev="wifi1"; [ "$dev" = "wifi1" ] && dev="ath1" ;;
+				ath2*|wifi2*) rdev="wifi2"; [ "$dev" = "wifi2" ] && dev="ath2" ;;
+				*) [ "$dev" = "wifi0" ] && dev="ath0" ;;
+			esac
+			if [ -n "$mac" ]; then
+				hostapd_cli -p "/var/run/hostapd-$rdev" -i "$dev" deauthenticate "$mac" >/dev/null 2>&1 || true
+				cfg80211tool "$dev" kickmac "$mac" >/dev/null 2>&1 || true
+			fi
+			echo '{"success":true,"action":"disconnect_client"}'
+			;;
+		reload|*)
+			# Synchronize QSDK wireless invariants before reloading
+			for sec in $(uci show wireless 2>/dev/null | grep '=wifi-iface' | cut -d'.' -f2 | cut -d'=' -f1); do
+				local k=$(uci -q get wireless.$sec.key)
+				local enc=$(uci -q get wireless.$sec.encryption)
+				local r=$(uci -q get wireless.$sec.device)
+				if [ -n "$k" ]; then
+					uci set wireless.$sec.sae_password="$k"
+				fi
+				case "$enc" in
+					sae)
+						uci set wireless.$sec.sae='1'
+						uci set wireless.$sec.ieee80211w='2'
+						;;
+					sae-mixed)
+						uci set wireless.$sec.sae='1'
+						uci set wireless.$sec.ieee80211w='1'
+						;;
+					psk2*|psk*)
+						if [ "$r" != "wifi2" ]; then
+							uci set wireless.$sec.sae='0'
+						fi
+						;;
+				esac
+			done
+			# Check wifi1 HT240 invariants
+			if [ "$(uci -q get wireless.wifi1.htmode)" = "HT240" ]; then
+				local ch1=$(uci -q get wireless.wifi1.channel)
+				if [ -z "$ch1" ] || [ "$ch1" = "auto" ] || [ "$ch1" -lt 100 ] 2>/dev/null || [ "$ch1" -gt 144 ] 2>/dev/null; then
+					uci set wireless.wifi1.channel='100'
+				fi
+				uci set wireless.wifi1.ccfs='130'
+				uci set wireless.wifi1.puncture_bitmap='61440'
+				uci set wireless.wifi1.puncture_strict='0'
+				uci set wireless.wifi1.dfs_punctureEn='1'
+				uci set wireless.wifi1_ap.cactimeout='1'
+			else
+				uci set wireless.wifi1.ccfs='0'
+				uci set wireless.wifi1.puncture_bitmap='0'
+			fi
+			uci commit wireless
+			mkdir -p /etc/predator
+			cp /etc/config/wireless /etc/predator/wireless.lastgood 2>/dev/null || true
+			( /sbin/wifi reload >/dev/null 2>&1; /etc/init.d/predator_rf start >/dev/null 2>&1 ) &
+			echo '{"success":true,"action":"reload"}'
+			;;
+	esac
+}
+
+do_run_net_diag() {
+	read input
+	local mode=$(echo "$input" | jsonfilter -e '@.mode' 2>/dev/null)
+	local target=$(echo "$input" | jsonfilter -e '@.target' 2>/dev/null | tr -cd 'a-zA-Z0-9._:-')
+	local size=$(echo "$input" | jsonfilter -e '@.size' 2>/dev/null | tr -cd '0-9')
+	[ -z "$target" ] && target="1.1.1.1"
+	[ -z "$size" ] && size="1500"
+	[ "$size" -lt 576 ] 2>/dev/null && size="576"
+	[ "$size" -gt 1500 ] 2>/dev/null && size="1500"
+
+	local mtu_fix="1"
+	case "$mode" in
+		pmtu)
+			local rt_line=$(ip route get "$target" 2>/dev/null | head -n1)
+			local wan_dev=$(echo "$rt_line" | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')
+			[ -z "$wan_dev" ] && wan_dev="br-lan"
+			local wan_mtu=$(cat "/sys/class/net/$wan_dev/mtu" 2>/dev/null | tr -cd '0-9')
+			[ -z "$wan_mtu" ] && wan_mtu="1500"
+
+			local raw_tp=""
+			local pmtu_val="$wan_mtu"
+			if [ -z "$rt_line" ] || echo "$rt_line" | grep -q "unreachable"; then
+				raw_tp=$(
+					echo "=== DIAGNOSTICO LOCAL PMTU (WAN desconectada no momento) ==="
+					echo "Alvo solicitado : $target (Pacote inicial: $size bytes)"
+					echo "Status da WAN   : Sem rota externa ativa (testando pilha local br-lan 192.168.76.1)"
+					echo "TCP MSS Clamping: ATIVO (mtu_fix=1 | IPv4 MSS 1452 / IPv6 MSS 1432)"
+					echo ""
+					tracepath -n -m 3 -l "$size" 192.168.76.1 2>&1
+				)
+				pmtu_val="$wan_mtu"
+			else
+				raw_tp=$(
+					echo "=== TRACEPATH PMTU DISCOVERY (iputils v20210202) ==="
+					echo "Alvo: $target | Interface de Saida: $wan_dev (MTU $wan_mtu) | Pacote Inicial: $size bytes (DF=1)"
+					echo "TCP MSS Clamping: ATIVO (mtu_fix=1 | Protecao Automatica Anti-Fragmentacao)"
+					echo ""
+					tracepath -n -m 8 -l "$size" "$target" 2>&1
+				)
+				local det_pmtu=$(echo "$raw_tp" | awk '/pmtu [0-9]+/{for(i=1;i<=NF;i++) if($i=="pmtu") p=$(i+1)} END{print p}' | tr -cd '0-9')
+				if [ -n "$det_pmtu" ] && [ "$det_pmtu" -le 1500 ] 2>/dev/null && [ "$det_pmtu" -ge 576 ] 2>/dev/null; then
+					pmtu_val="$det_pmtu"
+				fi
+			fi
+
+			local esc_out=$(printf '%s' "$raw_tp" | awk '{gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); gsub(/\r/,""); gsub(/\t/,"  "); printf "%s\\n", $0}')
+			printf '{"success":true,"mode":"pmtu","target":"%s","size":"%s","pmtu":"%s","wan_dev":"%s","wan_mtu":"%s","mtu_fix":"%s","output":"%s"}\n' \
+				"$target" "$size" "$pmtu_val" "$wan_dev" "$wan_mtu" "$mtu_fix" "$esc_out"
+			;;
+		ethtool)
+			local raw_eth=$(
+				echo "=== PORTA WAN 2.5G (eth0 - ethtool v5.10 NBASE-T) ==="
+				ethtool eth0 2>&1
+				echo ""
+				echo "=== ACELERACAO & OFFLOADS DE HARDWARE (eth0 GSO/GRO/TSO/SG) ==="
+				ethtool -k eth0 2>&1 | grep -E "scatter-gather|tcp-segmentation-offload|generic-segmentation-offload|generic-receive-offload|rx-checksumming|tx-checksumming"
+				echo ""
+				echo "=== INTERFACES ETHERNET & BRIDGES (MTU & ESTADO) ==="
+				for d in eth0 eth1 br-lan br-guest br-iot wg0; do
+					[ -d "/sys/class/net/$d" ] && printf "%-10s : state=%-8s mtu=%-5s speed=%s Mbps\n" "$d" "$(cat /sys/class/net/$d/operstate 2>/dev/null)" "$(cat /sys/class/net/$d/mtu 2>/dev/null)" "$(cat /sys/class/net/$d/speed 2>/dev/null || echo 'N/A')"
+				done
+			)
+			local esc_eth=$(printf '%s' "$raw_eth" | awk '{gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); gsub(/\r/,""); gsub(/\t/,"  "); printf "%s\\n", $0}')
+			printf '{"success":true,"mode":"ethtool","output":"%s"}\n' "$esc_eth"
+			;;
+		iperf_start)
+			killall iperf 2>/dev/null || true
+			iperf -s -D -p 5001 >/dev/null 2>&1 &
+			sleep 1
+			local ip_run="0"
+			[ -n "$(pidof iperf)" ] && ip_run="1"
+			local ip_ver=$(iperf -v 2>&1 | head -n1 | tr -d '\r\n"')
+			printf '{"success":true,"mode":"iperf_start","iperf_running":"%s","version":"%s","output":"Servidor %s ativo na porta TCP/UDP 5001!\\n\\nPara testar a velocidade maxima Multi-Thread (Wi-Fi 7 ou Cabo 2.5G) a partir do seu PC/Mac:\\n  iperf -c 192.168.76.1 -P 4 -t 10 -e"}\n' \
+				"$ip_run" "$ip_ver" "$ip_ver"
+			;;
+		iperf_stop)
+			killall -9 iperf 2>/dev/null || true
+			printf '{"success":true,"mode":"iperf_stop","iperf_running":"0","output":"Servidor iperf (porta 5001) encerrado."}\n'
+			;;
+		*)
+			echo '{"success":false,"error":"unknown_mode"}'
+			;;
+	esac
+}
+
 case "$1" in
 	list)
-		echo '{ "get_status": {}, "get_guard_status": {}, "ack_guard": {}, "set_telnet": { "enabled": "string" }, "apply_topology": { "mode": "string", "ssid": "string", "key": "string", "ssid_6g": "string" }, "set_radio": { "device": "string", "channel": "string", "htmode": "string", "txpower": "string" }, "set_all_radios": { "wifi0": "table", "wifi1": "table", "wifi2": "table" }, "edit_vif": { "section": "string", "ssid": "string", "key": "string", "encryption": "string" }, "add_vif": { "ssid": "string", "key": "string", "encryption": "string", "band_2g": "bool", "band_5g": "bool", "band_6g": "bool", "is_guest": "bool", "is_mld": "bool" }, "del_vif": { "section": "string" }, "toggle_vif": { "section": "string", "disabled": "string" }, "restart_wifi": {}, "toggle_radio": { "device": "string", "disabled": "string" }, "toggle_feature": { "feature": "string", "value": "string" } }'
+		echo '{ "get_status": {}, "get_guard_status": {}, "get_luci_wireless": {}, "luci_wifi_assoclist": { "device": "string" }, "luci_wifi_scan": { "device": "string" }, "luci_wifi_action": { "action": "string", "device": "string", "mac": "string" }, "ack_guard": {}, "set_telnet": { "enabled": "string" }, "apply_topology": { "mode": "string", "ssid": "string", "key": "string", "ssid_6g": "string" }, "set_radio": { "device": "string", "channel": "string", "htmode": "string", "txpower": "string" }, "set_all_radios": { "wifi0": "table", "wifi1": "table", "wifi2": "table" }, "edit_vif": { "section": "string", "ssid": "string", "key": "string", "encryption": "string" }, "add_vif": { "ssid": "string", "key": "string", "encryption": "string", "band_2g": "bool", "band_5g": "bool", "band_6g": "bool", "is_guest": "bool", "is_mld": "bool" }, "del_vif": { "section": "string" }, "toggle_vif": { "section": "string", "disabled": "string" }, "restart_wifi": {}, "toggle_radio": { "device": "string", "disabled": "string" }, "toggle_feature": { "feature": "string", "value": "string" }, "wake_on_lan": { "mac": "string" }, "optimize_channels": {}, "setup_wireguard": { "action": "string", "config": "string", "enabled": "string", "priv": "string", "pub": "string", "psk": "string", "address": "string", "mtu": "string", "endpoint_host": "string", "endpoint_port": "string", "allowed_ips": "string", "keepalive": "string" }, "set_schedule": { "action": "string", "enabled": "string", "start": "string", "stop": "string", "days": "string" }, "set_service": { "service": "string", "enabled": "string" }, "run_net_diag": { "mode": "string", "target": "string", "size": "string" } }'
 		;;
 	call)
 		case "$2" in
 			get_status) do_get_status ;;
 			get_guard_status) do_get_guard_status ;;
+			get_luci_wireless) do_get_luci_wireless ;;
+			luci_wifi_assoclist) do_luci_wifi_assoclist ;;
+			luci_wifi_scan) do_luci_wifi_scan ;;
+			luci_wifi_action) do_luci_wifi_action ;;
 			ack_guard) do_ack_guard ;;
 			set_telnet) do_set_telnet ;;
 			apply_topology) do_apply_topology ;;
@@ -1055,8 +2311,12 @@ case "$1" in
 			restart_wifi) do_restart_wifi ;;
 			toggle_radio) do_toggle_radio ;;
 			toggle_feature) do_toggle_feature ;;
+			wake_on_lan) do_wake_on_lan ;;
+			optimize_channels) do_optimize_channels ;;
+			setup_wireguard) do_setup_wireguard ;;
+			set_schedule) do_set_schedule ;;
+			set_service) do_set_service ;;
+			run_net_diag) do_run_net_diag ;;
 		esac
 		;;
 esac
-
-

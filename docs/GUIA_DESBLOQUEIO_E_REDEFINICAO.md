@@ -12,15 +12,15 @@ Este manual reúne o procedimento oficial para o **desbloqueio**, configuração
 
 ## 🎁 2. BENEFÍCIOS DO DESBLOQUEIO (POR QUE DESBLOQUEAR?)
 
-1. 🔓 **Acesso Root e SSH Nativo na LAN:** Portas `22` (SSH) e `23` (Telnet) liberadas na rede local sem travas da Acer.
-2. 🌐 **Interface LuCI Oficial OpenWrt:** Painel completo na porta 80 com controle total de firewall, DHCP, rotas, VLANs e diagnósticos de processos.
-3. 🚀 **Wi-Fi 7 Destravado:** Banda de 6 GHz com largura máxima de **320 MHz (5.76 Gbps)**, Roaming Rápido 802.11k/v e WPA3-SAE.
-4. 🎛️ **Central de Wi-Fi Inteligente:** Exclusiva com ajustes e liberação máxima dos recursos do Wi-Fi, fácil e intuitiva. Permite alterar configurações e salvar todas as frequências juntas!
-5. 🛡️ **Anti-Deadlock:** Eliminação definitiva dos módulos quebrados da Qualcomm (`whc` e `wsplc`) que causavam concorrência interna e instabilidade no Wi-Fi.
-6. 🧹 **Debloat Máximo:** Desativação de telemetrias invasivas e serviços celulares inúteis herdados do modelo X7, liberando **mais de 50 MB de memória RAM**.
-7. 🎮 **UPnP / NAT-PMP para Jogos:** Abertura automática de portas para PS5, Xbox, Switch e PC com NAT Aberto/Moderado e menor latência.
-8. 🛡️ **Segurança Total Anti-Brick:** O Slot 1 e o U-Boot permanecem **100% de fábrica intactos**, com retorno garantido a qualquer momento: fez o reset pelo OpenWrt ou pelo botão físico já volta ao padrão de fábrica!
-9. 🌐 **Idiomas 100% Organizados:** Interface LuCI e todos os novos menus customizados da Central de Wi-Fi perfeitamente localizados e alinhados em **Português (Brasil)**, **Inglês** e **Espanhol**, sem textos cortados ou confusos.
+1. 🔓 **Acesso Root e SSH Nativo na LAN:** Portas `22` (SSH) e `23` (Telnet com auto-respawn via `procd`) liberadas na rede local sem travas da Acer.
+2. 🌐 **Interface LuCI Oficial OpenWrt:** Painel completo na porta 80 com widget de telemetria Wi-Fi 7 nativa no Status Overview e controle total de firewall, DHCP, rotas e VLANs.
+3. 🚀 **Wi-Fi 7 Destravado:** Banda de 6 GHz com largura máxima de **320 MHz (5.76 Gbps)**, 5 GHz em 80/160 MHz com `sae-mixed` nativo, Roaming Rápido 802.11k/v e guardião anti-crash PCIe DualMAC.
+4. 🎛️ **Central de Wi-Fi Inteligente & Painel WISP (Wi-Fi como WAN):** Exclusivos e intuitivos! Ajuste e salve todas as bandas juntas, ou use o roteador como repetidor/cliente WISP blindado contra loop, colisão de sub-rede e senha incorreta (auto-rollback de 15s).
+5. 💾 **Servidor NAS USB 3.0 em Kernel (`ksmbd` SMB 3.1.1):** Compartilhamento de arquivos em alta velocidade com gerenciador visual de discos (Formatar EXT4, Remover com Segurança e Resetar Senha).
+6. 🔒 **DNS Criptografado (DoH), Filtro QUIC Seletivo, SQM CAKE & WireGuard:** Privacidade via Cloudflare/Google DoH com cache RAM instantâneo (`0.00ms`), bloqueio seletivo de UDP 443 por `ipset`, QoS CAKE homologado para PPPoE (`no-split-gso`) e suporte nativo a VPN WireGuard em kernel.
+7. 🛡️ **Anti-Deadlock & Debloat Máximo:** Eliminação definitiva dos daemons conflitantes (`whc`, `wsplc`, `acd`) e serviços celulares inativos herdados do X7, liberando **mais de 50 MB de RAM**.
+8. 🎮 **UPnP / NAT-PMP para Jogos:** Abertura automática de portas para PS5, Xbox, Switch e PC com NAT Aberto/Moderado e menor latência.
+9. 🛡️ **Segurança Total Anti-Brick & 3 Idiomas:** O Slot 1 e o U-Boot permanecem **100% de fábrica intactos** (reset físico ou via software restaura o estado de loja), e toda a interface está localizada em **Português (Brasil)**, **Inglês** e **Espanhol**.
 
 ---
 
@@ -32,7 +32,7 @@ Este manual reúne o procedimento oficial para o **desbloqueio**, configuração
 > Se você restaurar um backup antigo da interface de fábrica da Acer, ele vai **sobrescrever as configurações, apagar os arquivos de ajuste, deletar a interface LuCI e bloquear o SSH novamente**.  
 >  
 > 👉 **Como personalizar sua rede:**  
-> Se você quiser mudar o nome do Wi-Fi, colocar sua própria senha ou alterar faixas de IP, **faça sempre manualmente pela tela da LuCI após o desbloqueio**.
+> Se você quiser mudar o nome do Wi-Fi, colocar sua própria senha ou alterar faixas de IP, **faça sempre manualmente pela tela da LuCI após o desbloqueio** (ou use o gerador `dev/gerar_cfg_personalizado.py`).
 
 ---
 
@@ -42,7 +42,7 @@ Este manual reúne o procedimento oficial para o **desbloqueio**, configuração
 * **Senha Mestra Unificada:** `root0100` *(válida para LuCI Web, SSH, Telnet, usuário `root` e `admin`)*
 * **Arquivo do Pacote Mestre:** `cfg_restauracao_master_v2.cfg` *(disponível diretamente na raiz)*
 * **Rede Wi-Fi Unificada (Tri-Band):** `Predator_7G` *(2.4 GHz, 5 GHz e 6 GHz)*
-* **Largura de Banda 5 GHz:** `80 MHz` *(boot ultrarrápido em 2s sem espera DFS; alternável para 160 MHz no LuCI)*
+* **Largura de Banda 5 GHz:** `80 MHz` *(Canal 36 non-DFS: boot rápido em ~40s sem espera DFS; alternável para 160 MHz no LuCI)*
 * **Senha Padrão do Wi-Fi (todas as redes):** `Predator0@`
 * **SQM (Cake QoS):** Desativado por padrão *(máxima aceleração de 2.5 Gbps PPE; ativável no LuCI)*
 
@@ -64,7 +64,7 @@ Este manual reúne o procedimento oficial para o **desbloqueio**, configuração
      `cfg_restauracao_master_v2.cfg`
    * Clique no botão **`Restore`**.
 3. **Observe os LEDs durante o Boot:**
-   * 🔴 **LED Frontal Vermelho:** É **normal** no 1º boot! O chip Qualcomm calibra os rádios e cumpre **60 segundos obrigatórios de escuta de radar (DFS CAC)** na faixa de 5 GHz. Aguarde cerca de **2 minutos e 25 segundos**.
+   * 🔴 **LED Frontal Vermelho:** É **normal** durante a subida dos rádios! Com o padrão de **80 MHz (Canal 36 non-DFS)** na banda de 5 GHz, o boot completo leva cerca de **40 a 60 segundos** *(caso você altere o 5 GHz para **160 MHz**, o chip cumprirá 60 segundos obrigatórios de escuta de radar DFS CAC, levando ~2m25s)*.
    * 🔵 **LED Frontal Azul:** Assim que os 3 rádios subirem, a luz frontal comuta para **Azul**. O Wi-Fi está pronto para uso!
    * 🌐 **LED Superior Maior:** Só acende quando você conectar o cabo da internet na porta **WAN 2.5G**.
 4. **Entre na Nova Interface LuCI:**  
@@ -135,8 +135,15 @@ O Acer Predator Connect T7 conta com particionamento A/B duplo na memória NAND:
 
 ### Alternância pelo U-Boot Web Failsafe (`http://192.168.1.1`):
 No modo de emergência U-Boot (pressionando WPS ao ligar), basta acessar `http://192.168.1.1` no navegador em modo anônimo e fazer o upload do arquivo binário desejado da pasta `dev/`:
+
+#### Opção 1: Chaveadores Rápidos V1 (512 KB):
 * **Para forçar o boot no Slot 1 (OEM de Fábrica):** Faça upload de 👉 **`dev/chaveador_slot1_acer_oem.bin`**
 * **Para forçar o boot no Slot 2 (OpenWrt Custom):** Faça upload de 👉 **`dev/chaveador_slot2_openwrt.bin`**
+
+#### Opção 2: Alternadores Avançados V2 Seguros com Verificação SHA (`dev/Alternador_Boot_T7_V2/`):
+* **Para forçar o boot no Slot 1 (OEM de Fábrica):** Faça upload de 👉 **`dev/Alternador_Boot_T7_V2/selecionar_slot1_V2_CANDIDATO.bin`**
+* **Para forçar o boot no Slot 2 (OpenWrt Custom):** Faça upload de 👉 **`dev/Alternador_Boot_T7_V2/selecionar_slot2_V2_CANDIDATO.bin`**
+*(Os arquivos V2 possuem 2.6 MB em estrutura FIT U-Boot com `nand init`, gravação dupla em `0:BOOTCONFIG` e `0:BOOTCONFIG1`, verificação de integridade SHA e `reset` automático sem tocar em `APPSBLENV`).*
 
 ### Quando o roteador estiver desbloqueado (SSH / Telnet):
 Não é necessário enviar arquivos nem comandos complexos de partição. Estando conectado via SSH (`porta 22`) ou Telnet (`porta 23`), basta executar os comandos nativos já integrados no sistema:
